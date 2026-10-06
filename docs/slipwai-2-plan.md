@@ -1075,8 +1075,36 @@ The first attempt paid for these rules. They apply from phase 1, inside the fork
 
 ### Still open
 
-None. Every decision this plan needed on 2026-10-06 is taken. New ones go to the deck logs' `decision` lines
-and, where a person must take them, to the bridge's inbox.
+**Does the keel declare a language's axis options, or only the axes?** Found on 2026-10-06 while doing
+slice 3.6.
+
+Today `catalog.json` declares `http` with the options `fastify`, `fastapi`, `net-http`, `quarkus-rest`
+and `spring-web`, and `assets/backing-services/prune.py` carries a features-and-capabilities table per
+option. Every one of those names is a framework belonging to a language package. A package's manifest
+says which options it *answers*; the keel still says which exist.
+
+That is the line issue #26 drew, crossed. Theme A says the keel never names a language, and
+`check-structure` enforces it — for Python imports. `catalog.json` is data, so the gate never looks. The
+experiment knew: `docs/backend-protocol.md` marks this "**would move** when the catalog's options move
+into each language's fragment (FR-019)", and then it did not move.
+
+Three ways out. It is a decision, not a task:
+
+1. **Move the options into the fragments.** A package declares the options it brings, the merge adds
+   them, and the keel declares only the four axes. Truest to theme A, and the largest change: the
+   interview, the pruner's tables and every default would come from the merge.
+2. **Leave them, and narrow the sentence.** The keel declares a vocabulary of options and packages
+   answer them; the rule becomes "the keel names no language *module*", which is what the gate actually
+   checks. Cheapest, and theme A then claims less than it reads as claiming today.
+3. **Move the pruner's tables only.** Slice 3.6 as written: the catalogue keeps the option names, the
+   per-option features come from each family's `PRUNE_ROWS`. Half the benefit, and `catalog.json` still
+   names five frameworks.
+
+Slice 3.6 is blocked on this: the half of its done-when that is already true — rows emitted as data —
+was true when it arrived from the experiment, and the half that is not is this question.
+
+Every other decision this plan needed on 2026-10-06 is taken. New ones go to the deck logs' `decision`
+lines and, where a person must take them, to the bridge's inbox.
 
 ## 10. Gaps review, 2026-10-06
 
