@@ -17,7 +17,7 @@ from pathlib import Path
 import checkout_packages  # noqa: F401
 
 from slipwai.assets import PRUNER, ROOT
-from slipwai.catalog import CATALOG
+from slipwai.catalog import CATALOG, axis_applies, axis_default
 from slipwai.catalog_options import declare_options
 from slipwai.language_directory import Package
 
@@ -92,6 +92,36 @@ class RefusalTest(unittest.TestCase):
 
     def test_a_package_that_brings_nothing_is_not_refused(self) -> None:
         self.assertEqual(self.refuse(package("a", {})), {})
+
+
+class InferredTest(unittest.TestCase):
+    """`http` is never asked. Its answer follows from the backend, which has exactly one transport."""
+
+    def test_the_http_axis_is_marked_inferred(self) -> None:
+        self.assertTrue(KEEL["axes"]["http"].get("inferred"))
+
+    def test_an_inferred_axis_is_not_a_question(self) -> None:
+        for profile in KEEL["profiles"]:
+            with self.subTest(profile=profile):
+                self.assertFalse(axis_applies("http", profile, "toy-plain", "none"))
+
+    def test_the_axes_that_are_real_choices_are_still_asked(self) -> None:
+        """A reader still picks their event store: Postgres and SQLite are different products, not two
+        spellings of one backend's framework."""
+        self.assertTrue(axis_applies("event-store", "event-modelling", "toy-plain", "none"))
+
+    def test_only_http_is_inferred(self) -> None:
+        """Inferring an axis removes a question, so each one has to earn it separately."""
+        inferred = {axis for axis, spec in KEEL["axes"].items() if spec.get("inferred")}
+        self.assertEqual(inferred, {"http"})
+
+    def test_the_answer_is_the_backends_own_default(self) -> None:
+        self.assertEqual(axis_default("http", "toy-plain", "none"), "toy-serve")
+
+    def test_a_backend_that_serves_nothing_still_answers_none(self) -> None:
+        """`none` is not a choice any more; it is what a backend with no transport, or an adopted
+        repository that reports having none, ends up with."""
+        self.assertIn("none", KEEL["axes"]["http"]["options"])
 
 
 if __name__ == "__main__":  # pragma: no cover

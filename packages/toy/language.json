@@ -27,7 +27,7 @@
         ]
       },
       "defaults": {
-        "http": "none"
+        "http": "toy-serve"
       }
     }
   },

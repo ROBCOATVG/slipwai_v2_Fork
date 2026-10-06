@@ -178,7 +178,7 @@
       }
     },
     "http": {
-      "prompt": "HTTP transport",
+      "prompt": "Inbound HTTP (inferred from the backend, never asked)",
       "description": "What accepts inbound HTTP. One transport per backend, the ecosystem's own, or none for a library or worker",
       "profiles": [
         "standard",
@@ -202,7 +202,8 @@
           ]
         }
       },
-      "always": []
+      "always": [],
+      "inferred": true
     },
     "auth": {
       "prompt": "Staff authentication",

@@ -108,12 +108,24 @@ def resolve_backend(language: str, framework: str | None) -> str:
 def axis_applies(axis: str, profile: str, backend: str, target: str) -> bool:
     """Whether this axis is a question worth asking of this profile, backend and target.
 
-    An axis with only its no-infrastructure option left for a backend is not a choice, so it is not asked.
+    Three ways it is not. The profile does not carry the axis. Only the no-infrastructure option is left
+    for this backend, so there is nothing to choose between. Or the axis is **inferred**: its answer
+    follows from something already decided, and asking would be asking the reader to repeat themselves.
+
+    `http` is the inferred one. A backend answers exactly one transport — its framework's — so the
+    question was never "which?", and a generated project's first application is a service, so it was
+    never "whether?" either. The answer is the backend's own default. `none` stays an option for the
+    backend that offers no transport at all, and for an adopted repository that reports having none.
     """
     spec = CATALOG["axes"][axis]
-    if profile not in spec["profiles"]:
+    if profile not in spec["profiles"] or spec.get("inferred"):
         return False
     return len(axis_options(axis, backend, target)) > 1
+
+
+def axis_inferred(axis: str) -> bool:
+    """Whether this axis is never asked, its answer following from the backend."""
+    return bool(CATALOG["axes"][axis].get("inferred"))
 
 
 def axis_required(axis: str, target: str) -> bool:

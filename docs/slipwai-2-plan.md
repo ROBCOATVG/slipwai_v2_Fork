@@ -385,6 +385,15 @@ mirror between the catalogue and the pruner now holds only the keel's own option
 is declared in one place and has no second copy to drift from — its own conformance suite is what
 checks it.
 
+**An axis the reader should not be asked.** `http` was a question with one real answer. A backend
+answers exactly one transport — its framework's — so it was never "which?"; and a generated project's
+first application is a service, so it was never "whether?" either. Version 2 marks the axis `inferred`:
+it is not asked, and the answer is the backend's own default. `none` stays an option, because a backend
+may offer no transport and an adopted repository may report having none — it stops being a choice and
+becomes a state. Decided 2026-10-06. Only `http` is inferred; an axis earns it by having one answer
+once something already decided is known, and the event store does not: Postgres and SQLite are
+different products, not two spellings of one backend's framework.
+
 **What stays in the keel.** Profiles, targets, frontends, axes, adoption, and the toolkit. This is the line that
 issue #26 drew.
 
@@ -1176,7 +1185,7 @@ open decision left either.
 
 ## 11. The implementation plan
 
-**Progress: 27 of 83 slices done** — phase 1 6/6, phase 2 7/9, phase 3 14/19, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 28 of 84 slices done** — phase 1 6/6, phase 2 7/9, phase 3 15/20, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1407,6 +1416,7 @@ refuses by and which nothing else imports. Found on 2026-10-06 while doing the s
 | 3.4b | The **skiff** shape for both targets: a Lightsail container service and a scale-to-zero Container App, one environment, the shape question in the interview, `converge --shape`; the compute named in one row of the target's table, not spread through its stack | new | L | Both shapes validate against the real providers; a slipway project generates a skiff by default; changing a skiff's compute is one row and its stack file |  |
 | 3.5 | Frontends and backing services, the `react-vite` npm-workspace contract | upstream + cruise-2 | M | The frontend variants match |  |
 | 3.6 | The language-specific answers out of the keel: the `http` axis keeps `none` alone, a package declares the options it brings in `language.json`'s `axes` block, and the pruner's per-option tables travel with them | cruise-2 + new | L | `catalog.json` and the keel's `prune.py` name no framework; the toy brings `http/toy-serve` and the keel's own gate exercises the path on every commit | done |
+| 3.10 | `http` inferred rather than asked: the axis is marked `inferred`, the answer is the backend's own default, and the interview never raises it | new | S | A generated project gets its backend's transport without being asked; `none` is what a backend with no transport, or an adopted repository reporting none, ends up with | done |
 | 3.7 | `make starters`, and the full matrix per package run from each package's CI against a pinned keel, never from the keel's | cruise-2 | M | The keel's gate stays under ten minutes and reads one package, the toy; each package's CI proves its own variants |  |
 | 3.9 | `conformance/` and `matrix/` as `python -m` entry points (was 2.5) | cruise-2 | L | `python -m slipwai.conformance packages toy` runs in the gate and its five static checks pass; the matrix refuses the toy by name and says what to run instead. The two generation probes need the `generate` verb and light up at 4.1 | done |
 

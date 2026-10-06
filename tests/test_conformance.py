@@ -57,19 +57,33 @@ class EntryPointTest(unittest.TestCase):
         done = entry_point("slipwai.conformance", "a-package-nobody-wrote")
         self.assertNotEqual(done.returncode, 0)
 
-    def test_the_matrix_refuses_the_toy_and_says_what_to_run_instead(self) -> None:
+    def test_the_matrix_plans_the_toys_variants(self) -> None:
+        """Once the toy brought a transport of its own there were variants to generate, so the matrix
+        plans them: the two diagonals, one per event store, and the production row."""
         done = entry_point("slipwai.matrix", TOY, "--list")
         printed = done.stdout + done.stderr
-        self.assertNotEqual(done.returncode, 0)
-        self.assertIn("no http option", printed)
-        self.assertIn("slipwai.conformance", printed)
+        self.assertEqual(done.returncode, 0, printed)
+        for row in ("verify-standard-toy-plain-none", "verify-toy-plain-postgres",
+                    "verify-production-event-modelling-toy-plain"):
+            with self.subTest(row=row):
+                self.assertIn(row, printed)
 
 
 class RowsTest(unittest.TestCase):
     def test_a_backend_with_no_transport_has_no_variants_to_generate(self) -> None:
+        """A package that serves nothing has no native gate to run, and the matrix says so rather than
+        planning an empty run that passes."""
+        import copy
+
+        serves_nothing = copy.deepcopy(CATALOG)
+        serves_nothing["default"]["http"] = {"toy-plain": "none"}
         with self.assertRaises(ValueError) as raised:
-            rows.native_rows(CATALOG, "toy-plain")
+            rows.native_rows(serves_nothing, "toy-plain")
         self.assertIn("no variants to generate", str(raised.exception))
+        self.assertIn("slipwai.conformance", str(raised.exception))
+
+    def test_the_toy_does_have_one_now(self) -> None:
+        self.assertTrue(rows.native_rows(CATALOG, "toy-plain"))
 
     def test_the_diagonals_still_cover_every_profile_and_frontend_the_catalogue_has(self) -> None:
         """A profile added to the catalogue and not to the diagonals is a variant nobody generates."""
