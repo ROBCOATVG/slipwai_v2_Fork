@@ -78,10 +78,16 @@ class LedgerTest(unittest.TestCase):
         """The list is an exemption, so it must not quietly name something absent and exempt nothing."""
         self.assertEqual(bring_back.PARTIAL - self.here, set())
 
-    def test_a_package_satisfies_a_need_for_one_of_its_modules(self) -> None:
+    def test_a_module_inside_a_package_satisfies_a_need_for_the_package(self) -> None:
         self.assertTrue(bring_back.satisfied("project", {"project.flags"}))
         self.assertTrue(bring_back.satisfied("project.flags", {"project.flags"}))
         self.assertFalse(bring_back.satisfied("project.flags", {"catalog"}))
+
+    def test_a_package_does_not_satisfy_a_need_for_a_module_inside_it(self) -> None:
+        """The rule runs one way. `project/__init__.py` is six lines and knows nothing, and the first
+        version of this called `project.agents` ready on the strength of it."""
+        self.assertFalse(bring_back.satisfied("project.stage_models", {"project"}))
+        self.assertFalse(bring_back.satisfied("project.stage_models", {"project", "project.flags"}))
 
 
 if __name__ == "__main__":  # pragma: no cover

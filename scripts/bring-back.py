@@ -71,8 +71,15 @@ def here() -> set[str]:
 
 
 def satisfied(need: str, done: set[str]) -> bool:
-    """A need is met by the module itself, or by the package it names: `project.flags` satisfies `project`."""
-    return need in done or need.split(".")[0] in done or any(d.startswith(f"{need}.") for d in done)
+    """A need is met by the module itself, or — where the need is a package — by any module inside it.
+
+    It runs one way only. `project.flags` satisfies a need for `project`, because importing the package
+    is importing something in it; `project` does not satisfy a need for `project.stage_models`, because
+    the package's `__init__` is six lines and knows nothing. The first version had both directions and
+    called `project.agents` ready on the strength of an empty `__init__`, which cost an hour of bringing
+    modules back that could not import.
+    """
+    return need in done or any(d.startswith(f"{need}.") for d in done)
 
 
 def waves(rows: dict[str, Module], done: set[str]) -> list[tuple[list[str], set[str]]]:
