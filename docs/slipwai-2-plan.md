@@ -54,6 +54,7 @@ version 1, it uses version 1's own names and says so.
 | **Hoist, strike** | To hoist a flag is to turn a release flag on for real actors. To strike a flag is to remove it after it has been on everywhere for long enough. Only a person hoists | "turn on", "remove the flag" |
 | **Slipway, sea trials, in service** | The three states of a product, recorded once in `project.json`. Slipway: no production yet. Sea trials: a production with a known set of pilot actors. In service: real actors. The release mode defaults from this state | "pre-launch", "beta", "GA" |
 | **Release mode** | How dark a merge is. One of: open, keystone, flagged, promoted. Section 4, theme E, defines each | `release: flagged` |
+| **Skiff, liner** | The two shapes of a cloud target. A skiff is one environment on the smallest managed compute and database, for a staff tool. A liner is today's full stack, for a product. Theme E defines both | one stack for every project |
 | **Skipper, hand, bosun** | The three delegates inside one iteration. The skipper decides product questions. The hand runs the demo. The bosun works round a block. Unchanged from version 1 | Same words |
 | **Fleet board** | Every view of the harbour, meaning the agents at work: the berth table, the slice graph by fairway, the swimlanes with cost, the event feed, the pressure gauge and the bunker, and the inbox. Every view is computed from the logs and from `git rev-list`. The fleet board keeps no state of its own. `slipwai fleet` prints it. `slipwai fleet watch` keeps it live. The harbourmaster also renders it as a page | "fleet view", "multi-lane status", "dashboard" |
 | **Bridge** | One product's own dashboard, as distinct from the fleet board, which is the harbour's view of the agents. The bridge shows where the product is (slipway, sea trials, in service), the release mode, how far along each fairway is, which flags are hoisted and where, what is deployed to each environment, what is waiting on a person, and what the product has cost so far. `slipwai bridge` prints it. The harbourmaster renders it to the project's Pages site next to the event model | `/where-are-we`, the demo stop's progress board, the event-model page |
@@ -573,9 +574,41 @@ that is older than N days after that date. The careen carries the task that stri
 per fairway, the flags hoisted and the flags waiting to be struck. A flag that is never struck is the debt that
 every flag system accumulates. The factory refuses to accumulate it.
 
+**The shape of the target, decided by the same facts.** Today a project that answers `aws` or `azure` gets
+one stack whatever it is: on AWS, a Fargate service per application deployed blue/green behind its own load
+balancer and a CloudFront distribution, RDS, Cognito pools, two environments and a bootstrap with an OIDC
+role; on Azure, Container Apps, a Flexible Server, Entra, two environments. That is the right stack for a
+product with customers. It is too much for a staff tool with twelve users, and the idle bill (about $40 a
+month per service on AWS across two environments) says so. Version 2 gives each target two shapes, and the
+interview chooses one from the product state and one more question: who uses it, and what happens when it is
+down.
+
+| Shape | For | What it is on AWS | What it is on Azure | What it drops |
+|---|---|---|---|---|
+| **Skiff** | A staff or internal tool: the team, or named colleagues; an outage is an inconvenience | One environment. App Runner from the same image, with the smallest RDS or an Aurora Serverless v2 instance at its floor, staff identity through Cognito, flags through SSM, no CloudFront unless there is a site, no load balancer, rolling deploys | One environment. One Container App that scales to zero, the smallest Flexible Server, Entra app roles | The second environment, the per-service balancer, blue/green, CloudFront for an API, the customer identity pool. Roughly a third of the idle bill |
+| **Liner** | A product with customers, or anything whose outage is an incident | Today's stack, unchanged | Today's stack, unchanged | Nothing |
+
+Rules that hold the shapes to the same bar:
+
+- The shape is recorded in `project.json` beside the target. It defaults from the product state: `slipway`
+  gives a skiff, `in service` gives a liner, and the interview's question decides sea trials. A person can
+  override it either way at generation.
+- **Moving up is a step, not a rewrite.** `slipwai converge --shape liner` regenerates the target's module
+  for the liner shape, keeps the database and its data, writes the runbook for the one step a person does by
+  hand (the DNS move), and records the change in the convergence map's platform axis. Nothing moves a project
+  down a shape without a person asking.
+- **The same gate, the same flags, the same images.** A skiff runs the same `make verify`, the same release
+  modes, the same flag reader and the same images as a liner; languages answer nothing new. Only the
+  infrastructure module and the pipeline differ, which is what keeps the shape a target decision and not a
+  language one.
+- **The bridge shows the shape and the idle cost.** Beside the product state, so the owner sees what they are
+  paying for the stage they are at.
+- A heavier shape than today's (own VPC, multi-AZ database, WAF, alarms and a runbook for on-call) is a later
+  row, after 2.0.0, when a product asks for it.
+
 **Done when.** A product on the slipway runs the whole loop with no flag reader generated and no release park.
 A product in service keeps every guarantee it has in version 1. In every mode, the number of release-stage stops
-per slice is zero.
+per slice is zero. A staff tool on AWS costs a third of what it costs today at idle, with the same gate.
 
 ## 5. The delivery loop, drawn
 
@@ -885,10 +918,14 @@ Resolved:
   standard profile. Answer: one committed `chart.yaml` per feature on both profiles, rendered from the model
   on the event profile; events and schemas typed with JSON Schema, routes as OpenAPI operations, ports as
   names with typed inputs and outputs.
+- [Should → theme E, "The shape of the target"] One stack for every AWS or Azure project is too much for an
+  internal tool. Answer: two shapes per target, skiff and liner, chosen from the product state and who uses
+  it; moving up is a converge step; today's stack is the liner and stays as it is for products.
 - [Should → theme A, "Which languages 2.0.0 ships with"] Which languages must exist at 2.0.0. Answer: all six.
 - [Should → section 11] Effort per phase, the first dogfood product, the out-of-scope list and the token
-  baseline. Answer: written into the implementation plan as sizes in slices, a proposed first product, an
-  out-of-scope list and a baseline run; the product is confirmed below.
+  baseline. Answer: sizes in slices in the implementation plan; no real product is migrated before 2.0.0, the
+  fixtures prove section 6 and a two-context greenfield at phase 7 is the first measured product; the
+  out-of-scope list and the baseline are written in section 11.
 - [Blocker → theme D, "The bridge"] How a click on the dashboard becomes a `told` line. Answer: `slipwai
   bridge` serves the page locally from the harbourmaster's seat and its controls post to it; the Pages copy is
   the same page without controls.
@@ -899,12 +936,22 @@ Resolved:
 
 Open, in order:
 
-- [Nice] A one-line problem statement and the cost of doing nothing.
-- [Nice] Log format versioning and retention.
-- [Nice] The notification channel.
-- [Nice] A `GLOSSARY.md` the `wtf` skill can read.
-- [Nice] How version 1 users hear about the change.
-- [Nice] Team size.
+- [Nice, proposed → section 2] A one-line problem statement: version 1 delivers one product well with one
+  runner, and gets no faster when people or machines join; its gate grows with every language. The cost of
+  doing nothing is the experiment's numbers: 104 hours and 180M tokens per accepted slice at the median, and a
+  gate nobody runs locally.
+- [Nice, proposed → theme D] Log lines carry `v: 1`; a reader refuses a line from a newer format and names the
+  upgrade. Logs under `.slipwai/logs/` are kept for the life of the feature and archived into the feature's
+  directory when it closes, compressed, so the bill and the decisions stay auditable.
+- [Nice, proposed → theme D] The push for parks, banked fires and stalls uses the harness's own notification
+  hook where it has one, and otherwise a webhook URL in `harbour.json`, which covers Slack, Teams and a phone.
+- [Nice, proposed → section 1] Section 1 of this plan is extracted into `GLOSSARY.md` at the repository root
+  in phase 1, so the `wtf` skill and every session read one glossary.
+- [Nice, proposed → phase 8] Version 1 users hear about version 2 from the 2.0.0 changelog entry, the README
+  rewrite, and a final 1.5.x release whose `slipwai upgrade --check` names 2.0.0 and its migration page.
+- [Nice, proposed → section 7] The plan assumes one person with agents, and a second person or machine
+  joining from phase 5 to prove the fairways. The slice sizes are for that team; a larger one shortens the
+  calendar, not the slice.
 
 ## 11. The implementation plan
 
@@ -930,10 +977,10 @@ with the measured median, and keep doing so.
 
 ### The first products
 
-- **The first migration is MANDA.** It is the largest version 1 product that exists (37 slices, five lanes run
-  by hand), it is on the event-modelling profile, and its run is the source of half of section 3. Migrating it
-  proves section 6 on real in-flight work, and its five lanes become the first real fairways. Proposed; a
-  person confirms.
+- **No real product is migrated before 2.0.0.** Decided 2026-10-06. Section 6 is proven by the generated
+  fixtures in `make test-migration` only: every profile and backend, a split, two slices implemented, one
+  claimed, flags in both states, and the adopted fixtures. The first real migration happens after the release,
+  and MANDA (37 slices, five lanes, event profile) is the natural first candidate then.
 - **The first greenfield is a small product generated with the 2.0.0 keel at phase 7**, two bounded contexts
   by design, so that two captains on two machines can be proven on a product that was never version 1.
 - **The fork itself is not driven by the loop** (section 7). It is a dogfood for the keel's verbs and the
@@ -944,8 +991,9 @@ with the measured median, and keep doing so.
 The token target in theme B, half the experiment's median per accepted slice, needs a baseline measured the
 same way the fleet board will measure it. The baseline is the experiment's own `benchmark.md`: median input
 tokens per accepted slice across its nineteen slices, recomputed from that file in phase 1 and written here.
-The first measured comparison is MANDA's migration fairways under the phase 5 loop; the second is the phase 7
-greenfield. Until phase 7 the numbers come from the benchmark bracket version 1 already writes.
+The first measured comparison is the phase 7 greenfield, two bounded contexts by design. Until then the
+numbers come from the benchmark bracket version 1 already writes, on whatever generated project phase 5 runs
+against.
 
 ### Phase 1. The keel's gate
 
@@ -980,7 +1028,8 @@ Depends on: phase 1. 2.1 can start on day one.
 | 3.1 | `assets.py`, `toolkit.py`, `layout.py`, and the asset trees they read | upstream | M | Toolkit files materialise for both profiles |
 | 3.2 | `scaffold.py` and `services.py`, asking the registry | upstream + cruise-2 | L | `project_files()` returns a tree for one typescript variant equal to cruise-2's |
 | 3.3 | The `project/*.py` parts, in assembly order, one slice per group: Makefile and CI; README and AGENTS; docs; flags and composition; event model; the rest | upstream | 6 × M | After each group, `make starters` diffs empty against cruise-2 for the variants that group touches |
-| 3.4 | Targets `aws` and `azure`, their stacks and docs | upstream | L | Stack validation tests green |
+| 3.4 | Targets `aws` and `azure`, their stacks and docs, as the **liner** shape | upstream | L | Stack validation tests green |
+| 3.4b | The **skiff** shape for both targets: App Runner and a scale-to-zero Container App, one environment, the shape question in the interview, `converge --shape` | new | L | Both shapes validate against the real providers; a slipway project generates a skiff by default |
 | 3.5 | Frontends and backing services, the `react-vite` npm-workspace contract | upstream + cruise-2 | M | The frontend variants match |
 | 3.6 | The pruner with rows emitted as data | cruise-2 | S | `scripts/backing-services.py` in a generated project carries no language name |
 | 3.7 | `make starters` and the full matrix per package, run from each package's CI, not the keel's | cruise-2 | M | The keel's gate stays under ten minutes; each package's CI proves its variants |
@@ -1016,7 +1065,7 @@ Depends on: phase 3.
 | 5.9 | Adversary once with a bar, mutation as a gate, stage budgets, stow, the careen | new (#29) | L | A stage over budget stows; CRITICAL never does |
 | 5.10 | Ids with the fairway in them; per-fairway `decisions.md`, adversary log, register; rendered aggregates on `main` | new | L | Two fairways decide in parallel and nothing renumbers |
 | 5.11 | Composition root rendered from the chart; one file per event with a rendered index | new | M | Two slices add an event each and merge without touching one line |
-| 5.12 | The four release modes, the product state in `project.json`, flags at the entry wiring only, the hygiene gate | new | L | A slipway product runs the loop with no flag reader; an in-service one keeps every guarantee |
+| 5.12 | The four release modes, the product state in `project.json`, the shape beside the target, flags at the entry wiring only, the hygiene gate | new | L | A slipway product runs the loop with no flag reader; an in-service one keeps every guarantee |
 | 5.13 | The deck log and harbour log formats, written by `/drive`; `.slipwai/logs/` ignored; `refs/slipwai/logs` sync | new | M | A run's status is answerable from the logs after the fact |
 | 5.14 | Berths: `slipwai berth add / status / remove`, allocation policy, the sandbox | new | L | Two berths on one machine do not collide on ports or databases |
 | 5.15 | The decision ceiling, bounded waits, the inbox read at every boundary with receipts | new | M | A message is read within one boundary or forces one |
@@ -1058,9 +1107,8 @@ Depends on: 5.13 and 5.14. 7.1 first, then 7.2, then the rest in any order.
 | 8.1 | `AGENTS.md`'s versioning rules, `changelog.d/`, `make release`, `make changelog` | upstream | M | The fork's own release machinery is green |
 | 8.2 | One 2.0.0 changelog entry written from the fork's history | new | M | Every user-visible change since 1.5.2 is in it, with its catch-up |
 | 8.3 | `migrate`: base from an installed 1.x, languages first, the rename table, in-flight work as data (section 6) | upstream + cruise-2 + new | L | `make test-migration` green for every profile and backend and the adopted fixtures |
-| 8.4 | MANDA migrated on a branch | new | L | Its gate green; its five lanes are fairways; a person confirmed them |
-| 8.5 | The CI proposal's remaining items (per-package jobs, the root matrix retired) | cruise-2 | S | The keel's gate under ten minutes on CI |
-| 8.6 | `make release` to 2.0.0; the merge back to upstream; the Gitea decision | new | M | `v2.0.0` tagged, published, and upstream `main` is version 2 |
+| 8.4 | The CI proposal's remaining items (per-package jobs, the root matrix retired) | cruise-2 | S | The keel's gate under ten minutes on CI |
+| 8.5 | `make release` to 2.0.0; the merge back to upstream; the Gitea decision | new | M | `v2.0.0` tagged, published, and upstream `main` is version 2 |
 
 Depends on: everything before it.
 
@@ -1093,5 +1141,5 @@ each other. Nothing in phase 8 starts before phases 6 and 7 are done. Phase 9 is
 | The two-gate split hides a failure until the merge | 5.7's rule that the full gate runs on the rebased branch, plus CI |
 | Sandbox per berth on native Windows is harder than it reads | 5.14 proves it on all four platforms before 7.2 depends on it |
 | The chart on the standard profile is a design nobody has used | 5.4 is sized L and lands before 5.5 and 5.6 build on it; MANDA (event profile) does not depend on it |
-| The migration of in-flight work meets a case section 6 did not foresee | 8.4 migrates MANDA before 8.6 cuts the release |
-| The token target is missed | The baseline above, measured at 5.x on MANDA and at 7.x on the greenfield, with time to tune the telegraph positions |
+| The migration of in-flight work meets a case section 6 did not foresee | `make test-migration`'s fixtures carry a claimed slice and both flag states; the first real migration is after 2.0.0, on a branch, with `--check` first |
+| The token target is missed | The baseline above, measured at 7.x on the greenfield, with time to tune the telegraph positions |
