@@ -993,6 +993,17 @@ of using it, in the order a person meets it, and moves every explanation to a re
   chart, the split, one slice through its demo); a second person joins (fairways, berths, the fleet board); let it
   sail (captains, the telegraph, the inbox, and what a person still decides); bring an existing codebase (adopt). A
   reader stops when they have what they came for.
+- **One figure that answers "where does a slice come from?"** The README's hardest question is not
+  what a verb does, it is how a spec becomes work somebody is doing. Section 5's figures start at a
+  claimed slice and the reader has to take the chart on trust; the fleet board and the bridge show a run
+  already going. So phase 9 draws the step before: a single feature from its specification through the
+  model or the chart, the split into slices, the example map that turns one slice into rules and
+  examples, clearance, the claim, and the handoff to a delegate at the `delegate` and `cycle` widths.
+  One figure per profile, the same geometry, with the two boxes that differ highlighted the way section
+  5's pair already does — because the point is that the loop is one loop and the profiles differ in
+  where the examples come from, not in what happens to them. Drawn rather than captured: it is the shape
+  of the method, not a screenshot of one run. Slice 9.6.
+
 - **The contributor path is documentation too.** The five maintainer skills in `.claude/skills/` —
   `add-language`, `add-framework`, `add-extension`, `add-target` and `add-backing-service`, 1,891 lines
   between them — are the only part of version 1 that version 2 neither brought back nor replaced. Each
@@ -1141,7 +1152,7 @@ open decision left either.
 
 ## 11. The implementation plan
 
-**Progress: 18 of 77 slices done** — phase 1 6/6, phase 2 7/9, phase 3 5/14, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 18 of 78 slices done** — phase 1 6/6, phase 2 7/9, phase 3 5/14, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1440,6 +1451,7 @@ Depends on: everything before it.
 | 9.1 | The five pages of section 7, phase 9, written from a real session transcript | L | A first-time reader reaches a demoed slice in fifteen minutes following them |  |
 | 9.2 | The reference pages under `docs/reference/` | L | Every rule the plan names has a page |  |
 | 9.3 | The captures: the bridge, the fleet board, a demo-stop board, a `/chart` output | S | From real runs, not drawn |  |
+| 9.6 | **From a spec to a delegate**: one figure per profile following a single feature all the way down — spec, model or chart, split into slices, example-mapped into rules and examples, cleared, claimed, and handed to a delegate at the configured width. Drawn, not captured | new | M | A reader who has never used slipwai can point at where a slice comes from and at what one delegate is handed; both profiles are the same figure with two boxes different |  |
 | 9.4 | `make test-docs`: every command in the first three pages run against a fresh generation | M | The README cannot drift |  |
 | 9.5 | The five maintainer skills in `.claude/skills/`, rewritten for version 2's shape: `add-language`, `add-framework` and `add-extension` as prose around the four `slipwai package` verbs and the two package shapes; `add-target` for the skiff and the liner; `add-backing-service` for a catalogue that no longer holds backends | new | L | A contributor who has not seen this repository publishes a package by following one skill; no skill names a step a verb already does; none describes a file version 2 does not have |  |
 
