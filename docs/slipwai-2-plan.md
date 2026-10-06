@@ -1152,7 +1152,7 @@ open decision left either.
 
 ## 11. The implementation plan
 
-**Progress: 19 of 79 slices done** — phase 1 6/6, phase 2 7/9, phase 3 6/15, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 20 of 80 slices done** — phase 1 6/6, phase 2 7/9, phase 3 7/16, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1355,6 +1355,7 @@ refuses by and which nothing else imports. Found on 2026-10-06 while doing the s
 | 3.3b | The parts that write the ladder into a project: `drive_settings`, `demo_stop`, `adversary`, `mutation`, `benchmark`, `converge_stage`, `design_stage`, `docs_index`, `evolving`, `parallel_slices`, `agent_targets`, `model_targets`, `model_to_code` | upstream | M | The two widths are written and checked: `delegate` is story, rule or task, `cycle` is rule or example, and `story` is never a cycle | done |
 | 3.3c | The parts that write `/cruise` into a project, and the ones `./init` writes: the seat commands, the stop table, the unblock section, `whats_next`, `where_are_we`, `init_languages`, `init_production`, `native_commands`, `languages` | upstream | M | The harness output is repeated verbatim rather than summarised; nothing catastrophic is missing from the page that forbids it; a managed target adds stops an unmanaged one has not | done |
 | 3.3d | The parts that wire a project together: `composition`, `openapi`, `renovate`, `pins`, `agent_settings`, `adopted_ci`, `adopted_targets`, `backing_service_prose`, `catch_up_command`, `run_skill`, `add_commands` | upstream | M | Every pin is a tag and not a range; nothing is both allowed and denied in a generated project's permissions | done |
+| 3.3e | The parts that write how a project is run: `cruise`, `ci_workflows`, `init_script`, `backing_services`, `design_page`, `drive_adoption`, `existing`, `integration`, `pin_commands` | upstream | M | Every line the runner parses is declared in one place; a value with a quote in it cannot close the quote around it in `./init` | done |
 | 3.3z | `scaffold.py`, last of the parts and not first: it imports forty of them, and the suites that generate a project come back with it | upstream + cruise-2 | L | `project_files()` returns a tree for one typescript variant equal to cruise-2's, and `test_services.py`, `test_layout.py`, `test_toolkit.py` and `test_harness.py` run again |  |
 | 3.4 | Targets `aws` and `azure`, their stacks and docs, as the **liner** shape | upstream | L | Stack validation tests green |  |
 | 3.4b | The **skiff** shape for both targets: a Lightsail container service and a scale-to-zero Container App, one environment, the shape question in the interview, `converge --shape`; the compute named in one row of the target's table, not spread through its stack | new | L | Both shapes validate against the real providers; a slipway project generates a skiff by default; changing a skiff's compute is one row and its stack file |  |
