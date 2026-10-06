@@ -350,6 +350,13 @@ pass), and refuses with the reason. Under `/drive` the person's session is the h
 own credentials are used and never copied into a berth. Version 1's `--sandbox` flag, which let a run bypass
 permissions, does not exist in version 2: the sandbox is the berth, not a flag.
 
+**Platforms.** Version 2 runs where version 1 runs: macOS, Linux, WSL and native Windows, where a project's
+scripts run under Git Bash as today. The sandbox-per-berth rule has a Windows answer: on native Windows a berth
+is a container under Docker Desktop, or a Windows Sandbox instance where Docker is not available, and the keel's
+own verbs (`generate`, `adopt`, `install`, `bridge`) run natively. Every captain control is proven on all four
+before 2.0.0, which puts a Windows job and a WSL job in the keel's CI beside the Linux one, as version 1's
+cross-platform proof already does for the installer.
+
 **Harnesses.** Version 2 supports every agent harness that Spec Kit supports, and at least Claude Code, Codex,
 Cursor, Gemini CLI, OpenCode and Kiro. The harness registry stays the mechanism: one row per harness that says
 how it is invoked headless, whether it has a hook that fires when a turn ends and can refuse the end, whether it
@@ -862,6 +869,9 @@ Resolved:
 - [Should → section 1, theme D, "Permissions and credentials"] Unattended permissions and credentials.
   Answer: a sandbox per berth with no credentials in it; every credentialed action goes through the
   harbourmaster, which holds the keys and the refusal list.
+- [Should → theme D, "Platforms"] Which platforms version 2 supports. Answer: the same four as version 1,
+  native Windows included; a Windows berth is a Docker Desktop container or a Windows Sandbox instance; all
+  four are in CI before 2.0.0.
 - [Blocker → theme D, "The bridge"] How a click on the dashboard becomes a `told` line. Answer: `slipwai
   bridge` serves the page locally from the harbourmaster's seat and its controls post to it; the Pages copy is
   the same page without controls.
@@ -872,7 +882,6 @@ Resolved:
 
 Open, in order:
 
-- [Should] Windows and WSL scope.
 - [Should] Whether the chart is a committed file on the event profile; what a typed mark looks like on the standard profile.
 - [Should] Which languages must exist at 2.0.0.
 - [Should] Effort per phase.
