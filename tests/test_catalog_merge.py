@@ -121,7 +121,7 @@ class MergeOrderTest(unittest.TestCase):
         self.assertEqual(core, CORE)
 
 
-@unittest.skipUnless(checkout_packages.pinned(), "the packages are pinned in slice 3.8")
+@unittest.skipUnless(checkout_packages.pinned(), "the toy package arrives in slice 3.8")
 class MovesTest(unittest.TestCase):
     """The merge reproduces the catalog as it was when every language was a row of the keel's own file:
     the six pinned packages fold back into the same bytes."""

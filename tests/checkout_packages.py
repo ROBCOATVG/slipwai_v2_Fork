@@ -6,10 +6,11 @@ here imports `slipwai` until a function is called. `SLIPWAI_LANGUAGES` is set wh
 environment said, so a run is tested against the pinned package and never the person's home, and
 `SLIPWAI_INDEX` is pinned to a `file:` URL that is not there, so no test reaches a network index.
 
-`packages/` does not exist yet: the seven are pinned as submodules in slice 3.8, once the keel has the
-twenty modules their import surface names. Until then `pinned()` is false and the tests that need a real
-package skip with that reason rather than passing on nothing, which is the failure mode this file exists
-to prevent — a suite that silently proves less than it claims.
+`packages/` does not exist yet. Slice 3.8 puts one package here — the template's toy, in-tree as a
+fixture — and no first-party package ever: the keel pins none, because a keel whose gate checks seven
+packages is a keel that cannot be changed without them. Until then `pinned()` is false and the tests that
+need a package on disk skip with that reason rather than passing on nothing, which is the failure mode
+this file exists to prevent: a suite that silently proves less than it claims.
 """
 from __future__ import annotations
 

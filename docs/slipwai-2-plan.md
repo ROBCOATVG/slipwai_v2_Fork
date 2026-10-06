@@ -245,17 +245,39 @@ loaded and released the same way. They differ in what they declare, and in when 
 
 The loader does one merge into two destinations: `language.json` into the backends catalogue, `extension.json`
 into the catalogue's `extensions` map, which is what `./init`'s extension menu already reads. Because the two
-kinds sit beside each other on disk, the installed directory is `~/.slipwai/packages/<name>/` and the keel
-pins its own first-party packages as submodules under `packages/`. Neither is called `languages/`, as the
-experiment's was: a directory of that name holding `codegraph` is the sort of small lie that costs an hour
-later. `slipwai migrate` moves an install made before the rename. Decided 2026-10-06.
+kinds sit beside each other on disk, the installed directory is `~/.slipwai/packages/<name>/`. It is not
+called `languages/`, as the experiment's was: a directory of that name holding `codegraph` is the sort of
+small lie that costs an hour later. `slipwai migrate` moves an install made before the rename. Decided
+2026-10-06.
 
-**How a package is linked at development time.** The keel's own repository pins each first-party package as a git
-submodule under `packages/`, so the keel's gate can run the conformance suite and the matrix against the
-packages it ships with, at a known commit. That pin is for the keel's tests only. A package repository's own CI
-runs the same suite against a pinned keel. Publishing is `slipwai package release` in the package repository,
-which tags, builds the release file, signs it and uploads it as a release asset, followed by `slipwai package
-register`, which adds the release to a channel's index.
+**How a package is linked at development time: it is not.** There is one link between a keel and a
+package and it is made when a project is generated or migrated — the chandlery index, a download, a
+checksum, a directory under `~/.slipwai/packages/`. There is no second link at build time. The keel's
+repository pins no package, holds no submodule, and its gate never reads one.
+
+This is the whole of theme A's goal, and it is easy to lose. The first instinct is to pin the first-party
+packages so the keel's gate can prove them, and the experiment did exactly that: its CI could not load the
+`go` submodule without a token and a person, and its root matrix regenerated every language's variants on
+every commit, which is the ten minutes theme A is trying to buy back. Making the repositories public fixes
+the token. It does not fix the shape. A keel whose gate checks seven packages is a keel that cannot be
+changed without them, which is the coupling the packages were split out to remove.
+
+So the work is divided by who owns the failure:
+
+| Who | Proves | When |
+|---|---|---|
+| The keel's gate | That the conformance suite and the matrix work, against one toy package held in-tree as a fixture | Every commit. It is one package, and it is the keel's own |
+| Each package's CI | That *that* package passes the suite against a pinned keel, and imports nothing off the surface | Every commit to that package, on its own schedule |
+| The keel's release | That the published packages still pass against the keel about to ship | Once, at release (phase 8), never per commit |
+
+A keel change that breaks a package is found by that package's CI, which is the Maven arrangement this
+design keeps invoking: Central does not test every artefact that depends on it. The release job is the
+backstop, and it runs once. Decided 2026-10-06, on the objection that a build-time link is a link theme A
+exists to remove.
+
+Publishing is `slipwai package release` in the package repository, which tags, builds the release file,
+signs it and uploads it as a release asset, followed by `slipwai package register`, which adds the release
+to a channel's index.
 
 **Trust: an open channel, signed releases, and a publisher confirmed once.** Anyone may publish a language or
 an extension; the ecosystem is open or it is not one. Loading a package runs its Python, so the keel will not
@@ -289,8 +311,10 @@ never mistakes a development copy for a release. Decided 2026-10-06.
 Parity with 1.5, with `java-spring` needing its real repository first (phase 2). Decided 2026-10-06.
 
 **Where the first-party packages live.** Under `ROBCOATVG`, beside the keel, public from the start, moved
-before phase 2. Public repositories need no token for the keel's CI to read the submodules, which removes the
-first two items of cruise-2's CI proposal. Decided 2026-10-06 (section 10).
+before phase 2. Public so that a contributor can read one without being given access, and so each
+package's own CI is free on Actions. Not so that the keel's CI can read them: it does not read them at
+all, and the submodule the experiment could not load without a token is gone rather than unlocked
+(theme A). Decided 2026-10-06 (section 10).
 
 **What version 2 builds.**
 
@@ -919,8 +943,9 @@ on an empty `src/`.
 **Phase 2. The registry and the chart.** Bring back `registry.py`, `loaded.py`, `catalog_merge.py`,
 `language_directory.py`, `language_shape.py`, `conformance/`, `matrix/`, and their tests. Source:
 `slipwai-cruise-2`. Bring back the keel's `catalog.json` with no backends in it. Create the real `java-spring`
-repository first, then pin the six packages as submodules under `packages/`. Done when the gate loads every
-package and runs the conformance suite, before any scaffold exists.
+repository first. The keel pins none of them: the link between a keel and a package is made when a project
+is generated, not when the keel is built (theme A). Done when the catalogue, the package directory and the
+loader build a registry on an empty keel, before any scaffold exists.
 
 **Phase 3. The scaffold pipeline.** Grow `assets.py` into the asset trees, bring back `toolkit.py`, `manifest/`, `scaffold.py`, and then the
 `project/*.py` parts, one module at a time, in the order that `scaffold.project_files` assembles them. Source:
@@ -1251,7 +1276,7 @@ here — renumbering is what version 2 exists partly to stop — so the sequence
         └─► 2.8  features, targets, extensions, axes
               └─► 2.3  catalog.json, catalog_merge, catalog
                     └─► 2.9  loaded, registry()
-                          └─► 2.5  conformance, matrix        then 3.8  the submodules
+                          └─► 2.5  conformance, matrix        then 3.8  the toy fixture
 ```
 
 This was computed from the imports rather than guessed, on 2026-10-06, after 2.3 turned out to be
@@ -1262,13 +1287,20 @@ four validators had no slice at all — `catalog.py` imports them and nothing br
 new, and 2.9 takes `loaded.py` back off 2.4, where the previous correction had put it: `loaded` reads the
 catalogue, so it cannot land with the directory.
 
-**Why 2.6 moved to phase 3.** Pinning the packages as submodules makes `check-structure` read them,
+**Why 2.6 moved to phase 3, and then stopped being about submodules.** Pinning the packages as
+submodules makes `check-structure` read them,
 and it refuses every import that is not on the surface. The six packages import 46 names across exactly
 twenty keel modules — which is where the plan's "exactly twenty" comes from, read off them on 2026-10-06 —
 and in phase 2 the keel has three of those twenty. Pinning them any earlier means either a red gate or a
 surface that promises modules the keel has not got, and the gate refuses that too, by design. It becomes
 3.8, after the parts land. `import-surface.txt` carries the other seventeen as comments meanwhile, so the
 contract is visible before it is enforceable.
+
+And 3.8 is no longer a pin. The keel reads one package — the template's toy, in-tree as a fixture — and
+no first-party package at all, because a keel whose gate checks seven packages is a keel that cannot be
+changed without them. The surface is still held in both directions: the toy proves the gate can read a
+package, each package's own CI proves that package, and the keel proves every line of the surface names
+a module it has.
 
 **Why 2.1 no longer asks for CI.** Its done-when said "each with a green CI of its own". None of the seven
 has a workflow: they were built inside the experiment, whose CI ran conformance over them as submodules.
@@ -1299,8 +1331,8 @@ refuses by and which nothing else imports. Found on 2026-10-06 while doing the s
 | 3.4b | The **skiff** shape for both targets: a Lightsail container service and a scale-to-zero Container App, one environment, the shape question in the interview, `converge --shape`; the compute named in one row of the target's table, not spread through its stack | new | L | Both shapes validate against the real providers; a slipway project generates a skiff by default; changing a skiff's compute is one row and its stack file |  |
 | 3.5 | Frontends and backing services, the `react-vite` npm-workspace contract | upstream + cruise-2 | M | The frontend variants match |  |
 | 3.6 | The pruner with rows emitted as data | cruise-2 | S | `scripts/backing-services.py` in a generated project carries no language name |  |
-| 3.7 | `make starters` and the full matrix per package, run from each package's CI, not the keel's | cruise-2 | M | The keel's gate stays under ten minutes; each package's CI proves its variants |  |
-| 3.8 | The seven packages pinned as submodules under `packages/`, and the import surface filled in to the twenty modules they import (was 2.6) | cruise-2 | M | `check-structure` reads every package and finds no import off the surface; the surface is twenty lines and every one names a module the keel has |  |
+| 3.7 | `make starters`, and the full matrix per package run from each package's CI against a pinned keel, never from the keel's | cruise-2 | M | The keel's gate stays under ten minutes and reads one package, the toy; each package's CI proves its own variants |  |
+| 3.8 | The template's toy package in-tree as the one fixture the keel's own gate reads, and the import surface filled in to the twenty modules a package imports (was 2.6) | cruise-2 | M | `check-structure` reads the toy package and finds no import off the surface; the surface is twenty lines and every one names a module the keel has; the keel pins no package |  |
 | 3.9 | `conformance/` and `matrix/` as `python -m` entry points (was 2.5) | cruise-2 | L | Both run against the template's toy package |  |
 
 Depends on: phase 2.
@@ -1378,7 +1410,7 @@ Depends on: 5.13 and 5.14. 7.1 first, then 7.2, then the rest in any order.
 | 8.1 | `AGENTS.md`'s versioning rules, `changelog.d/`, `make release`, `make changelog`, and `requirements-build.txt` and `requirements-publish.txt`, which come back with the machinery that proves them rather than sitting unused from phase 1 | upstream | M | The fork's own release machinery is green |  |
 | 8.2 | One 2.0.0 changelog entry written from the fork's history | new | M | Every user-visible change since 1.5.2 is in it, with its catch-up |  |
 | 8.3 | `migrate`: base from an installed 1.x, languages first, the rename table, in-flight work as data (section 6) | upstream + cruise-2 + new | L | `make test-migration` green for every profile and backend and the adopted fixtures |  |
-| 8.4 | The CI proposal's remaining items (per-package jobs, the root matrix retired) | cruise-2 | S | The keel's gate under ten minutes on CI |  |
+| 8.4 | The release backstop: one job that runs the matrix across the published packages against the keel about to ship, and the root matrix retired | cruise-2 + new | M | A keel release is refused when a published package fails against it; no per-commit job reads a package |  |
 | 8.5 | `make release` to 2.0.0; the merge back to upstream; the Gitea decision | new | M | `v2.0.0` tagged, published, and upstream `main` is version 2 |  |
 | 8.6 | A final 1.5.x release whose `slipwai upgrade --check` names 2.0.0 and its migration page | upstream | S | A version 1 user is told where version 2 is and what moving costs |  |
 

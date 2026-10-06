@@ -181,7 +181,9 @@ def surface_violations(modules: set[str]) -> tuple[int, list[str]]:
     ]
     if not PACKAGES.is_dir():
         return 0, violations
-    # An empty package directory is a clone that skipped the submodules: nothing in it can be checked.
+    # An empty package directory is a clone that skipped a submodule: nothing in it can be checked. The
+    # keel pins no first-party package — one toy fixture is all its own gate reads — but a contributor's
+    # checkout may hold their package here, and an empty directory is as wrong there as anywhere.
     violations += [
         f"packages/{entry.name} is not checked out: git submodule update --init packages/{entry.name}"
         for entry in sorted(PACKAGES.iterdir())

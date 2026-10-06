@@ -288,7 +288,7 @@ FAULTS: dict[str, dict[str, object]] = {
 }
 
 
-@unittest.skipUnless(checkout_packages.pinned(), "the packages are pinned in slice 3.8")
+@unittest.skipUnless(checkout_packages.pinned(), "the toy package arrives in slice 3.8")
 class EndToEndTest(unittest.TestCase):
     """The same refusals through the command line: one line on stderr, the verb runs, everything else loads."""
 
