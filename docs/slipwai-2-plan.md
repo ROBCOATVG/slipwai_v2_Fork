@@ -394,6 +394,31 @@ becomes a state. Decided 2026-10-06. Only `http` is inferred; an axis earns it b
 once something already decided is known, and the event store does not: Postgres and SQLite are
 different products, not two spellings of one backend's framework.
 
+**A cloud is a package too.** Decided 2026-10-06, and it is the same rule the languages and the axis
+options are already held to: the keel asks where a project goes to production; *AWS* and *Azure* are
+answers, and an answer naming a product is the product's to carry. A keel that ships Terraform for two
+clouds is a keel that cannot add a third without a release, and cannot be changed without testing both.
+
+What stays is the question and the two answers that provision nothing: `none`, and `existing` for a
+project deploying somewhere the keel does not own. What moves is each cloud's whole stack — its
+`assets/targets/<name>/`, its bootstrap and deploy scripts, its docs page, its preflight tool list, its
+image builder, its skiff and liner shapes, and the provisioning each axis option declares under it.
+
+**It is bigger than the language move, and the measurement says how much.** On 2026-10-06: 47 asset
+files and 612K under `assets/targets/`, and 29 keel modules naming a cloud in 112 places. Six of those
+are deep — `aws_docs` and `azure_docs` are nothing else, `target_docs` and `deploy_workflow` are mostly
+cloud, `targets.py` and `preflight.py` carry a table each — and the remaining twenty-three mention one
+in passing, which is usually a default or an example in prose.
+
+So it is a phase rather than a slice, and it needs a contract first: a `TARGET` object answering a
+protocol the way `LANGUAGE` does, a `target.json` manifest, `kind: target` through the chandlery, a
+third conformance profile, and the import surface widened to whatever a target package reads. **This is
+phase 10, after 2.0.0.** Not because it is optional — it is the last place the keel still names a
+product — but because doing it before the release would hold the release behind a second ecosystem
+contract, and the first one is not proven until real packages are rebuilt on it (phase 2's build list).
+A keel that ships the clouds is a keel version 2 can release; a keel that ships them *and* claims to
+name no product is one that cannot.
+
 **What stays in the keel.** Profiles, targets, frontends, axes, adoption, and the toolkit. This is the line that
 issue #26 drew.
 
@@ -1185,7 +1210,7 @@ open decision left either.
 
 ## 11. The implementation plan
 
-**Progress: 30 of 84 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 1/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 30 of 90 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 1/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1500,6 +1525,24 @@ Depends on: 5.13 and 5.14. 7.1 first, then 7.2, then the rest in any order.
 | 8.6 | A final 1.5.x release whose `slipwai upgrade --check` names 2.0.0 and its migration page | upstream | S | A version 1 user is told where version 2 is and what moving costs |  |
 
 Depends on: everything before it.
+
+
+### Phase 10. The clouds as packages, after 2.0.0
+
+The last place the keel names a product. Scoped from the measurement in theme A: 47 asset files, 612K,
+and 29 modules naming a cloud in 112 places.
+
+| Slice | What | From | Size | Done when | Status |
+|---|---|---|---|---|---|
+| 10.1 | The target protocol: a `TARGET` object, `target.json`, `kind: target` through the chandlery and the four `slipwai package` verbs, and a conformance profile of its own | new | L | A target package is made by `slipwai package new --kind target` and passes `check` |  |
+| 10.2 | The import surface widened to what a target package reads, held in both directions as the language surface is | new | M | `check-structure` reads a target package and refuses an import off the list |  |
+| 10.3 | `aws` out of the keel: its assets, scripts, docs page, preflight tools, image builder, and both shapes | upstream | L | The keel's `make verify` passes with no cloud installed, and a project generates on AWS with the package installed |  |
+| 10.4 | `azure` out, the same way | upstream | L | Neither cloud is named anywhere in `src/slipwai/` |  |
+| 10.5 | The twenty-three passing mentions: defaults, examples and prose that name a cloud | new | M | `grep -ri aws src/slipwai` finds nothing but a comment about there being nothing |  |
+| 10.6 | `check-structure` refuses a keel module naming a target package, as it already refuses a language one | new | S | The rule is a gate and not a habit |  |
+
+Depends on: 2.0.0 shipped, and phase 2's build list proving the package contract on the six real
+languages first.
 
 ### Phase 9. The README and the docs
 
