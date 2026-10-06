@@ -1116,7 +1116,7 @@ open decision left either.
 
 ## 11. The implementation plan
 
-**Progress: 13 of 72 slices done** — phase 1 6/6, phase 2 7/9, phase 3 0/9, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 13 of 73 slices done** — phase 1 6/6, phase 2 7/9, phase 3 0/10, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1206,13 +1206,22 @@ launcher — the first code where the distinction can go wrong. Decided 2026-10-
 | 2.2 | `assets.py` as the path head, `registry.py`, `family_only.py`, `docs/backend-protocol.md` and their tests | cruise-2 | M | The registry answers Members for a fake package in tests, and the contract page and `PROTOCOL` cannot drift | done |
 | 2.3 | `catalog.json` with no backends, `catalog_merge.py`, `catalog.py` split into what the catalogue is and `catalog_checks.py` for what makes one valid, the `Fault` boundary, and `assets/targets/` so the managed targets have the infrastructure the catalogue claims | cruise-2 | L | A fragment merges; a duplicate backend is refused with one line; the shipped catalogue validates with nothing installed | done |
 | 2.4 | `versions.py`, `language_shape.py`, `language_directory.py`: the package directory, read and admitted in two phases | cruise-2 | L | A package directory loads whole or not at all; a bad one reports every fault in one line | done |
-| 2.5 | `conformance/` and `matrix/` as `python -m` entry points | cruise-2 | M | Both run against the template's toy package |  |
+| 2.5 | *Moved to phase 3 as 3.9 — see below.* | | |  |
 | 2.6 | *Moved to phase 3 as 3.8 — see below.* | | |  |
 | 2.8 | The catalogue's validators, which `catalog.py` reads: `features.py`, `targets.py`, `extensions.py`, `axes.py`, and `assets/backing-services/prune.py`, the one asset tree the keel reads for itself | cruise-2 | L | Each refuses a malformed option, entry or extension, named by axis and option; nothing in them names a language. The whole-catalogue checks are 2.3's, with the `catalog.json` they mirror | done |
 | 2.9 | `loaded.py`, `registry()`, and `inside`/`located` in `assets.py` so a package reads its own `assets/` and nothing else | cruise-2 | M | `registry()` builds once per process and is empty with nothing installed; a faulty package is a line and not a crash | done |
 | 2.7 | The one refusal shape: `errors.py` with `Fault`, `Refusal` and `refuse`. **Runs before 2.3 and 2.4**, not after them | new + upstream | M | Every refusal in 2.3 and 2.4 goes through it; the experiment's nine wording-test files collapse to one table | done |
 
 Depends on: phase 1. 2.1 can start on day one.
+
+**Why 2.5 moved to phase 3.** The conformance suite proves a package by generating a project with it:
+`conformance/generation.py` reads `images` and `project.flag_route`, `probe.py` reads `examples`,
+`rows.py` reads `services` and `project.backing_services`, `version_rule.py` reads `changelog`, and
+`matrix/plan.py` reads `probes`. Six keel modules, all of them phase 3's. Its own done-when says it runs
+against the template's toy package, and running against a package means generating with it. The harness
+half — the entry points, the case classes, the runner — would build today, but shipping half a suite is
+the carried gap rule 5 exists to stop. It becomes 3.9, after the parts land. Found on 2026-10-06 while
+doing the slice, which closes phase 2 at seven slices rather than eight.
 
 **Why 2.3 carries `assets/targets/` too.** `validate_targets` refuses a managed target with no
 `assets/targets/<name>/` behind it — a catalogue entry with nothing behind it generates projects claiming
@@ -1292,6 +1301,7 @@ refuses by and which nothing else imports. Found on 2026-10-06 while doing the s
 | 3.6 | The pruner with rows emitted as data | cruise-2 | S | `scripts/backing-services.py` in a generated project carries no language name |  |
 | 3.7 | `make starters` and the full matrix per package, run from each package's CI, not the keel's | cruise-2 | M | The keel's gate stays under ten minutes; each package's CI proves its variants |  |
 | 3.8 | The seven packages pinned as submodules under `packages/`, and the import surface filled in to the twenty modules they import (was 2.6) | cruise-2 | M | `check-structure` reads every package and finds no import off the surface; the surface is twenty lines and every one names a module the keel has |  |
+| 3.9 | `conformance/` and `matrix/` as `python -m` entry points (was 2.5) | cruise-2 | L | Both run against the template's toy package |  |
 
 Depends on: phase 2.
 
