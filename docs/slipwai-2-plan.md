@@ -244,8 +244,9 @@ install anything it cannot attribute. Three rules make both true at once.
    CI binds the release file to the repository and workflow that built it; a publisher without CI uses a
    minisign key. The index entry names the publisher identity, and the keel refuses a release whose signature
    does not match it. Nobody can publish as someone else.
-2. **The public channel takes contributions by pull request.** A contributor forks the template, builds the
-   package, cuts a signed release, and opens a pull request that adds the entry to the public `index.json`. The
+2. **The public channel takes contributions by pull request.** A contributor makes the package with `slipwai
+   package new`, cuts a signed release with `slipwai package release`, and opens the pull request that adds the
+   entry to the public `index.json` with `slipwai package register`. The
    channel's CI checks that the signature matches the publisher, that the package passes the conformance suite
    against the keel range it claims, and that its name does not collide. Merged means listed. No approval by a
    person at `ROBCOATVG` is needed beyond the merge, and the checks are the same for a first-party package.
@@ -289,7 +290,23 @@ first two items of cruise-2's CI proposal. Decided 2026-10-06 (section 10).
    frameworks, the keel range, the publisher and its repository, the release history, and the install command.
    The same search runs inside `generate` when an answer names something not installed, so the interview can
    say "three packages answer that; install one?" instead of refusing.
-6. When nothing is installed, `slipwai generate` names what to install and offers to do it. The standalone
+6. When nothing is installed, `slipwai generate` names what to install and offers to do it.
+7. **Making a package is a verb, not a fork of the template.** `slipwai package` is `generate` for packages,
+   with the same shape as the product path:
+   - `slipwai package new <name>` asks what the product interview asks, for a package: language or extension;
+     family, or framework of which family; which backends it provides and which axis options each answers;
+     which targets. It writes the repository from the template with `language.json` filled in, the `LANGUAGE`
+     object as a skeleton with one `Member` per answer and a failing test per Member, the conformance suite and
+     the matrix wired into `make verify`, a CI workflow that runs them against the pinned keel and signs a
+     release with Sigstore, `make release`, and a `README` that says what is left to write. Like `generate`, it
+     makes one commit on `main`, and like `./init` it offers to create the repository on the forge and push.
+   - `slipwai package check` runs the conformance suite and the matrix locally against the installed keel, and
+     prints the same lines the channel's CI will.
+   - `slipwai package release` tags, builds the release file, signs it, and uploads it as a release asset. It
+     refuses when `check` is red or the version is not new.
+   - `slipwai package register [--channel <url>]` opens the pull request that adds the entry to the channel's
+     index, with the entry generated from the release. For a private channel it pushes the entry directly.
+   The `add-language`, `add-framework` and `add-extension` skills become the prose around these four commands. The standalone
    executable bundles no language: it is the keel alone, the same as the wheel, so there is one artefact to
    build and sign and no bundled copy to drift from the chandlery's. Decided 2026-10-06.
 
@@ -1136,9 +1153,9 @@ most worth running in two fairways themselves, once 5.3 exists.
 | 6.1 | Extensions as packages on the same loader; `codegraph`, `uipro`, `ux-gates` out of the keel | new | L | `./init --extension` installs from a directory package |
 | 6.2 | The index schema with publishers, checksums, the signature field, descriptions and tags; the public channel as a Pages site | cruise-2 + new | M | `slipwai search` and `slipwai install` read it for both kinds |
 | 6.3 | A private channel per organisation, `SLIPWAI_LANGUAGE_INDEX` generalised to `SLIPWAI_CHANDLERY` | cruise-2 | S | An organisation's index serves its own packages |
-| 6.4 | `make release` in the package template: tag, build, upload, append to the index | new | M | A release from the template lands in a local index |
+| 6.4 | `slipwai package new / check / release / register`, and `make release` in the template behind them | new | L | A package made by `new` on an empty machine passes `check`, releases, and registers into a local channel without a hand edit |
 | 6.5 | Signed releases and the trust store: Sigstore or minisign verification, `trust.json`, the `ROBCOATVG` root, the confirm-once prompt, `unsigned` in `slipwai list` | new | M | A new publisher is confirmed once and then installs silently; a mismatched signature is refused; a hand-placed package loads and says `unsigned` |
-| 6.6 | The public channel's contribution path: the index repository, its CI (signature matches publisher, conformance passes, no name collision), and the contributor page | new | M | A package from outside `ROBCOATVG` is listed by a merged pull request and installs with one confirmation |
+| 6.6 | The public channel's contribution path, which `slipwai package register` targets: the index repository, its CI (signature matches publisher, conformance passes, no name collision), and the contributor page | new | M | A package from outside `ROBCOATVG` is listed by a merged pull request and installs with one confirmation |
 
 Depends on: phase 4. Runs beside phase 7.
 
