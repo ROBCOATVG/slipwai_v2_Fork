@@ -1595,13 +1595,32 @@ and most of it has no source commit to read first. Where version 1 has a precede
 `slipwai-workstreams` fairway work, the stop table) it is named; where it has none, the design below is the
 first draft and the slice is where it gets corrected.
 
-**One prerequisite gates everything, and it is not a slice.** The six real language packages carry
+**One prerequisite gated everything, and it is done.** The six real language packages carried
 version 1's `language.json`: no `axes` block, and their transports lived in the keel's catalogue, which no
-longer declares them (slice 3.6). Until each is rebuilt onto the shape the toy has — an `axes` block
-declaring its transport with label, capabilities, features, targets, `app-in-compose`,
-`repository-owned` and `web-app-owned`, and `defaults.http` naming it — nothing generates in Go, Python,
-TypeScript or Java, 55 tests stay skipped, and phase 5's loop has nothing real to run against. Six
-repositories under `ROBCOATVG`, one commit each, and the pushes are the owner's. Do this first.
+longer declares them (slice 3.6). Each is now on the shape the toy has — an `axes` block declaring its
+transport with label, capabilities, features, targets, `app-in-compose`, and for the three with a
+generated client `repository-owned` and `web-app-owned`, with `defaults.http` naming it — one commit per
+repository under `ROBCOATVG` (go `e592ff9`, python `d058fff`, typescript `685ee06`, java-quarkus
+`e979579`, java-spring `8c01ae4`; `java` is the family alone and declares nothing), and the template
+repository is `packages/toy` again (`11590fb`). Conformance passes for all six, the matrix plans five
+variants of each, and `generate` writes a project in every language with its transport in `project.json`
+and the app in Compose.
+
+Running the keel against something other than the toy found three faults in it, fixed in `07c215f`:
+`check_prune_rows` held a family's rows to the shipped pruner's features alone, so a package's own
+transport was "not a feature the pruner knows"; `resolve_selection` skipped the inferred `http` axis along
+with the questions, so every service had no transport and `--auth keycloak` was refused; and `pruner()`
+patched rows into the shipped script after it had loaded, so the keel's own copy refused the transport the
+project was given — it now runs `emitted()`, the exact text a project carries. A fourth was the wheel:
+`pyproject.toml` still force-included `VERSION` alone, so a pip-installed keel failed on import, and that
+is the path `.github/workflows/package.yml` installs a package's keel by (`c84c51c` fixed it; proven from a
+fresh venv). The lesson for every slice below is the one the toy was always going to teach: a fixture
+proves the mechanism, and only a real package proves the keel.
+
+**Still to come for the packages**, and not before 8.1: a CI workflow in each repository calling
+`package.yml`, which needs a keel on PyPI to install (`keel: 2.0.0`) — until then a package's gate is
+`python -m slipwai.conformance` from a checkout, as above. The 55 tests guarded on `installed("go")` and
+its siblings stay skipped in the keel's own gate by design: the keel pins no package.
 
 **Every slice here lands the same way the first 36 did.** A branch per slice; `make unit` and lint per
 increment; `make verify` once before the merge; a commit ending `Slice-done: <n>.<m>`; `make progress`;
@@ -2107,4 +2126,4 @@ Collected from above, so they can be taken before the slice that needs them.
 Phase 5 is seventeen slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
 beside each other and are each about three weeks. Phase 8 is a week of machinery and a release. Phase 9
 is a fortnight of writing against real runs. Phase 10 is after the release and is its own month. The
-prerequisite — the six packages rebuilt — is a day, and it is the day that has to come first.
+prerequisite — the six packages rebuilt — took the evening of 6 October, and found four keel faults on the way.
