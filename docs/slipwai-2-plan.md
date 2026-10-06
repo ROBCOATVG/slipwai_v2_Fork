@@ -167,8 +167,8 @@ Version 2 keeps these decisions from the experiment.
   Version 2 has one refusal shape. The shape is generated from the fault, and the fixing command is data.
 - **The contract files also served as the specification.** They grew a Status column that slices changed.
   Version 2 writes the contracts first, freezes them, and keeps the specification separate.
-- **Packages had no release tool** (decision D112). Releases were cut by hand. Version 2 ships a publish verb,
-  or the package template carries a `make release` that mirrors the keel's.
+- **Packages had no release tool** (decision D112). Releases were cut by hand. Version 2 makes the whole path
+  four verbs: `slipwai package new`, `check`, `release` and `register`.
 - **Tables keyed by HTTP option stayed in the keel** (decision D39). A language that brings a new HTTP framework
   still edits the keel. Version 2 moves those tables behind the protocol.
 - **Loading a package runs its Python code**, both at install and in the conformance probe. There is no sandbox.
@@ -233,8 +233,9 @@ index and the installed directory:
 **How a package is linked at development time.** The keel's own repository pins each first-party package as a git
 submodule under `languages/`, so the keel's gate can run the conformance suite and the matrix against the
 packages it ships with, at a known commit. That pin is for the keel's tests only. A package repository's own CI
-runs the same suite against a pinned keel. Publishing is `make release` in the package repository: it tags,
-builds the release file, uploads it as a release asset, and appends the release to the channel's index.
+runs the same suite against a pinned keel. Publishing is `slipwai package release` in the package repository,
+which tags, builds the release file, signs it and uploads it as a release asset, followed by `slipwai package
+register`, which adds the release to a channel's index.
 
 **Trust: an open channel, signed releases, and a publisher confirmed once.** Anyone may publish a language or
 an extension; the ecosystem is open or it is not one. Loading a package runs its Python, so the keel will not
@@ -275,8 +276,9 @@ first two items of cruise-2's CI proposal. Decided 2026-10-06 (section 10).
 
 1. The keel is brought back one module at a time, in the order of the import surface (section 7). Each module
    asks the registry from its first commit. Nothing is inverted afterwards.
-2. The chart points at the six packages. The real `java-spring` repository is created. A package release tool
-   exists.
+2. The chart points at the six packages. The real `java-spring` repository is created. The six are rebuilt
+   onto the template that `slipwai package new` writes, so a first-party package and a contributor's are the
+   same shape.
 3. Extensions become packages on the same loader. `codegraph`, `uipro` and `ux-gates` move out of the keel.
 4. The chandlery: one `index.json` per channel. It lists languages and extensions alike, each with a version, a
    compatibility range, a checksum, a publisher, a one-line description and tags. An organisation can run a
@@ -290,7 +292,9 @@ first two items of cruise-2's CI proposal. Decided 2026-10-06 (section 10).
    frameworks, the keel range, the publisher and its repository, the release history, and the install command.
    The same search runs inside `generate` when an answer names something not installed, so the interview can
    say "three packages answer that; install one?" instead of refusing.
-6. When nothing is installed, `slipwai generate` names what to install and offers to do it.
+6. When nothing is installed, `slipwai generate` names what to install and offers to do it. The standalone
+      executable bundles no language: it is the keel alone, the same as the wheel, so there is one artefact to
+      build and sign and no bundled copy to drift from the chandlery's. Decided 2026-10-06.
 7. **Making a package is a verb, not a fork of the template.** `slipwai package` is `generate` for packages,
    with the same shape as the product path:
    - `slipwai package new <name>` asks what the product interview asks, for a package: language or extension;
@@ -306,15 +310,13 @@ first two items of cruise-2's CI proposal. Decided 2026-10-06 (section 10).
      refuses when `check` is red or the version is not new.
    - `slipwai package register [--channel <url>]` opens the pull request that adds the entry to the channel's
      index, with the entry generated from the release. For a private channel it pushes the entry directly.
-   The `add-language`, `add-framework` and `add-extension` skills become the prose around these four commands. The standalone
-   executable bundles no language: it is the keel alone, the same as the wheel, so there is one artefact to
-   build and sign and no bundled copy to drift from the chandlery's. Decided 2026-10-06.
+   The `add-language`, `add-framework` and `add-extension` skills become the prose around these four commands.
 
 **What stays in the keel.** Profiles, targets, frontends, axes, adoption, and the toolkit. This is the line that
 issue #26 drew.
 
 **Done when.** The keel's `make verify` runs in under ten minutes with no language present. A new language or
-extension is one repository made from the template, with no change to the keel.
+extension is one repository made by `slipwai package new`, with no change to the keel.
 
 ### Theme B. A leaner loop
 
@@ -869,7 +871,8 @@ fairways from start to finish.
 
 **Phase 8. 2.0.0.** The working contract comes back for the merge: the rules in `AGENTS.md`, `changelog.d/`, one
 2.0.0 changelog entry written from the fork's history, `migrate` from 1.5.x to 2.0 as section 6 describes and as
-`make test-migration` proves, the CI proposal applied, and the package release tool. Then the fork merges back
+`make test-migration` proves, the CI proposal applied, and the four `slipwai package` verbs proven on a
+first-party package. Then the fork merges back
 to upstream as version 2.
 
 **Phase 9. The README and the docs, rewritten for a first-time reader.** This is the last phase, after everything
