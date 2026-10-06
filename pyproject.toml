@@ -64,6 +64,14 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 [tool.ruff.lint.isort]
 known-first-party = ["slipwai"]
 
+[tool.ruff.lint.per-file-ignores]
+# Embedded file content: the strings in these modules are other projects' files — a generated Makefile,
+# a workflow, a table in somebody's AGENTS.md — and a line inside one of them is as long as that file
+# needs it to be. Rewrapping it to suit this repository's margin changes what gets generated. Every
+# other rule still applies here, and a long line that is this repository's own prose rather than a
+# generated file's content is still worth wrapping by hand.
+"src/slipwai/project/*.py" = ["E501"]
+
 [tool.mypy]
 # What `make typecheck` runs. `files` rather than arguments so the gate and a bare `mypy` agree; `mypy_path`
 # so a script or a test that imports `slipwai` resolves it from `src/` the way `PYTHONPATH=src` does at run

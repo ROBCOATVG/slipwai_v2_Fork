@@ -59,7 +59,7 @@ TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("answers", ("selection", "origin", "layout", "services", "tooling", "capabilities",
                  "toolkit", "platform")),
     # One module per part of the repository being generated.
-    ("parts", ()),
+    ("parts", ("project",)),
     # The whole of a project, assembled and written, and the whole of it again from a newer keel.
     ("assembly", ()),
     # The command line, and the entry point the executable is built from.
