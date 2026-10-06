@@ -30,9 +30,35 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 KEEL = ROOT / "src/slipwai"
 LEDGER = ROOT / "docs/bring-back.tsv"
-# The asset trees the keel already has. A module that reads one it has not got is blocked on the tree,
-# which the import graph does not show and which cost phase 2 two corrections on its own.
-ASSETS_HERE = {"BACKING_SERVICE_ROOT", "PRUNER", "TARGET_ROOT"}
+# Which asset tree each name in the ledger's `assets` column stands for. A module that reads a tree the
+# keel has not got is blocked on it, which the import graph does not show and which cost phase 2 two
+# corrections on its own.
+TREES = {
+    "TOOLKIT_ROOT": "toolkit",
+    "PROFILE_ROOT": "profiles",
+    "FRONTEND_ROOT": "frontends",
+    "ADOPTION_ROOT": "adoption",
+    "BACKING_SERVICE_ROOT": "backing-services",
+    "TARGET_ROOT": "targets",
+    "PRUNER": "backing-services",
+    "LANGUAGE_ROOT": None,  # version 2 has none: a language's assets live in its package
+}
+
+
+def trees_here() -> set[str]:
+    """The asset trees `assets/` actually holds, read rather than remembered.
+
+    This was a hand-kept list for one slice and was stale the moment the next one landed — it still said
+    the toolkit was missing after the toolkit arrived, so `make next` held back every module that reads
+    it. A list of directories is a thing the disk already knows.
+    """
+    return {
+        name for name, directory in TREES.items()
+        if directory is not None and (ROOT / "assets" / directory).is_dir()
+    }
+
+
+ASSETS_HERE = trees_here()
 # Written for version 2 rather than brought back, so the ledger will never hold them.
 OWN = {"family_only", "catalog_checks"}
 # Present, but in a version 2 shape that is not the experiment's yet: `cli` answers `--version` and will

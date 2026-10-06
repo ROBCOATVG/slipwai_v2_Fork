@@ -78,6 +78,22 @@ class LedgerTest(unittest.TestCase):
         """The list is an exemption, so it must not quietly name something absent and exempt nothing."""
         self.assertEqual(bring_back.PARTIAL - self.here, set())
 
+    def test_the_asset_trees_are_read_off_the_disk_and_not_remembered(self) -> None:
+        """The list was hand-kept for one slice and was stale the moment the next landed: it still said
+        the toolkit was missing after the toolkit arrived, and `make next` held back every module that
+        reads it."""
+        self.assertEqual(bring_back.trees_here(), bring_back.ASSETS_HERE)
+        for name in bring_back.ASSETS_HERE:
+            directory = bring_back.TREES[name]
+            with self.subTest(tree=name):
+                self.assertIsNotNone(directory)
+                self.assertTrue((REPOSITORY / "assets" / str(directory)).is_dir())
+
+    def test_a_tree_version_2_will_never_have_is_marked_as_such(self) -> None:
+        """`assets/languages/` is a package's, not the keel's, so no module may wait on it here."""
+        self.assertIsNone(bring_back.TREES["LANGUAGE_ROOT"])
+        self.assertNotIn("LANGUAGE_ROOT", bring_back.ASSETS_HERE)
+
     def test_a_module_inside_a_package_satisfies_a_need_for_the_package(self) -> None:
         self.assertTrue(bring_back.satisfied("project", {"project.flags"}))
         self.assertTrue(bring_back.satisfied("project.flags", {"project.flags"}))
