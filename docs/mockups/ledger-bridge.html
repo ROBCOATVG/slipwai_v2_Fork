@@ -1,0 +1,429 @@
+<title>Ledger Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#f1f3f4;--paper:#fcfcfb;--ink:#172129;--ink-2:#4a5862;--ink-3:#7a8891;--rule:#d9e0e4;--rule-2:#e9eef1;
+  --teal:#0f6b6b;--teal-soft:#dcecea;--brass:#8a6d24;--brass-soft:#f1e9d2;
+  --s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s1-soft:#d6e6f8;--s2-soft:#fbe1d7;--s3-soft:#d2f0e4;
+  --good:#0ca30c;--warn:#fab219;--serious:#ec835a;--critical:#d03b3b;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;--sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --ground:#10171c;--paper:#1a1a19;--ink:#e6ecef;--ink-2:#b6c1c8;--ink-3:#808e97;--rule:#2c3840;--rule-2:#222c33;
+  --teal:#5fc1bb;--teal-soft:#15302f;--brass:#d2b465;--brass-soft:#2e2814;
+  --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s1-soft:#1b2f4a;--s2-soft:#45261b;--s3-soft:#153a2d;}}
+:root[data-theme="dark"]{
+  --ground:#10171c;--paper:#1a1a19;--ink:#e6ecef;--ink-2:#b6c1c8;--ink-3:#808e97;--rule:#2c3840;--rule-2:#222c33;
+  --teal:#5fc1bb;--teal-soft:#15302f;--brass:#d2b465;--brass-soft:#2e2814;
+  --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s1-soft:#1b2f4a;--s2-soft:#45261b;--s3-soft:#153a2d;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45;padding-inline:20px;padding-block:0 60px}
+.wrap{max-width:1400px;margin:0 auto}
+code,.mono{font-family:var(--mono);font-size:.92em}
+a{color:var(--teal);text-decoration:none}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;padding-block:22px 14px;border-bottom:1px solid var(--rule)}
+.top h1{font-size:1.35rem;font-weight:600;margin:0;letter-spacing:-.01em}
+.top .sub{color:var(--ink-3);font-size:.85rem;margin-top:3px}
+.top .sub b{color:var(--ink-2);font-weight:500}
+.tabs{display:flex;gap:4px;background:var(--rule-2);padding:3px;border-radius:7px}
+.tabs button{font:inherit;font-size:.86rem;font-weight:500;color:var(--ink-2);background:transparent;border:0;border-radius:5px;padding:6px 14px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--paper);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.mock{font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);background:var(--brass-soft);padding:3px 8px;border-radius:999px}
+
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;margin-top:14px}
+.card{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;min-width:0}
+.card h2{font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.card h2 span{font-family:var(--mono);font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink-3)}
+.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+@media (max-width:1000px){.c3,.c4,.c5{grid-column:span 6}.c7,.c8{grid-column:span 12}}
+@media (max-width:620px){.c3,.c4,.c5,.c6,.c7,.c8{grid-column:span 12}}
+
+.hero{font-size:52px;font-weight:600;line-height:1;letter-spacing:-.02em;margin:2px 0 4px}
+.hero small{font-size:20px;color:var(--ink-3);font-weight:500;letter-spacing:0}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:.92rem}
+.kv dt{color:var(--ink-3)}.kv dd{margin:0;font-weight:500}
+.big{font-size:1.6rem;font-weight:600;line-height:1.1}
+.muted{color:var(--ink-3)}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:.8rem;font-weight:500;padding:2px 8px;border-radius:999px;background:var(--rule-2);color:var(--ink-2);white-space:nowrap;max-width:100%}
+.chip.good{background:color-mix(in oklab,var(--good) 14%,var(--paper));color:var(--ink)}
+.chip.warn{background:color-mix(in oklab,var(--warn) 22%,var(--paper));color:var(--ink)}
+.chip.serious{background:color-mix(in oklab,var(--serious) 20%,var(--paper));color:var(--ink)}
+.chip.critical{background:color-mix(in oklab,var(--critical) 16%,var(--paper));color:var(--ink)}
+.chip i{font-style:normal;font-size:.75rem}
+.dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.f1{background:var(--s1)}.f2{background:var(--s2)}.f3{background:var(--s3)}
+
+/* telegraph */
+.tele{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-top:8px}
+.tele div{font-family:var(--mono);font-size:.68rem;text-align:center;padding:7px 2px 6px;border-radius:4px;background:var(--rule-2);color:var(--ink-3);border-top:3px solid transparent}
+.tele div.on{background:var(--brass-soft);color:var(--ink);border-top-color:var(--brass);font-weight:500}
+
+/* stacked bar */
+.stack{display:flex;gap:2px;height:14px;margin:10px 0 6px}
+.stack span{display:block;height:100%;border-radius:3px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.8rem;color:var(--ink-2)}
+
+/* meter */
+.meter{height:10px;background:var(--rule-2);border-radius:999px;overflow:hidden;margin-top:8px}
+.meter > span{display:block;height:100%;border-radius:999px;background:var(--teal)}
+.spark{display:block;width:100%;height:46px;margin-top:8px}
+
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th{font-family:var(--mono);font-weight:500;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:4px 10px 6px;border-bottom:1px solid var(--rule)}
+td{padding:8px 10px;border-bottom:1px solid var(--rule-2);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.tablewrap{overflow-x:auto}
+tfoot td{font-weight:600;border-top:1px solid var(--rule)}
+
+/* chart: swimlanes */
+.lane{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--rule-2)}
+.lane:last-of-type{border-bottom:0}
+.lane .name{font-weight:500;font-size:.9rem}
+.lane .name small{display:block;color:var(--ink-3);font-weight:400;font-size:.76rem}
+.slices{display:flex;flex-wrap:wrap;gap:4px}
+.sl{position:relative;font-family:var(--mono);font-size:.72rem;padding:4px 7px;border-radius:4px;border:1.5px solid transparent;cursor:default;min-width:46px;text-align:center;color:var(--ink)}
+.sl.merged{color:#fff}
+.sl.f1.merged{background:var(--s1)}.sl.f2.merged{background:var(--s2)}.sl.f3.merged{background:var(--s3)}
+.sl.live{background:transparent}
+.sl.f1.live{border-color:var(--s1);background:var(--s1-soft)}.sl.f2.live{border-color:var(--s2);background:var(--s2-soft)}.sl.f3.live{border-color:var(--s3);background:var(--s3-soft)}
+.sl.cleared{background:transparent;border-style:dashed}
+.sl.f1.cleared{border-color:var(--s1)}.sl.f2.cleared{border-color:var(--s2)}.sl.f3.cleared{border-color:var(--s3)}
+.sl.held{background:transparent;border-color:var(--rule);color:var(--ink-3)}
+.sl.careen{background:repeating-linear-gradient(135deg,transparent 0 3px,var(--rule) 3px 4px);border-color:var(--rule)}
+.sl:hover,.sl:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.leg2{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.78rem;color:var(--ink-2);margin-top:10px}
+.leg2 .sl{min-width:0;padding:1px 6px;font-size:.68rem}
+#tip{position:fixed;z-index:9;pointer-events:none;background:var(--ink);color:var(--paper);font-size:.78rem;padding:6px 9px;border-radius:5px;max-width:260px;box-shadow:0 2px 8px rgba(0,0,0,.2);opacity:0;transition:opacity .08s}
+@media (prefers-reduced-motion:reduce){#tip{transition:none}}
+
+.inbox{list-style:none;margin:0;padding:0}
+.inbox li{display:grid;grid-template-columns:54px minmax(0,1fr) auto;gap:10px;padding:9px 0;border-bottom:1px solid var(--rule-2);align-items:start}
+.inbox li:last-child{border-bottom:0}
+.inbox .age{font-family:var(--mono);font-size:.76rem;color:var(--ink-3);padding-top:3px}
+.inbox .what b{font-weight:600}
+.inbox .what small{display:block;color:var(--ink-3)}
+.inbox .cmd{font-family:var(--mono);font-size:.74rem;background:var(--rule-2);padding:4px 8px;border-radius:4px;white-space:nowrap}
+.log{font-family:var(--mono);font-size:.76rem;line-height:1.6;margin:0;color:var(--ink-2);white-space:pre;overflow-x:auto}
+.log b{color:var(--ink);font-weight:500}
+.hidden{display:none}
+.act{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.btn{font:inherit;font-size:.8rem;font-weight:500;padding:5px 11px;border-radius:5px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
+.btn:hover{border-color:var(--ink-3)}
+.btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+.btn.danger{border-color:var(--critical);color:var(--critical)}
+.opts{display:grid;gap:5px;margin-top:8px;font-size:.84rem}
+.opts label{display:flex;gap:8px;align-items:flex-start;padding:6px 8px;border:1px solid var(--rule-2);border-radius:5px;cursor:pointer}
+.opts label:has(input:checked){border-color:var(--teal);background:var(--teal-soft)}
+.opts input{margin-top:3px}
+.opts .rec{font-family:var(--mono);font-size:.68rem;color:var(--brass);margin-left:auto;white-space:nowrap}
+.note{width:100%;font:inherit;font-size:.84rem;padding:6px 8px;border:1px solid var(--rule);border-radius:5px;background:var(--paper);color:var(--ink);margin-top:6px}
+.done{color:var(--ink-3)}
+.done b{color:var(--ink-2)}
+.inbox li.answered{opacity:.75}
+.confirm{margin-top:8px;padding:8px 10px;border-radius:5px;background:color-mix(in oklab,var(--warn) 18%,var(--paper));font-size:.84rem}
+.tele div{cursor:pointer}
+.tele div:hover{color:var(--ink)}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:6px;font-size:.84rem;opacity:0;transition:opacity .15s;pointer-events:none;z-index:8}
+.toast.on{opacity:1}
+.foot{margin-top:18px;font-size:.78rem;color:var(--ink-3)}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div>
+    <h1>Ledger · project dashboard</h1>
+    <div class="sub">Feature <b>001-invoicing</b> · refreshed <b>14:32</b> from trunk <b class="mono">7c81961</b> · published to Pages 14:32 · <span class="mock">mockup · example data</span></div>
+  </div>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" id="tab-bridge" aria-controls="bridge">Project</button>
+    <button role="tab" aria-selected="false" id="tab-fleet" aria-controls="fleet">Agents</button>
+  </div>
+</header>
+
+<section id="bridge" role="tabpanel" aria-labelledby="tab-bridge">
+<div class="grid">
+
+  <div class="card c3">
+    <h2>Status</h2>
+    <div class="big">In service</div>
+    <div class="muted">since 2026-08-14 · 7 weeks</div>
+    <dl class="kv" style="margin-top:12px">
+      <dt>Release mode</dt><dd>Flagged</dd>
+      <dt>Profile</dt><dd>Event modelling</dd>
+      <dt>Target</dt><dd>AWS · eu-west-2</dd>
+      <dt>Keel</dt><dd class="mono">2.1.0 · typescript 2.0.4</dd>
+    </dl>
+  </div>
+
+  <div class="card c3">
+    <h2>Speed vs cost <span>set 09:12 by Luke</span></h2>
+    <div class="big" id="tele-big">Half ahead</div>
+    <div class="muted" id="tele-sub">2 of 3 captains running · delegates per captain 2 → <b style="color:var(--ink)">1</b> (throttled 09:40 to stay in budget)</div>
+    <div class="tele" aria-label="Speed settings" id="tele">
+      <div data-pos="stop" role="button" tabindex="0">stop</div><div data-pos="dead slow" role="button" tabindex="0">dead slow</div><div data-pos="slow ahead" role="button" tabindex="0">slow</div><div data-pos="half ahead" class="on" role="button" tabindex="0">half</div><div data-pos="full ahead" role="button" tabindex="0">full</div>
+    </div>
+    <div class="muted" style="font-size:.78rem;margin-top:6px">Click a setting to change it. Captains pick it up at their next stage boundary.</div>
+  </div>
+
+  <div class="card c3">
+    <h2>Progress <span>slices accepted</span></h2>
+    <div class="hero">11<small> of 19</small></div>
+    <div class="stack" aria-label="Accepted slices by fairway">
+      <span class="f1" style="width:26.3%" title="Ordering 5"></span>
+      <span class="f2" style="width:15.8%" title="Billing 3"></span>
+      <span class="f3" style="width:15.8%" title="Fulfilment 3"></span>
+      <span style="width:42.1%;background:var(--rule-2)" title="Still to come 8"></span>
+    </div>
+    <div class="legend"><span><i class="dot f1"></i>Ordering 5 of 7</span><span><i class="dot f2"></i>Billing 3 of 6</span><span><i class="dot f3"></i>Fulfilment 3 of 6</span></div>
+  </div>
+
+  <div class="card c3">
+    <h2>Token burn &amp; budget <span>today</span></h2>
+    <div class="big">1.9M <span class="muted" style="font-size:.9rem;font-weight:400">tokens / hour</span></div>
+    <svg class="spark" viewBox="0 0 240 46" role="img" aria-label="Tokens per hour, last six hours in half-hour steps, now 1.9 million">
+      <polyline fill="none" stroke="var(--rule)" stroke-width="2" points="0,30 20,26 40,22 60,14 80,10 100,12 120,20 140,24 160,28 180,27 200,25 220,22"/>
+      <circle cx="220" cy="22" r="4" fill="var(--teal)"/>
+      <line x1="80" y1="4" x2="80" y2="42" stroke="var(--brass)" stroke-dasharray="3 2"/>
+      <text x="84" y="10" font-size="8" fill="var(--ink-3)" font-family="IBM Plex Mono,monospace">throttled 09:40</text>
+    </svg>
+    <div class="muted" style="margin-top:6px">Budget today <b style="color:var(--ink)">70M of 150M left</b> · 47%</div>
+    <div class="meter" aria-label="Budget remaining 47 percent"><span style="width:47%"></span></div>
+  </div>
+
+  <div class="card c12">
+    <h2>Progress by fairway <span>from the logs and trunk</span></h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Fairway</th><th>Holder</th><th class="num">Accepted</th><th>Now</th><th>Next slice</th><th>Flag</th><th>State</th></tr></thead>
+      <tbody>
+        <tr><td><i class="dot f1"></i><b>Ordering</b> <span class="muted mono">ORD</span></td><td>captain · berth <span class="mono">ord</span></td><td class="num">5 / 7</td><td>S06 <span class="muted">Return an item</span> · review + refactor</td><td>S07 <span class="muted">Cancel an order</span></td><td><span class="mono">ordering.cancel</span> <span class="muted">seeded off</span></td><td id="ord-state"><span class="chip warn"><i>?</i> question waiting 11m</span></td></tr>
+        <tr><td><i class="dot f2"></i><b>Billing</b> <span class="muted mono">BIL</span></td><td>Luke · /drive · berth <span class="mono">bil</span></td><td class="num">3 / 6</td><td>S13 <span class="muted">Issue a credit note</span> · implement, increment 4 of 7</td><td>S14 <span class="muted">Void a credit note</span></td><td><span class="mono">billing.credit-notes</span> <span class="muted">seeded off</span></td><td><span class="chip good"><i>●</i> under way</span></td></tr>
+        <tr><td><i class="dot f3"></i><b>Fulfilment</b> <span class="muted mono">FUL</span></td><td>captain · berth <span class="mono">ful</span></td><td class="num">3 / 6</td><td>S21 <span class="muted">hardening</span> · 2 findings open</td><td>none · S19 waits for event <span class="mono">OrderCancelled</span> from ORD S07</td><td><span class="mono">fulfilment.pick-lists</span> <span class="muted">staging on</span></td><td><span class="chip"><i>‖</i> waiting on Ordering</span></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="card c7">
+    <h2>Slices <span>each coloured by its log state</span></h2>
+    <div class="lane"><div class="name">Ordering<small>context <span class="mono">ordering</span> · apps/service</small></div>
+      <div class="slices">
+        <span class="sl f1 merged" tabindex="0" data-tip="S01 Place an order · merged 2026-09-18 · 38M tokens">S01</span>
+        <span class="sl f1 merged" tabindex="0" data-tip="S02 See my orders · merged 2026-09-19 · 21M">S02</span>
+        <span class="sl f1 merged" tabindex="0" data-tip="S03 Amend an order · merged 2026-09-23 · 44M">S03</span>
+        <span class="sl f1 merged" tabindex="0" data-tip="S04 Ship notification · merged 2026-09-26 · 29M">S04</span>
+        <span class="sl f1 merged" tabindex="0" data-tip="S05 Order history · merged 2026-10-01 · 25M">S05</span>
+        <span class="sl f1 live" tabindex="0" data-tip="S06 Return an item · demo accepted 13:40 · review + refactor now · 31M so far">S06 · review</span>
+        <span class="sl f1 cleared" tabindex="0" data-tip="S07 Cancel an order · ready: every event it depends on is defined · publishes OrderCancelled">S07 · ready</span>
+      </div></div>
+    <div class="lane"><div class="name">Billing<small>context <span class="mono">billing</span> · apps/service</small></div>
+      <div class="slices">
+        <span class="sl f2 merged" tabindex="0" data-tip="S10 Raise an invoice · merged 2026-09-20">S10</span>
+        <span class="sl f2 merged" tabindex="0" data-tip="S11 Record a payment · merged 2026-09-25">S11</span>
+        <span class="sl f2 merged" tabindex="0" data-tip="S12 Statement of account · merged 2026-10-03">S12</span>
+        <span class="sl f2 live" tabindex="0" data-tip="S13 Issue a credit note · Luke, /drive · implement, increment 4 of 7">S13 · implement</span>
+        <span class="sl f2 cleared" tabindex="0" data-tip="S14 Void a credit note · ready · depends on CreditNoteIssued (S13, planned)">S14 · ready</span>
+        <span class="sl f2 held" tabindex="0" data-tip="S15 Credit note on statement · waits for CreditNoteVoided from S14">S15</span>
+      </div></div>
+    <div class="lane"><div class="name">Fulfilment<small>context <span class="mono">fulfilment</span> · apps/warehouse</small></div>
+      <div class="slices">
+        <span class="sl f3 merged" tabindex="0" data-tip="S16 Pick list · merged 2026-09-22">S16</span>
+        <span class="sl f3 merged" tabindex="0" data-tip="S17 Mark as picked · merged 2026-09-27">S17</span>
+        <span class="sl f3 merged" tabindex="0" data-tip="S18 Dispatch · merged 2026-10-02">S18</span>
+        <span class="sl f3 held" tabindex="0" data-tip="S19 Unpick a cancelled order · waits for OrderCancelled, which ORD S07 defines at its first stage">S19 · waits for S07</span>
+        <span class="sl f3 held" tabindex="0" data-tip="S20 Restock · waits for Unpicked from S19">S20</span>
+        <span class="sl f3 careen" tabindex="0" data-tip="S21 hardening · 2 LOW findings deferred from S17, S18 · runs before fulfilment.pick-lists goes on">S21 · hardening</span>
+      </div></div>
+    <div class="leg2">
+      <span><span class="sl f1 merged">S</span> merged</span>
+      <span><span class="sl f1 live">S</span> in a stage</span>
+      <span><span class="sl f1 cleared">S</span> ready, unclaimed</span>
+      <span><span class="sl held">S</span> waiting on another slice</span>
+      <span><span class="sl careen">S</span> hardening</span>
+      <span class="muted">colour is the fairway; hover a slice for its history</span>
+    </div>
+  </div>
+
+  <div class="card c5">
+    <h2>Release flags <span>remove 30 days after fully on</span></h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Capability</th><th>Staging</th><th>Production</th><th>Remove</th></tr></thead>
+      <tbody>
+        <tr><td><span class="mono">ordering.returns</span></td><td>on 09-22</td><td>on 09-28</td><td><span class="chip good"><i>✓</i> due 10-28</span></td></tr>
+        <tr><td><span class="mono">billing.invoices</span></td><td id="inv-stg">on 08-30</td><td id="inv-prod">on 09-02</td><td id="inv-strike"><span class="chip serious" title="Removal task deferred to Billing hardening"><i>!</i> overdue 4 d</span></td></tr>
+        <tr><td><span class="mono">ordering.cancel</span></td><td>off</td><td>off</td><td class="muted">capability 2 of 3 slices</td></tr>
+        <tr><td><span class="mono">billing.credit-notes</span></td><td>off</td><td>off</td><td class="muted">capability 1 of 3 slices</td></tr>
+        <tr><td><span class="mono">fulfilment.pick-lists</span></td><td>on 10-02</td><td id="pl-prod">off</td><td id="pl-strike"><span class="chip warn"><i>⚑</i> ready to turn on</span></td></tr>
+      </tbody>
+    </table></div>
+    <h2 style="margin-top:18px">Deployed <span>pipeline for trunk</span></h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Environment</th><th>Commit</th><th>Pipeline</th></tr></thead>
+      <tbody>
+        <tr><td>production</td><td class="mono">a4c0294</td><td><span class="chip good"><i>✓</i> green 13:58</span></td></tr>
+        <tr><td>staging</td><td class="mono">7c81961 <span class="muted">(trunk)</span></td><td><span class="chip"><i>◌</i> running 14:20 · verify</span></td></tr>
+        <tr><td>preview · bil</td><td class="mono">slice/S13</td><td><span class="chip good"><i>✓</i> green 14:09</span></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="card c5">
+    <h2>Waiting on a person <span>oldest first</span></h2>
+    <ul class="inbox" id="inbox">
+      <li data-item="strike"><span class="age">4 d</span><span class="what"><b>Flag removal overdue</b> billing.invoices<small>fully on since 09-02 · task deferred to Billing hardening</small>
+        <div class="act"><button class="btn danger" data-do="strike">Remove the flag now</button><button class="btn" data-do="later" data-days="7">Leave it 7 more days</button></div></span><span class="cmd">slipwai strike billing.invoices</span></li>
+      <li data-item="adr"><span class="age">2 h</span><span class="what"><b>3 ADRs at Proposed</b><small>decided by captains, waiting for a person</small>
+        <div class="opts" id="adrs">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="mono" style="font-size:.76rem">ADR-ORD-2026-10-05-refund-policy</span><span class="muted" style="font-size:.8rem">refunds go to the original payment method</span><span style="margin-left:auto;display:flex;gap:4px"><button class="btn" data-adr="refund-policy" data-verdict="accept">Accept</button><button class="btn" data-adr="refund-policy" data-verdict="reject">Reject</button></span></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="mono" style="font-size:.76rem">ADR-BIL-2026-10-04-credit-note-numbering</span><span class="muted" style="font-size:.8rem">one sequence per legal entity</span><span style="margin-left:auto;display:flex;gap:4px"><button class="btn" data-adr="credit-note-numbering" data-verdict="accept">Accept</button><button class="btn" data-adr="credit-note-numbering" data-verdict="reject">Reject</button></span></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="mono" style="font-size:.76rem">ADR-FUL-2026-10-03-pick-list-store</span><span class="muted" style="font-size:.8rem">pick lists are a read model, not a stream</span><span style="margin-left:auto;display:flex;gap:4px"><button class="btn" data-adr="pick-list-store" data-verdict="accept">Accept</button><button class="btn" data-adr="pick-list-store" data-verdict="reject">Reject</button></span></div>
+        </div></span><span class="cmd">slipwai adr review</span></li>
+      <li data-item="hoist"><span class="age">38 m</span><span class="what"><b>Flag ready to turn on</b> fulfilment.pick-lists<small>capability complete · staging on since 10-02 · hardening S21 has 2 LOWs open</small>
+        <div class="act"><button class="btn primary" data-do="hoist-ask">Turn on in production</button><button class="btn" data-do="later" data-days="1">Not yet</button></div>
+        <div class="confirm hidden" id="hoist-confirm">This makes pick lists visible to every warehouse user. The 2 open LOWs in S21 are cosmetic. Turn it on?
+          <div class="act"><button class="btn primary" data-do="hoist">Yes, turn it on</button><button class="btn" data-do="hoist-cancel">Cancel</button></div></div></span><span class="cmd">slipwai hoist fulfilment.pick-lists</span></li>
+      <li data-item="question"><span class="age">11 m</span><span class="what"><b>Question</b> from captain ORD, slice S07 Cancel an order<small>“Does cancelling a shipped order refund the postage?” · the captain cannot find this in the spec, the constitution or the domain notes</small>
+        <div class="opts" id="q-opts">
+          <label><input type="radio" name="q1" value="1" id="q1-1"> <span>Refund postage in full with the goods</span></label>
+          <label><input type="radio" name="q1" value="2" id="q1-2"> <span>Refund postage only if the order has not left the warehouse</span></label>
+          <label><input type="radio" name="q1" value="3" id="q1-3" checked> <span>No refund of postage once shipped</span><span class="rec">recommended · matches Ordering T&amp;Cs §4</span></label>
+        </div>
+        <input class="note" id="q-note" placeholder="Add a note for the captain (optional)">
+        <div class="act"><button class="btn primary" data-do="answer">Send answer</button><button class="btn" data-do="park">Park it, I need to ask someone</button></div></span><span class="cmd">slipwai tell ord --answer 3</span></li>
+      <li data-item="throttle"><span class="age">09:40</span><span class="what"><b>Throttled</b> to stay in budget<small>40% of today's budget gone by 09:40 · delegates per captain 2 → 1</small>
+        <div class="act"><button class="btn" data-do="restore">Restore 2 delegates per captain</button><button class="btn" data-do="ok">Fine as it is</button></div></span><span class="cmd">slipwai telegraph half-ahead</span></li>
+    </ul>
+    <div class="muted" style="margin-top:10px;font-size:.8rem">Decisions unreviewed <b style="color:var(--ink)">8 of 10</b> before the ceiling parks the captains.</div>
+    <div class="meter" aria-label="Unreviewed decisions 8 of 10"><span style="width:80%;background:var(--brass)"></span></div>
+  </div>
+
+  <div class="card c7">
+    <h2>Cost <span>tokens · wall time</span></h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Fairway</th><th class="num">Today</th><th class="num">To date</th><th class="num">Wall</th><th class="num">Accepted</th><th class="num">Per accepted slice</th></tr></thead>
+      <tbody>
+        <tr><td><i class="dot f1"></i>Ordering</td><td class="num">41M</td><td class="num">312M</td><td class="num">31 h</td><td class="num">5</td><td class="num">62M</td></tr>
+        <tr><td><i class="dot f2"></i>Billing</td><td class="num">12M</td><td class="num">98M</td><td class="num">14 h</td><td class="num">3</td><td class="num">33M</td></tr>
+        <tr><td><i class="dot f3"></i>Fulfilment</td><td class="num">27M</td><td class="num">201M</td><td class="num">22 h</td><td class="num">3</td><td class="num">67M</td></tr>
+      </tbody>
+      <tfoot><tr><td>Ledger</td><td class="num">80M</td><td class="num">611M</td><td class="num">67 h</td><td class="num">11</td><td class="num">56M</td></tr></tfoot>
+    </table></div>
+    <div class="muted" style="margin-top:8px;font-size:.8rem">The experiment's median was 180M per accepted slice. The plan's target is 90M.</div>
+  </div>
+
+  <div class="card c12">
+    <h2>Activity <span>all logs, merged</span></h2>
+<pre class="log" id="log">14:31 ORD  heartbeat    S06 review · 1.1M tokens this stage
+14:28 BIL  increment    S13 4/7 · make unit green 38s
+14:21 ORD  <b>question</b>     S07 refund postage? → inbox
+14:20 HARB pipeline     staging verify running 7c81961
+14:09 ORD  accepted     S06 demo · hand: 6 of 6 examples
+13:58 HARB deployed     production a4c0294 green
+13:54 FUL  heartbeat    S21 careen · waiting on a person
+13:52 ORD  <b>merged</b>       S05 → main a4c0294 · verify green
+13:40 ORD  demo         S06 at browser rung
+13:31 BIL  told/read    “use the statement layout for notes”</pre>
+  </div>
+
+</div>
+</section>
+
+<section id="fleet" role="tabpanel" aria-labelledby="tab-fleet" class="hidden">
+<div class="grid">
+  <div class="card c12">
+    <h2>Agents <span>half ahead · 2 of 3 captains running · one product shown</span></h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Workspace</th><th>Holder</th><th>Stage</th><th>Slice</th><th class="num">Idle</th><th>Live work</th><th class="num">Age</th><th class="num">Behind / ahead</th><th class="num">Undelivered</th><th class="num">Tokens today</th><th>Throttle</th><th>State</th></tr></thead>
+      <tbody>
+        <tr><td class="mono"><i class="dot f1"></i>ord</td><td>captain</td><td>review + refactor</td><td>S06</td><td class="num">0 m</td><td><span class="mono">vitest</span> · 2 procs</td><td class="num">3 h 12</td><td class="num">0 / 4</td><td class="num">0</td><td class="num">41M</td><td>delegates 2 → 1</td><td><span class="chip warn"><i>?</i> question 11m</span></td></tr>
+        <tr><td class="mono"><i class="dot f2"></i>bil</td><td>Luke · /drive</td><td>implement</td><td>S13</td><td class="num">6 m</td><td>none</td><td class="num">1 h 40</td><td class="num">2 / 1</td><td class="num">0</td><td class="num">12M</td><td>—</td><td><span class="chip good"><i>●</i> a person · idle is not a stall</span></td></tr>
+        <tr><td class="mono"><i class="dot f3"></i>ful</td><td>captain</td><td>hardening</td><td>S21</td><td class="num">22 m</td><td>none</td><td class="num">3 h 12</td><td class="num">0 / 0</td><td class="num">1 · 12 m</td><td class="num">27M</td><td>delegates 2 → 1</td><td><span class="chip"><i>‖</i> waiting on Ordering for S19</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="muted" style="margin-top:10px;font-size:.8rem">A workspace more than 20 commits behind trunk, or holding unpushed work older than an hour, is flagged <span class="chip serious" style="font-size:.72rem"><i>!</i> behind</span>. None today.</div>
+  </div>
+  <div class="card c6">
+    <h2>Timeline <span>today, stages as spans</span></h2>
+    <svg viewBox="0 0 640 150" role="img" aria-label="Stage spans per berth since 09:00" style="width:100%;height:auto;display:block">
+      <g font-family="IBM Plex Mono,monospace" font-size="9" fill="var(--ink-3)">
+        <text x="0" y="12">ord</text><text x="0" y="62">bil</text><text x="0" y="112">ful</text>
+        <text x="40" y="146">09:00</text><text x="190" y="146">11:00</text><text x="340" y="146">13:00</text><text x="490" y="146">15:00</text>
+      </g>
+      <g stroke="var(--rule-2)"><line x1="40" y1="0" x2="40" y2="136"/><line x1="190" y1="0" x2="190" y2="136"/><line x1="340" y1="0" x2="340" y2="136"/><line x1="490" y1="0" x2="490" y2="136"/></g>
+      <g fill="var(--s1)"><rect x="40" y="4" width="120" height="14" rx="3"/><rect x="162" y="4" width="90" height="14" rx="3"/><rect x="254" y="4" width="60" height="14" rx="3"/><rect x="316" y="4" width="74" height="14" rx="3"/><rect x="392" y="4" width="30" height="14" rx="3"/><rect x="424" y="4" width="28" height="14" rx="3" fill="var(--s1-soft)" stroke="var(--s1)"/></g>
+      <g font-family="IBM Plex Sans,sans-serif" font-size="8" fill="var(--ink-2)"><text x="42" y="28">S05 implement</text><text x="164" y="28">converge</text><text x="256" y="28">demo</text><text x="318" y="28">S06 implement</text><text x="394" y="28">demo</text><text x="426" y="28">review</text></g>
+      <g fill="var(--s2)"><rect x="332" y="54" width="118" height="14" rx="3"/></g>
+      <text x="334" y="78" font-family="IBM Plex Sans,sans-serif" font-size="8" fill="var(--ink-2)">S13 implement · a person</text>
+      <g fill="var(--s3)"><rect x="40" y="104" width="150" height="14" rx="3"/><rect x="192" y="104" width="100" height="14" rx="3"/><rect x="294" y="104" width="70" height="14" rx="3" fill="var(--s3-soft)" stroke="var(--s3)"/></g>
+      <g font-family="IBM Plex Sans,sans-serif" font-size="8" fill="var(--ink-2)"><text x="42" y="128">S18 implement</text><text x="194" y="128">demo · merge</text><text x="296" y="128">S21 hardening</text><text x="370" y="128">waiting on Ordering</text></g>
+      <line x1="452" y1="0" x2="452" y2="136" stroke="var(--brass)" stroke-dasharray="3 2"/><text x="455" y="10" font-size="8" fill="var(--brass)" font-family="IBM Plex Mono,monospace">now</text>
+    </svg>
+  </div>
+  <div class="card c6">
+    <h2>Token burn <span>tokens per hour, by workspace</span></h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Workspace</th><th class="num">Now</th><th class="num">Peak today</th><th class="num">Budget left</th></tr></thead>
+      <tbody>
+        <tr><td><i class="dot f1"></i>ord</td><td class="num">1.1M / h</td><td class="num">3.8M / h · 09:20</td><td class="num">34M</td></tr>
+        <tr><td><i class="dot f2"></i>bil</td><td class="num">0.3M / h</td><td class="num">0.9M / h · 12:40</td><td class="num">26M</td></tr>
+        <tr><td><i class="dot f3"></i>ful</td><td class="num">0.5M / h</td><td class="num">2.4M / h · 10:05</td><td class="num">10M</td></tr>
+      </tbody>
+      <tfoot><tr><td>Ledger</td><td class="num">1.9M / h</td><td class="num">6.1M / h</td><td class="num">70M of 150M</td></tr></tfoot>
+    </table></div>
+    <div class="muted" style="margin-top:8px;font-size:.8rem">At 6.1M / h the budget would have run out by 13:00. Throttling at 09:40 means the day ends inside it.</div>
+  </div>
+</div>
+</section>
+
+<div class="foot">Every number on this page is computed from the logs, <code>project.json</code>, the flag file and <code>git rev-list</code>. The page keeps no state of its own. This is a mockup with example data for the slipwai 2 plan.</div>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+(function(){
+  var tabs=document.querySelectorAll('[role=tab]');
+  tabs.forEach(function(t){t.addEventListener('click',function(){
+    tabs.forEach(function(o){o.setAttribute('aria-selected','false');document.getElementById(o.getAttribute('aria-controls')).classList.add('hidden');});
+    t.setAttribute('aria-selected','true');document.getElementById(t.getAttribute('aria-controls')).classList.remove('hidden');
+    try{localStorage.setItem('bridge-tab',t.id)}catch(e){}
+  });});
+  try{var saved=localStorage.getItem('bridge-tab');if(saved&&document.getElementById(saved))document.getElementById(saved).click();}catch(e){}
+  var tip=document.getElementById('tip');
+  function show(e){var el=e.currentTarget;tip.textContent=el.getAttribute('data-tip');tip.style.opacity=1;move(e);}
+  function move(e){var x=(e.clientX||0)+12,y=(e.clientY||0)+14;if(x+270>innerWidth)x=innerWidth-270;tip.style.left=x+'px';tip.style.top=y+'px';}
+  function hide(){tip.style.opacity=0;}
+  document.querySelectorAll('[data-tip]').forEach(function(el){
+    el.addEventListener('mouseenter',show);el.addEventListener('mousemove',move);el.addEventListener('mouseleave',hide);
+    el.addEventListener('focus',function(e){var r=el.getBoundingClientRect();tip.textContent=el.getAttribute('data-tip');tip.style.opacity=1;tip.style.left=r.left+'px';tip.style.top=(r.bottom+6)+'px';});
+    el.addEventListener('blur',hide);
+  });
+
+  // ---- answering in place: in the real page every action appends a `told` line to the fairway's log ----
+  var log=document.getElementById('log'); var toast=document.createElement('div'); toast.className='toast'; document.body.appendChild(toast);
+  function now(){var d=new Date();return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
+  function logLine(who,kind,text,strong){var line=now()+' '+(who+'    ').slice(0,4)+' '+(kind+'            ').slice(0,12)+' '+text;log.innerHTML=(strong?'<b>'+line+'</b>':line)+'\n'+log.innerHTML;}
+  function say(t){toast.textContent=t;toast.classList.add('on');clearTimeout(say.t);say.t=setTimeout(function(){toast.classList.remove('on')},2600);}
+  function settle(li,html){li.classList.add('answered');var what=li.querySelector('.what');what.innerHTML='<div class="done">'+html+'</div>';var cmd=li.querySelector('.cmd');if(cmd)cmd.remove();}
+  function readReceipt(who,li){setTimeout(function(){logLine(who,'read','told line read at stage boundary');var d=li.querySelector('.done');if(d)d.innerHTML+=' · <b>read by captain '+who+' '+now()+'</b>';},1800);}
+  document.getElementById('inbox').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;var li=b.closest('li');var act=b.getAttribute('data-do');
+    if(b.hasAttribute('data-adr')){var v=b.getAttribute('data-verdict'),id=b.getAttribute('data-adr');var row=b.closest('div');row.innerHTML='<span class="mono" style="font-size:.76rem">ADR-'+id+'</span><span class="done" style="margin-left:8px">'+(v==='accept'?'Accepted':'Rejected, returned to the captain with the reason asked for')+' · '+now()+'</span>';logLine('HARB','adr',id+' '+v+'ed by Luke',true);say('ADR '+v+'ed');
+      if(!document.querySelector('#adrs button'))settle(li,'<b>3 ADRs reviewed</b> · '+now());return;}
+    if(act==='answer'){var opt=document.querySelector('input[name=q1]:checked');var note=document.getElementById('q-note').value.trim();var txt={1:'refund postage in full',2:'refund postage if not yet dispatched',3:'no postage refund once shipped'}[opt.value];
+      logLine('ORD','told','S07 answer '+opt.value+': '+txt+(note?' · "'+note+'"':''),true);settle(li,'<b>Answered</b> option '+opt.value+', '+txt+' · sent to captain ORD '+now()+' as decision D-ORD-11');document.getElementById('ord-state').innerHTML='<span class="chip good"><i>●</i> under way</span>';say('Answer sent to captain ORD');readReceipt('ORD',li);return;}
+    if(act==='park'){logLine('ORD','parked','S07 question parked by Luke: needs finance');settle(li,'<b>Parked</b> · captain ORD moves to the next cleared slice · '+now());document.getElementById('ord-state').innerHTML='<span class="chip"><i>‖</i> S07 parked · on S08</span>';say('Parked. Captain ORD takes the next slice.');return;}
+    if(act==='hoist-ask'){document.getElementById('hoist-confirm').classList.remove('hidden');return;}
+    if(act==='hoist-cancel'){document.getElementById('hoist-confirm').classList.add('hidden');return;}
+    if(act==='hoist'){logLine('HARB','flag on','fulfilment.pick-lists production by Luke',true);document.getElementById('pl-prod').textContent='on '+now();document.getElementById('pl-strike').innerHTML='<span class="chip good"><i>✓</i> remove by 11-05</span>';settle(li,'<b>Turned on</b> in production · '+now()+' · removal due 11-05');say('fulfilment.pick-lists is on in production');return;}
+    if(act==='strike'){logLine('HARB','flag off','billing.invoices removed by Luke · task to delete the reader queued in BIL',true);document.getElementById('inv-strike').innerHTML='<span class="chip good"><i>✓</i> removed '+now()+'</span>';settle(li,'<b>Flag removed</b> · the reader comes out in Billing\'s next slice · '+now());say('billing.invoices removed');return;}
+    if(act==='later'){var d=b.getAttribute('data-days');logLine('HARB','deferred',li.getAttribute('data-item')+' deferred '+d+' day'+(d==='1'?'':'s')+' by Luke');settle(li,'<b>Deferred</b> '+d+' day'+(d==='1'?'':'s')+' · back in the inbox then · '+now());say('Deferred');return;}
+    if(act==='restore'){setSpeed('half ahead',true);settle(li,'<b>Restored</b> 2 delegates per captain · '+now());return;}
+    if(act==='ok'){settle(li,'<b>Kept</b> at 1 delegate per captain · '+now());logLine('HARB','throttle','kept by Luke');return;}
+  });
+  var subs={'stop':'every captain parks at its next stage boundary','dead slow':'1 captain · 1 delegate · cheapest roles','slow ahead':'1 captain · 2 delegates','half ahead':'2 of 3 captains running · 2 delegates per captain','full ahead':'3 of 3 captains running · full fan-out · strongest roles'};
+  function setSpeed(pos,fromRestore){document.querySelectorAll('#tele div').forEach(function(d){d.classList.toggle('on',d.getAttribute('data-pos')===pos)});document.getElementById('tele-big').textContent=pos.charAt(0).toUpperCase()+pos.slice(1);document.getElementById('tele-sub').textContent=subs[pos]+' · set '+now()+' by Luke';logLine('HARB','speed',pos+' set by Luke'+(fromRestore?' (throttle lifted)':''),true);say('Speed set to '+pos+'. Captains pick it up at their next boundary.');}
+  document.querySelectorAll('#tele div').forEach(function(d){d.addEventListener('click',function(){setSpeed(d.getAttribute('data-pos'))});d.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();setSpeed(d.getAttribute('data-pos'))}});});
+})();
+</script>

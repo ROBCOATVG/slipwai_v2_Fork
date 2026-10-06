@@ -1,4 +1,0 @@
-#!/bin/sh
-set -eu
-root=$(dirname "$0")
-PYTHONPATH="$root/src${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m slipwai "$@"

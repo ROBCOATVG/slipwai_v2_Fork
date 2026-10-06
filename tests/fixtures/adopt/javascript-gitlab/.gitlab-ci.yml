@@ -1,8 +1,0 @@
-stages: [test, deploy]
-test:
-  stage: test
-  script: [npm test]
-deploy:
-  stage: deploy
-  script: [./deploy.sh]
-  when: manual

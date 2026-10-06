@@ -1,2 +1,0 @@
-all:
-	@echo their build

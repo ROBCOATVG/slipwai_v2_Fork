@@ -1,8 +1,0 @@
-{
-  "name": "shop",
-  "private": true,
-  "scripts": {
-    "lint": "node lint.js",
-    "test": "node --test"
-  }
-}
