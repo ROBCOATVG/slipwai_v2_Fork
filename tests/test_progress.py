@@ -70,7 +70,9 @@ class TickTest(unittest.TestCase):
         hash it had just recorded, so the gate went red on the commit that made it green."""
         page = progress.rendered()
         self.assertNotRegex(page, r"\| done [0-9a-f]{7,} \|")
-        self.assertIn("| done |", page)
+        # Not "a tick exists": whether one does depends on the history this checkout has, and a shallow
+        # clone has none. What must hold is that a tick, where written, is the stable form.
+        self.assertEqual(page.count("| done |"), len(progress.shipped()))
 
     def test_the_slices_that_predate_the_trailer_are_a_closed_list(self) -> None:
         """It was written once and is never added to; everything after carries its own trailer."""
