@@ -12,6 +12,7 @@ import shutil
 import sys
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 from .errors import GenerationError
 
@@ -229,3 +230,26 @@ def relaunch() -> list[str]:
     if FROZEN:
         return [sys.executable]
     return [sys.executable, "-I", "-c", _BOOT, str(Path(__file__).resolve().parent.parent)]
+
+
+def _load_style_checker() -> Any:
+    """The generated style gate, shared with replay so both identify imported token files alike."""
+    import importlib.util
+
+    source = TOOLKIT_ROOT / "scripts/check-styles.py"
+    spec = importlib.util.spec_from_file_location("delivery_check_styles", source)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load the style checker from {source}")
+    module = importlib.util.module_from_spec(spec)
+    # Unlike the pruner, this source sits inside the canonical toolkit. Its self-containment test reads
+    # every file there as text, so an import cache beside the script would become binary toolkit material.
+    previous = sys.dont_write_bytecode
+    try:
+        sys.dont_write_bytecode = True
+        spec.loader.exec_module(module)
+    finally:
+        sys.dont_write_bytecode = previous
+    return module
+
+
+STYLE_CHECKER = _load_style_checker()

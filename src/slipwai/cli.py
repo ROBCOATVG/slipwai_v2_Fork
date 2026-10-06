@@ -17,6 +17,15 @@ from .catalog import (
     families,
 )
 from .catalog_checks import validate_catalog
+from .cli_add import (
+    add_frontend_main,
+    add_service_main,
+    converge_main,
+    describe_service_main,
+    migrate_main,
+    replay_main,
+)
+from .cli_adopt import adopt_main
 from .cli_language import (
     braced,
     language_main,
@@ -43,6 +52,7 @@ from .cli_prompts import (
 from .cli_search import search_main, show_main
 from .errors import GenerationError, failure, refuse
 from .language_directory import Package, refusal
+from .language_upkeep import after_core
 from .loaded import refusals
 from .preflight import check as check_requirements
 from .registry import RegistryError
@@ -50,10 +60,12 @@ from .scaffold import write_project
 from .selection import resolve_selection
 from .services import FIRST_SERVICE, FIRST_WEB, default_apps
 from .targets import check_project_name, offered_backends
+from .upgrade import main as upgrade_main
 
 # One verb so far. Each of the others is registered here by the slice that brings its module
 # back, so an unknown argument is argparse's refusal rather than a stub that half-answers.
-VERBS = ("generate", "list", "search", "show", "install", "language")
+VERBS = ("generate", "add-service", "add-frontend", "describe-service", "migrate", "replay",
+         "adopt", "converge", "upgrade", "list", "search", "show", "install", "language")
 
 
 def main() -> None:
@@ -112,6 +124,22 @@ def dispatch(argv: list[str]) -> None:
         return
     if argv[:1] == ["list"]:
         list_main(argv[1:])
+        return
+    for verb, run in (("add-service", add_service_main), ("add-frontend", add_frontend_main),
+                      ("describe-service", describe_service_main), ("migrate", migrate_main),
+                      ("replay", replay_main), ("adopt", adopt_main), ("converge", converge_main)):
+        if argv[:1] == [verb]:
+            run(argv[1:])
+            return
+    # `upgrade` replaces this command with the newest the index has, and `after_core` moves any
+    # installed package the new keel would refuse — an upgrade that left them behind would leave a
+    # working copy that generates nothing.
+    if argv[:1] == ["upgrade"]:
+        upgrade_main(argv[1:], languages=after_core)
+        return
+    # "Where am I?" asked the ways people ask it — `slipwai status`, `slipwai --next` — is `adopt --next`.
+    if argv[:1] in (["status"], ["next"], ["--status"], ["--next"]):
+        adopt_main(["--next", *argv[1:]])
         return
     if argv[:1] == ["search"]:
         search_main(argv[1:])

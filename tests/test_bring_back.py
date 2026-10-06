@@ -39,10 +39,16 @@ class LedgerTest(unittest.TestCase):
             code = bring_back.main(["--check"])
         self.assertEqual(code, 0, out.getvalue())
 
-    def test_the_ledger_is_not_empty_and_is_bigger_than_the_keel(self) -> None:
-        """It is the whole of version 1; the keel is what has come back so far."""
+    def test_every_module_the_ledger_holds_is_back(self) -> None:
+        """It was "the keel is smaller than the ledger" while the bring-back was in progress, which is a
+        state and not an invariant. Everything is back now, so the invariant is that it stays back: a
+        module that disappears from `src/` without leaving the ledger is one nothing would notice."""
         self.assertGreater(len(self.rows), 100)
-        self.assertLess(len(self.here), len(self.rows))
+        self.assertEqual(sorted(set(self.rows) - self.here), [])
+
+    def test_the_keel_also_holds_what_version_2_wrote_for_itself(self) -> None:
+        """And nothing else: a module in neither is one the ledger has not been taught about."""
+        self.assertEqual(self.here - set(self.rows), bring_back.OWN)
 
     def test_every_module_the_keel_has_is_either_in_the_ledger_or_version_2s_own(self) -> None:
         self.assertEqual(self.here - set(self.rows) - bring_back.OWN, set())

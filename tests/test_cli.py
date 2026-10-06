@@ -35,14 +35,23 @@ class VersionTest(unittest.TestCase):
         self.assertEqual(out.getvalue().strip(), f"slipwai {VERSION}")
 
     def test_no_arguments_says_which_verbs_there_are(self) -> None:
-        """And names only the verbs this copy actually has, so the list cannot promise one that is not
-        back yet — which it did, until `generate` arrived and the hardcoded line was still version 1's."""
+        """And names exactly the verbs this copy has, so the list cannot promise one that is absent —
+        which it did, until `generate` arrived and the hardcoded line was still version 1's. It is
+        built from VERBS now, which is also what argparse checks, so the two cannot disagree."""
+        from slipwai.cli import VERBS
+
         err = io.StringIO()
         with self.assertRaises(SystemExit) as raised, contextlib.redirect_stderr(err):
             main_with([])
         self.assertEqual(raised.exception.code, 2)
-        self.assertIn("a verb is required: generate", err.getvalue())
-        self.assertNotIn("add-service", err.getvalue())
+        self.assertIn("a verb is required: " + ", ".join(VERBS), err.getvalue())
+
+    def test_a_verb_this_copy_has_not_got_is_refused_rather_than_half_run(self) -> None:
+        err = io.StringIO()
+        with self.assertRaises(SystemExit) as raised, contextlib.redirect_stderr(err):
+            main_with(["teleport"])
+        self.assertEqual(raised.exception.code, 2)
+        self.assertIn("invalid choice", err.getvalue())
 
 
 def main_with(arguments: list[str]) -> None:

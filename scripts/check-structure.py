@@ -64,10 +64,11 @@ TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
     # One module per part of the repository being generated.
     ("parts", ("project",)),
     # The whole of a project, assembled and written, and the whole of it again from a newer keel.
-    ("assembly", ("unlabel", "next_steps", "scaffold", "adopt_report")),
+    ("assembly", ("unlabel", "next_steps", "scaffold", "adopt_report", "add_service", "adopt",
+                  "replay", "catch_up", "migrate", "resurvey", "confirm", "converge")),
     # The command line, and the entry point the executable is built from.
     ("edge", ("cli", "__main__", "preflight", "upgrade", "cli_confirm", "cli_init",
-              "cli_prompts", "cli_interview", "cli_offered", "cli_language", "cli_search",
+              "cli_prompts", "cli_interview", "cli_offered", "cli_language", "cli_search", "cli_add", "cli_adopt",
               # The chandlery client: the index, a release file, an install as one
               # transaction, the plan a verb shows first, and upkeep after a keel moves.
               "language_index", "language_release", "language_install", "language_plan",
