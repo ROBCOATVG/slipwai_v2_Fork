@@ -2,32 +2,14 @@
 
 At 2.0.0.dev0 the keel answers one question — which keel this is — so `--version` is all there is. Verbs
 arrive with the modules that answer them, which is what keeps this file a dispatcher rather than somewhere
-logic accumulates.
+logic accumulates. Every path it needs comes from `assets`, never from the working directory.
 """
 from __future__ import annotations
 
 import argparse
 import sys
-from pathlib import Path
 
-# Where `VERSION` sits depends on how slipwai is being run, and there are three ways. A frozen executable
-# unpacks it beside the rest of the bundle; an installed wheel carries it under the package as
-# `slipwai/_bundle/`, put there by the force-include table in pyproject.toml; a checkout keeps it at the
-# repository root, two directories above this file.
-#
-# This resolution belongs in `assets.py`, which phase 3 brings back as the one place every keel path comes
-# from. It is here because `assets.py` is not back yet and the version has to be readable without it; the
-# move is phase 3's, and this block goes with it.
-FROZEN = bool(getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"))
-BUNDLE = Path(__file__).resolve().parent / "_bundle"
-if FROZEN:
-    ROOT = Path(sys._MEIPASS)  # type: ignore[attr-defined]
-elif BUNDLE.is_dir():
-    ROOT = BUNDLE
-else:
-    ROOT = Path(__file__).resolve().parents[2]
-
-VERSION = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+from .assets import VERSION
 
 
 def main() -> None:

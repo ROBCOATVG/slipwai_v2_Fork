@@ -863,13 +863,13 @@ chandlery stay on GitHub and the keel keeps today's split.
 with the import surface as a tier, and CI with the fast jobs only. Source: upstream. Done when the gate is green
 on an empty `src/`.
 
-**Phase 2. The registry and the chart.** Bring back `registry.py`, `loaded.py`, `manifest/`, `catalog_merge.py`,
+**Phase 2. The registry and the chart.** Bring back `registry.py`, `loaded.py`, `catalog_merge.py`,
 `language_directory.py`, `language_shape.py`, `conformance/`, `matrix/`, and their tests. Source:
 `slipwai-cruise-2`. Bring back the keel's `catalog.json` with no backends in it. Create the real `java-spring`
 repository first, then pin the six packages as submodules under `packages/`. Done when the gate loads every
 package and runs the conformance suite, before any scaffold exists.
 
-**Phase 3. The scaffold pipeline.** Bring back `assets.py`, `toolkit.py`, `scaffold.py`, and then the
+**Phase 3. The scaffold pipeline.** Grow `assets.py` into the asset trees, bring back `toolkit.py`, `manifest/`, `scaffold.py`, and then the
 `project/*.py` parts, one module at a time, in the order that `scaffold.project_files` assembles them. Source:
 upstream. Each module lands already asking the registry for what the experiment's protocol moved. After each
 part lands, `make starters` must produce the same tree as `slipwai-cruise-2` for every variant. Targets,
@@ -1138,14 +1138,22 @@ launcher — the first code where the distinction can go wrong. Decided 2026-10-
 | Slice | What | From | Size | Done when |
 |---|---|---|---|---|
 | 2.1 | Move the six package repositories under `ROBCOATVG`, public; create `slipwai-language-java-spring` from the `slice/S10-java-spring` content | cruise-2 | M | Six public repositories, each with its history, each with a green CI of its own |
-| 2.2 | `registry.py`, `loaded.py`, `manifest/` and their tests | cruise-2 | M | The registry answers Members for a fake package in tests |
+| 2.2 | `assets.py` as the path head, `registry.py`, `family_only.py`, `docs/backend-protocol.md` and their tests | cruise-2 | M | The registry answers Members for a fake package in tests, and the contract page and `PROTOCOL` cannot drift |
 | 2.3 | `catalog.json` with no backends, `catalog_merge.py`, `catalog.py` | cruise-2 | M | A fragment merges; a duplicate backend is refused with one line |
-| 2.4 | `language_directory.py`, `language_shape.py`, the loader and admission in two phases | cruise-2 | M | A package directory loads whole or not at all; a bad one reports every fault in one line |
+| 2.4 | `language_directory.py`, `language_shape.py`, `loaded.py`, the loader and admission in two phases, and `registry()` as the built-once entry point | cruise-2 | M | A package directory loads whole or not at all; a bad one reports every fault in one line |
 | 2.5 | `conformance/` and `matrix/` as `python -m` entry points | cruise-2 | M | Both run against the template's toy package |
 | 2.6 | The six packages pinned as submodules under `packages/`; CI runs conformance across all six | cruise-2 | S | Six green rows in the gate, no language variant generated yet |
 | 2.7 | The one refusal shape: a fault type that renders to one line ending with the fixing command | new | M | Every refusal in 2.3 and 2.4 goes through it; the S20 wording tests collapse to one table |
 
 Depends on: phase 1. 2.1 can start on day one.
+
+**Why 2.2 is not what it first said.** It named `registry.py`, `loaded.py` and `manifest/` as one slice.
+They cannot be one: `loaded.py` imports `catalog`, `catalog_merge` and `language_directory`, which are 2.3
+and 2.4, and `manifest/` imports `services`, `selection`, `versions` and `origin`, which are phase 3. So
+`loaded.py` joins 2.4, where the loader it is part of lives, and `manifest/` moves to phase 3, with the
+modules it reads. 2.2 instead brings `assets.py` — only its path head, because `registry.py` resolves a
+package's root through it and nothing else in the keel can — and `family_only.py`, which `registry.load`
+refuses by and which nothing else imports. Found on 2026-10-06 while doing the slice.
 
 ### Phase 3. The scaffold pipeline
 

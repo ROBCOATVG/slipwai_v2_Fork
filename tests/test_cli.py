@@ -12,7 +12,8 @@ import io
 import sys
 import unittest
 
-from slipwai.cli import ROOT, VERSION, main
+from slipwai.assets import ROOT, VERSION
+from slipwai.cli import main
 
 
 class VersionTest(unittest.TestCase):
@@ -21,7 +22,7 @@ class VersionTest(unittest.TestCase):
         self.assertEqual(VERSION, (ROOT / "VERSION").read_text(encoding="utf-8").strip())
 
     def test_the_root_of_a_checkout_is_the_repository_root(self) -> None:
-        """`src/slipwai/cli.py` is two directories below the root; an installed wheel reads `_bundle`."""
+        """`src/slipwai/assets.py` is two directories below the root; an installed wheel reads `_bundle`."""
         self.assertTrue((ROOT / "pyproject.toml").is_file())
 
     def test_version_prints_the_version_and_exits_clean(self) -> None:
