@@ -694,6 +694,15 @@ so that `testing`, `tdd`, `codebase-design`, `hexagonal-architecture`, `cli-desi
 are available to every session from the first commit. Phase 5 brings the toolkit back properly, renamed, and
 replaces this copy. Decided 2026-10-06 in the gaps review (section 10).
 
+**Where version 2 lives.** Everything for version 2 is on GitHub: this fork, the six package repositories,
+the public chandlery channel as a GitHub Pages site, and CI on GitHub Actions. Actions is free for public
+repositories, so the fork and the packages are public from phase 2, when the first gate runs there. Version 1's
+canonical home on the Gitea instance at `git.treyco.dev` is untouched until the merge back; at phase 8 a person
+decides whether Gitea stays canonical with GitHub as the mirror, as today, or GitHub becomes canonical. The
+runner topology notes for the Gitea instance stay valid for version 1 in the meantime. Decided 2026-10-06
+(section 10), on the condition that Actions stays free for public repositories; if it does not, packages and the
+chandlery stay on GitHub and the keel keeps today's split.
+
 **Phase 1. The keel's gate.** Bring back `pyproject.toml`, `VERSION` at `2.0.0.dev0`, a `Makefile` whose
 `verify` target runs lint, typecheck, `check-structure` and test, `scripts/check-structure.py` with its tiers and
 with the import surface as a tier, and CI with the fast jobs only. Source: upstream. Done when the gate is green
@@ -837,6 +846,9 @@ Resolved:
 - [Should → theme D, "Harnesses"] Which harnesses version 2 supports. Answer: every one Spec Kit supports, at
   least Claude Code, Codex, Cursor, Gemini CLI, OpenCode and Kiro; the captain's controls depend on no hook;
   a harness is `unproven` until a captain has run a feature on it.
+- [Should → section 7, "Where version 2 lives"] Which forge runs version 2's CI and the chandlery. Answer:
+  GitHub for everything, public, because Actions is free for public repositories; Gitea's role is decided at the
+  merge back.
 - [Blocker → theme D, "The bridge"] How a click on the dashboard becomes a `told` line. Answer: `slipwai
   bridge` serves the page locally from the harbourmaster's seat and its controls post to it; the Pages copy is
   the same page without controls.
@@ -847,7 +859,6 @@ Resolved:
 
 Open, in order:
 
-- [Should] GitHub or the Gitea instance for CI and tokens.
 - [Should] Unattended permissions and credentials per berth.
 - [Should] Windows and WSL scope.
 - [Should] Whether the chart is a committed file on the event profile; what a typed mark looks like on the standard profile.
