@@ -15,7 +15,7 @@ import unittest
 
 import checkout_packages  # noqa: F401
 
-from slipwai import delivery_facts, images, preflight, unlabel, upgrade, wrappers
+from slipwai import delivery_facts, images, preflight, structure, unlabel, upgrade, wrappers
 
 
 class ImagesTest(unittest.TestCase):
@@ -82,6 +82,25 @@ class WrappersTest(unittest.TestCase):
     def test_a_shell_builtin_is_not_a_tool_the_repository_depends_on(self) -> None:
         self.assertTrue(wrappers.BUILTINS)
         self.assertIn("cd", wrappers.BUILTINS)
+
+
+class StructureTest(unittest.TestCase):
+    """Reading the shape of a repository the keel did not make, from its code graph where it has one."""
+
+    def test_a_dependency_edge_is_one_of_the_kinds_the_graph_records(self) -> None:
+        self.assertIn("calls", structure.DEPENDS)
+        self.assertIn("imports", structure.DEPENDS)
+
+    def test_the_files_that_run_at_import_are_the_ones_a_framework_starts_from(self) -> None:
+        """A module that runs on import cannot be read for its shape without running somebody's server."""
+        for entry in ("manage.py", "wsgi.py", "__main__.py"):
+            with self.subTest(entry=entry):
+                self.assertIn(entry, structure.RUNS_AT_IMPORT)
+
+    def test_the_history_and_the_top_are_bounded(self) -> None:
+        """A survey of an unbounded history is a survey that never finishes on a real repository."""
+        self.assertGreater(structure.HISTORY, 0)
+        self.assertGreater(structure.TOP, 0)
 
 
 class UnlabelTest(unittest.TestCase):
