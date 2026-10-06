@@ -1141,7 +1141,7 @@ open decision left either.
 
 ## 11. The implementation plan
 
-**Progress: 13 of 74 slices done** — phase 1 6/6, phase 2 7/9, phase 3 0/11, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 14 of 74 slices done** — phase 1 6/6, phase 2 7/9, phase 3 1/11, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1337,7 +1337,7 @@ refuses by and which nothing else imports. Found on 2026-10-06 while doing the s
 
 | Slice | What | From | Size | Done when | Status |
 |---|---|---|---|---|---|
-| 3.1 | The parts that wait on nothing: `backends.py`, `naming.py`, `probes.py`, `layout.py`, `selection.py`, `origin.py`, `ecosystems.py`, `npm_workspace.py`, `changelog.py`, then `services.py` | upstream + cruise-2 | L | `make next` shows the first wave empty; each module is in a tier and the gate is green after every one |  |
+| 3.1 | The parts that wait on nothing: `backends.py`, `naming.py`, `probes.py`, `layout.py`, `selection.py`, `origin.py`, `ecosystems.py`, `npm_workspace.py`, `changelog.py`, then `services.py` | upstream + cruise-2 | L | `make next` shows the first wave empty; each module is in a tier and the gate is green after every one | done |
 | 3.2 | `assets.py` grown to the asset trees, `examples.py`, `tooling.py`, `capabilities.py` and `toolkit.py`: the first slice that reads an asset tree | upstream | L | Toolkit files materialise for both profiles |  |
 | 3.3 | The `project/*.py` parts, cut against `make next` rather than against assembly order, one slice per wave: the forty that wait on nothing, then composition and flags, then the pages and the workflows, then the rest | upstream | 6 × M | After each group, `make starters` diffs empty against cruise-2 for the variants that group touches |  |
 | 3.3b | `scaffold.py`, last of the parts and not first: it imports forty of them | upstream + cruise-2 | M | `project_files()` returns a tree for one typescript variant equal to cruise-2's |  |
