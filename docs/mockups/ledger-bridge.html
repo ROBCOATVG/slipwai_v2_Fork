@@ -167,6 +167,21 @@ tfoot td{font-weight:600;border-top:1px solid var(--rule)}
       <div data-pos="stop" role="button" tabindex="0">stop</div><div data-pos="dead slow" role="button" tabindex="0">dead slow</div><div data-pos="slow ahead" role="button" tabindex="0">slow</div><div data-pos="half ahead" class="on" role="button" tabindex="0">half</div><div data-pos="full ahead" role="button" tabindex="0">full</div>
     </div>
     <div class="muted" style="font-size:.78rem;margin-top:6px">Click a setting to change it. Captains pick it up at their next stage boundary.</div>
+    <details id="tune" style="margin-top:8px">
+      <summary style="cursor:pointer;font-size:.82rem;font-weight:500;color:var(--teal)">Fine tune</summary>
+      <div class="kv" style="margin-top:8px;grid-template-columns:auto 1fr;gap:6px 12px;font-size:.84rem;align-items:center">
+        <dt>Captains at once</dt><dd><input class="note" style="margin:0;width:70px" type="number" min="0" max="3" value="2" id="t-boilers"></dd>
+        <dt>Delegates per captain</dt><dd><input class="note" style="margin:0;width:70px" type="number" min="1" max="4" value="1" id="t-fanout"></dd>
+        <dt>Decide (skipper)</dt><dd><select class="note" style="margin:0" id="t-skipper"><option>strong</option><option selected>standard</option><option>fast</option></select></dd>
+        <dt>Implement</dt><dd><select class="note" style="margin:0" id="t-impl"><option>strong</option><option selected>standard</option><option>fast</option></select></dd>
+        <dt>Review</dt><dd><select class="note" style="margin:0" id="t-review"><option selected>strong</option><option>standard</option><option>fast</option></select></dd>
+        <dt>Demo (hand)</dt><dd><select class="note" style="margin:0" id="t-hand"><option>strong</option><option>standard</option><option selected>fast</option></select></dd>
+        <dt>Budget per slice</dt><dd><input class="note" style="margin:0;width:90px" value="40M" id="t-slice"></dd>
+        <dt>Budget per day</dt><dd><input class="note" style="margin:0;width:90px" value="150M" id="t-day"></dd>
+      </div>
+      <div class="act"><button class="btn primary" id="t-apply">Apply</button><button class="btn" id="t-reset">Reset to half ahead</button></div>
+      <div class="muted" style="font-size:.76rem;margin-top:6px">Writes <code>harbour.json</code> through the local server, the same checked edit as <code>slipwai telegraph --set</code>. Captains pick it up at their next boundary.</div>
+    </details>
   </div>
 
   <div class="card c3">
@@ -422,6 +437,14 @@ tfoot td{font-weight:600;border-top:1px solid var(--rule)}
     if(act==='restore'){setSpeed('half ahead',true);settle(li,'<b>Restored</b> 2 delegates per captain · '+now());return;}
     if(act==='ok'){settle(li,'<b>Kept</b> at 1 delegate per captain · '+now());logLine('HARB','throttle','kept by Luke');return;}
   });
+  document.getElementById('t-apply').addEventListener('click',function(){
+    var v=['boilers='+document.getElementById('t-boilers').value,'fanout='+document.getElementById('t-fanout').value,'skipper='+document.getElementById('t-skipper').value,'implement='+document.getElementById('t-impl').value,'review='+document.getElementById('t-review').value,'hand='+document.getElementById('t-hand').value,'bunker_per_slice='+document.getElementById('t-slice').value,'bunker_per_day='+document.getElementById('t-day').value].join(' ');
+    logLine('HARB','settings','telegraph --set '+v+' by Luke',true);
+    var big=document.getElementById('tele-big');if(big.textContent.indexOf('adjusted')<0)big.textContent=big.textContent+', adjusted';
+    document.getElementById('tele-sub').textContent=document.getElementById('t-boilers').value+' captains at once · '+document.getElementById('t-fanout').value+' delegate(s) per captain · set '+now()+' by Luke';
+    say('Settings applied. Captains pick them up at their next boundary.');
+  });
+  document.getElementById('t-reset').addEventListener('click',function(){document.getElementById('t-boilers').value=2;document.getElementById('t-fanout').value=2;document.getElementById('t-skipper').value='standard';document.getElementById('t-impl').value='standard';document.getElementById('t-review').value='strong';document.getElementById('t-hand').value='fast';document.getElementById('t-slice').value='40M';document.getElementById('t-day').value='150M';setSpeed('half ahead');});
   var subs={'stop':'every captain parks at its next stage boundary','dead slow':'1 captain · 1 delegate · cheapest roles','slow ahead':'1 captain · 2 delegates','half ahead':'2 of 3 captains running · 2 delegates per captain','full ahead':'3 of 3 captains running · full fan-out · strongest roles'};
   function setSpeed(pos,fromRestore){document.querySelectorAll('#tele div').forEach(function(d){d.classList.toggle('on',d.getAttribute('data-pos')===pos)});document.getElementById('tele-big').textContent=pos.charAt(0).toUpperCase()+pos.slice(1);document.getElementById('tele-sub').textContent=subs[pos]+' · set '+now()+' by Luke';logLine('HARB','speed',pos+' set by Luke'+(fromRestore?' (throttle lifted)':''),true);say('Speed set to '+pos+'. Captains pick it up at their next boundary.');}
   document.querySelectorAll('#tele div').forEach(function(d){d.addEventListener('click',function(){setSpeed(d.getAttribute('data-pos'))});d.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();setSpeed(d.getAttribute('data-pos'))}});});

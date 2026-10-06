@@ -39,8 +39,8 @@ version 1, it uses version 1's own names and says so.
 | **Berth** | The provisioned place where one captain works: a git worktree, environment variables, an allocated block of ports, a database, and scratch directories. `slipwai berth add`, `slipwai berth status` and `slipwai berth remove` manage berths | "workstation", "lane" |
 | **Captain** | The outer loop for one fairway, in both modes. The captain reads the logs, works out the state of the fairway from the logs and trunk, gives clearance, claims a slice, dispatches an iteration, enforces every stage boundary, and appends to the deck log. There is one captain per fairway. Under `/drive` the captain brings every question and demo to the person. Under `/cruise` the skipper answers and the hand demos | "runner", `cruise.py run` |
 | **Harbourmaster** | The part the captains share, one process per harbour. It allocates berths, is the only writer of the harbour log, draws the fleet board and the bridge, holds the flags, and answers the telegraph. Under `/drive` it runs inside the person's session; under `/cruise` it runs on its own. It is not a merge queue | "integrator" |
-| **Deck log** | A fairway's own append-only log, committed with the work, written only by that fairway's captain. Its lines are: claimed, mark set, demo, accepted, merged, decision, told, read, heartbeat, stowed, parked | "stream log" |
-| **Harbour log** | The one append-only log that every fairway reads and only the harbourmaster writes. Its lines are: mark set, flag hoisted, berth allocated, fires banked, park for a person, telegraph rung. A captain never appends to it; the harbourmaster copies what other fairways need from each deck log | "cross-stream log" |
+| **Deck log** | A fairway's own append-only log at `.slipwai/logs/<feature>/<fairway>.jsonl`, ignored by git and written only by that fairway's captain. The harbourmaster syncs it between machines through the ref `refs/slipwai/logs`, never through trunk. Its lines are: claimed, mark set, demo, accepted, merged, decision, told, read, heartbeat, stowed, parked | "stream log" |
+| **Harbour log** | The one append-only log at `.slipwai/logs/harbour.jsonl`, ignored by git, that every fairway reads and only the harbourmaster writes. Its lines are: mark set, flag hoisted, berth allocated, fires banked, park for a person, telegraph rung. A captain never appends to it; the harbourmaster copies what other fairways need from each deck log | "cross-stream log" |
 | **Chart** | The contracts, written before the split. The chart names the fairways, the marks each slice sets, the marks each slice steers by, and the paths each fairway owns. On the event-modelling profile the chart is derived from the event model. On the standard profile a `/chart` stage writes it | "contract map", "streams manifest" |
 | **Mark** | One published contract that another slice steers by: an event, a route, a schema or a port. A mark is set once and never moved. The files that hold marks only grow | "contract entry" |
 | **Clearance** | The rule that lets a slice start. A slice has clearance when every mark it steers by has been set by a slice that is planned or implemented. A slice sets its own marks itself, as its first stage, in its own worktree | "consumption gate" (issue #32) |
@@ -322,7 +322,11 @@ numbers would only shrink the window. Version 2 removes both the counter and the
   mint the same id. Nothing is ever renumbered. A citation never goes stale. When a reader wants a global order,
   the log's timestamps give it.
 - Every append-only artefact is per fairway: `fairways/<name>/decisions.md`, `adversary-log.md`,
-  `benchmark.jsonl`, the register, and the deck log. Two fairways never touch one file. The feature-level
+  `benchmark.jsonl`, the register, and the deck log. Two fairways never touch one file. The logs themselves are
+  not committed: they live under `.slipwai/logs/`, which `.gitignore` lists, because heartbeat and token lines
+  arrive every few seconds and have no place in trunk's history. The harbourmaster pushes and fetches them
+  through the ref `refs/slipwai/logs`, so a captain on another machine reads the same lines without a commit
+  on `main`. What is committed is what the logs render: the decisions, the register, the chart fragments. The feature-level
   `decisions.md`, adversary log and register are rendered from the fairway files on `main` by the
   harbourmaster. They are never edited by hand. This is the same pattern as `make model`, which renders the
   diagrams.
@@ -359,7 +363,9 @@ raises the pressure to match. The person holds the telegraph. The harbourmaster 
   telegraph half-ahead` sets them as a group. Each can be set alone afterwards: `slipwai telegraph --set
   boilers=2 fanout=1 bunker_per_day=120M`, and `/model-delegation-settings` for the roles, the same checked
   edit the version 1 settings commands make. A position with a changed number shows on the fleet board as
-  `half-ahead, adjusted`, and ringing a position again resets every number to that position's group.
+  `half-ahead, adjusted`, and ringing a position again resets every number to that position's group. The
+  bridge's local copy has the same controls: a fine-tune panel under the speed setting for boilers, delegates
+  per captain, the role per stage, and the two budgets.
 - **The gauges.** The benchmark bracket already records tokens and wall time per stage. The captain appends them
   to the deck log. The harbourmaster sums them at every boundary into two readings on the fleet board: the
   pressure gauge, which is tokens per hour now, per fairway and in total; and the bunker, which is what is left
@@ -437,10 +443,14 @@ Three rules hold the bridge to the same standard as the fleet board.
 
 - **It is computed, never written.** Every instrument folds from files that the loop already writes. The bridge
   keeps no state. If the bridge disagrees with trunk, trunk is right and the bridge is a bug.
-- **It is the same page under `/drive` and under `/cruise`.** Under `/drive`, the person's session refreshes it
-  at every demo stop and on `slipwai bridge`. Under `/cruise`, the harbourmaster refreshes it on every harbour
-  log line. Under both, it is published to the project's existing Pages site, next to the event model that the
-  `event-model.yml` workflow already renders, so a stakeholder with no checkout can read it.
+- **It is the same page under `/drive` and under `/cruise`, and it comes in two copies.** `slipwai bridge`
+  serves the page on localhost from the harbourmaster's seat. That copy has the controls: a person answers a
+  question, hoists or strikes a flag, accepts an ADR, rings the telegraph or tunes a number from the page, and
+  each click is a request to the local server, which appends the `told` line, syncs the logs, and re-renders.
+  The copy on the project's Pages site, next to the event model that the `event-model.yml` workflow already
+  renders, is the same page without the controls: read-only, for a stakeholder with no checkout. Under
+  `/drive` the person's session is the server; under `/cruise` the harbourmaster process is. Nothing on either
+  copy is state of its own.
 - **It is for the owner of one product.** The fleet board is for whoever runs the harbour, and it may show many
   products. The bridge never shows another product. An organisation that wants both opens both.
 
@@ -782,12 +792,16 @@ Resolved:
   toolkit. Answer: nothing does; plain sessions with the toolkit's skills copied in, people merge.
 - [Blocker → section 1, theme D] Who writes the harbour log. Answer: only the harbourmaster, one process per
   harbour; captains write their deck log and nothing else; the harbourmaster copies across what others need.
+- [Blocker → theme D, "The bridge"] How a click on the dashboard becomes a `told` line. Answer: `slipwai
+  bridge` serves the page locally from the harbourmaster's seat and its controls post to it; the Pages copy is
+  the same page without controls.
+- [Should → section 1, theme D] Where the logs live. Answer: `.slipwai/logs/`, git-ignored, synced by the
+  harbourmaster through `refs/slipwai/logs`; only what they render is committed.
 - [Should → theme D, "The telegraph"] Whether the numbers under a position can be tuned alone. Answer: yes,
   `slipwai telegraph --set` and `/model-delegation-settings`; the board shows the position as adjusted.
 
 Open, in order:
 
-- [Blocker] Answering in the dashboard needs a channel back to the logs; the plan calls the bridge a static page.
 - [Blocker] Where the package repositories live (section 9).
 - [Should] How fairways are worked out when a version 1 project migrates (section 6 has a first answer).
 - [Should] Supported harnesses in version 2.

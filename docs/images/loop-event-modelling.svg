@@ -48,7 +48,7 @@ text{fill:#172129}.lbl{fill:#44525c}.arr{stroke:#172129;stroke-width:1.2;fill:no
 <path class="arr " d="M 1380,96.0 L 1524,96.0" marker-end="url(#ah)"/>
 <rect class="box " x="1524" y="44" width="206" height="112" rx="3"/>
 <text x="1627.0" y="64.2" text-anchor="middle" font-size="12" font-weight="600">Harbour log</text>
-<text x="1627.0" y="80.2" text-anchor="middle" font-size="12">append-only, committed</text>
+<text x="1627.0" y="80.2" text-anchor="middle" font-size="12">append-only · git-ignored · one writer</text>
 <text x="1627.0" y="96.2" text-anchor="middle" font-size="12">marks set · flag hoists</text>
 <text x="1627.0" y="112.2" text-anchor="middle" font-size="12">boilers · fires banked · parks</text>
 <text x="1627.0" y="128.2" text-anchor="middle" font-size="12">ids carry their fairway:</text>
@@ -169,7 +169,7 @@ text{fill:#172129}.lbl{fill:#44525c}.arr{stroke:#172129;stroke-width:1.2;fill:no
 <text class="lbl" x="1073.0" y="550" text-anchor="start" font-size="11">below the bar</text>
 <rect class="box " x="1524" y="256" width="206" height="330" rx="3"/>
 <text x="1627.0" y="329.2" text-anchor="middle" font-size="12" font-weight="600">Deck log</text>
-<text x="1627.0" y="345.2" text-anchor="middle" font-size="12">fairways/&lt;name&gt;/log.jsonl</text>
+<text x="1627.0" y="345.2" text-anchor="middle" font-size="12">.slipwai/logs/&lt;f&gt;/&lt;fairway&gt;.jsonl</text>
 <text x="1627.0" y="361.2" text-anchor="middle" font-size="12"></text>
 <text x="1627.0" y="377.2" text-anchor="middle" font-size="12">claimed · mark-set</text>
 <text x="1627.0" y="393.2" text-anchor="middle" font-size="12">demo · accepted · merged</text>
@@ -188,7 +188,7 @@ text{fill:#172129}.lbl{fill:#44525c}.arr{stroke:#172129;stroke-width:1.2;fill:no
 <path class="arr " d="M 1460,450.0 L 1524,450.0" marker-end="url(#ah)"/>
 <text class="lbl" x="1478" y="466.0" text-anchor="middle" font-size="11">merged</text>
 <path class="arr hl " d="M 129.0,490 L 129.0,506 L 1508,506 L 1508,178 L 1627,178 L 1627,156" marker-end="url(#ah-hl)"/>
-<text class="lbl" x="200" y="503" text-anchor="start" font-size="11">mark set → other fairways re-derive clearance</text>
+<text class="lbl" x="200" y="503" text-anchor="start" font-size="11">mark set → harbourmaster copies it to the harbour log → other fairways re-derive clearance</text>
 <rect class="band" x="16" y="704" width="1728" height="220" rx="4"/><text class="bandt" x="28" y="721" font-size="11">HARBOUR · what every fairway touches, the harbourmaster, and a person</text>
 <rect class="trunk" x="30" y="736" width="1430" height="38" rx="3"/>
 <text x="745" y="759" text-anchor="middle" font-size="12" font-weight="600">main · a merge is as dark as the release mode says · first come across fairways, split order within · composition root rendered from the chart</text>
@@ -210,8 +210,8 @@ text{fill:#172129}.lbl{fill:#44525c}.arr{stroke:#172129;stroke-width:1.2;fill:no
 <path class="arr dash" d="M 740,820 L 740,774" marker-end="url(#ah)"/>
 <rect class="box " x="900" y="818" width="300" height="96" rx="3"/>
 <text x="1050.0" y="838.2" text-anchor="middle" font-size="12" font-weight="600">Harbourmaster</text>
-<text x="1050.0" y="854.2" text-anchor="middle" font-size="12">the engine room: lights and puts out boilers</text>
-<text x="1050.0" y="870.2" text-anchor="middle" font-size="12">fleet board = fold(every log)</text>
+<text x="1050.0" y="854.2" text-anchor="middle" font-size="12">only writer of the harbour log</text>
+<text x="1050.0" y="870.2" text-anchor="middle" font-size="12">fleet board + bridge = fold(every log)</text>
 <text x="1050.0" y="886.2" text-anchor="middle" font-size="12">pressure gauge · bunker · banks the fires</text>
 <text x="1050.0" y="902.2" text-anchor="middle" font-size="12">the flags · the inbox</text>
 <path class="arr " d="M 1580,586 L 1580,690 L 1050,690 L 1050,818" marker-end="url(#ah)"/>

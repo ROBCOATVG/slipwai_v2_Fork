@@ -19,7 +19,7 @@ text{fill:#172129}.lbl{fill:#44525c}.arr{stroke:#172129;stroke-width:1.2;fill:no
 <rect class="box " x="30" y="212" width="180" height="64" rx="3"/>
 <text x="120.0" y="232.2" text-anchor="middle" font-size="12" font-weight="600">Captain A</text>
 <text x="120.0" y="248.2" text-anchor="middle" font-size="12">appends mark-set</text>
-<text x="120.0" y="264.2" text-anchor="middle" font-size="12">to the harbour log</text>
+<text x="120.0" y="264.2" text-anchor="middle" font-size="12">to its own deck log</text>
 <path class="arr " d="M 120,128 L 120,212" marker-end="url(#ah)"/>
 <text class="lbl" x="128" y="164.0" text-anchor="start" font-size="11">its first stage</text>
 <rect class="box " x="260" y="64" width="200" height="64" rx="3"/>
@@ -34,7 +34,7 @@ text{fill:#172129}.lbl{fill:#44525c}.arr{stroke:#172129;stroke-width:1.2;fill:no
 <text x="700.0" y="177.2" text-anchor="middle" font-size="12">set by A3 · schema v1 · commit</text>
 <text x="700.0" y="193.2" text-anchor="middle" font-size="12">merged A3 (later)</text>
 <path class="arr hl " d="M 210,244 L 480,244 L 480,165 L 520,165" marker-end="url(#ah-hl)"/>
-<text class="lbl" x="340" y="238" text-anchor="middle" font-size="11">append</text>
+<text class="lbl" x="340" y="238" text-anchor="middle" font-size="11">harbourmaster copies it across</text>
 <rect class="band" x="744" y="16" width="640" height="288" rx="4"/><text class="bandt" x="756" y="33" font-size="11">FAIRWAY · Billing</text>
 <rect class="box " x="760" y="212" width="180" height="64" rx="3"/>
 <text x="850.0" y="232.2" text-anchor="middle" font-size="12" font-weight="600">Captain B</text>
