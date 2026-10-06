@@ -75,6 +75,20 @@ class GeneratedProjectTest(unittest.TestCase):
                          (REPOSITORY / "VERSION").read_text(encoding="utf-8").strip())
         self.assertIn("toy", recorded["generator"]["languages"])
 
+    def test_no_script_the_keel_ships_reads_or_writes_in_the_machines_locale(self) -> None:
+        """Every one of these runs on somebody else's machine, under whatever locale it has. Python
+        without an explicit encoding uses that locale's codec — cp1252 on Windows — and the pruner
+        failed every generation there until this was swept. A shipped script is the worst place for it:
+        the keel's own copy is one machine's problem, and a shipped one is every project's."""
+        for path in sorted(self.project.rglob("*.py")):
+            if "__pycache__" in path.parts:
+                continue
+            text = path.read_text(encoding="utf-8")
+            for line in text.splitlines():
+                if ".read_text(" in line or ".write_text(" in line:
+                    with self.subTest(file=str(path.relative_to(self.project)), line=line.strip()[:70]):
+                        self.assertIn("encoding=", line)
+
     def test_the_keel_left_no_placeholder_behind(self) -> None:
         """`__APP__`, `__VERIFY__`, `__IMAGE__` and the rest are substituted, never shipped."""
         for path in sorted(self.project.rglob("*")):
