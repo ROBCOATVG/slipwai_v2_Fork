@@ -67,10 +67,9 @@ known-first-party = ["slipwai"]
 [tool.mypy]
 # What `make typecheck` runs. `files` rather than arguments so the gate and a bare `mypy` agree; `mypy_path`
 # so a script or a test that imports `slipwai` resolves it from `src/` the way `PYTHONPATH=src` does at run
-# time. 3.11 because that is the floor this keel promises. `scripts` joins the list in the slice that
-# creates it — mypy fails on a path that is not there.
+# time. 3.11 because that is the floor this keel promises.
 python_version = "3.11"
-files = ["src", "tests"]
+files = ["src", "scripts", "tests"]
 mypy_path = "src"
 check_untyped_defs = true
 warn_unused_ignores = true

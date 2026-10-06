@@ -1,0 +1,287 @@
+#!/usr/bin/env python3
+"""Fail when the keel's own source stops having the shape it claims.
+
+The generated projects get `scripts/check-imports.py`, which fails a build when domain code names an outer
+layer. This is the same idea turned on the keel: the rules below are the architecture, written where they
+can be enforced rather than only described, so a module cannot quietly start depending on the command line
+or grow back into a second `generate.py`.
+
+Four rules, each with a failure it exists to prevent:
+
+1. **Direction.** Imports point inward, toward the tiers that know less. A part of the generated repository
+   may read the selection; the selection may not read a part. Without this, `selection` gains an import of
+   `project.makefile` "just to reuse a string" and the thing every module depends on starts depending on
+   everything.
+2. **No cycles.** Python enforces this at import time, but only for the paths that actually get imported —
+   and it reports it as an ImportError from whichever module happened to be first. Checked here, a cycle is
+   a named pair before anyone pays for it.
+3. **Size.** A module over the budget is the state this package was split out of: a file nobody reads
+   end to end, whose contents are found by grep and edited in the dark.
+4. **The import surface.** A language package may import only the keel modules `import-surface.txt` lists,
+   and that file may list only modules the keel has. Without it, a package leans on a module nobody
+   promised it, and a rename inside the keel breaks a language built somewhere this repository cannot see.
+
+The keel knows no package in the other direction either: an absolute import of a `slipwai_language_*`
+module anywhere in `src/` is a violation, whichever package it names.
+
+Every module the keel has must be named in TIERS. That is deliberate friction. A module arrives with the
+slice that brings it back, and the slice says out loud which tier it belongs to.
+"""
+
+from __future__ import annotations
+
+import ast
+import importlib.util
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+KEEL = ROOT / "src/slipwai"
+
+# Each tier may import from earlier tiers and from nothing later. `project.*` is one tier rather than a
+# stack of sub-tiers on purpose: within it the order is enforced by rule 2, which needs no maintenance, and
+# a hand-kept sub-tier list would be a second place to update every time a part is added.
+#
+# The tiers are the architecture and they are all declared here from the first slice. Their members are
+# not: a tier is empty until the phase that brings its modules back fills it, one slice at a time.
+TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    # Where the keel's own material is, how a refusal is raised, how a version string reads, what the entry
+    # for the release in flight is made of, and what a project's name becomes in each ecosystem's namespace.
+    ("foundation", ()),
+    # What a caller may ask for, what an option declares about the feature it owns, what an optional
+    # dev-tooling hook is, where a project goes to production, what differs per package and where each
+    # backend answers its probes. The registry and the loader land here in phase 2.
+    ("contract", ()),
+    # One validated answer per axis, which applications a project has, and what they add up to being able
+    # to do.
+    ("answers", ()),
+    # One module per part of the repository being generated.
+    ("parts", ()),
+    # The whole of a project, assembled and written, and the whole of it again from a newer keel.
+    ("assembly", ()),
+    # The command line, and the entry point the executable is built from.
+    ("edge", ("cli", "__main__")),
+    # The package's own `__init__`: last, so it may name anything and nothing may name it.
+    ("package", ("__init__",)),
+)
+
+# A module over this is the file this package was split out of. Tests get the same budget: a suite nobody
+# reads is a suite whose duplicate coverage nobody notices.
+MODULE_BUDGET = 350
+# A package facade dispatches; anything longer is behaviour hiding somewhere no one looks for it.
+FACADE_BUDGET = 40
+
+# A language is a package in a directory of its own (`slipwai_language_<name>`), loaded by name at run
+# time. Extensions are not here: an extension's executable half is the `init.py` that runs inside a
+# generated project, where the keel is not installed and nothing of it can be imported.
+PACKAGE_PREFIX = "slipwai_language_"
+PACKAGES = ROOT / "packages"
+SURFACE = ROOT / "import-surface.txt"
+
+
+def tier_of(module: str) -> tuple[int, str]:
+    """Which tier a dotted module name belongs to, by its first matching prefix."""
+    for index, (name, prefixes) in enumerate(TIERS):
+        for prefix in prefixes:
+            if module == prefix or module.startswith(f"{prefix}."):
+                return index, name
+    raise SystemExit(f"check-structure: {module} belongs to no declared tier — add it to TIERS")
+
+
+def module_name(path: Path) -> str:
+    relative = path.relative_to(KEEL).with_suffix("")
+    parts = [part for part in relative.parts if part != "__init__"]
+    return ".".join(parts) if parts else "__init__"
+
+
+def imported_modules(path: Path, text: str) -> list[tuple[int, str]]:
+    """Every sibling module this one imports, as (line, dotted name). Absolute imports are not ours."""
+    here = path.relative_to(KEEL).parent.parts
+    found: list[tuple[int, str]] = []
+    for node in ast.walk(ast.parse(text)):
+        if not isinstance(node, ast.ImportFrom) or not node.level:
+            continue
+        # `from .x import y` is level 1 and relative to this module's own package; each extra dot climbs one.
+        base = list(here[: len(here) - (node.level - 1)])
+        if node.module is None:
+            # `from . import x, y` names submodules of the package, not members of a module.
+            found += [(node.lineno, ".".join([*base, alias.name])) for alias in node.names]
+            continue
+        target = ".".join([*base, node.module])
+        if target:
+            found.append((node.lineno, target))
+    return found
+
+
+def package_imports(text: str) -> list[tuple[int, str]]:
+    """Every absolute import of a language package in a module, as (line, top-level module), anywhere in it."""
+    found: list[tuple[int, str]] = []
+    for node in ast.walk(ast.parse(text)):
+        if isinstance(node, ast.Import):
+            names = [alias.name for alias in node.names]
+        elif isinstance(node, ast.ImportFrom) and not node.level and node.module:
+            names = [node.module]
+        else:
+            continue
+        found += [(node.lineno, name.split(".")[0]) for name in names if name.startswith(PACKAGE_PREFIX)]
+    return found
+
+
+def import_surface(listing: str) -> set[str]:
+    """The modules `import-surface.txt` lists: one dotted name per line, blanks and `#` comments ignored."""
+    lines = (line.split("#", 1)[0].strip() for line in listing.splitlines())
+    return {line for line in lines if line}
+
+
+def keel_modules() -> set[str]:
+    """Every module the keel has, by the dotted name a package imports it by (`slipwai.registry`)."""
+    return {"slipwai" if name == "__init__" else f"slipwai.{name}" for name in map(module_name, KEEL.rglob("*.py"))}
+
+
+def keel_imports(text: str, modules: set[str]) -> list[tuple[int, str]]:
+    """Every keel module a package module imports, as (line, dotted name), the way Python resolves it:
+    `from slipwai import registry` names `slipwai.registry`, a module the keel has, and `from slipwai import x`
+    the package `slipwai` where `x` is a name in it rather than a module of its own."""
+    found: list[tuple[int, str]] = []
+    for node in ast.walk(ast.parse(text)):
+        if isinstance(node, ast.Import):
+            found += [(node.lineno, alias.name) for alias in node.names if alias.name.split(".")[0] == "slipwai"]
+        elif isinstance(node, ast.ImportFrom) and not node.level and (node.module or "").split(".")[0] == "slipwai":
+            for alias in node.names:
+                named = f"{node.module}.{alias.name}"
+                found.append((node.lineno, named if named in modules else str(node.module)))
+    return found
+
+
+def read_module(path: Path) -> tuple[str, str | None]:
+    """A module's text, decoded as Python decodes it (UTF-8, or the encoding it declares), and the one line naming it
+    when it cannot be decoded or parsed, so the gate reports that rather than a traceback."""
+    relative = path.relative_to(ROOT).as_posix()
+    try:
+        text = importlib.util.decode_source(path.read_bytes())
+        ast.parse(text)
+    except (SyntaxError, UnicodeDecodeError, ValueError) as error:
+        message = error.msg if isinstance(error, SyntaxError) else str(error)
+        line = f" (line {error.lineno})" if isinstance(error, SyntaxError) and error.lineno else ""
+        return "", f"{relative}: does not parse: {message}{line}"
+    return text, None
+
+
+def surface_violations(modules: set[str]) -> tuple[int, list[str]]:
+    """How many packages were read, and each package module's import of a keel module the surface omits.
+
+    The surface is held whether or not a package exists to break it: a line naming a module the keel does
+    not have is a promise nobody can keep, and the empty list of phase 1 is checked the same way.
+    """
+    surface = import_surface(SURFACE.read_text(encoding="utf-8") if SURFACE.is_file() else "")
+    violations = [
+        f"{SURFACE.name}: the import surface lists {module}, which the keel does not have"
+        for module in sorted(surface - modules)
+    ]
+    if not PACKAGES.is_dir():
+        return 0, violations
+    # An empty package directory is a clone that skipped the submodules: nothing in it can be checked.
+    violations += [
+        f"packages/{entry.name} is not checked out: git submodule update --init packages/{entry.name}"
+        for entry in sorted(PACKAGES.iterdir())
+        if entry.is_dir() and not entry.name.startswith(".") and not any(entry.iterdir())
+    ]
+    packages = sorted(PACKAGES.glob(f"*/{PACKAGE_PREFIX}*/"))
+    for directory in packages:
+        language = directory.parent.name
+        for path in sorted(directory.rglob("*")):
+            relative = path.relative_to(ROOT).as_posix()
+            if path.is_symlink():
+                violations.append(f"{relative}: a symlink inside language {language}'s source, whose target this gate "
+                                  "does not read; a package holds its own files")
+                continue
+            if "__pycache__" not in path.parts and path.suffix in (".pyc", ".so", ".pyd"):
+                violations.append(f"{relative}: a compiled module in language {language}'s source, which this gate "
+                                  "cannot read; ship the .py")
+            if path.suffix != ".py" or not path.is_file():
+                continue
+            text, fault = read_module(path)
+            if fault:
+                violations.append(fault)
+                continue
+            violations += [
+                f"{relative}:{line}: language {language} imports {module}, which is not on the import surface "
+                f"listed in {SURFACE.name}"
+                for line, module in sorted(set(keel_imports(text, modules))) if module not in surface
+            ]
+    return len(packages), violations
+
+
+def main() -> int:
+    modules = sorted(path for path in KEEL.rglob("*.py"))
+    packages, violations = surface_violations(keel_modules())
+    graph: dict[str, set[str]] = {}
+
+    for path in modules:
+        relative = path.relative_to(ROOT).as_posix()
+        text, fault = read_module(path)
+        if fault:
+            violations.append(fault)
+            continue
+        name = module_name(path)
+        length = len(text.splitlines())
+        budget = FACADE_BUDGET if path.name == "__init__.py" else MODULE_BUDGET
+        if length > budget:
+            what = "package facade" if path.name == "__init__.py" else "module"
+            violations.append(f"{relative}: {length} lines in one {what}, over the {budget}-line budget")
+        if ast.get_docstring(ast.parse(text)) is None:
+            violations.append(f"{relative}: no module docstring saying what part this is")
+
+        violations += [
+            f"{relative}:{line}: the keel imports a language package: {package}"
+            for line, package in package_imports(text)
+        ]
+        index, tier = tier_of(name)
+        graph[name] = set()
+        for line, target in imported_modules(path, text):
+            target_index, target_tier = tier_of(target)
+            graph[name].add(target)
+            if target_index > index:
+                violations.append(
+                    f"{relative}:{line}: {tier} imports {target_tier}: {name} -> {target}. "
+                    "Imports point inward; move what is shared into a tier both may read."
+                )
+
+    # Rule 2: a cycle anywhere, reported as the pair that closes it rather than as an ImportError later.
+    for name in sorted(graph):
+        seen: set[str] = set()
+        stack = [(name, [name])]
+        while stack:
+            current, route = stack.pop()
+            for target in sorted(graph.get(current, ())):
+                if target == name:
+                    violations.append(f"import cycle: {' -> '.join([*route, target])}")
+                    stack.clear()
+                    break
+                if target not in seen:
+                    seen.add(target)
+                    stack.append((target, [*route, target]))
+
+    for path in sorted((ROOT / "tests").glob("*.py")):
+        text, fault = read_module(path)
+        if fault:
+            violations.append(fault)
+            continue
+        length = len(text.splitlines())
+        if length > MODULE_BUDGET:
+            relative = path.relative_to(ROOT).as_posix()
+            violations.append(f"{relative}: {length} lines in one suite, over the {MODULE_BUDGET}-line budget")
+
+    if violations:
+        print("check-structure: the source does not have the shape it claims\n", file=sys.stderr)
+        for violation in sorted(set(violations)):
+            print(f"  {violation}", file=sys.stderr)
+        return 1
+    surface = import_surface(SURFACE.read_text(encoding="utf-8") if SURFACE.is_file() else "")
+    print(f"check-structure: {len(modules)} modules, {len(TIERS)} tiers, no upward imports and no cycles; "
+          f"{packages} language packages import only the {len(surface)} modules on the surface")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

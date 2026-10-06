@@ -152,8 +152,11 @@ Version 2 keeps these decisions from the experiment.
 - **Packages load from a directory, not from Python entry points.** A frozen executable cannot run `pip
   install` into itself. One directory loader serves the wheel, the executable and a checkout alike.
 - **Compatibility is a range that the package declares.** It is not an equality test on `schemaVersion`.
-- **The import surface is part of the schema.** A package may import exactly twenty keel modules.
-  `check-structure` holds that list, by file and by line. This is what makes a change to the keel safe.
+- **The import surface is part of the schema.** A package may import exactly twenty keel modules. In the
+  experiment the list lived in a prose contract that the gate parsed; in version 2 it is `import-surface.txt`
+  at the repository root, which `check-structure` holds in both directions — a package that imports off the
+  list fails, and a line naming a module the keel does not have fails too. This is what makes a change to
+  the keel safe.
 - **A package is either whole in its directory or not there.** Installation stages the files, checks the
   sha256, and renames the directory atomically.
 - **Every refusal ends with the command that fixes it.** The idea is right. The cost is described below.
@@ -1100,7 +1103,7 @@ against.
 |---|---|---|---|---|
 | 1.1 | `pyproject.toml`, `VERSION` at `2.0.0.dev0`, `requirements-dev.txt`, the `slipwai` launcher, and `src/slipwai/` as `__init__`, `__main__` and a `cli.py` that answers `--version` | upstream | S | A checkout, an editable install and a built wheel all print `2.0.0.dev0` through `slipwai`, `python -m slipwai` and `./slipwai`; ruff, mypy and `tests/test_cli.py` are green |
 | 1.2 | `Makefile` with `lint`, `typecheck`, `unit`, `test` and `verify`, and `scripts/verify` behind them; `verify` is lint, typecheck and test, and `unit` is the fast half, named by a `SLOW` list | upstream, `unit` new | S | `make verify` green from a clean checkout, `.python-tools` installed on demand; `make unit` runs the fast tests alone |
-| 1.3 | `scripts/check-structure.py` with its tiers, and the import surface as a tier that reads a list file; `check-structure` added to the `Makefile` and to `verify` | cruise-2 | M | The gate refuses an import against the direction; the surface list is empty and held |
+| 1.3 | `scripts/check-structure.py` with its tiers, `import-surface.txt` as the list it reads, and `check-structure` added to the `Makefile` and to `verify` | cruise-2 | M | The gate refuses an import against the direction, a cycle, an oversized module, a missing docstring, a keel import of a package and a package import off the surface, each proven by a test; the surface list is empty and held |
 | 1.4 | CI: `verify.yml` with lint, typecheck, structure and unit on Linux, macOS, Windows and WSL; no matrix, no languages | upstream, cut down | M | Green on the fork, public, under Actions |
 | 1.5 | `AGENTS.md` for the fork: section 8's rules, the two gates, and nothing about versioning yet | new | S | A session reads it and knows the rules |
 | 1.6 | `GLOSSARY.md` at the repository root, extracted from section 1 and kept in step with it | new | S | The `wtf` skill and every session read one glossary |

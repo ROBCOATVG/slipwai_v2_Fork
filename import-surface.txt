@@ -1,0 +1,15 @@
+# The keel modules a language package may import.
+#
+# This file is the schema, not a description of one. `scripts/check-structure.py` reads it and fails a
+# package that imports a keel module not listed here, and fails this file if it lists a module the keel
+# does not have. Nothing copies it: a package's contract points at this path.
+#
+# One dotted module name per line. Blank lines and `#` comments are ignored.
+#
+# The surface is empty until phase 2 brings the registry back. It grows one line at a time, and each line
+# is a promise: a module on this list cannot be renamed or removed without breaking a package built
+# somewhere this repository cannot see. The list being short is the point — twenty modules is the ceiling
+# the plan sets, not a target.
+#
+# Extensions are not on this schema. An extension's executable half is the `init.py` that runs inside a
+# generated project, where the keel is not installed and nothing of it can be imported.

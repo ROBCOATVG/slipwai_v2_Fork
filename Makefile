@@ -39,9 +39,11 @@ UNIT_TESTS := $(filter-out $(SLOW),$(ALL_TESTS))
 unit: ## The fast tests only — the per-increment gate, with the slow modules left out
 	$(if $(UNIT_TESTS),PYTHONPATH=src:tests python3 -m unittest $(UNIT_TESTS),@echo 'unit: no test modules yet')
 
-# `check-structure` joins this list in slice 1.3, with the script that holds the import surface. It is not
-# listed here yet because a gate that names a check it does not run is worse than one that does not claim it.
+.PHONY: check-structure
+check-structure: ## Fail when a module imports against the declared direction, cycles, or outgrows its budget
+	python3 scripts/check-structure.py
+
 .PHONY: verify
-verify: lint typecheck test ## Full local gate — the same one CI runs
+verify: lint typecheck check-structure test ## Full local gate — the same one CI runs
 	@echo
 	@echo 'verify: all gates passed'
