@@ -41,8 +41,12 @@ def validate_axes(catalog: dict) -> None:
     profiles = set(catalog["profiles"])
     for axis, spec in axes.items():
         options = spec.get("options")
-        if not isinstance(options, dict) or len(options) < 2:
-            raise ValueError(f"the {axis} axis must offer at least two options")
+        if not isinstance(options, dict) or not options:
+            raise ValueError(f"the {axis} axis must offer at least the answer meaning 'no infrastructure'")
+        # One option is a real state, not a broken catalogue: an axis whose answers are a language's —
+        # `http` is — offers only `none` until a package brings one, and a keel with no package
+        # installed has a short menu rather than an invalid one. The same reasoning as an option no
+        # loaded backend answers being kept rather than refused.
         if not spec.get("prompt"):
             raise ValueError(f"the {axis} axis must carry the question the prompt asks")
         # The role, and what every answer to it has in common — the sentence that stops the axis being
@@ -158,8 +162,17 @@ def validate_axes(catalog: dict) -> None:
                         f"the {feature} feature is owned by both the {owners[feature]} and {axis} axes"
                     )
                 owners[feature] = axis
-    if set(PRUNER.FEATURES) != known_features(catalog):
-        raise ValueError("catalog and assets/backing-services/prune.py disagree about the feature list")
+    # The mirror holds the keel's two copies of one table to each other, and only those. An option a
+    # package brought is declared in one place — the package — and travels into a project's pruner from
+    # there, so there is no second copy to disagree with. Its own conformance suite is what checks it.
+    brought = {feature for feature in known_features(catalog) if feature not in set(PRUNER.FEATURES)}
+    missing = set(PRUNER.FEATURES) - known_features(catalog)
+    if missing:
+        raise ValueError(
+            "assets/backing-services/prune.py knows features the catalog does not offer: "
+            + ", ".join(sorted(missing))
+        )
+    del brought
 
 
 
@@ -172,9 +185,10 @@ def validate_axis_capabilities(axis: str, spec: dict) -> None:
     `check-agents` would go on justifying a skill by it. Two halves of one fact, checked the way `FEATURES`
     and the option targets are. Order and all, because the manifest's list is written in it.
     """
+    # The keel's own options only; a package's is declared once and has nothing to mirror.
     shipped = PRUNER.AXES.get(axis, {}).get("options", {})
     for name, option in spec["options"].items():
-        if name not in shipped or list(shipped[name]["capabilities"]) != list(option["capabilities"]):
+        if name in shipped and list(shipped[name]["capabilities"]) != list(option["capabilities"]):
             raise ValueError(
                 f"catalog and assets/backing-services/prune.py disagree about what {axis}/{name} gives"
             )

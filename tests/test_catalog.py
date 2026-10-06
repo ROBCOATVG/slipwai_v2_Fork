@@ -77,10 +77,14 @@ class MirrorTest(unittest.TestCase):
     def test_the_targets_agree_with_the_pruner(self) -> None:
         validate_targets(CATALOG)
 
-    def test_the_pruner_knows_every_feature_the_catalogue_offers(self) -> None:
+    def test_the_pruner_knows_every_feature_the_keel_itself_offers(self) -> None:
+        """The keel's copy carries the infrastructure features and no framework. A feature a package's
+        option brought is in the package and in the project's copy, and in neither of these."""
         offered = {feature for axis in CATALOG["axes"].values()
                    for option in axis["options"].values() for feature in option.get("features", [])}
-        self.assertEqual(set(PRUNER.FEATURES), offered)
+        self.assertLessEqual(set(PRUNER.FEATURES), offered)
+        self.assertNotIn("toy-serve", PRUNER.FEATURES)
+        self.assertIn("toy-serve", offered)
 
     def test_an_option_offered_somewhere_the_pruner_does_not_know_about_is_refused(self) -> None:
         """Drift in either direction is a project that prunes to something the catalogue did not promise."""

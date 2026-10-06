@@ -7,12 +7,54 @@
     "toy-plain": {
       "framework": "plain",
       "label": "Toy — the language template's inert placeholder; not a real language",
-      "targets": ["none"],
+      "targets": [
+        "none"
+      ],
       "options": {
-        "event-store": ["memory", "postgres"],
-        "http": ["none"],
-        "auth": ["none"],
-        "users": ["none"]
+        "event-store": [
+          "memory",
+          "postgres"
+        ],
+        "http": [
+          "none",
+          "toy-serve"
+        ],
+        "auth": [
+          "none"
+        ],
+        "users": [
+          "none"
+        ]
+      },
+      "defaults": {
+        "http": "none"
+      }
+    }
+  },
+  "axes": {
+    "http": {
+      "toy-serve": {
+        "label": "Toy serve — the template's inert placeholder transport; not a real framework",
+        "capabilities": [
+          "http-toy-serve"
+        ],
+        "features": [
+          "toy-serve"
+        ],
+        "containers": [],
+        "migrations": false,
+        "integration-suite": false,
+        "targets": [
+          "none"
+        ],
+        "app-in-compose": true,
+        "repository-owned": [
+          "packages/api-client"
+        ],
+        "web-app-owned": [
+          "src/routes",
+          "tests/routes"
+        ]
       }
     }
   }

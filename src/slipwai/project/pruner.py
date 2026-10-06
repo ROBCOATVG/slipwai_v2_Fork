@@ -21,13 +21,16 @@ import importlib.util
 import json
 from collections.abc import Iterable
 from types import ModuleType
+from typing import Any
 
-from ..assets import BACKING_SERVICE_ROOT
+from ..assets import BACKING_SERVICE_ROOT, ROOT
+from ..catalog import CATALOG
 from ..registry import PRUNE_ROWS, Registry, registry
 
 SOURCE = BACKING_SERVICE_ROOT / "prune.py"
 # The keel's own line, the one place a script's rows go. Emission replaces it; a source without exactly one is refused.
 ROWS_LINE = "ROWS: dict[str, dict] = {}\n"
+OPTIONS_LINE = "AXIS_OPTIONS: dict[str, dict] = {}\n"
 
 
 def family_rows(loaded: Registry, family: str) -> dict | None:
@@ -46,13 +49,46 @@ def prune_rows(families: Iterable[str]) -> dict[str, dict]:
     return {family: answer for family, answer in rows.items() if answer is not None}
 
 
+def axis_options(catalog: dict[str, Any] | None = None) -> dict[str, dict]:
+    """Every axis option a package brought, keyed by axis, in the shape the pruner's own table takes.
+
+    The keel's copy of the pruner carries the infrastructure answers and no framework: an option named
+    after a library — `fastapi`, `spring-web` — belongs to the package that implements it. They are
+    written into a generated project's copy from the merged catalogue, the way each family's rows are,
+    so a project prunes by the options it was actually offered.
+    """
+    merged = CATALOG if catalog is None else catalog
+    keel = json.loads((ROOT / "catalog.json").read_text(encoding="utf-8"))["axes"]
+    brought: dict[str, dict] = {}
+    for axis, spec in merged["axes"].items():
+        own = set(keel.get(axis, {}).get("options", {}))
+        for name, option in spec["options"].items():
+            if name in own:
+                continue
+            brought.setdefault(axis, {})[name] = {
+                "capabilities": list(option.get("capabilities", ())),
+                "features": list(option.get("features", ())),
+                "targets": list(option.get("targets", ())),
+                "label": option.get("label", ""),
+                "note": option.get("note", ""),
+                "app-in-compose": bool(option.get("app-in-compose")),
+                "repository-owned": list(option.get("repository-owned", ())),
+                "web-app-owned": list(option.get("web-app-owned", ())),
+            }
+    return brought
+
+
 def emitted(families: Iterable[str], source: str | None = None) -> str:
-    """The keel's pruning script carrying the rows of these families, and no other, as the project's copy."""
-    text = SOURCE.read_text() if source is None else source
-    if text.count(ROWS_LINE) != 1:
-        raise RuntimeError(f"the pruning script must carry exactly one `{ROWS_LINE.strip()}` line to write rows into")
+    """The keel's pruning script carrying the rows of these families and the options their packages
+    brought, and nothing of any other, as the project's copy."""
+    text = SOURCE.read_text(encoding="utf-8") if source is None else source
+    for line in (ROWS_LINE, OPTIONS_LINE):
+        if text.count(line) != 1:
+            raise RuntimeError(f"the pruning script must carry exactly one `{line.strip()}` line to write into")
     rows = json.dumps(prune_rows(families), indent=2)
-    return text.replace(ROWS_LINE, f'ROWS: dict[str, dict] = json.loads(r"""\n{rows}\n""")\n')
+    options = json.dumps(axis_options(), indent=2)
+    text = text.replace(ROWS_LINE, f'ROWS: dict[str, dict] = json.loads(r"""\n{rows}\n""")\n')
+    return text.replace(OPTIONS_LINE, f'AXIS_OPTIONS: dict[str, dict] = json.loads(r"""\n{options}\n""")\n')
 
 
 @functools.cache

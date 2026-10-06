@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from .assets import this_command
+from .catalog_options import declare_options
 from .language_directory import (
     NO_FRAGMENT,
     VARIABLE,
@@ -191,12 +192,19 @@ def faults_in(
         for other in held[key]:
             if other is not package:
                 faults.append(f"declares backend {key}, which {named(other.name, other.root)} also declares")
-        faults += row_faults(core, key, row)
+        faults += row_faults(core, key, row, package.fragment.get("axes", {}))
     return faults
 
 
-def row_faults(core: Mapping[str, Any], key: str, row: Mapping[str, Any]) -> list[str]:
-    """What a fragment's row says that the keel does not declare, or cannot take as a default."""
+def row_faults(
+    core: Mapping[str, Any], key: str, row: Mapping[str, Any], brought: Mapping[str, Any] | None = None,
+) -> list[str]:
+    """What a fragment's row says that neither the keel nor the fragment itself declares.
+
+    `brought` is the fragment's own `axes` block: a package answering an option it declares is answering
+    one that exists, and checking it against the keel alone would refuse every package that brings a
+    framework — which is every language package there is.
+    """
     faults = [f"backend {key} answers target {target}, which core does not declare"
               for target in row.get("targets", []) if target not in core["targets"]]
     options: Mapping[str, list[str]] = row.get("options", {})
@@ -204,8 +212,8 @@ def row_faults(core: Mapping[str, Any], key: str, row: Mapping[str, Any]) -> lis
         if axis not in core["axes"]:
             faults.append(f"backend {key} answers axis {axis}, which core does not declare")
             continue
-        declared = core["axes"][axis]["options"]
-        faults += [f"backend {key} answers {axis} option {name}, which core does not declare"
+        declared = {*core["axes"][axis]["options"], *(brought or {}).get(axis, {})}
+        faults += [f"backend {key} answers {axis} option {name}, which neither the keel nor this package declares"
                    for name in names if name not in declared]
     for axis, name in row.get("defaults", {}).items():
         if axis not in core["default"]:
@@ -239,6 +247,10 @@ def merge(
             refused[package.name] = refusal(package.name, package.root, fault)
     kept = [package for package in packages if package.name not in refused]
     merged = copy.deepcopy(core)
+    declared = declare_options(merged, kept)
+    for name, fault in declared.items():
+        refused.setdefault(name, fault)
+    kept = [package for package in kept if package.name not in declared]
     rows: list[tuple[str, dict[str, Any], int]] = [
         (key, row, row.get("order", 0)) for key, row in merged["backends"].items()
     ]

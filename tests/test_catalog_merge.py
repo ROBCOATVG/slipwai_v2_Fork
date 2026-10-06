@@ -193,7 +193,8 @@ class UndeclaredTest(unittest.TestCase):
     def test_an_option_core_does_not_declare(self) -> None:
         self.assertEqual(
             self.refusal(options={"http": ["none", "gin"]}),
-            f"language bad ({at('bad')}): backend bad answers http option gin, which core does not declare",
+            f"language bad ({at('bad')}): backend bad answers http option gin, which neither the keel "
+            "nor this package declares",
         )
 
     def test_an_axis_core_does_not_have(self) -> None:

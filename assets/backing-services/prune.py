@@ -43,14 +43,12 @@ from pathlib import Path, PurePosixPath
 
 # Every marker feature this script knows how to prune. A feature owns files and marked regions; an axis
 # option is answered *with* a set of features. The factory asserts this tuple against its catalog.
-FEATURES = (
-    "fastapi",
-    "fastify",
+# The infrastructure features the keel knows. A feature a language's framework owns — `fastapi`,
+# `spring-web` — is not here: it arrives with the option that owns it, in AXIS_OPTIONS below, so this
+# list and the catalogue's agree whether or not a package is installed.
+KEEL_FEATURES = (
     "keycloak",
-    "net-http",
     "postgres",
-    "quarkus-rest",
-    "spring-web",
     "sqlite",
     "users-keycloak",
 )
@@ -85,6 +83,12 @@ ROWS: dict[str, dict] = {}
 # and the generator writes into `project.json` per deployable, which is why `record_answers` can swap one
 # for another rather than recomputing a project's capabilities from a second copy of the rules. Mirrored
 # like `features` and `targets`, and the factory asserts the three agree with the catalog.
+# The options a language package brings, written in by the keel when a project is generated, the way
+# ROWS is. An option that names a framework — `fastapi`, `spring-web` — belongs to the package that
+# implements it, not to the keel: the keel declares the question and the infrastructure answers, and a
+# language declares its own. Empty here, and empty in the keel's own copy.
+AXIS_OPTIONS: dict[str, dict] = {}
+
 AXES: dict[str, dict] = {
     "event-store": {
         "prompt": "Event store",
@@ -126,50 +130,6 @@ AXES: dict[str, dict] = {
     "http": {
         "prompt": "Inbound HTTP transport",
         "options": {
-            "fastify": {
-                "capabilities": ("http-fastify",),
-                "features": ("fastify",),
-                "targets": ("none", "existing", "aws", "azure"),
-                "label": "Fastify — JSON API, schema-parsed at the edge",
-                "note": "",
-            },
-            "fastapi": {
-                "capabilities": ("http-fastapi",),
-                "features": ("fastapi",),
-                "targets": ("none", "existing", "aws", "azure"),
-                "label": "FastAPI — JSON API on ASGI, schema-parsed at the edge",
-                "note": "",
-            },
-            "net-http": {
-                "capabilities": ("http-net-http",),
-                "features": ("net-http",),
-                "targets": ("none", "existing", "aws", "azure"),
-                "label": "net/http — standard-library JSON API, no framework dependency",
-                "note": "",
-            },
-            "quarkus-rest": {
-                "capabilities": ("http-quarkus-rest",),
-                "features": ("quarkus-rest",),
-                "targets": ("none", "existing", "aws", "azure"),
-                "label": "Quarkus REST — JSON API on the framework's own HTTP layer, with SmallRye Health "
-                         "serving the readiness probe",
-                "note": (
-                    "Dropping this drops SmallRye Health with it, so the project loses its readiness "
-                    "probe as well as its routes — there is no hand-written /health to fall back to, "
-                    "on purpose."
-                ),
-            },
-            "spring-web": {
-                "capabilities": ("http-spring-web",),
-                "features": ("spring-web",),
-                "targets": ("none", "existing", "aws", "azure"),
-                "label": "Spring MVC — JSON API on Tomcat over virtual threads, with Actuator serving "
-                         "the readiness probe",
-                "note": (
-                    "Dropping this drops Actuator with it, so the project loses its readiness probe as "
-                    "well as its routes — there is no hand-written /health to fall back to, on purpose."
-                ),
-            },
             "none": {
                 "capabilities": (),
                 "features": (),
@@ -342,6 +302,8 @@ AXES: dict[str, dict] = {
 # deploy by asking it for /health, so `--http none` is refused in a project going there — the factory refused
 # it at generation time, and a later prune has to refuse it for the same reason. Mirrored from the catalog,
 # and the factory asserts the two agree.
+
+
 TARGET_REQUIRES: dict[str, tuple[str, ...]] = {"aws": ("http",), "azure": ("http",)}
 
 # Axes whose non-"none" answer needs another axis to be answered too. The factory refuses these
@@ -420,9 +382,6 @@ MARKED_FILES_PER_WEB_APP: tuple[str, ...] = (
 REPOSITORY_OWNED_FILES: dict[str, tuple[str, ...]] = {
     # With the document gone there is nothing to generate the client from, and a package whose build points at
     # a file that is not there fails every target `build-packages` is a prerequisite of.
-    "fastify": ("packages/api-client",),
-    "net-http": ("packages/api-client",),
-    "fastapi": ("packages/api-client",),
     "keycloak": ("docker/keycloak/realms/app.json",),
     "users-keycloak": ("docker/keycloak/realms/customers.json",),
 }
@@ -443,9 +402,6 @@ SHARED_FILES: dict[str, tuple[str, ...]] = {
 # reason: what it shows is a service answering, and a project with no transport has no service to ask.
 OWNED_FILES_PER_WEB_APP: dict[str, tuple[str, ...]] = {
     "users-keycloak": ("src/auth", "tests/auth"),
-    "fastify": ("src/routes", "tests/routes"),
-    "fastapi": ("src/routes", "tests/routes"),
-    "net-http": ("src/routes", "tests/routes"),
 }
 
 # Compose services a feature needs. A feature absent from here needs no container at all, which is what
@@ -455,13 +411,9 @@ CONTAINERS: dict[str, str] = {"postgres": "postgres", "keycloak": "keycloak", "u
 # The features whose presence puts the *app* into Compose: a transport gives the file a `service` to run,
 # and a frontend gives it a `web`. Compose is deleted only when nothing is left to compose — dropping the
 # last container is not the same question, now that `make demo` runs the app from this file too.
-APP_SERVICE_FEATURES: tuple[str, ...] = (
-    "fastapi",
-    "fastify",
-    "net-http",
-    "quarkus-rest",
-    "spring-web",
-)
+# Empty here: every feature that puts the app into Compose is a transport, and a transport belongs to
+# the package that implements it. Filled from the brought options below.
+APP_SERVICE_FEATURES: tuple[str, ...] = ()
 
 # The npm packages a feature adds to every browser app, removed the same way as a service's. The factory's
 # test suite asserts this agrees with what the generator adds to the browser app's manifest.
@@ -478,6 +430,32 @@ WEB_PACKAGE_EDITS: dict[str, tuple[str, ...]] = {
 # deleted. So this is the same shape as a row's `package_edits` — what generation adds, a prune takes away —
 # and the factory's test suite asserts the two agree.
 SERVICE_ENVIRONMENT: dict[str, tuple[str, ...]] = {"postgres": ("DATABASE_URL",)}
+
+
+# Folded in after the literal so every reader of AXES sees one table: the keel's infrastructure options
+# and whatever the loaded packages brought.
+for _axis, _options in AXIS_OPTIONS.items():
+    for _name, _option in _options.items():
+        AXES[_axis]["options"][_name] = _option
+        # What a brought option owns at the repository root and in a browser app travels with it. A
+        # transport's generated API client and its `/routes` page exist because that transport was
+        # chosen, and the table that says so is the package's, not the keel's.
+        if _option.get("app-in-compose"):
+            # A transport gives Compose a `service` to run, so the app goes in the file because this
+            # option was chosen. Which options do that is theirs to say.
+            APP_SERVICE_FEATURES = (*APP_SERVICE_FEATURES, *_option.get("features", ()))
+        for _feature in _option.get("features", ()):
+            if _option.get("repository-owned"):
+                REPOSITORY_OWNED_FILES[_feature] = tuple(_option["repository-owned"])
+            if _option.get("web-app-owned"):
+                OWNED_FILES_PER_WEB_APP[_feature] = tuple(_option["web-app-owned"])
+
+# Every feature there is: the keel's, and each one a package's option brought with it.
+FEATURES = tuple(sorted({
+    *KEEL_FEATURES,
+    *(feature for _options in AXIS_OPTIONS.values() for _option in _options.values()
+      for feature in _option.get("features", ())),
+}))
 
 
 def project_has_web(root: Path) -> bool:

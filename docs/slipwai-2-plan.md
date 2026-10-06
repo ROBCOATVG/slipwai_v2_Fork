@@ -364,6 +364,27 @@ all, and the submodule the experiment could not load without a token is gone rat
      index, with the entry generated from the release. For a private channel it pushes the entry directly.
    The `add-language`, `add-framework` and `add-extension` skills become the prose around these four commands, which is slice 9.5. In version 1 they are 1,368 lines in `.claude/skills/` describing a manual procedure — fork the template, fill in `language.json` by hand, wire the matrix, remember the release — and almost every line of that is a verb's job now.
 
+**The keel declares the question; a package declares its own answers.** An axis is the keel's: there are
+four, and a package adds none. An *answer* depends on what it is. `event-store: postgres` is
+infrastructure — Postgres is Postgres whichever language talks to it, and the keel ships the Compose
+service, the SQL and the Keycloak realm for the ones like it. `http: fastapi` is not infrastructure; it
+is a Python library, and a keel that declared it would be a keel a new language has to be edited into.
+
+So the five framework options left `catalog.json` on 2026-10-06. A package declares the options it
+brings in a new `axes` block in `language.json`, and everything about an option travels with it: its
+label, its capabilities, the feature that owns its files, which targets it is offered under, whether it
+puts the app into Compose, and what it owns at the repository root and in a browser app. Two rules,
+both the registry's rules restated: an option belongs to one package, and no package may redeclare one
+the keel has.
+
+Three consequences worth naming. The `http` axis ships with one option, `none`, and that is a keel with
+a short menu rather than a broken catalogue — the same reading as an option no loaded backend answers.
+The keel's copy of the pruner carries the infrastructure tables and nothing else; a generated project's
+copy gets the options that project was offered, written in the way each family's rows are. And the
+mirror between the catalogue and the pruner now holds only the keel's own options, because a package's
+is declared in one place and has no second copy to drift from — its own conformance suite is what
+checks it.
+
 **What stays in the keel.** Profiles, targets, frontends, axes, adoption, and the toolkit. This is the line that
 issue #26 drew.
 
@@ -1075,33 +1096,8 @@ The first attempt paid for these rules. They apply from phase 1, inside the fork
 
 ### Still open
 
-**Does the keel declare a language's axis options, or only the axes?** Found on 2026-10-06 while doing
-slice 3.6.
-
-Today `catalog.json` declares `http` with the options `fastify`, `fastapi`, `net-http`, `quarkus-rest`
-and `spring-web`, and `assets/backing-services/prune.py` carries a features-and-capabilities table per
-option. Every one of those names is a framework belonging to a language package. A package's manifest
-says which options it *answers*; the keel still says which exist.
-
-That is the line issue #26 drew, crossed. Theme A says the keel never names a language, and
-`check-structure` enforces it — for Python imports. `catalog.json` is data, so the gate never looks. The
-experiment knew: `docs/backend-protocol.md` marks this "**would move** when the catalog's options move
-into each language's fragment (FR-019)", and then it did not move.
-
-Three ways out. It is a decision, not a task:
-
-1. **Move the options into the fragments.** A package declares the options it brings, the merge adds
-   them, and the keel declares only the four axes. Truest to theme A, and the largest change: the
-   interview, the pruner's tables and every default would come from the merge.
-2. **Leave them, and narrow the sentence.** The keel declares a vocabulary of options and packages
-   answer them; the rule becomes "the keel names no language *module*", which is what the gate actually
-   checks. Cheapest, and theme A then claims less than it reads as claiming today.
-3. **Move the pruner's tables only.** Slice 3.6 as written: the catalogue keeps the option names, the
-   per-option features come from each family's `PRUNE_ROWS`. Half the benefit, and `catalog.json` still
-   names five frameworks.
-
-Slice 3.6 is blocked on this: the half of its done-when that is already true — rows emitted as data —
-was true when it arrived from the experiment, and the half that is not is this question.
+None. Every decision this plan needed on 2026-10-06 is taken, including the one slice 3.6 raised and
+section 4 now records: a language's answers are the language's to declare.
 
 Every other decision this plan needed on 2026-10-06 is taken. New ones go to the deck logs' `decision`
 lines and, where a person must take them, to the bridge's inbox.
@@ -1180,7 +1176,7 @@ open decision left either.
 
 ## 11. The implementation plan
 
-**Progress: 26 of 83 slices done** — phase 1 6/6, phase 2 7/9, phase 3 13/19, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 27 of 83 slices done** — phase 1 6/6, phase 2 7/9, phase 3 14/19, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1410,7 +1406,7 @@ refuses by and which nothing else imports. Found on 2026-10-06 while doing the s
 | 3.4 | Targets `aws` and `azure`, their stacks and docs, as the **liner** shape | upstream | L | Stack validation tests green |  |
 | 3.4b | The **skiff** shape for both targets: a Lightsail container service and a scale-to-zero Container App, one environment, the shape question in the interview, `converge --shape`; the compute named in one row of the target's table, not spread through its stack | new | L | Both shapes validate against the real providers; a slipway project generates a skiff by default; changing a skiff's compute is one row and its stack file |  |
 | 3.5 | Frontends and backing services, the `react-vite` npm-workspace contract | upstream + cruise-2 | M | The frontend variants match |  |
-| 3.6 | The pruner with rows emitted as data | cruise-2 | S | `scripts/backing-services.py` in a generated project carries no language name |  |
+| 3.6 | The language-specific answers out of the keel: the `http` axis keeps `none` alone, a package declares the options it brings in `language.json`'s `axes` block, and the pruner's per-option tables travel with them | cruise-2 + new | L | `catalog.json` and the keel's `prune.py` name no framework; the toy brings `http/toy-serve` and the keel's own gate exercises the path on every commit | done |
 | 3.7 | `make starters`, and the full matrix per package run from each package's CI against a pinned keel, never from the keel's | cruise-2 | M | The keel's gate stays under ten minutes and reads one package, the toy; each package's CI proves its own variants |  |
 | 3.9 | `conformance/` and `matrix/` as `python -m` entry points (was 2.5) | cruise-2 | L | `python -m slipwai.conformance packages toy` runs in the gate and its five static checks pass; the matrix refuses the toy by name and says what to run instead. The two generation probes need the `generate` verb and light up at 4.1 | done |
 

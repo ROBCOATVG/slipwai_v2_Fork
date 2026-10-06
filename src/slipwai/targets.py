@@ -178,9 +178,11 @@ def validate_axis_targets(catalog: dict, axis: str, spec: dict) -> None:
         raise ValueError(
             f"{axis}/{absent} means no infrastructure, so it must be offered under every target"
         )
+    # Only the options the keel itself declares are mirrored: a package's option is written in one
+    # place and copied into a project's pruner from there, so it has no second copy to drift from.
     shipped = PRUNER.AXES.get(axis, {}).get("options", {})
     for name, option in spec["options"].items():
-        if name not in shipped or set(shipped[name]["targets"]) != set(option["targets"]):
+        if name in shipped and set(shipped[name]["targets"]) != set(option["targets"]):
             raise ValueError(
                 f"catalog and assets/backing-services/prune.py disagree about where {axis}/{name} is offered"
             )
