@@ -61,7 +61,13 @@ def fragment(name: str = "bad", order: int = 50, **row: Any) -> dict[str, Any]:
 
 
 def package(name: str = "bad", order: int = 50, **row: Any) -> Package:
-    return Package(name, Path(f"/languages/{name}"), fragment(name, order, **row))
+    return Package(name, at(name), fragment(name, order, **row))
+
+
+def at(name: str) -> Path:
+    """Where a fake package sits. A refusal names it, and what a path reads as is the platform's to say:
+    `/languages/a` on POSIX and `\\languages\\a` on Windows. Tests ask this rather than spelling one."""
+    return Path(f"/languages/{name}")
 
 
 class MergeOrderTest(unittest.TestCase):
@@ -159,8 +165,8 @@ class ClaimTest(unittest.TestCase):
         self.assertEqual(
             refused,
             {
-                "a": "language a (/languages/a): declares backend dup, which language b (/languages/b) also declares",
-                "b": "language b (/languages/b): declares backend dup, which language a (/languages/a) also declares",
+                "a": f"language a ({at('a')}): declares backend dup, which language b ({at('b')}) also declares",
+                "b": f"language b ({at('b')}): declares backend dup, which language a ({at('a')}) also declares",
             },
         )
         self.assertNotIn("dup", merged["backends"])
@@ -171,7 +177,7 @@ class ClaimTest(unittest.TestCase):
         clash.fragment["backends"] = {built_in: clash.fragment["backends"]["py2"]}
         merged, refused = merge(copy.deepcopy(BUILT), [clash, package("fine")])
         self.assertEqual(
-            refused, {"py2": f"language py2 (/languages/py2): declares backend {built_in}, which core already has"}
+            refused, {"py2": f"language py2 ({at('py2')}): declares backend {built_in}, which core already has"}
         )
         self.assertEqual(merged["backends"][built_in]["label"], BUILT["backends"][built_in]["label"])
         self.assertIn("fine", merged["backends"])
@@ -186,19 +192,19 @@ class UndeclaredTest(unittest.TestCase):
     def test_an_option_core_does_not_declare(self) -> None:
         self.assertEqual(
             self.refusal(options={"http": ["none", "gin"]}),
-            "language bad (/languages/bad): backend bad answers http option gin, which core does not declare",
+            f"language bad ({at('bad')}): backend bad answers http option gin, which core does not declare",
         )
 
     def test_an_axis_core_does_not_have(self) -> None:
         self.assertEqual(
             self.refusal(options={"cache": ["memory"]}),
-            "language bad (/languages/bad): backend bad answers axis cache, which core does not declare",
+            f"language bad ({at('bad')}): backend bad answers axis cache, which core does not declare",
         )
 
     def test_a_target_core_does_not_have(self) -> None:
         self.assertEqual(
             self.refusal(targets=["none", "gcp"]),
-            "language bad (/languages/bad): backend bad answers target gcp, which core does not declare",
+            f"language bad ({at('bad')}): backend bad answers target gcp, which core does not declare",
         )
 
 
@@ -215,7 +221,7 @@ class DefaultsTest(unittest.TestCase):
     def test_a_per_backend_default_for_an_axis_core_answers_once_is_refused(self) -> None:
         self.assertEqual(
             self.refusal(options={"auth": ["none"]}, defaults={"auth": "none"}),
-            "language bad (/languages/bad): backend bad defaults auth, and core's auth default is one answer, "
+            f"language bad ({at('bad')}): backend bad defaults auth, and core's auth default is one answer, "
             "not one per backend",
         )
 
