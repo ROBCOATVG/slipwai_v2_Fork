@@ -915,11 +915,15 @@ of using it, in the order a person meets it, and moves every explanation to a re
   chart, the split, one slice through its demo); a second person joins (fairways, berths, the fleet board); let it
   sail (captains, the telegraph, the inbox, and what a person still decides); bring an existing codebase (adopt). A
   reader stops when they have what they came for.
-- **The contributor path is documentation too.** `add-language`, `add-framework` and `add-extension` are
-  maintainer skills in `.claude/skills/`, and version 2 never brought them back: the procedures they
-  describe were replaced by `slipwai package new`, `check`, `release` and `register`, and by the two
-  package shapes in theme A. They are rewritten here, last, because a skill that describes a verb has to
-  be written against the verb that shipped. Slice 9.5.
+- **The contributor path is documentation too.** The five maintainer skills in `.claude/skills/` —
+  `add-language`, `add-framework`, `add-extension`, `add-target` and `add-backing-service`, 1,891 lines
+  between them — are the only part of version 1 that version 2 neither brought back nor replaced. Each
+  describes a procedure that has changed. The first three are replaced by `slipwai package new`, `check`,
+  `release` and `register` and by the two package shapes in theme A. `add-target` walks the catalogue's
+  targets block and `project/infra.py`, and now has two shapes to cover rather than one, the skiff and the
+  liner. `add-backing-service` walks `catalog.json`, `prune.py`'s tables and the `src/slipwai/` wiring, and
+  the catalogue it describes no longer holds backends at all. They are rewritten here, last, because a
+  skill that describes a verb has to be written against the verb that shipped. Slice 9.5.
 
 - **Every verb shown as an experience, once.** Each page has the command, its output, and the one decision the
   person makes there. The vocabulary is introduced by use, with a glossary page behind it. The vocabulary is
@@ -1237,7 +1241,7 @@ Depends on: phase 4. Runs beside phase 7.
 |---|---|---|---|---|
 | 7.1 | The harbourmaster process: the only writer of the harbour log, the log sync, berth allocation, credentials | new | L | Two captains' marks reach each other through the harbour log |
 | 7.2 | The captain: the outer loop for one fairway, clearance, claim, dispatch, boundaries, heartbeat, ending a wedged stage | new + `cruise.py` | L | One fairway runs unattended for a day with every line in its deck log |
-| 7.3 | The telegraph: positions, `harbour.json`, `--set`, banking the fires in order | new | M | Over budget, the run slows in the fixed order before it stops |
+| 7.3 | The telegraph: positions, `harbour.json`, `--set` for the numbers, `/model-delegation-settings` for the model role per stage, banking the fires in order | new | M | Over budget, the run slows in the fixed order before it stops; every number and role the telegraph groups can also be set alone |
 | 7.4 | The fleet board: `slipwai fleet`, `fleet watch`, the rendered page | new | M | Every column folds from the logs; a stalled berth is told from a finished one |
 | 7.5 | The bridge: `slipwai bridge` local server with controls, the read-only Pages copy | new | L | A question answered from the page becomes a `told` line |
 | 7.6 | The harness registry rows for Claude Code, Codex, Cursor, Gemini CLI, OpenCode and Kiro; `unproven` until run | upstream + new | M | Each row says how it is invoked and which hooks it has |
@@ -1266,7 +1270,7 @@ Depends on: everything before it.
 | 9.2 | The reference pages under `docs/reference/` | L | Every rule the plan names has a page |
 | 9.3 | The captures: the bridge, the fleet board, a demo-stop board, a `/chart` output | S | From real runs, not drawn |
 | 9.4 | `make test-docs`: every command in the first three pages run against a fresh generation | M | The README cannot drift |
-| 9.5 | `add-language`, `add-framework` and `add-extension` rewritten as prose around the four `slipwai package` verbs and the two package shapes; `extension.json` and `init.py` in `add-extension`, not a template fork | new | M | A contributor who has not seen this repository publishes a package by following one skill; no skill names a step a verb already does; each is a fraction of version 1's 1,368 lines |
+| 9.5 | The five maintainer skills in `.claude/skills/`, rewritten for version 2's shape: `add-language`, `add-framework` and `add-extension` as prose around the four `slipwai package` verbs and the two package shapes; `add-target` for the skiff and the liner; `add-backing-service` for a catalogue that no longer holds backends | new | L | A contributor who has not seen this repository publishes a package by following one skill; no skill names a step a verb already does; none describes a file version 2 does not have |
 
 ### Order, and what runs in parallel
 
