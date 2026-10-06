@@ -86,9 +86,9 @@ text{fill:#172129}.lbl{fill:#44525c}.arr{stroke:#172129;stroke-width:1.2;fill:no
 <rect class="bar" x="30" y="332" width="990" height="24" rx="3"/>
 <text x="525.0" y="348" text-anchor="middle" font-size="11.5" font-weight="600">at every stage boundary, enforced by the captain: inbox read + receipt · heartbeat · stage budget · token budget · controls guard · stop file</text>
 <rect class="box hl" x="30" y="410" width="150" height="80" rx="3"/>
-<text x="105.0" y="430.2" text-anchor="middle" font-size="12" font-weight="600">Set its marks</text>
-<text x="105.0" y="446.2" text-anchor="middle" font-size="12">what it publishes,</text>
-<text x="105.0" y="462.2" text-anchor="middle" font-size="12">typed, into contracts/</text>
+<text x="105.0" y="430.2" text-anchor="middle" font-size="12" font-weight="600">Example map</text>
+<text x="105.0" y="446.2" text-anchor="middle" font-size="12">rules and examples from</text>
+<text x="105.0" y="462.2" text-anchor="middle" font-size="12">the chart; sets its marks</text>
 <text x="105.0" y="478.2" text-anchor="middle" font-size="12">→ check-chart green</text>
 <path class="arr " d="M 180,450.0 L 190,450.0" marker-end="url(#ah)"/>
 <rect class="box " x="190" y="410" width="150" height="80" rx="3"/>
@@ -105,8 +105,8 @@ text{fill:#172129}.lbl{fill:#44525c}.arr{stroke:#172129;stroke-width:1.2;fill:no
 <path class="arr " d="M 500,450.0 L 510,450.0" marker-end="url(#ah)"/>
 <rect class="box " x="510" y="410" width="150" height="80" rx="3"/>
 <text x="585.0" y="430.2" text-anchor="middle" font-size="12" font-weight="600">Implement</text>
-<text x="585.0" y="446.2" text-anchor="middle" font-size="12">one increment per rule</text>
-<text x="585.0" y="462.2" text-anchor="middle" font-size="12">fast checks only:</text>
+<text x="585.0" y="446.2" text-anchor="middle" font-size="12">red · green · refactor</text>
+<text x="585.0" y="462.2" text-anchor="middle" font-size="12">one cycle per the setting</text>
 <text x="585.0" y="478.2" text-anchor="middle" font-size="12">make unit · lint · types</text>
 <path class="arr " d="M 660,450.0 L 670,450.0" marker-end="url(#ah)"/>
 <rect class="box " x="670" y="410" width="150" height="80" rx="3"/>
@@ -116,10 +116,10 @@ text{fill:#172129}.lbl{fill:#44525c}.arr{stroke:#172129;stroke-width:1.2;fill:no
 <text x="745.0" y="478.2" text-anchor="middle" font-size="12">verdict in three words</text>
 <path class="arr " d="M 820,450.0 L 830,450.0" marker-end="url(#ah)"/>
 <rect class="box " x="830" y="410" width="150" height="80" rx="3"/>
-<text x="905.0" y="430.2" text-anchor="middle" font-size="12" font-weight="600">Review + refactor</text>
+<text x="905.0" y="430.2" text-anchor="middle" font-size="12" font-weight="600">Review + reshape</text>
 <text x="905.0" y="446.2" text-anchor="middle" font-size="12">fresh-context reviewer</text>
-<text x="905.0" y="462.2" text-anchor="middle" font-size="12">over the slice diff</text>
-<text x="905.0" y="478.2" text-anchor="middle" font-size="12">simplify · fast checks</text>
+<text x="905.0" y="462.2" text-anchor="middle" font-size="12">over the whole diff</text>
+<text x="905.0" y="478.2" text-anchor="middle" font-size="12">the slice&#x27;s shape, not a cycle&#x27;s</text>
 <path class="arr " d="M 980,450.0 L 990,450.0" marker-end="url(#ah)"/>
 <rect class="box " x="990" y="410" width="150" height="80" rx="3"/>
 <text x="1065.0" y="430.2" text-anchor="middle" font-size="12" font-weight="600">Adversary × 1</text>

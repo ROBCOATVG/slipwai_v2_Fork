@@ -720,6 +720,48 @@ The three figures below draw the new loop. The first two use the same grid, one 
 identical. The highlighted boxes are the only places where the two profiles differ, and every difference is one
 question: where does a fairway's chart come from, and who holds it? The SVG files are in `docs/images/`.
 
+**Two things are the same in both profiles, and neither is optional.**
+
+1. **Example mapping opens every slice.** A slice begins by turning its story into rules, an example per
+   rule, and the questions it cannot answer. Nothing is implemented before that, in either profile. The
+   profiles differ only in where the examples come from: the event profile derives them from the model's
+   given/when/then, and the standard profile writes them from the chart and the story. They do not differ
+   in whether there are any. A slice with no examples has nothing for the hand to demo and nothing for a
+   test to be about, and the demo stage in both figures says "the hand walks the examples" — in version 2
+   that sentence is true because a stage put them there.
+2. **The implement stage is red, green, refactor.** The ladder's `Implement` box is not "write the code":
+   it is the `tdd` skill's cycle, with `make unit`, lint and types as the green step's gate. The mutation
+   gate later is evidence the tests were real; it is not what makes anyone write one first.
+
+   **How wide a cycle is, and how much one delegate takes, are settings — version 1's, carried forward.**
+   `.specify/drive.json` holds two: `delegate`, which is `story` (every rule of one user story, each rule
+   its own cycle, one context), `rule` (one rule with its examples) or `task` (one task as the tasks stage
+   cut it); and `cycle`, which is `rule` (a rule's examples written together, each failing for its own
+   stated reason, then the code) or `example` (one failing test, then the code that passes it). The
+   defaults are `delegate=story`, `cycle=rule`.
+
+   Two rules come with them and both matter more than the defaults. **A story is never a cycle unit** —
+   every rule of a story red before any is implemented is a batch, and `cycle=rule` is the widest cycle
+   there is; the setting refuses `story` rather than accepting it. And the settings **fall back rather
+   than fail**: on a slice whose tasks carry no story tag, `story` falls to `rule`; on a map that does not
+   number its rules, the boundary falls to `task` and the cycle to `example`. A slice that cannot support
+   the configured width runs narrower, and says so.
+
+   This is why the figures say "one cycle per the setting" rather than naming a width. Version 2 adds one
+   thing: the setting is read and shown by the telegraph alongside the model roles and the budgets (slice
+   7.3), because how wide a cycle is belongs with the other dials that trade speed against care.
+
+Version 1 had both — the `tdd` and `testing` skills are in the toolkit, and the event profile's example map
+is a stage — but the standard profile had no example-mapping stage at all, so it reached a demo of examples
+nothing had written, and neither profile's loop named the inner cycle, so `Implement` read as a black box.
+Both are stages in the figures now. Noticed 2026-10-06.
+
+**Two refactors, and they are not the same one.** The one inside `Implement` is the third beat of each
+cycle: the code just made green, tidied before the next example. The one at `Review + reshape` is the
+slice's whole diff, after the demo, with a fresh-context reviewer on it — the shape of what was built
+rather than the shape of one cycle's code. Collapsing them loses the small one, which is the one that
+stops the big one being needed.
+
 ### The event-modelling profile
 
 One artefact answers every question. The model names each slice's context and service. It types the slice's
@@ -778,6 +820,9 @@ Rendering `status` from the deck log rather than writing it.
 for each slice the routes, schemas and ports it sets and steers by, typed; it is the standard profile's stage 3.
 `check-chart`: marks are typed, every mark steered by has a setter, each mark has one setter, deletions are
 refused. Owned paths on the chart, so that `check-slice-scope` can hold a context boundary without a model.
+And an example-mapping stage of its own: the event profile derives its examples from the model, and a
+profile with no model has to write them, which is why this is the profile that needs the stage most rather
+than the one that can do without it.
 
 ## 6. How a project built on version 1 moves to version 2
 
@@ -1307,7 +1352,7 @@ Depends on: phase 4. Runs beside phase 7.
 |---|---|---|---|---|---|
 | 7.1 | The harbourmaster process: the only writer of the harbour log, the log sync, berth allocation, credentials | new | L | Two captains' marks reach each other through the harbour log |  |
 | 7.2 | The captain: the outer loop for one fairway, clearance, claim, dispatch, boundaries, heartbeat, ending a wedged stage | new + `cruise.py` | L | One fairway runs unattended for a day with every line in its deck log |  |
-| 7.3 | The telegraph: positions, `harbour.json`, `--set` for the numbers, `/model-delegation-settings` for the model role per stage, banking the fires in order | new | M | Over budget, the run slows in the fixed order before it stops; every number and role the telegraph groups can also be set alone |  |
+| 7.3 | The telegraph: positions, `harbour.json`, `--set` for the numbers, `/model-delegation-settings` for the model role per stage, the `delegate` and `cycle` widths from `.specify/drive.json` shown and set alongside them, banking the fires in order | new | M | Over budget, the run slows in the fixed order before it stops; every number and role the telegraph groups can also be set alone |  |
 | 7.4 | The fleet board: `slipwai fleet`, `fleet watch`, the rendered page | new | M | Every column folds from the logs; a stalled berth is told from a finished one |  |
 | 7.5 | The bridge: `slipwai bridge` local server with controls, the read-only Pages copy | new | L | A question answered from the page becomes a `told` line |  |
 | 7.6 | The harness registry rows for Claude Code, Codex, Cursor, Gemini CLI, OpenCode and Kiro; `unproven` until run | upstream + new | M | Each row says how it is invoked and which hooks it has |  |
