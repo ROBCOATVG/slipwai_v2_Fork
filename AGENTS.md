@@ -1,0 +1,80 @@
+# Work in this repository
+
+This is the slipwai keel, being rebuilt as version 2. Read
+[GLOSSARY.md](GLOSSARY.md) first: every name here comes from the slipway and the harbour, and nothing is
+called a workstation, a workstream, a lane or a runner. The whole design is
+[docs/slipwai-2-plan.md](docs/slipwai-2-plan.md); section 11 is the slice list, and section 8 is the rules
+these are.
+
+**Until 2.0.0 is cut, this repository keeps no version 1 working contract.** No `migrate`, no catch-up
+notes, no changelog fragments, no bump arithmetic, and `VERSION` does not move. All of that comes back in
+phase 8. If you are about to write a changelog entry, you are in the wrong phase.
+
+## Two gates, not one
+
+| When | What to run | Why |
+|---|---|---|
+| Every increment inside a slice | `make unit`, `make lint`, `make typecheck` | Seconds. Run them often enough that a break is one edit old |
+| Once, before the merge to `main` | `make verify`, on the rebased branch | Lint, typecheck, structure and the whole suite |
+| Every push and pull request | `make verify` again, in CI, on Linux, macOS and Windows | The platform legs, which a laptop cannot give you |
+
+The full gate is never part of the inner loop. In version 1 one `make verify` did everything, and every
+increment paid for the whole suite; that is the single most expensive habit the first attempt had. A test
+that generates a project, shells out, or reaches the network goes in the `SLOW` list in the `Makefile` in
+the same commit that adds it, so `make unit` stays worth running.
+
+## The rules
+
+These are section 8 of the plan. The first attempt paid for every one of them.
+
+1. **Chart first.** Do not claim a slice until the marks it sets and the marks it steers by are on the
+   chart.
+2. **One slice is one pull request, a few hours, one module or one skill.**
+3. **Fast checks inside the slice. The full gate before `main`.** The table above.
+4. **Review and refactor before `main`.** A fresh-context review of the slice's diff and a refactor pass
+   are stages, not favours. A slice merges with its review findings closed.
+5. **Nothing merges red. Nothing merges with carried gaps.** Grant no standing exemption for an
+   environment problem. Fix the environment, or exclude the test once, in writing.
+6. **One adversary round. One convergence round beyond the first.** LOW findings go to the careen.
+7. **Every stop records a reason. Every iteration writes to the log.** If a checkpoint is older than the
+   last commit, delete it. Do not trust it.
+8. **Declare the fork as a deployable in its own `project.json`** before any run of the factory on itself.
+9. **Review decisions weekly.** The count of unreviewed decisions is a hard ceiling.
+10. **People hold the merge to trunk** until phase 5's captain-enforced controls exist.
+11. **Bring back. Never bulk copy.** Each module comes in by name, from a named source commit. Read it,
+    rename it, and test it before the next one.
+
+## Bringing a module back
+
+Every module in version 2 comes from one of two commits, and the slice says which: upstream `main` at
+`e1a9e43` (1.5.2.dev0), or `slipwai-cruise-2` `main` at `c6f1e74`. "New" means written for version 2.
+
+1. **Read it where it is.** `git show e1a9e43:src/slipwai/<module>.py`. Understand why it is shaped the way
+   it is before you move it.
+2. **Rename it to the vocabulary as it lands.** Core becomes the keel, a language directory becomes
+   `packages/`, a value stream becomes a fairway. A module that arrives with version 1's words keeps them
+   for years.
+3. **Give it a tier.** `scripts/check-structure.py` holds `TIERS`, and a module in no tier stops the gate.
+   Add it to the tier it belongs to in the same commit, and keep its imports pointing inward.
+4. **Leave nothing it needed behind.** If it imported something not back yet, either bring that too or
+   say in the commit what was cut and which slice restores it.
+5. **Test it before the next one.** The slice is not done because the module compiles.
+
+## What the keel may not know
+
+The keel names no language and no extension. A `slipwai_language_*` import anywhere in `src/` fails the
+gate. In the other direction, a package may import only the keel modules
+[import-surface.txt](import-surface.txt) lists, and that file is held in both directions: a line naming a
+module the keel has not got fails too. Adding a line to it is a promise that cannot be withdrawn without
+breaking a package built somewhere this repository cannot see. The ceiling is twenty.
+
+## The small things that save a day
+
+- **`GLOSSARY.md` is written, not edited.** It comes from the plan's section 1 through
+  `scripts/glossary.py`. Edit the plan, run `make glossary`, commit both.
+- **The version lives in `VERSION` and nowhere else.** `pyproject.toml` reads it, the wheel carries it as
+  `slipwai/_bundle/VERSION`, and `slipwai --version` prints it. Never repeat the number.
+- **Deck logs and the harbour log are never committed.** `.slipwai/logs/` is ignored; the harbourmaster
+  syncs them through `refs/slipwai/logs`.
+- **Every refusal ends with the command that fixes it.** A gate that says what is wrong and not what to do
+  about it costs the reader a search.

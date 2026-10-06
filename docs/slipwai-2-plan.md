@@ -1105,8 +1105,8 @@ against.
 | 1.2 | `Makefile` with `lint`, `typecheck`, `unit`, `test` and `verify`, and `scripts/verify` behind them; `verify` is lint, typecheck and test, and `unit` is the fast half, named by a `SLOW` list | upstream, `unit` new | S | `make verify` green from a clean checkout, `.python-tools` installed on demand; `make unit` runs the fast tests alone |
 | 1.3 | `scripts/check-structure.py` with its tiers, `import-surface.txt` as the list it reads, and `check-structure` added to the `Makefile` and to `verify` | cruise-2 | M | The gate refuses an import against the direction, a cycle, an oversized module, a missing docstring, a keel import of a package and a package import off the surface, each proven by a test; the surface list is empty and held |
 | 1.4 | CI: `verify.yml` with lint, typecheck, structure and the suite on Linux, macOS and Windows, plus an install-and-ask-its-version smoke on each; no matrix, no languages. WSL is deferred — see below | upstream, cut down | M | Green on the fork under Actions, on all three platforms |
-| 1.5 | `AGENTS.md` for the fork: section 8's rules, the two gates, and nothing about versioning yet | new | S | A session reads it and knows the rules |
-| 1.6 | `GLOSSARY.md` at the repository root, extracted from section 1 and kept in step with it | new | S | The `wtf` skill and every session read one glossary |
+| 1.5 | `AGENTS.md` for the fork: section 8's rules, the two-gate table, how to bring a module back, and nothing about versioning yet; `tests/test_agents.py` holds it to section 8 | new | S | A session reads it and knows the rules; a rule added to the plan and not to the page fails the gate |
+| 1.6 | `GLOSSARY.md` at the repository root, written from section 1 by `scripts/glossary.py`, with `make glossary` and a `--check` the suite runs | new | S | The `wtf` skill and every session read one glossary, and it cannot drift from the plan without the gate saying so |
 
 Depends on: the fork public (section 7). Phase 5 may start when 1.2 is green.
 
