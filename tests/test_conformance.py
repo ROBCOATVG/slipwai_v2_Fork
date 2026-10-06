@@ -45,13 +45,12 @@ class EntryPointTest(unittest.TestCase):
             with self.subTest(check=check):
                 self.assertIn(check, printed)
 
-    def test_those_checks_pass_for_the_toy(self) -> None:
-        """The two that do not are the generation probes, which need the `generate` verb: slice 4.1."""
-        printed = entry_point("slipwai.conformance", TOY).stdout
-        for line in printed.splitlines():
-            if line.startswith("  ") and "profiles" not in line:
-                with self.subTest(line=line.strip()):
-                    self.assertNotIn("FAILED", line)
+    def test_every_check_passes_for_the_toy(self) -> None:
+        """Including the two generation probes, which were red until `generate` came back in 4.1: the
+        suite was reporting that the keel could not generate, because it could not."""
+        done = entry_point("slipwai.conformance", TOY)
+        self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+        self.assertIn("toy passed", done.stdout)
 
     def test_a_package_the_directory_has_not_got_is_refused_rather_than_passing_empty(self) -> None:
         done = entry_point("slipwai.conformance", "a-package-nobody-wrote")

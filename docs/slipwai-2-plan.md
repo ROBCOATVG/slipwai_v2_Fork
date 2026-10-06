@@ -1185,7 +1185,7 @@ open decision left either.
 
 ## 11. The implementation plan
 
-**Progress: 29 of 84 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 30 of 84 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 1/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1426,7 +1426,7 @@ Depends on: phase 2.
 
 | Slice | What | From | Size | Done when | Status |
 |---|---|---|---|---|---|
-| 4.1 | `generate` and the interview, menus from the registry, the offer to install | upstream + new | M | A fresh project from an empty machine with one answer sequence |  |
+| 4.1 | `generate` and the interview, menus from the registry; `cli_offered.py` for what this copy can be asked for, with the offer to install arriving at 4.5 | upstream + new | M | A fresh project from one answer sequence, and the conformance suite's generation probes pass against the toy | done |
 | 4.2 | `adopt`, the survey, `converge` | upstream | L | The adopted fixtures survey as before |  |
 | 4.3 | `add-service`, `add-frontend`, `describe-service` | upstream | M | Mid-flight additions match cruise-2 |  |
 | 4.4 | `./init` and the installer, with the language record read and reported | upstream + cruise-2 | M | A clone with a missing language is told what to install |  |

@@ -25,20 +25,24 @@ class VersionTest(unittest.TestCase):
         """`src/slipwai/assets.py` is two directories below the root; an installed wheel reads `_bundle`."""
         self.assertTrue((ROOT / "pyproject.toml").is_file())
 
-    def test_version_prints_the_version_and_exits_clean(self) -> None:
-        """A tool asked what it is answers on stdout and exits 0, so a script can read it."""
+    def test_version_prints_the_command_and_the_version_and_exits_clean(self) -> None:
+        """A tool asked what it is answers on stdout and exits 0, so a script can read it. It names
+        itself as well as its number, which is argparse's convention and what the packages' CI reads."""
         out = io.StringIO()
         with self.assertRaises(SystemExit) as raised, contextlib.redirect_stdout(out):
             main_with(["--version"])
         self.assertEqual(raised.exception.code, 0)
-        self.assertEqual(out.getvalue().strip(), VERSION)
+        self.assertEqual(out.getvalue().strip(), f"slipwai {VERSION}")
 
-    def test_no_arguments_prints_the_help(self) -> None:
-        """There is no verb yet, so the useful answer to a bare `slipwai` is what it can be asked."""
-        out = io.StringIO()
-        with contextlib.redirect_stdout(out):
+    def test_no_arguments_says_which_verbs_there_are(self) -> None:
+        """And names only the verbs this copy actually has, so the list cannot promise one that is not
+        back yet — which it did, until `generate` arrived and the hardcoded line was still version 1's."""
+        err = io.StringIO()
+        with self.assertRaises(SystemExit) as raised, contextlib.redirect_stderr(err):
             main_with([])
-        self.assertIn("--version", out.getvalue())
+        self.assertEqual(raised.exception.code, 2)
+        self.assertIn("a verb is required: generate", err.getvalue())
+        self.assertNotIn("add-service", err.getvalue())
 
 
 def main_with(arguments: list[str]) -> None:

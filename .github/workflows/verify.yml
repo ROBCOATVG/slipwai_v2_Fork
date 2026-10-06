@@ -78,7 +78,7 @@ jobs:
         shell: bash
         run: |
           set -eu
-          expected=$(cat VERSION)
+          expected="slipwai $(cat VERSION)"
           test "$(slipwai --version)" = "$expected"
           test "$(python -m slipwai --version)" = "$expected"
-          echo "slipwai --version = $expected on ${{ runner.os }}"
+          echo "$expected on ${{ runner.os }}"
