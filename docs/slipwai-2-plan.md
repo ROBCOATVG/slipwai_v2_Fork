@@ -41,8 +41,8 @@ version 1, it uses version 1's own names and says so.
 | **Harbourmaster** | The part the captains share, one process per harbour. It allocates berths, is the only writer of the harbour log, draws the fleet board and the bridge, holds the flags, and answers the telegraph. Under `/drive` it runs inside the person's session; under `/cruise` it runs on its own. It is not a merge queue | "integrator" |
 | **Deck log** | A fairway's own append-only log at `.slipwai/logs/<feature>/<fairway>.jsonl`, ignored by git and written only by that fairway's captain. The harbourmaster syncs it between machines through the ref `refs/slipwai/logs`, never through trunk. Its lines are: claimed, mark set, demo, accepted, merged, decision, told, read, heartbeat, stowed, parked | "stream log" |
 | **Harbour log** | The one append-only log at `.slipwai/logs/harbour.jsonl`, ignored by git, that every fairway reads and only the harbourmaster writes. Its lines are: mark set, flag hoisted, berth allocated, fires banked, park for a person, telegraph rung. A captain never appends to it; the harbourmaster copies what other fairways need from each deck log | "cross-stream log" |
-| **Chart** | The contracts, written before the split. The chart names the fairways, the marks each slice sets, the marks each slice steers by, and the paths each fairway owns. On the event-modelling profile the chart is derived from the event model. On the standard profile a `/chart` stage writes it | "contract map", "streams manifest" |
-| **Mark** | One published contract that another slice steers by: an event, a route, a schema or a port. A mark is set once and never moved. The files that hold marks only grow | "contract entry" |
+| **Chart** | The contracts, written before the split, as one committed file per feature: `specs/<feature>/chart.yaml`. The chart names the fairways, the marks each slice sets, the marks each slice steers by, and the paths each fairway owns. On the event-modelling profile `make chart` renders it from the event model and `check-chart` fails when the two disagree. On the standard profile a `/chart` stage writes it | "contract map", "streams manifest" |
+| **Mark** | One published contract that another slice steers by: an event, a route, a schema or a port, typed. An event or a schema is typed with JSON Schema; a route is an OpenAPI operation; a port is a name with typed inputs and outputs. A mark is set once and never moved. The files that hold marks only grow | "contract entry" |
 | **Clearance** | The rule that lets a slice start. A slice has clearance when every mark it steers by has been set by a slice that is planned or implemented. A slice sets its own marks itself, as its first stage, in its own worktree | "consumption gate" (issue #32) |
 | **Careen** | One hardening slice per fairway. It holds the findings below the severity bar and the work that stages stowed. It runs before the fairway's flag is hoisted. Its demo is: the findings are closed | "hardening slice" |
 | **Stow** | What a stage does with its open work when it runs out of budget: it moves the work into the careen. Work is never dropped. A CRITICAL finding is never stowed | "backload" |
@@ -285,11 +285,15 @@ carried gaps.
 
 **Goal.** A fairway plans, builds, merges and releases on its own. Fairways share nothing but marks.
 
-1. **The chart is written before the split, on both profiles.** On the event-modelling profile, the chart is
-   derived from `model.yaml`, which already names each slice's context, service, typed events, and what the
-   slice produces and reads. On the standard profile, a `/chart` stage names the fairways, and for each slice the
-   routes, schemas and ports it sets and steers by. A gate called `check-chart` holds the chart, the way
-   `check-model` holds the model.
+1. **The chart is written before the split, on both profiles, as one committed file**, `specs/<feature>/chart.yaml`,
+   so captains and gates read one thing on either profile and a change to it shows in a diff. On the
+   event-modelling profile `make chart` renders it from `model.yaml`, which already names each slice's context,
+   service, typed events, and what the slice produces and reads; `check-chart` fails when the rendered file and
+   the model disagree, the way `check-drawio` holds the canvas today. On the standard profile, a `/chart` stage
+   writes it: the fairways, and for each slice the routes, schemas and ports it sets and steers by. Marks are
+   typed: an event or a schema with JSON Schema, a route as an OpenAPI operation (the keel already generates
+   OpenAPI), a port as a name with typed inputs and outputs. `check-chart` holds the chart the way `check-model`
+   holds the model.
 2. **Clearance replaces the version 1 rule** "its own contract is settled" (issue #32). A second rule comes with
    it: no two slices set the same mark.
 3. **The split writes typed attributes and a minimal `examples.md` for every slice.** Slices then arrive in the
@@ -872,6 +876,10 @@ Resolved:
 - [Should → theme D, "Platforms"] Which platforms version 2 supports. Answer: the same four as version 1,
   native Windows included; a Windows berth is a Docker Desktop container or a Windows Sandbox instance; all
   four are in CI before 2.0.0.
+- [Should → section 1, theme C] Whether the chart is a committed file, and what a typed mark is on the
+  standard profile. Answer: one committed `chart.yaml` per feature on both profiles, rendered from the model
+  on the event profile; events and schemas typed with JSON Schema, routes as OpenAPI operations, ports as
+  names with typed inputs and outputs.
 - [Blocker → theme D, "The bridge"] How a click on the dashboard becomes a `told` line. Answer: `slipwai
   bridge` serves the page locally from the harbourmaster's seat and its controls post to it; the Pages copy is
   the same page without controls.
@@ -882,7 +890,6 @@ Resolved:
 
 Open, in order:
 
-- [Should] Whether the chart is a committed file on the event profile; what a typed mark looks like on the standard profile.
 - [Should] Which languages must exist at 2.0.0.
 - [Should] Effort per phase.
 - [Should] The first product to migrate or dogfood.
