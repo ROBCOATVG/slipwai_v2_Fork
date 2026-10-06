@@ -236,6 +236,20 @@ packages it ships with, at a known commit. That pin is for the keel's tests only
 runs the same suite against a pinned keel. Publishing is `make release` in the package repository: it tags,
 builds the release file, uploads it as a release asset, and appends the release to the channel's index.
 
+**Trust: signed releases and a trusted-publisher list.** Loading a package runs its Python, so the keel will
+not install from an index entry it cannot attribute. Every release file is signed by its publisher, with
+Sigstore's keyless signing from the package's CI or a minisign key where CI has no identity. The keel ships
+with one trust root, the `ROBCOATVG` publisher, the way a JDK ships a trust store and Maven ships Central's
+address. An organisation adds its own publishers and channels in `~/.slipwai/trust.json` or in the project's
+configuration. An entry from a publisher the keel does not trust is still listed by `slipwai chandlery`, and
+`slipwai install` refuses it with the command that trusts the publisher.
+
+This costs the keel nothing at build time. Like Maven scanning a repository, discovery is at run time: the
+keel reads the index when a person installs, verifies the signature against the trust store then, and from
+then on loads whatever is whole in `~/.slipwai/languages/`. A package placed there by hand, as a developer
+does with `SLIPWAI_LANGUAGES`, loads without a signature and is shown as `unsigned` by `slipwai list`, so a
+machine never mistakes a development copy for a release. Decided 2026-10-06.
+
 **Which languages 2.0.0 ships with.** All six from the experiment: `typescript`, `python`, `go`, `java`,
 `java-quarkus` and `java-spring`, each passing the conformance suite and its own matrix against the 2.0.0 keel.
 Parity with 1.5, with `java-spring` needing its real repository first (phase 2). Decided 2026-10-06.
@@ -883,15 +897,14 @@ The first attempt paid for these rules. They apply from phase 1, inside the fork
 - **A review and refactor stage before the merge.** Theme B, item 8.
 - **Four release modes, chosen by product state.** Theme E.
 - **The README rewrite is the last phase.** Phase 9.
+- **Signed releases and a trusted-publisher list, verified at install time, never at build time.** Theme A, "Trust".
 - **The six package repositories move under `ROBCOATVG`, public, before phase 2.** Theme A, "Where the first-party packages live".
 
 ### Still open
 
-1. **The trust model of the chandlery.** Signed entries from named publishers, or a list of allowed chandlery
-   URLs. Decide before phase 6 writes the index schema.
-2. **Whether the standalone executable bundles any language.** Issue #26 left it open. The experiment chose none
+1. **Whether the standalone executable bundles any language.** Issue #26 left it open. The experiment chose none
    (decision D5). Recommended: none, with `generate` offering to install.
-3. **Whether issues #30, #32 and #29 also ship on 1.x**, for users who will not wait for 2.0. Under the second
+2. **Whether issues #30, #32 and #29 also ship on 1.x**, for users who will not wait for 2.0. Under the second
    settled decision above, the default answer is no.
 
 ## 10. Gaps review, 2026-10-06
@@ -944,11 +957,6 @@ Resolved:
   harbourmaster through `refs/slipwai/logs`; only what they render is committed.
 - [Should → theme D, "The telegraph"] Whether the numbers under a position can be tuned alone. Answer: yes,
   `slipwai telegraph --set` and `/model-delegation-settings`; the board shows the position as adjusted.
-
-All six nice-to-haves were accepted as written on 2026-10-06 and moved into the sections they name.
-
-Open, in order:
-
 - [Nice → section 2, "The problem in one line"] A one-line problem statement: version 1 delivers one product well with one
   runner, and gets no faster when people or machines join; its gate grows with every language. The cost of
   doing nothing is the experiment's numbers: 104 hours and 180M tokens per accepted slice at the median, and a
@@ -965,6 +973,11 @@ Open, in order:
 - [Nice → section 11, "Who does the work"] The plan assumes one person with agents, and a second person or machine
   joining from phase 5 to prove the fairways. The slice sizes are for that team; a larger one shortens the
   calendar, not the slice.
+
+All six nice-to-haves were accepted as written on 2026-10-06 and moved into the sections they name.
+
+Open: none. Every blocker, should-address and nice-to-have found on 2026-10-06 is closed. The three
+decisions in section 9 are the only open items, and they are decisions, not gaps.
 
 ## 11. The implementation plan
 
@@ -1100,7 +1113,7 @@ most worth running in two fairways themselves, once 5.3 exists.
 | 6.2 | The index schema with publishers, checksums and the signature field; the public channel as a Pages site | cruise-2 + new | M | `slipwai install` reads it for both kinds |
 | 6.3 | A private channel per organisation, `SLIPWAI_LANGUAGE_INDEX` generalised to `SLIPWAI_CHANDLERY` | cruise-2 | S | An organisation's index serves its own packages |
 | 6.4 | `make release` in the package template: tag, build, upload, append to the index | new | M | A release from the template lands in a local index |
-| 6.5 | The trust model as decided in section 9 | new | M | An unsigned or unknown-publisher entry is refused with the reason |
+| 6.5 | Signed releases and the trust store: Sigstore or minisign verification, `trust.json`, the `ROBCOATVG` root, `unsigned` in `slipwai list` | new | M | An unknown-publisher entry is refused with the command that trusts it; a hand-placed package loads and says `unsigned` |
 
 Depends on: phase 4. Runs beside phase 7.
 
