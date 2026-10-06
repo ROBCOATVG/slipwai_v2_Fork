@@ -38,9 +38,9 @@ version 1, it uses version 1's own names and says so.
 | **Fairway** | One bounded context's slices, in split order, with one release flag and one holder. The fairway is the unit of scope, of ownership and of release. Several fairways run side by side into the same harbour. A vessel keeps to its own fairway | "value stream", "workstream" |
 | **Berth** | The provisioned place where one captain works: a git worktree, environment variables, an allocated block of ports, a database, and scratch directories. `slipwai berth add`, `slipwai berth status` and `slipwai berth remove` manage berths | "workstation", "lane" |
 | **Captain** | The outer loop for one fairway, in both modes. The captain reads the logs, works out the state of the fairway from the logs and trunk, gives clearance, claims a slice, dispatches an iteration, enforces every stage boundary, and appends to the deck log. There is one captain per fairway. Under `/drive` the captain brings every question and demo to the person. Under `/cruise` the skipper answers and the hand demos | "runner", `cruise.py run` |
-| **Harbourmaster** | The part the captains share. It allocates berths, keeps the harbour log, draws the fleet board, holds the flags, and answers the telegraph. It is not a merge queue | "integrator" |
-| **Deck log** | A fairway's own append-only log, committed with the work. Its lines are: claimed, mark set, demo, accepted, merged, decision, told, read, heartbeat, stowed, parked | "stream log" |
-| **Harbour log** | The one append-only log that every fairway reads. Its lines are: mark set, flag hoisted, berth allocated, fires banked, park for a person | "cross-stream log" |
+| **Harbourmaster** | The part the captains share, one process per harbour. It allocates berths, is the only writer of the harbour log, draws the fleet board and the bridge, holds the flags, and answers the telegraph. Under `/drive` it runs inside the person's session; under `/cruise` it runs on its own. It is not a merge queue | "integrator" |
+| **Deck log** | A fairway's own append-only log, committed with the work, written only by that fairway's captain. Its lines are: claimed, mark set, demo, accepted, merged, decision, told, read, heartbeat, stowed, parked | "stream log" |
+| **Harbour log** | The one append-only log that every fairway reads and only the harbourmaster writes. Its lines are: mark set, flag hoisted, berth allocated, fires banked, park for a person, telegraph rung. A captain never appends to it; the harbourmaster copies what other fairways need from each deck log | "cross-stream log" |
 | **Chart** | The contracts, written before the split. The chart names the fairways, the marks each slice sets, the marks each slice steers by, and the paths each fairway owns. On the event-modelling profile the chart is derived from the event model. On the standard profile a `/chart` stage writes it | "contract map", "streams manifest" |
 | **Mark** | One published contract that another slice steers by: an event, a route, a schema or a port. A mark is set once and never moved. The files that hold marks only grow | "contract entry" |
 | **Clearance** | The rule that lets a slice start. A slice has clearance when every mark it steers by has been set by a slice that is planned or implemented. A slice sets its own marks itself, as its first stage, in its own worktree | "consumption gate" (issue #32) |
@@ -295,10 +295,15 @@ that wrote no line made no progress.
 **What a captain does.** It fetches trunk and reads both logs. It works out the fairway's state from the logs plus trunk,
 never from the `status` field in `model.yaml`. It gives clearance. It claims `slice/<id>`. It dispatches the
 iteration with the stage budgets. It enforces an inbox read at every boundary. It writes a heartbeat. It ends a
-stage that has wedged. It appends every result to the deck log.
+stage that has wedged. It appends every result to its own deck log, and to nothing else.
 
-**The harbourmaster.** It allocates berths. It keeps the harbour log. It computes the fleet board. It holds the
-flags. It answers the telegraph. A person speaks to a captain through the log: `tell` appends a message, the captain
+**The harbourmaster.** One process per harbour; the only writer of the harbour log. It reads every deck log
+after each fetch and copies into the harbour log what other fairways need: a mark set, a park, a flag change,
+a telegraph change. Captains read the harbour log and never write it, so the one shared log has one writer and
+never conflicts. It allocates berths. It computes the fleet board and the bridge. It holds the flags. It answers
+the telegraph. Under `/drive` it runs inside the person's session. Under `/cruise` it is a process of its own,
+on one machine; captains on other machines reach it through the forge, by fetch and push, the way they reach
+trunk. A person speaks to a captain through the log: `tell` appends a message, the captain
 appends `read` at its next boundary, and a message older than N minutes forces a boundary.
 
 **The delegates.** The skipper, the hand and the bosun stay as they are inside an iteration.
@@ -328,6 +333,7 @@ numbers would only shrink the window. Version 2 removes both the counter and the
   rendered from the chart, one line per use case; `model_to_code` already knows the mapping, so a merge becomes
   a regeneration. The events module becomes one file per event, with a generated index, so two additions never
   meet on one line. On the standard profile, `contracts/` is already one file per entry.
+- The harbour log is shared for reading and has one writer, the harbourmaster. That is how it keeps the rule.
 - `main` itself stays shared. The rule for it stands: rebase, run the full gate, push. A real conflict in a mark
   is a contract change. It stops both fairways for the host.
 
@@ -348,10 +354,12 @@ raises the pressure to match. The person holds the telegraph. The harbourmaster 
 | `dead-slow` | One | One | The cheapest mapped role for every stage | Small | Version 1's `/drive` behaviour, on a budget |
 | `stop` | None | None | — | — | Every captain parks at its next boundary. A person rings it, or the bunker is empty |
 
-- **The numbers underneath.** `boilers`, `fanout`, the model role per stage (the existing `models.json`
-  table), `bunker_per_slice`, `bunker_per_day`, and the stage budgets from theme B. `slipwai telegraph
-  half-ahead` sets them as a group. Each can be set alone, and the fleet board then shows the position as
-  `half-ahead, adjusted`.
+- **The numbers underneath, and fine tuning.** `boilers`, `fanout`, the model role per stage (the existing
+  `models.json` table), `bunker_per_slice`, `bunker_per_day`, and the stage budgets from theme B. `slipwai
+  telegraph half-ahead` sets them as a group. Each can be set alone afterwards: `slipwai telegraph --set
+  boilers=2 fanout=1 bunker_per_day=120M`, and `/model-delegation-settings` for the roles, the same checked
+  edit the version 1 settings commands make. A position with a changed number shows on the fleet board as
+  `half-ahead, adjusted`, and ringing a position again resets every number to that position's group.
 - **The gauges.** The benchmark bracket already records tokens and wall time per stage. The captain appends them
   to the deck log. The harbourmaster sums them at every boundary into two readings on the fleet board: the
   pressure gauge, which is tokens per hour now, per fairway and in total; and the bunker, which is what is left
@@ -523,7 +531,8 @@ contract. The scope gate finds no model, so it holds no context boundary at all.
 ### The hop between fairways
 
 This figure shows why neither fairway waits for the other. The slice that steers by a mark gets clearance when
-the slice that sets the mark is planned, not when it is merged. The steering slice seeds its tests from the
+the slice that sets the mark is planned, not when it is merged. The setting captain writes `mark-set` to its
+deck log; the harbourmaster copies the line into the harbour log; the other captain reads it there. The steering slice seeds its tests from the
 schema. On the standard profile, the same hop carries a route, a schema or a port instead of an event.
 
 ![A mark set in one fairway clears a slice in another](images/mark-hop.svg)
@@ -771,10 +780,13 @@ Resolved:
 
 - [Blocker → section 7, "How phases 1 to 4 are driven"] What runs the ladder on the fork before it has a
   toolkit. Answer: nothing does; plain sessions with the toolkit's skills copied in, people merge.
+- [Blocker → section 1, theme D] Who writes the harbour log. Answer: only the harbourmaster, one process per
+  harbour; captains write their deck log and nothing else; the harbourmaster copies across what others need.
+- [Should → theme D, "The telegraph"] Whether the numbers under a position can be tuned alone. Answer: yes,
+  `slipwai telegraph --set` and `/model-delegation-settings`; the board shows the position as adjusted.
 
 Open, in order:
 
-- [Blocker] The harbour log is one shared append-only file every captain writes, which the plan's own rule forbids.
 - [Blocker] Answering in the dashboard needs a channel back to the logs; the plan calls the bridge a static page.
 - [Blocker] Where the package repositories live (section 9).
 - [Should] How fairways are worked out when a version 1 project migrates (section 6 has a first answer).
