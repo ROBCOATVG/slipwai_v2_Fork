@@ -1,0 +1,63 @@
+name: package conformance
+
+# What a language package's own CI runs, as a workflow a package repository calls rather than copies.
+# The division is theme A's: the keel's gate proves the conformance suite works, against one toy package
+# in-tree; each package proves itself against a pinned keel, on its own schedule; and the keel's release
+# proves the published packages still pass against what is about to ship (slice 8.4).
+#
+# A keel that ran every package's gate would be a keel nobody could change without them, which is the
+# coupling the packages were split out to remove. So this file lives here to be *reused*, and runs
+# nowhere in this repository.
+on:
+  workflow_call:
+    inputs:
+      package:
+        description: The package's directory name, which is also its name in the chandlery
+        required: true
+        type: string
+      keel:
+        description: The keel to prove against — a version on PyPI, or a git ref of this repository
+        required: false
+        default: ''
+        type: string
+      matrix:
+        description: Run the generated-variant matrix as well as the conformance suite
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: ${{ inputs.package }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      # A pinned keel, named by the package. Pinned and not latest: a package says which keel it was
+      # built for in `language.json`, and a CI that silently tracked the newest would turn a keel's
+      # release into every package's problem at once.
+      - name: Install the keel this package is built for
+        run: |
+          set -eu
+          if [ -n "${{ inputs.keel }}" ]; then
+            python -m pip install --disable-pip-version-check "slipwai==${{ inputs.keel }}"
+          else
+            python -m pip install --disable-pip-version-check slipwai
+          fi
+          slipwai --version
+
+      - name: Conformance
+        run: python -m slipwai.conformance "$PWD" "${{ inputs.package }}"
+
+      # Every generated variant of every backend, each held to its own native gate. Opt-in, because it
+      # builds images and starts containers and a package that has not got that far says so.
+      - name: The generated-variant matrix
+        if: ${{ inputs.matrix }}
+        run: python -m slipwai.matrix "$PWD" "${{ inputs.package }}"

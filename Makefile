@@ -51,6 +51,10 @@ progress: ## Tick off in the plan the slices the history says are done
 next: ## What can be brought back next, and what each remaining module waits on
 	python3 scripts/bring-back.py
 
+.PHONY: starters
+starters: ## Materialise every starter combination under build/ for inspection
+	python3 scripts/regenerate-starters.py
+
 .PHONY: check-structure
 check-structure: ## Fail when a module imports against the declared direction, cycles, or outgrows its budget
 	python3 scripts/check-structure.py
