@@ -53,17 +53,19 @@ TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
     # backend answers its probes. The registry and the loader land here in phase 2.
     ("contract", ("registry", "family_only", "language_shape", "language_directory",
                   "features", "extensions", "targets", "axes", "catalog", "catalog_checks", "catalog_merge",
-                  "loaded", "backends", "probes", "ecosystems", "npm_workspace", "examples", "harness")),
+                  "loaded", "backends", "probes", "ecosystems", "npm_workspace", "examples", "harness",
+                  "images")),
     # One validated answer per axis, which applications a project has, and what they add up to being able
     # to do.
     ("answers", ("selection", "origin", "layout", "services", "tooling", "capabilities",
-                 "toolkit", "platform")),
+                 "toolkit", "platform", "convergence", "delivery_facts", "programme", "quick_wins",
+                 "uncommitted", "wrappers")),
     # One module per part of the repository being generated.
     ("parts", ("project",)),
     # The whole of a project, assembled and written, and the whole of it again from a newer keel.
-    ("assembly", ()),
+    ("assembly", ("unlabel",)),
     # The command line, and the entry point the executable is built from.
-    ("edge", ("cli", "__main__")),
+    ("edge", ("cli", "__main__", "preflight", "upgrade")),
     # The package's own `__init__`: last, so it may name anything and nothing may name it.
     ("package", ("__init__",)),
 )
