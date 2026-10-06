@@ -40,6 +40,16 @@ def pinned(packages: Path = PACKAGES) -> bool:
     return packages.is_dir() and any(packages.iterdir())
 
 
+def installed(name: str) -> bool:
+    """Whether a package of this name is in the directory.
+
+    `pinned()` says a package is there; this says *which*. A suite that generates in Go needs Go, and
+    the toy arriving made every `skipUnless(pinned())` true at once — including on suites that then
+    failed with `KeyError: 'go'`, which is a skip that stopped guarding the moment it mattered.
+    """
+    return (PACKAGES / name).is_dir()
+
+
 def pin(packages: Path = PACKAGES) -> Path:
     """Point `SLIPWAI_LANGUAGES` at `packages`, or raise the line saying one is not checked out."""
     missing = unchecked(packages)

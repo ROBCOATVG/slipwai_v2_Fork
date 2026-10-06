@@ -1152,7 +1152,7 @@ open decision left either.
 
 ## 11. The implementation plan
 
-**Progress: 24 of 83 slices done** — phase 1 6/6, phase 2 7/9, phase 3 11/19, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 25 of 83 slices done** — phase 1 6/6, phase 2 7/9, phase 3 12/19, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1263,6 +1263,15 @@ So the slices are cut against the waves, and `make next` is how the next one is 
 data, re-read rather than remembered: `scripts/bring-back.py --check` runs in the gate and fails when the
 keel holds a module the ledger does not know, so the next reading is never stale.
 
+**Why 3.8 runs before 3.4.** It was last in the phase, after the targets and the frontends. By the end
+of 3.3z thirty-one tests were skipped on it, nearly all of them the suites that generate a project —
+the keel could assemble one and nothing had watched it do so. Pulling it forward cost an afternoon and
+found three things the same day: `assets/backing-services/` had come in with only its pruner, so a
+generated project had no `docker-compose.yml`; every `skipUnless(pinned())` became true at once, which
+is a guard that stops guarding exactly when a package arrives; and four of this repository's own tests
+asserted "with nothing installed" rather than an invariant. None of those would have been cheaper after
+three more slices had been built on top. Decided 2026-10-06.
+
 **Why 2.5 moved to phase 3.** The conformance suite proves a package by generating a project with it:
 `conformance/generation.py` reads `images` and `project.flag_route`, `probe.py` reads `examples`,
 `rows.py` reads `services` and `project.backing_services`, `version_rule.py` reads `changelog`, and
@@ -1360,12 +1369,12 @@ refuses by and which nothing else imports. Found on 2026-10-06 while doing the s
 | 3.3g | The answers tier: `convergence`, `delivery_facts`, `images`, `programme`, `quick_wins`, `uncommitted`, `unlabel`, `wrappers`, `preflight`, `upgrade` | upstream | M | Every reader of a repository the keel did not make has a nothing case; every builder and index is pinned and https | done |
 | 3.3h | The last of the parts: the target docs and stacks, `makefile`, `readme`, `production`, `deploy_workflow`, `infra`, `ground_command`, `structure_page`, `strangle_command`, and `strategy`, `survey`, `structure`, `next_steps` beside them | upstream | M | `make next` lists no `project.*` module as waiting | done |
 | 3.3z | `scaffold.py`, last of the parts and not first: it imports forty of them. With `manifest/`, `adopt_report`, the `cli_*` prompts and `tests/support.py` | upstream + cruise-2 | L | `project_files()` is importable and the suites that generate a project are in the tree, skipped on the one thing they still lack | done |
+| 3.8 | The template's toy package in-tree as the one fixture the keel's own gate reads, and the import surface filled in to the twenty modules a package imports (was 2.6) | cruise-2 | L | `check-structure` reads the toy and finds no import off the surface; the surface is twenty lines and every one names a module the keel has; the keel pins no package; and every suite that generates a project runs against the toy — `test_services`, `test_layout`, `test_toolkit`, `test_harness`, `test_npm_workspace`, the flag gate and the prune rows | done |
 | 3.4 | Targets `aws` and `azure`, their stacks and docs, as the **liner** shape | upstream | L | Stack validation tests green |  |
 | 3.4b | The **skiff** shape for both targets: a Lightsail container service and a scale-to-zero Container App, one environment, the shape question in the interview, `converge --shape`; the compute named in one row of the target's table, not spread through its stack | new | L | Both shapes validate against the real providers; a slipway project generates a skiff by default; changing a skiff's compute is one row and its stack file |  |
 | 3.5 | Frontends and backing services, the `react-vite` npm-workspace contract | upstream + cruise-2 | M | The frontend variants match |  |
 | 3.6 | The pruner with rows emitted as data | cruise-2 | S | `scripts/backing-services.py` in a generated project carries no language name |  |
 | 3.7 | `make starters`, and the full matrix per package run from each package's CI against a pinned keel, never from the keel's | cruise-2 | M | The keel's gate stays under ten minutes and reads one package, the toy; each package's CI proves its own variants |  |
-| 3.8 | The template's toy package in-tree as the one fixture the keel's own gate reads, and the import surface filled in to the twenty modules a package imports (was 2.6) | cruise-2 | L | `check-structure` reads the toy and finds no import off the surface; the surface is twenty lines and every one names a module the keel has; the keel pins no package; and every suite that generates a project runs against the toy — `test_services`, `test_layout`, `test_toolkit`, `test_harness`, `test_npm_workspace`, the flag gate and the prune rows |  |
 | 3.9 | `conformance/` and `matrix/` as `python -m` entry points (was 2.5) | cruise-2 | L | Both run against the template's toy package |  |
 
 Depends on: phase 2.

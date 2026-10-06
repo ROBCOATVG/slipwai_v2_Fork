@@ -1,0 +1,1 @@
+# A placeholder for a real language's Postgres checkpoint store, behind the read-model port.

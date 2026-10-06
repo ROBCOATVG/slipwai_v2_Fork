@@ -1,0 +1,1 @@
+# __SERVICE_NAME__: a placeholder for a real language's service entry point.

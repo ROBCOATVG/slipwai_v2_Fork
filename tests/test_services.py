@@ -48,8 +48,8 @@ def with_payments(
     return project_files("two", "event-modelling", "none", apps), apps
 
 
-@unittest.skipUnless(checkout_packages.pinned(),
-                     "generates a project, so it needs a package in the directory: slice 3.8")
+@unittest.skipUnless(all(checkout_packages.installed(n) for n in ("go", "typescript", "python",)),
+                     "generates in go, which the keel never installs: each package's own CI")
 class ServicesTest(FactoryTestCase):
     def test_the_manifest_records_every_application_and_reads_back(self) -> None:
         apps = default_apps("typescript", "react-vite", Selection({"http": "fastify"}))

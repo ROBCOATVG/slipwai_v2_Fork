@@ -1,0 +1,1 @@
+# A placeholder for a real language's feature-flag reader: `flag("<key>")` answers off.

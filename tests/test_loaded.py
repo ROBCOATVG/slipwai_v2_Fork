@@ -16,18 +16,22 @@ import unittest
 
 import checkout_packages  # noqa: F401
 
-from slipwai.catalog import CATALOG
+from slipwai.catalog import CATALOG, PACKAGES
 from slipwai.loaded import build, refusals, sound, without_later
 from slipwai.registry import Registry, registry
 
 
 class EmptyKeelTest(unittest.TestCase):
-    def test_the_process_registry_builds_and_is_empty(self) -> None:
-        """A keel with no package installed answers nothing, and answering nothing is not a failure."""
+    def test_the_process_registry_builds_from_the_package_in_the_directory(self) -> None:
+        """One package in, one backend out. The keel itself still answers for none."""
         built = registry()
         self.assertIsInstance(built, Registry)
-        self.assertEqual(dict(built.backends), {})
-        self.assertEqual(dict(built.families), {})
+        self.assertEqual(set(built.backends), {"toy-plain"})
+        self.assertEqual(set(built.families), {"toy"})
+
+    def test_a_registry_of_no_package_answers_nothing_and_that_is_not_a_failure(self) -> None:
+        built, refused = build((), [], CATALOG)
+        self.assertEqual((dict(built.backends), refused), ({}, []))
 
     def test_it_is_built_once_per_process(self) -> None:
         """`registry()` is cached: the loader imports a package's Python, and importing it twice would run
@@ -38,8 +42,9 @@ class EmptyKeelTest(unittest.TestCase):
         self.assertEqual(refusals(), [])
 
     def test_the_keels_own_catalogue_is_sound_before_any_package_is_folded_in(self) -> None:
-        """If this is false the fault is the keel's, and no package may be blamed for it."""
-        self.assertTrue(sound((), [], CATALOG))
+        """If this is false the fault is the keel's, and no package may be blamed for it. Asked of the
+        catalogue with the installed packages taken back out, which is what `sound` is for."""
+        self.assertTrue(sound((), list(PACKAGES), CATALOG))
 
     def test_build_takes_no_language_of_its_own(self) -> None:
         """Version 1 passed the built-in languages first. Version 2 has none — every language is a package

@@ -14,28 +14,26 @@
 # generated project, where the keel is not installed and nothing of it can be imported.
 
 slipwai.assets
+slipwai.backends
 slipwai.errors
+slipwai.images
+slipwai.naming
+slipwai.npm_workspace
+slipwai.probes
 slipwai.registry
+slipwai.selection
+slipwai.services
+slipwai.tooling
+slipwai.project.backing_services
+slipwai.project.ci_workflows
+slipwai.project.composition
+slipwai.project.entry_stores
+slipwai.project.flag_route
+slipwai.project.flags
+slipwai.project.openapi
+slipwai.project.renovate
+slipwai.project.shared_packages
 
-# The rest of the twenty, with the phase that brings each. Read off the six packages on 2026-10-06: they
-# import 46 names across exactly 20 modules, which is where the plan's "exactly twenty" comes from. A line
-# moves up into the list above in the slice that lands its module, and not before — the gate refuses a
-# surface that promises a module the keel has not got.
-#
-#   slipwai.backends                      phase 3
-#   slipwai.images                        phase 3
-#   slipwai.naming                        phase 3
-#   slipwai.npm_workspace                 phase 3
-#   slipwai.probes                        phase 3
-#   slipwai.selection                     phase 3
-#   slipwai.services                      phase 3
-#   slipwai.tooling                       phase 3
-#   slipwai.project.backing_services      phase 3
-#   slipwai.project.ci_workflows          phase 3
-#   slipwai.project.composition           phase 3
-#   slipwai.project.entry_stores          phase 3
-#   slipwai.project.flag_route            phase 3
-#   slipwai.project.flags                 phase 3
-#   slipwai.project.openapi               phase 3
-#   slipwai.project.renovate              phase 3
-#   slipwai.project.shared_packages       phase 3
+# The toy package's own tests import `slipwai.conformance` — the suite the keel exports for a package to
+# run against itself, rather than a module its source imports for an answer. The gate reads a package's
+# source and not its tests, so it is not on this list; it arrives in slice 3.9.

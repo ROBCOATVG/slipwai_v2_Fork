@@ -1,0 +1,19 @@
+{
+  "name": "toy",
+  "core": ">=9.0,<10",
+  "order": 90,
+  "family": "toy",
+  "backends": {
+    "toy-plain": {
+      "framework": "plain",
+      "label": "Toy — the language template's inert placeholder; not a real language",
+      "targets": ["none"],
+      "options": {
+        "event-store": ["memory", "postgres"],
+        "http": ["none"],
+        "auth": ["none"],
+        "users": ["none"]
+      }
+    }
+  }
+}

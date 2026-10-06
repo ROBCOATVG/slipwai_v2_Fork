@@ -23,7 +23,7 @@ from slipwai.axes import validate_axes
 from slipwai.catalog import CATALOG, PACKAGES, SCHEMA_VERSION
 from slipwai.catalog_checks import validate_catalog
 from slipwai.errors import Refusal
-from slipwai.registry import load
+from slipwai.registry import load, registry
 from slipwai.targets import validate_targets
 
 EMPTY = load([])
@@ -32,12 +32,24 @@ SHIPPED = json.loads((ROOT / "catalog.json").read_text(encoding="utf-8"))
 
 class ShippedCatalogTest(unittest.TestCase):
     def test_the_keel_ships_no_backend(self) -> None:
-        """Theme A's line, in one assertion: the keel declares the questions, a package the answers."""
+        """Theme A's line, in one assertion: the keel declares the questions, a package the answers.
+        `catalog.json` on disk has none; `CATALOG` in memory has whatever is installed merged in."""
         self.assertEqual(SHIPPED["backends"], {})
 
-    def test_the_whole_catalogue_validates_with_nothing_installed(self) -> None:
-        """A keel with no package is a usable keel with a short menu, not a broken one."""
-        validate_catalog(CATALOG, loaded=EMPTY)
+    def test_the_backend_in_the_merged_catalogue_came_from_a_package(self) -> None:
+        self.assertEqual(set(CATALOG["backends"]), {"toy-plain"})
+
+    def test_the_whole_catalogue_validates_against_the_registry_it_describes(self) -> None:
+        """The catalogue and the registry are two halves of one answer: every backend listed has an
+        object behind it, and every object has a row. Held against the process's own registry, which is
+        the toy package merged in."""
+        validate_catalog(CATALOG, loaded=registry())
+
+    def test_a_catalogue_holding_a_backend_the_registry_has_not_is_refused(self) -> None:
+        """Which is what an empty registry makes of a catalogue the toy is merged into."""
+        with self.assertRaises(Refusal) as raised:
+            validate_catalog(CATALOG, loaded=EMPTY)
+        self.assertIn("no registry object", str(raised.exception))
 
     def test_the_axes_are_the_four_the_keel_asks_about(self) -> None:
         self.assertEqual(set(SHIPPED["axes"]), {"event-store", "http", "auth", "users"})
@@ -45,8 +57,10 @@ class ShippedCatalogTest(unittest.TestCase):
     def test_the_schema_version_is_the_one_the_code_speaks(self) -> None:
         self.assertEqual(SHIPPED["schemaVersion"], SCHEMA_VERSION)
 
-    def test_no_package_is_installed_in_a_checkout_that_pins_none(self) -> None:
-        self.assertEqual(PACKAGES, [] if not checkout_packages.pinned() else PACKAGES)
+    def test_the_toy_package_is_the_one_this_keel_reads(self) -> None:
+        """One package, in-tree, and no first-party one: a keel whose gate checks seven packages is a
+        keel that cannot be changed without them."""
+        self.assertEqual([package.name for package in PACKAGES], ["toy"])
 
 
 class MirrorTest(unittest.TestCase):
@@ -111,9 +125,12 @@ class RefusalBoundaryTest(unittest.TestCase):
         """So a verb catches one kind of thing. `ValueError` is the validators' word, not the keel's."""
         self.assertIsInstance(self.refuse({**CATALOG, "schemaVersion": "1.0"}), Refusal)
 
-    def test_with_no_package_installed_the_refusal_names_no_command(self) -> None:
+    def test_with_a_package_installed_the_refusal_names_the_command_that_shows_whose(self) -> None:
+        """The merged catalogue is the packages' as much as the keel's, so `list` is what shows whose."""
         refusal = self.refuse({**CATALOG, "schemaVersion": "1.0"})
-        self.assertEqual([fault.fix for fault in refusal.faults], [None])
+        self.assertEqual(len(refusal.faults), 1)
+        self.assertIsNotNone(refusal.faults[0].fix)
+        self.assertIn("list", str(refusal.faults[0].fix))
 
     def test_the_underlying_value_error_is_kept_as_the_cause(self) -> None:
         """A keel bug should still have a traceback that points at the rule that fired."""
