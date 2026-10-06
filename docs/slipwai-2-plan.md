@@ -34,7 +34,7 @@ version 1, it uses version 1's own names and says so.
 | **Keel** | The core of slipwai: the questions it asks, the code that writes a project, the toolkit, the adoption path, and the delivery loop. Every package attaches to the keel | "core", "core driver" |
 | **Language** | A package that holds every answer for one language family, with a thin framework package for each framework of that family. Example: `java` is a family, `java-quarkus` is a framework of it | Same word |
 | **Extension** | A package of developer tooling that a project chooses to add. Example: `codegraph` | Same word |
-| **Chandlery** | The index of packages that slipwai can install: languages and extensions, each with a version, a compatibility range, a checksum and a publisher. `slipwai chandlery` lists it. `slipwai install <name>` installs from it | "marketplace", "index" |
+| **Chandlery** | The index of packages that slipwai can install: languages and extensions, each with a version, a compatibility range, a checksum, a publisher and a one-line description. `slipwai search <term>` finds packages across every channel; `slipwai show <name>` describes one; `slipwai install <name>` installs it | "marketplace", "index" |
 | **Slice** | One unit of product work that an actor can use when it is done. Unchanged from version 1 | Same word |
 | **Fairway** | One bounded context's slices, in split order, with one release flag and one holder. The fairway is the unit of scope, of ownership and of release. Several fairways run side by side into the same harbour. A vessel keeps to its own fairway | "value stream", "workstream" |
 | **Berth** | The provisioned place where one captain works: a sandbox or container, a git worktree, environment variables, an allocated block of ports, a database, and scratch directories. A berth holds no cloud or forge credential. `slipwai berth add`, `slipwai berth status` and `slipwai berth remove` manage berths | "workstation", "lane" |
@@ -278,8 +278,18 @@ first two items of cruise-2's CI proposal. Decided 2026-10-06 (section 10).
    exists.
 3. Extensions become packages on the same loader. `codegraph`, `uipro` and `ux-gates` move out of the keel.
 4. The chandlery: one `index.json` per channel. It lists languages and extensions alike, each with a version, a
-   compatibility range, a checksum and a publisher. An organisation can run a private chandlery.
-5. When nothing is installed, `slipwai generate` names what to install and offers to do it. The standalone
+   compatibility range, a checksum, a publisher, a one-line description and tags. An organisation can run a
+   private chandlery.
+5. **Search from the command line.** `slipwai search <term>` reads every configured channel and matches the
+   term against name, description, tags, family, framework and the axis options a package answers, and prints
+   one line per match: name, kind (language or extension), latest version that fits this keel, publisher
+   status (`first-party`, `confirmed`, `new to you`), installed or not, and the description. `slipwai search
+   --kind extension`, `--family java` and `--answers http=fastapi` narrow it. `slipwai search` with no term
+   lists everything. `slipwai show <name>` prints one package in full: what it answers, which targets, which
+   frameworks, the keel range, the publisher and its repository, the release history, and the install command.
+   The same search runs inside `generate` when an answer names something not installed, so the interview can
+   say "three packages answer that; install one?" instead of refusing.
+6. When nothing is installed, `slipwai generate` names what to install and offers to do it. The standalone
    executable bundles no language: it is the keel alone, the same as the wheel, so there is one artefact to
    build and sign and no bundled copy to drift from the chandlery's. Decided 2026-10-06.
 
@@ -1089,7 +1099,7 @@ Depends on: phase 2.
 | 4.2 | `adopt`, the survey, `converge` | upstream | L | The adopted fixtures survey as before |
 | 4.3 | `add-service`, `add-frontend`, `describe-service` | upstream | M | Mid-flight additions match cruise-2 |
 | 4.4 | `./init` and the installer, with the language record read and reported | upstream + cruise-2 | M | A clone with a missing language is told what to install |
-| 4.5 | `slipwai list`, `slipwai install`, `language list / upgrade / remove`, the index client | cruise-2 | M | Install from a local index end to end |
+| 4.5 | `slipwai list`, `slipwai search`, `slipwai show`, `slipwai install`, `language upgrade / remove`, the index client | cruise-2 + new | M | Search and install from a local index end to end; `search` with no term lists every channel |
 | 4.6 | `upgrade` without its 1.x paths | upstream | S | The keel upgrades itself from the index |
 | 4.7 | The standalone executable, bundling no language | upstream | M | `make test-executable` green on four platforms |
 
@@ -1124,7 +1134,7 @@ most worth running in two fairways themselves, once 5.3 exists.
 | Slice | What | From | Size | Done when |
 |---|---|---|---|---|
 | 6.1 | Extensions as packages on the same loader; `codegraph`, `uipro`, `ux-gates` out of the keel | new | L | `./init --extension` installs from a directory package |
-| 6.2 | The index schema with publishers, checksums and the signature field; the public channel as a Pages site | cruise-2 + new | M | `slipwai install` reads it for both kinds |
+| 6.2 | The index schema with publishers, checksums, the signature field, descriptions and tags; the public channel as a Pages site | cruise-2 + new | M | `slipwai search` and `slipwai install` read it for both kinds |
 | 6.3 | A private channel per organisation, `SLIPWAI_LANGUAGE_INDEX` generalised to `SLIPWAI_CHANDLERY` | cruise-2 | S | An organisation's index serves its own packages |
 | 6.4 | `make release` in the package template: tag, build, upload, append to the index | new | M | A release from the template lands in a local index |
 | 6.5 | Signed releases and the trust store: Sigstore or minisign verification, `trust.json`, the `ROBCOATVG` root, the confirm-once prompt, `unsigned` in `slipwai list` | new | M | A new publisher is confirmed once and then installs silently; a mismatched signature is refused; a hand-placed package loads and says `unsigned` |
