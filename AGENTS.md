@@ -70,6 +70,11 @@ breaking a package built somewhere this repository cannot see. The ceiling is tw
 
 ## The small things that save a day
 
+- **A slice that lands says so in a trailer.** End the commit that merges a slice with
+  `Slice-done: <n>.<m>`, then run `make progress`: `scripts/progress.py` ticks the plan's tables from the
+  history, so nothing is marked done that is not in it. A subject line that merely mentions a slice is not
+  a trailer, deliberately — the first version of the ticker read subjects and marked a slice done whose
+  work had not started.
 - **`GLOSSARY.md` is written, not edited.** It comes from the plan's section 1 through
   `scripts/glossary.py`. Edit the plan, run `make glossary`, commit both.
 - **The version lives in `VERSION` and nowhere else.** `pyproject.toml` reads it, the wheel carries it as

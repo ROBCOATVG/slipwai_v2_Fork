@@ -43,6 +43,10 @@ unit: ## The fast tests only — the per-increment gate, with the slow modules l
 glossary: ## Rewrite GLOSSARY.md from the plan's vocabulary (tests/test_glossary.py holds them in step)
 	python3 scripts/glossary.py
 
+.PHONY: progress
+progress: ## Tick off in the plan the slices the history says are done
+	python3 scripts/progress.py
+
 .PHONY: check-structure
 check-structure: ## Fail when a module imports against the declared direction, cycles, or outgrows its budget
 	python3 scripts/check-structure.py
