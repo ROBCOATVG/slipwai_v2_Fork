@@ -115,9 +115,9 @@ class ContainmentTest(unittest.TestCase):
         first, second = self.root / "first", self.root / "second"
         for root in (first, second):
             (root / "assets").mkdir(parents=True)
-        (second / "assets/only-in-second.txt").write_text("x")
-        (first / "assets/in-both.txt").write_text("first")
-        (second / "assets/in-both.txt").write_text("second")
+        (second / "assets/only-in-second.txt").write_text("x", encoding="utf-8")
+        (first / "assets/in-both.txt").write_text("first", encoding="utf-8")
+        (second / "assets/in-both.txt").write_text("second", encoding="utf-8")
         self.assertEqual(located((first, second), "in-both.txt"), (first, first / "assets/in-both.txt"))
         found = located((first, second), "only-in-second.txt")
         assert found is not None

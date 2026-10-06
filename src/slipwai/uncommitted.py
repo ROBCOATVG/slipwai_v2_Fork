@@ -55,7 +55,7 @@ def digest(path: Path) -> str | None:
 
 def recorded(root: Path) -> dict[str, str | None]:
     try:
-        read = json.loads(record_path(root).read_text())
+        read = json.loads(record_path(root).read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {}
     return read if isinstance(read, dict) else {}

@@ -75,11 +75,11 @@ def write_package(parent: Path, name: str = "bad", fragment: dict | str | None =
     # The flag reader `required_answers` gives a fake names a tree under the package's assets, and the loader holds
     # every source to being there, so the fake has the one it names.
     (root / "assets/languages/fake/flags").mkdir(parents=True)
-    (root / "assets/languages/fake/flags/flags.x").write_text("x")
+    (root / "assets/languages/fake/flags/flags.x").write_text("x", encoding="utf-8")
     if init is not None:
         package = root / f"slipwai_language_{name.replace('-', '_')}"
         package.mkdir()
-        (package / "__init__.py").write_text(init)
+        (package / "__init__.py").write_text(init, encoding="utf-8")
     return root
 
 
@@ -113,7 +113,7 @@ class DirectoryTest(unittest.TestCase):
     def test_a_file_or_a_hidden_directory_is_not_a_language_and_is_skipped_silently(self) -> None:
         with tempfile.TemporaryDirectory() as parent:
             base = Path(parent)
-            (base / "notes.txt").write_text("not a language")
+            (base / "notes.txt").write_text("not a language", encoding="utf-8")
             (base / ".git").mkdir()
             (base / ".DS_Store").mkdir()
             write_package(base, "bad")
@@ -242,7 +242,7 @@ class ImportTest(unittest.TestCase):
         parent = Path(tempfile.mkdtemp())
         self.addCleanup(lambda: __import__("shutil").rmtree(parent, ignore_errors=True))
         root = write_package(parent, init="from . import helper\n1 / 0\n")
-        (root / "slipwai_language_bad" / "helper.py").write_text("VALUE = 1\n")
+        (root / "slipwai_language_bad" / "helper.py").write_text("VALUE = 1\n", encoding="utf-8")
         packages, _ = read(parent, CORE)
         with self.assertRaises(Refused):
             import_package(packages[0])

@@ -52,7 +52,7 @@ class AwsStackTest(FactoryTestCase):
             # `count` must be knowable at plan time, and `secret_arns` is not: its ARNs are created in the
             # same apply, so deciding the count from it fails every first apply into a fresh environment —
             # a failure `tofu validate` cannot see. The count reads `has_secrets`, decided from `var.services`.
-            stack = (repo / "infra/service/main.tf").read_text()
+            stack = (repo / "infra/service/main.tf").read_text(encoding="utf-8")
             self.assertNotIn("count = length(local.secret_arns)", stack)
             self.assertEqual(stack.count("count = local.has_secrets ? 1 : 0"), 2)
             # Fargate rejects an awslogs configuration without a stream prefix — another apply-time failure
@@ -61,7 +61,7 @@ class AwsStackTest(FactoryTestCase):
             # A buildpack image's entrypoint starts the web process whatever `command` it is given, so the
             # migrate task points the entrypoint at the buildpack launcher wherever it gives a command — a
             # run-time failure, not an apply-time one: the task serves instead of migrating and never exits.
-            migrate = (repo / "infra/service/rds.tf").read_text()
+            migrate = (repo / "infra/service/rds.tf").read_text(encoding="utf-8")
             self.assertIn(
                 'entryPoint = ["/cnb/lifecycle/launcher"]\n        command    = each.value.migrate_command', migrate
             )
@@ -72,11 +72,11 @@ class AwsStackTest(FactoryTestCase):
             self.assertIn('strategy             = "BLUE_GREEN"', stack)
             self.assertIn("bake_time_in_minutes = var.bake_minutes", stack)
             self.assertIn("sigint_rollback       = true", stack)
-            ingress = (repo / "infra/service/ingress.tf").read_text()
+            ingress = (repo / "infra/service/ingress.tf").read_text(encoding="utf-8")
             for said in ('"aws_lb_target_group" "blue"', '"aws_lb_target_group" "green"', "ignore_changes = [action]",
                          '"aws_cloudfront_distribution" "service"', 'origin_protocol_policy = "http-only"'):
                 self.assertIn(said, ingress)
-            self.assertIn("bake_minutes = 5", (repo / "infra/service/production.tfvars").read_text())
+            self.assertIn("bake_minutes = 5", (repo / "infra/service/production.tfvars").read_text(encoding="utf-8"))
             # The infrastructure role's managed policy lives at the policy root, not under `service-role/`
             # where ECS's other managed policies are; the wrong path is a 404 at apply, not a validate error.
             self.assertIn(
@@ -90,14 +90,14 @@ class AwsStackTest(FactoryTestCase):
             descriptions = [
                 (path.name, text)
                 for path in sorted((repo / "infra/service").glob("*.tf"))
-                for group in groups.findall(path.read_text())
+                for group in groups.findall(path.read_text(encoding="utf-8"))
                 for text in described.findall(group)
             ]
             self.assertEqual(len(descriptions), 3, descriptions)
             for file, text in descriptions:
                 with self.subTest(file=file, description=text):
                     self.assertRegex(text, allowed)
-            frontend = (repo / "infra/service/frontend.tf").read_text()
+            frontend = (repo / "infra/service/frontend.tf").read_text(encoding="utf-8")
             self.assertIn("api_origin = local.service_origins[var.web.api]", frontend)
             # The app's routes are rewritten to index.html by a function on the site's behaviour alone.
             # `custom_error_response` is the whole distribution's, so it would answer the service's
@@ -133,6 +133,7 @@ class AwsStackTest(FactoryTestCase):
                 ],
                 cwd=maximal, check=True, capture_output=True,
             )
-            self.assertEqual((maximal / "infra/service/rds.tf").read_text(), "")
-            self.assertNotIn("backing-service:postgres", (maximal / "infra/service/main.tf").read_text())
+            self.assertEqual((maximal / "infra/service/rds.tf").read_text(encoding="utf-8"), "")
+            self.assertNotIn("backing-service:postgres",
+                (maximal / "infra/service/main.tf").read_text(encoding="utf-8"))
             self.validate(maximal / "infra/service")

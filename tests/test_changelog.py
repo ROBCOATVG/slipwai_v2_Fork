@@ -37,7 +37,7 @@ LEAD = re.compile(r"^\*\*[^*]+[.!?]\*\*")
 
 
 def entries() -> list[tuple[str, str | None]]:
-    return [(match.group(1), match.group(2)) for match in ENTRY.finditer(CHANGELOG.read_text())]
+    return [(match.group(1), match.group(2)) for match in ENTRY.finditer(CHANGELOG.read_text(encoding="utf-8"))]
 
 
 def parts(version: str) -> tuple[int, int, int]:
@@ -160,7 +160,7 @@ class ChangelogTest(unittest.TestCase):
         and the file is also what keeps the directory in the repository between releases."""
         guide = FRAGMENTS / "README.md"
         self.assertTrue(guide.is_file(), "changelog.d/ has no README.md saying what belongs in it")
-        text = guide.read_text()
+        text = guide.read_text(encoding="utf-8")
         self.assertIn("make release", text)
         self.assertIn("AGENTS.md", text)
 
@@ -170,7 +170,7 @@ class ChangelogTest(unittest.TestCase):
         into the tail of the paragraph above it. Cheap to check, and invisible until the page is read."""
         fused = []
         for path in [CHANGELOG, *(path for path, _claim, _body in fragments())]:
-            lines = path.read_text().split("\n")
+            lines = path.read_text(encoding="utf-8").split("\n")
             fused += [
                 f"{path.relative_to(ROOT).as_posix()} line {number}: {line[:50]}…"
                 for number, line in enumerate(lines, start=1)
@@ -253,11 +253,11 @@ class ChangelogTest(unittest.TestCase):
     def test_the_rule_and_the_files_point_at_each_other(self) -> None:
         """`AGENTS.md` is where the versioning rule lives, and a fragment nobody is told to write is a
         fragment nobody writes."""
-        rule = (ROOT / "AGENTS.md").read_text()
+        rule = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
         self.assertIn("CHANGELOG.md", rule)
         self.assertIn("changelog.d/", rule)
-        self.assertIn("make changelog", (ROOT / "docs/maintaining.md").read_text())
-        self.assertIn("CHANGELOG.md", (ROOT / "README.md").read_text())
+        self.assertIn("make changelog", (ROOT / "docs/maintaining.md").read_text(encoding="utf-8"))
+        self.assertIn("CHANGELOG.md", (ROOT / "README.md").read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

@@ -26,7 +26,7 @@ PINNED = sorted(
     if path.is_dir() and not path.name.startswith(".")
 ) if checkout_packages.PACKAGES.is_dir() else []
 
-CORE = json.loads((ROOT / "catalog.json").read_text())
+CORE = json.loads((ROOT / "catalog.json").read_text(encoding="utf-8"))
 
 
 def with_keel_rows(catalog: Mapping[str, Any], *rows: tuple[str, int]) -> dict[str, Any]:
@@ -135,7 +135,7 @@ class MovesTest(unittest.TestCase):
                          ["go", "java", "java-quarkus", "java-spring", "python", "typescript"])
         merged, refused = merge(copy.deepcopy(CORE), packages)
         self.assertEqual(refused, {})
-        before = json.loads((ROOT / "tests/catalog-before-s08.json").read_text())
+        before = json.loads((ROOT / "tests/catalog-before-s08.json").read_text(encoding="utf-8"))
         # Less the default backend, which is the merge's first backend now and no key of the keel's.
         default = {key: value for key, value in before["default"].items() if key != "backend"}
         expected = {**before, "schemaVersion": "9.0", "default": default}

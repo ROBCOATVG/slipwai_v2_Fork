@@ -307,7 +307,7 @@ class ServicesTest(FactoryTestCase):
             self.assertFalse((repo / "apps/service/migrations").exists())
             self.assertFalse(list((repo / "apps/service/src").glob("*/adapters/driving/http/auth")))
             self.assertTrue(list((repo / "apps/service/src").glob("*/adapters/driving/http/app.py")))
-            self.assertNotIn("psycopg", (repo / "apps/service/pyproject.toml").read_text())
+            self.assertNotIn("psycopg", (repo / "apps/service/pyproject.toml").read_text(encoding="utf-8"))
             self.assertFalse((repo / "apps/payments/cmd/migrate").exists())
             self.assertFalse((repo / "apps/payments/adapters/driving/http/auth").exists())
             self.assertTrue((repo / "apps/payments/adapters/driving/http/app.go").is_file())

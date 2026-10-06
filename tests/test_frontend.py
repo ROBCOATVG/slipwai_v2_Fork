@@ -28,7 +28,7 @@ class FrontendTest(FactoryTestCase):
                         language,
                         "react-vite",
                     )
-                    metadata = json.loads((repo / "project.json").read_text())
+                    metadata = json.loads((repo / "project.json").read_text(encoding="utf-8"))
                     # The *family*, with the framework as its own field beside it — which is the shape
                     # `project.json` deliberately has, and the shape the two differ in for a backend named
                     # for the framework that owns its startup.
@@ -51,18 +51,19 @@ class FrontendTest(FactoryTestCase):
                     self.assertTrue((repo / "apps/web/src/App.tsx").is_file())
                     self.assertTrue((repo / "apps/web/tests/App.test.tsx").is_file())
                     self.assertTrue((repo / "package-lock.json").is_file())
-                    self.assertIn("apps/web", json.loads((repo / "package.json").read_text())["workspaces"])
+                    self.assertIn("apps/web",
+                        json.loads((repo / "package.json").read_text(encoding="utf-8"))["workspaces"])
                     if profile == "event-modelling":
                         self.assertIn(
                             "Event sourcing applies only to `apps/service/**`",
-                            (repo / "AGENTS.md").read_text(),
+                            (repo / "AGENTS.md").read_text(encoding="utf-8"),
                         )
                         self.assertIn(
                             "it never owns streams, rehydrates Deciders",
-                            (repo / "skills/event-sourcing/SKILL.md").read_text(),
+                            (repo / "skills/event-sourcing/SKILL.md").read_text(encoding="utf-8"),
                         )
                     web_text = "\n".join(
-                        path.read_text()
+                        path.read_text(encoding="utf-8")
                         for path in (repo / "apps/web").rglob("*")
                         if path.is_file()
                     ).lower()
@@ -78,7 +79,7 @@ class FrontendTest(FactoryTestCase):
         with tempfile.TemporaryDirectory() as directory:
             repo = self.generate(directory, "gated", "standard", "go", "react-vite")
 
-            helper = (repo / "apps/web/src/flags.ts").read_text()
+            helper = (repo / "apps/web/src/flags.ts").read_text(encoding="utf-8")
             self.assertIn("export function flagEnabled(", helper)
             self.assertIn("`VITE_FLAG_${key.toUpperCase().replace(/-/g, '_')}`", helper)
             self.assertTrue((repo / "apps/web/tests/flags.test.ts").is_file())
@@ -94,7 +95,7 @@ class FrontendTest(FactoryTestCase):
             )
             (repo / "apps/web/src/illegal.ts").write_text(
                 "import value from '../../service/health/internal';\nvoid value;\n"
-            )
+            , encoding="utf-8")
 
             result = subprocess.run(
                 ["python3", "scripts/check-imports.py"],
@@ -161,9 +162,9 @@ class FrontendTest(FactoryTestCase):
             )
 
             # A stylesheet import, which is what every frontend adds before its second component.
-            (repo / "apps/web/src/app.css").write_text("main { padding: 1rem; }\n")
+            (repo / "apps/web/src/app.css").write_text("main { padding: 1rem; }\n", encoding="utf-8")
             app = repo / "apps/web/src/App.tsx"
-            app.write_text("import './app.css';\n" + app.read_text())
+            app.write_text("import './app.css';\n" + app.read_text(encoding="utf-8"))
             typecheck = subprocess.run(
                 ["npm", "--workspace", "apps/web", "run", "typecheck"],
                 cwd=repo, capture_output=True, text=True,
@@ -183,39 +184,39 @@ class FrontendTest(FactoryTestCase):
         """
         with tempfile.TemporaryDirectory() as directory:
             repo = self.generate(directory, "styled-web", frontend="react-vite")
-            entry = (repo / "apps/web/src/main.tsx").read_text()
+            entry = (repo / "apps/web/src/main.tsx").read_text(encoding="utf-8")
 
             # Imported once, from the entry point: they are the app's, not any screen's.
             self.assertIn("./styles/tokens.css", entry)
             self.assertIn("./styles/base.css", entry)
-            tokens = (repo / "apps/web/src/styles/tokens.css").read_text()
+            tokens = (repo / "apps/web/src/styles/tokens.css").read_text(encoding="utf-8")
             # Tokens as custom properties, light and dark, and a scale rather than a palette of one.
             self.assertIn("--colour-surface", tokens)
             self.assertIn("prefers-color-scheme: dark", tokens)
             self.assertIn("--space-3", tokens)
-            base = (repo / "apps/web/src/styles/base.css").read_text()
+            base = (repo / "apps/web/src/styles/base.css").read_text(encoding="utf-8")
             # The elements a browser already renders, so a slice writing `<button>` gets this project's.
             for element in ("button", "table", "input", "a {"):
                 self.assertIn(element, base)
             # And the shell the route sits inside, with real landmarks rather than styled divs.
-            shell = (repo / "apps/web/src/App.tsx").read_text()
+            shell = (repo / "apps/web/src/App.tsx").read_text(encoding="utf-8")
             for landmark in ("<header", "<main", "<footer", "<nav"):
                 self.assertIn(landmark, shell)
 
             page = repo / "docs/design.md"
             self.assertTrue(page.is_file())
-            self.assertIn("apps/web/src/styles/tokens.css", page.read_text())
+            self.assertIn("apps/web/src/styles/tokens.css", page.read_text(encoding="utf-8"))
             # Linked from where somebody about to write a screen is already reading.
-            self.assertIn("docs/design.md", (repo / "AGENTS.md").read_text())
-            self.assertIn("docs/design.md", (repo / "skills/react-testing/SKILL.md").read_text())
-            self.assertIn("[`design.md`](design.md)", (repo / "docs/README.md").read_text())
+            self.assertIn("docs/design.md", (repo / "AGENTS.md").read_text(encoding="utf-8"))
+            self.assertIn("docs/design.md", (repo / "skills/react-testing/SKILL.md").read_text(encoding="utf-8"))
+            self.assertIn("[`design.md`](design.md)", (repo / "docs/README.md").read_text(encoding="utf-8"))
 
     def test_a_project_with_no_browser_surface_has_no_design_to_record(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = self.generate(directory, "headless-service", frontend="none")
 
             self.assertFalse((repo / "docs/design.md").exists())
-            self.assertNotIn("docs/design.md", (repo / "AGENTS.md").read_text())
+            self.assertNotIn("docs/design.md", (repo / "AGENTS.md").read_text(encoding="utf-8"))
 
     def test_a_browser_app_brings_the_two_design_skills_and_the_design_page_says_when(self) -> None:
         """The catalogue said how work is done and nothing about what a screen should look like or how to
@@ -228,25 +229,25 @@ class FrontendTest(FactoryTestCase):
             repo = self.generate(directory, "designed-web", frontend="react-vite")
 
             for skill in ("frontend-design", "web-interface-guidelines"):
-                text = (repo / f"skills/{skill}/SKILL.md").read_text()
+                text = (repo / f"skills/{skill}/SKILL.md").read_text(encoding="utf-8")
                 self.assertIn("capabilities: frontend", text)
                 self.assertTrue((repo / f"skills/{skill}/LICENSE").is_file(), f"{skill} carries no LICENSE")
             guidelines = repo / "skills/web-interface-guidelines/references/guidelines.md"
-            self.assertIn("### Anti-patterns", guidelines.read_text())
-            wrapper = (repo / "skills/web-interface-guidelines/SKILL.md").read_text()
+            self.assertIn("### Anti-patterns", guidelines.read_text(encoding="utf-8"))
+            wrapper = (repo / "skills/web-interface-guidelines/SKILL.md").read_text(encoding="utf-8")
             self.assertNotIn("raw.githubusercontent.com", wrapper)
 
-            page = (repo / "docs/design.md").read_text()
+            page = (repo / "docs/design.md").read_text(encoding="utf-8")
             self.assertIn("`skills/frontend-design`", page)
             self.assertIn("`skills/web-interface-guidelines`", page)
             self.assertIn("this page wins", page)
-            drive = (repo / "commands/drive.md").read_text()
+            drive = (repo / "commands/drive.md").read_text(encoding="utf-8")
             self.assertIn("`skills/web-interface-guidelines`", drive)
 
             headless = self.generate(directory, "headless-again", frontend="none")
             for skill in ("frontend-design", "web-interface-guidelines"):
                 self.assertFalse((headless / f"skills/{skill}").exists(), f"{skill} shipped with no browser app")
-            self.assertNotIn("web-interface-guidelines", (headless / "commands/drive.md").read_text())
+            self.assertNotIn("web-interface-guidelines", (headless / "commands/drive.md").read_text(encoding="utf-8"))
 
     def test_the_browser_app_calls_its_service_through_a_generated_client(self) -> None:
         """The types the app expects and the shapes the service serialises are one declaration.
@@ -257,18 +258,18 @@ class FrontendTest(FactoryTestCase):
         """
         with tempfile.TemporaryDirectory() as directory:
             repo = self.generate(directory, "typed-client", frontend="react-vite")
-            manifest = json.loads((repo / "packages/api-client/package.json").read_text())
+            manifest = json.loads((repo / "packages/api-client/package.json").read_text(encoding="utf-8"))
 
             self.assertEqual(manifest["name"], "@packages/api-client")
             self.assertIn("openapi-typescript", manifest["devDependencies"])
             self.assertIn("../../apps/service/openapi.json", manifest["scripts"]["build"])
             self.assertFalse((repo / "packages/api-client/src/schema.ts").exists())
-            self.assertIn("packages/api-client/src/schema.ts", (repo / ".gitignore").read_text())
+            self.assertIn("packages/api-client/src/schema.ts", (repo / ".gitignore").read_text(encoding="utf-8"))
             # The document itself is committed, and `check-openapi` is what holds it to the routes.
             self.assertTrue((repo / "apps/service/openapi.json").is_file())
-            self.assertIn("check-openapi", (repo / "Makefile").read_text())
+            self.assertIn("check-openapi", (repo / "Makefile").read_text(encoding="utf-8"))
             # And the one route calls through the client rather than writing a path out a second time.
-            route = (repo / "apps/web/src/routes/Home.tsx").read_text()
+            route = (repo / "apps/web/src/routes/Home.tsx").read_text(encoding="utf-8")
             self.assertIn("@packages/api-client", route)
             self.assertIn("/health", route)
 
@@ -276,13 +277,13 @@ class FrontendTest(FactoryTestCase):
         """A top-level `await` in the entry point is a blank tab for as long as the request takes."""
         with tempfile.TemporaryDirectory() as directory:
             repo = self.generate(directory, "first-paint", frontend="react-vite")
-            entry = (repo / "apps/web/src/main.tsx").read_text()
+            entry = (repo / "apps/web/src/main.tsx").read_text(encoding="utf-8")
 
             before = entry[: entry.index("createRoot(")]
             self.assertNotIn("await ", before)
             # The flags are still resolved before a gated screen paints — inside a component, where
             # there is somewhere to render "loading" and somewhere to render a failure.
-            self.assertIn("loadFlags", (repo / "apps/web/src/App.tsx").read_text())
+            self.assertIn("loadFlags", (repo / "apps/web/src/App.tsx").read_text(encoding="utf-8"))
 
     def test_a_transport_that_publishes_nothing_says_so_rather_than_shipping_half_a_client(self) -> None:
         """Both Java frameworks publish no API document, so there is nothing to generate a client from.
@@ -296,24 +297,24 @@ class FrontendTest(FactoryTestCase):
                 repo = self.generate(directory, f"unpublished-{backend}", "standard", backend, "react-vite")
 
                 self.assertFalse((repo / "packages/api-client").exists())
-                route = (repo / "apps/web/src/routes/Home.tsx").read_text()
+                route = (repo / "apps/web/src/routes/Home.tsx").read_text(encoding="utf-8")
                 # It names the package that is missing, in prose, and imports nothing from it.
                 self.assertNotIn("@packages/api-client", route)
                 self.assertIn("packages/api-client", route)
                 # Typed as much as an undeclared shape can honestly be, and no further.
                 self.assertIn("Record<string, unknown>", route)
                 for page in ("docs/design.md", "AGENTS.md"):
-                    self.assertIn("packages/api-client", (repo / page).read_text(), page)
+                    self.assertIn("packages/api-client", (repo / page).read_text(encoding="utf-8"), page)
                 # And its test drives the same states, through a fetch it writes itself.
-                self.assertIn("HomeView", (repo / "apps/web/tests/routes/Home.test.tsx").read_text())
+                self.assertIn("HomeView", (repo / "apps/web/tests/routes/Home.test.tsx").read_text(encoding="utf-8"))
 
     def test_the_dev_server_forwards_the_one_path_the_skeleton_s_screen_calls(self) -> None:
         """A demo that shows "the service could not be reached" on a working machine teaches the wrong
         thing. With nowhere to deploy there is no product route to call, so the probe is forwarded too."""
         with tempfile.TemporaryDirectory() as directory:
             repo = self.generate(directory, "proxied", frontend="react-vite")
-            proxy = (repo / "apps/web/vite.config.ts").read_text()
+            proxy = (repo / "apps/web/vite.config.ts").read_text(encoding="utf-8")
 
             self.assertIn("'/api': { target: apiOrigin", proxy)
             self.assertIn("'/health': { target: apiOrigin", proxy)
-            self.assertIn("'/health'", (repo / "apps/web/src/routes/Home.tsx").read_text())
+            self.assertIn("'/health'", (repo / "apps/web/src/routes/Home.tsx").read_text(encoding="utf-8"))

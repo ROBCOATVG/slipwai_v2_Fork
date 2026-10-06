@@ -33,7 +33,7 @@ test: ## Run the keel's test suite, or a slice: TESTS="test_a test_b", or SKIP="
 # The fast half of the suite: everything that does not generate a project, shell out, or reach the network.
 # A slice that adds a test of that kind adds its module to SLOW in the same commit, because the value of
 # this target is entirely in it staying quick — an increment that waits on the full suite stops being run.
-SLOW :=
+SLOW := test_generated
 UNIT_TESTS := $(filter-out $(SLOW),$(ALL_TESTS))
 .PHONY: unit
 unit: ## The fast tests only — the per-increment gate, with the slow modules left out

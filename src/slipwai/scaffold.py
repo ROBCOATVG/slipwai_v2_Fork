@@ -132,8 +132,9 @@ def project_files(
         generated["docs/deployment.md"] = existing_deployment_page(project_name, adoption)
     if wrapped_of(apps):
         # The ratchet, only where there is code that was written before the gate that now judges it.
-        generated["scripts/ratchet.py"] = (ADOPTION_ROOT / "scripts/ratchet.py").read_text()
-        generated["scripts/check-convergence.py"] = (ADOPTION_ROOT / "scripts/check-convergence.py").read_text()
+        generated["scripts/ratchet.py"] = (ADOPTION_ROOT / "scripts/ratchet.py").read_text(encoding="utf-8")
+        convergence = ADOPTION_ROOT / "scripts/check-convergence.py"
+        generated["scripts/check-convergence.py"] = convergence.read_text(encoding="utf-8")
     if managed(CATALOG, target):
         # The one answer whose credential the cloud did not issue, so the one the workflows carry extra.
         auth0 = any(
@@ -216,10 +217,13 @@ def write_project(
     for relative, content in files.items():
         path = paths[relative]
         path.parent.mkdir(parents=True, exist_ok=True)
-        # `newline=""` writes the string's own line endings rather than translating them, which is the
-        # other half of `asset_tree`'s faithful read. Only `mvnw.cmd` depends on it today, but the pair is
-        # what makes "an asset arrives as committed" true of the bytes and not just of the characters.
-        path.write_text(content, newline="")
+        # The other half of `asset_tree`'s faithful read, and both halves are spelled out for the same
+        # reason. `newline=""` writes the string's own line endings rather than translating them, which
+        # only `mvnw.cmd` depends on today. `encoding="utf-8"` because without it Python writes in the
+        # platform's locale codec — cp1252 on Windows, which cannot encode the first em dash in the
+        # toolkit and failed the generation outright. Together they make "an asset arrives as committed"
+        # true of the bytes and not just of the characters, on every machine.
+        path.write_text(content, encoding="utf-8", newline="")
         desired_mode = 0o755 if relative in executables else 0o644
         path.chmod(desired_mode)
     prunable = set(prunable_features_of(apps)) if keep is None else keep

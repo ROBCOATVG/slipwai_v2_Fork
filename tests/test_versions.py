@@ -82,9 +82,10 @@ class SnapshotVersionTest(unittest.TestCase):
         # module it imports — the same two files the real one has.
         (self.repo / "scripts").mkdir()
         (self.repo / "src/slipwai").mkdir(parents=True)
-        (self.repo / "scripts/snapshot-version.py").write_text(SCRIPT.read_text())
-        (self.repo / "src/slipwai/versions.py").write_text((ROOT / "src/slipwai/versions.py").read_text())
-        (self.repo / "src/slipwai/__init__.py").write_text("")
+        (self.repo / "scripts/snapshot-version.py").write_text(SCRIPT.read_text(encoding="utf-8"))
+        (self.repo / "src/slipwai/versions.py").write_text(
+            (ROOT / "src/slipwai/versions.py").read_text(encoding="utf-8"), encoding="utf-8")
+        (self.repo / "src/slipwai/__init__.py").write_text("", encoding="utf-8")
         self.git("init", "--initial-branch=main")
         self.git("config", "user.email", "snapshot@example.com")
         self.git("config", "user.name", "Snapshot Test")
@@ -99,10 +100,10 @@ class SnapshotVersionTest(unittest.TestCase):
         ).stdout.strip()
 
     def write_version(self, version: str) -> None:
-        (self.repo / "VERSION").write_text(f"{version}\n")
+        (self.repo / "VERSION").write_text(f"{version}\n", encoding="utf-8")
 
     def commit(self, subject: str) -> None:
-        (self.repo / subject).write_text("\n")
+        (self.repo / subject).write_text("\n", encoding="utf-8")
         self.git("add", "-A")
         self.git("commit", "-q", "-m", subject)
 
@@ -123,7 +124,8 @@ class SnapshotVersionTest(unittest.TestCase):
         result = self.run_script()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), "1.2.4.dev3")
-        self.assertEqual((self.repo / "VERSION").read_text().strip(), "1.2.4.dev0", "printing does not write")
+        self.assertEqual((self.repo / "VERSION").read_text(encoding="utf-8").strip(), "1.2.4.dev0",
+            "printing does not write")
 
     def test_the_count_keeps_rising_when_the_number_is_raised_mid_cycle(self) -> None:
         """Counted from the tag rather than from the commit that opened the number, so raising `1.2.4.dev0`
@@ -145,7 +147,7 @@ class SnapshotVersionTest(unittest.TestCase):
         self.git("commit", "-q", "-m", "Open 1.2.4.dev0")
         result = self.run_script("--write")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual((self.repo / "VERSION").read_text(), "1.2.4.dev1\n")
+        self.assertEqual((self.repo / "VERSION").read_text(encoding="utf-8"), "1.2.4.dev1\n")
         self.assertEqual(self.git("status", "--porcelain").split(), ["M", "VERSION"], "written, never committed")
 
     def test_a_release_commit_is_not_a_snapshot_and_says_so_with_its_own_exit_code(self) -> None:
@@ -154,7 +156,7 @@ class SnapshotVersionTest(unittest.TestCase):
         result = self.run_script("--write")
         self.assertEqual(result.returncode, 3)
         self.assertIn("a release rather than a snapshot", result.stderr)
-        self.assertEqual((self.repo / "VERSION").read_text(), "1.2.3\n", "nothing written")
+        self.assertEqual((self.repo / "VERSION").read_text(encoding="utf-8"), "1.2.3\n", "nothing written")
 
     def test_a_history_that_has_never_released_counts_from_its_root(self) -> None:
         self.git("tag", "-d", "v1.2.3")

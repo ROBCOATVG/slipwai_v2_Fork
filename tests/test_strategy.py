@@ -107,13 +107,14 @@ class StrategyTest(unittest.TestCase):
             adr.mkdir(parents=True)
             self.assertEqual(decision_of(root, DELIVERY), {"decided": None, "adr": None})
             (adr / "0002-change-strategy.md").write_text(
-                ADR.format(status="Proposed", strategy="strangler-fig"))
+                ADR.format(status="Proposed", strategy="strangler-fig"), encoding="utf-8")
             self.assertIsNone(decision_of(root, DELIVERY)["decided"], "proposed is not decided")
             (adr / "0002-change-strategy.md").write_text(
-                ADR.format(status="Accepted", strategy="strangler-fig"))
+                ADR.format(status="Accepted", strategy="strangler-fig"), encoding="utf-8")
             self.assertEqual(decision_of(root, DELIVERY),
                              {"decided": "strangler-fig", "adr": "delivery/docs/adr/0002-change-strategy.md"})
-            (adr / "0003-leave-it.md").write_text(ADR.format(status="Accepted", strategy="**leave-it**"))
+            (adr / "0003-leave-it.md").write_text(ADR.format(status="Accepted", strategy="**leave-it**"),
+                encoding="utf-8")
             self.assertEqual(decision_of(root, DELIVERY)["decided"], "leave-it", "the later ADR supersedes")
             # The first real ADR's Consequences said "the `Strategy:` line here reads `strangler-fig`" before the
             # line itself, and the decision read as the strategy `line` — that is, as no decision at all.
@@ -121,7 +122,7 @@ class StrategyTest(unittest.TestCase):
                 ADR.format(status="Accepted", strategy="in-place").replace(
                     "## Decision", "## Consequences\n\n- `/strangle` refuses until the\n  `Strategy:` line here reads "
                     "`strangler-fig` under an `Accepted` status.\n\n## Decision")
-            )
+            , encoding="utf-8")
             self.assertEqual(decision_of(root, DELIVERY)["decided"], "in-place",
                              "a sentence that mentions the line is not the line")
             self.assertFalse(ledger_finished(root, DELIVERY), "no ledger, nothing finished")
@@ -129,10 +130,11 @@ class StrategyTest(unittest.TestCase):
                 "| Date | Capability | From | To | Routed by | Pinned by | Status |\n|---|---|---|---|---|---|---|\n"
                 "| 2026-09-01 | orders | a | b | router | t1 | *routed* |\n"
                 "| 2026-09-05 | orders | a | b | router | t1 | *removed* |\n"
-            )
+            , encoding="utf-8")
             self.assertTrue(ledger_finished(root, DELIVERY), "the last row per capability is what counts")
             (root / "delivery/retirement.md").write_text(
-                (root / "delivery/retirement.md").read_text() + "| 2026-09-06 | billing | a | b | r | t2 | *moved* |\n"
+                (root / "delivery/retirement.md").read_text(encoding="utf-8")
+                + "| 2026-09-06 | billing | a | b | r | t2 | *moved* |\n"
             )
             self.assertFalse(ledger_finished(root, DELIVERY))
 
@@ -163,14 +165,15 @@ class StrategyTest(unittest.TestCase):
 
             (root / "delivery/docs/adr").mkdir(parents=True)
             (root / "delivery/docs/adr/0002-strategy.md").write_text(
-                ADR.format(status="Accepted", strategy="strangler-fig"))
+                ADR.format(status="Accepted", strategy="strangler-fig"), encoding="utf-8")
             decided = with_recommendation(root, DELIVERY, Adoption(why="Python 2 is end of life"), apps)
             row = next(r for r in decided.convergence if r["axis"] == "strategy")
             self.assertEqual(row["rung"], "decided", "an ADR decides, whatever was recommended")
             self.assertIn("ADR delivery/docs/adr/0002-strategy.md: strangler-fig", row["evidence"])
             self.assertIn("`strangler-fig` (decided by `delivery/docs/adr/0002-strategy.md`)",
                           strangle_files(apps, DELIVERY, "existing", decided)["commands/strangle.md"])
-            (root / "delivery/docs/adr/0003-leave.md").write_text(ADR.format(status="Accepted", strategy="leave-it"))
+            (root / "delivery/docs/adr/0003-leave.md").write_text(ADR.format(status="Accepted", strategy="leave-it"),
+                encoding="utf-8")
             left = with_recommendation(root, DELIVERY, Adoption(why="Python 2 is end of life"), apps)
             self.assertEqual(next(r for r in left.convergence if r["axis"] == "strategy")["rung"], "done",
                              "leaving it finishes the axis")
@@ -209,7 +212,7 @@ class StrategyTest(unittest.TestCase):
             adr = root / "delivery/docs/adr"
             adr.mkdir(parents=True)
             (adr / "0002-modernisation-strategy.md").write_text(
-                ADR.format(status="Accepted", strategy="modernise-in-place"))
+                ADR.format(status="Accepted", strategy="modernise-in-place"), encoding="utf-8")
             self.assertEqual(decision_of(root, DELIVERY)["decided"], "in-place",
                              "the decision is the person's; the factory renamed the value, not the choice")
 

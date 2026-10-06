@@ -42,7 +42,7 @@ def default_gateways() -> list[str]:
     that file does not exist and there is nothing here to ask.
     """
     try:
-        table = Path("/proc/net/route").read_text().splitlines()[1:]
+        table = Path("/proc/net/route").read_text(encoding="utf-8").splitlines()[1:]
     except OSError:
         return []
     gateways = []

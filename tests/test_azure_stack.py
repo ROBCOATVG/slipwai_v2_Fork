@@ -48,7 +48,7 @@ class AzureStackTest(FactoryTestCase):
     def test_the_stack_deploys_by_revision_and_decides_its_counts_from_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = self.generate_azure(directory, "shipped", auth="entra")
-            stack = (repo / "infra/service/main.tf").read_text()
+            stack = (repo / "infra/service/main.tf").read_text(encoding="utf-8")
             # Multiple revisions, and all of the traffic to whatever this apply produced. `latest_revision`
             # rather than a suffix named after the commit: a suffix must be unique for the lifetime of the
             # app and `make rollback` re-runs a commit that has already had one, so naming revisions after
@@ -71,13 +71,13 @@ class AzureStackTest(FactoryTestCase):
             self.assertIn("depends_on = [azurerm_role_assignment.pull, time_sleep.rbac]", stack)
             # The environment's own ingress, and no per-service load balancer to create: the file that
             # would have held one is a `locals` block.
-            ingress = (repo / "infra/service/ingress.tf").read_text()
+            ingress = (repo / "infra/service/ingress.tf").read_text(encoding="utf-8")
             self.assertNotIn("resource ", ingress)
             self.assertIn("app.ingress[0].fqdn", ingress)
             # A buildpack image's entrypoint starts the web process whatever `command` it is given, so the
             # migrate job points the command at the buildpack launcher wherever it gives one — a run-time
             # failure, not an apply-time one: the job serves instead of migrating and never exits.
-            migrate = (repo / "infra/service/postgres.tf").read_text()
+            migrate = (repo / "infra/service/postgres.tf").read_text(encoding="utf-8")
             self.assertIn('command = each.value.migrate_command != null ? ["/cnb/lifecycle/launcher"] : []', migrate)
             # The same environment the long-running app gets, not a subset: a migration and the service it
             # migrates for reach the same database, so `PGSSLMODE` has to reach both.
@@ -93,7 +93,7 @@ class AzureStackTest(FactoryTestCase):
         handed an address that answers 403."""
         with tempfile.TemporaryDirectory() as directory:
             repo = self.generate_azure(directory, "shipped")
-            frontend = (repo / "infra/service/frontend.tf").read_text()
+            frontend = (repo / "infra/service/frontend.tf").read_text(encoding="utf-8")
             self.assertIn('sku_tier = "Standard"', frontend)  # Free cannot link a backend
             self.assertIn("Microsoft.Web/staticSites/linkedBackends@2024-04-01", frontend)
             self.assertIn("backendResourceId = azurerm_container_app.service[var.web.api].id", frontend)
@@ -101,11 +101,12 @@ class AzureStackTest(FactoryTestCase):
             # No bucket, no CDN, no cache behaviour and no rewrite function: all four are the AWS shape.
             for absent in ("storage", "cdn", "cache_behavior", "rewrite"):
                 self.assertNotIn(absent, frontend.lower(), absent)
-            outputs = (repo / "infra/service/outputs.tf").read_text()
+            outputs = (repo / "infra/service/outputs.tf").read_text(encoding="utf-8")
             self.assertIn("is deliberately absent", outputs)
             # Without a browser app every service keeps its own address, exactly as it would on AWS.
             bare = self.generate_azure(directory, "bare", frontend="none")
-            self.assertIn("service_urls = local.all_service_urls", (bare / "infra/service/frontend.tf").read_text())
+            self.assertIn("service_urls = local.all_service_urls",
+                (bare / "infra/service/frontend.tf").read_text(encoding="utf-8"))
 
     def test_the_bootstrap_asks_for_the_directory_permission_only_where_an_answer_needs_it(self) -> None:
         """An app registration is a directory object, outside the subscription's RBAC, so the pipeline
@@ -114,11 +115,11 @@ class AzureStackTest(FactoryTestCase):
         the prerequisite a property of the answer rather than of the target."""
         with tempfile.TemporaryDirectory() as directory:
             repo = self.generate_azure(directory, "identified", auth="entra")
-            granted = (repo / "infra/bootstrap/main.tf").read_text()
+            granted = (repo / "infra/bootstrap/main.tf").read_text(encoding="utf-8")
             self.assertIn('azuread_service_principal.msgraph.app_role_ids["Application.ReadWrite.OwnedBy"]', granted)
             # And the staff identity is app roles rather than directory groups, so the claim carries the
             # same plain strings the local Keycloak realm does and nothing needs `Group.ReadWrite.All`.
-            staff = (repo / "infra/service/entra_staff.tf").read_text()
+            staff = (repo / "infra/service/entra_staff.tf").read_text(encoding="utf-8")
             self.assertIn('OIDC_GROUPS_CLAIM   = "roles"', staff)
             self.assertIn('OIDC_GROUP_ADMIN    = "app-admin"', staff)
             self.assertNotIn("azuread_group", staff)
@@ -129,8 +130,8 @@ class AzureStackTest(FactoryTestCase):
                 ["python3", "scripts/backing-services.py", "--auth", "none"],
                 cwd=repo, check=True, capture_output=True,
             )
-            self.assertNotIn("Application.ReadWrite", (repo / "infra/bootstrap/main.tf").read_text())
-            self.assertEqual((repo / "infra/service/entra_staff.tf").read_text(), "")
+            self.assertNotIn("Application.ReadWrite", (repo / "infra/bootstrap/main.tf").read_text(encoding="utf-8"))
+            self.assertEqual((repo / "infra/service/entra_staff.tf").read_text(encoding="utf-8"), "")
 
     def test_every_stack_validates_against_the_real_providers_before_and_after_a_prune(self) -> None:
         if shutil.which("tofu") is None:
@@ -147,8 +148,9 @@ class AzureStackTest(FactoryTestCase):
                 ["python3", "scripts/backing-services.py", "--event-store", "memory", "--auth", "none"],
                 cwd=maximal, check=True, capture_output=True,
             )
-            self.assertEqual((maximal / "infra/service/postgres.tf").read_text(), "")
-            self.assertEqual((maximal / "infra/service/entra_staff.tf").read_text(), "")
-            self.assertNotIn("backing-service:postgres", (maximal / "infra/service/main.tf").read_text())
+            self.assertEqual((maximal / "infra/service/postgres.tf").read_text(encoding="utf-8"), "")
+            self.assertEqual((maximal / "infra/service/entra_staff.tf").read_text(encoding="utf-8"), "")
+            self.assertNotIn("backing-service:postgres",
+                (maximal / "infra/service/main.tf").read_text(encoding="utf-8"))
             self.validate(maximal / "infra/service")
             self.validate(maximal / "infra/bootstrap")

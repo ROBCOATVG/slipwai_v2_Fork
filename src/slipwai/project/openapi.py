@@ -71,7 +71,7 @@ def published_document(selection: Selection, target: str, backend: str) -> dict[
         return {}
     source = FLAGGED_DOCUMENT if managed(CATALOG, target) else PLAIN_DOCUMENT
     # From the backend's own root: a loaded language's directory, else the keel's.
-    return {"openapi.json": (registry().root(backend) / "assets/backing-services" / backend / source).read_text()}
+    return {"openapi.json": (registry().root(backend) / "assets/backing-services" / backend / source).read_text(encoding="utf-8")}
 
 
 def document_of(service: App) -> str | None:

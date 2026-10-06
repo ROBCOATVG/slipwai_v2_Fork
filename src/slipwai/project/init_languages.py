@@ -16,7 +16,7 @@ if command -v python3 >/dev/null 2>&1; then
   python3 - <<'SLIPWAI_LANGUAGES_CHECK' || true
 import json, os, pathlib, re, sys
 try:
-    generator = json.loads(pathlib.Path("project.json").read_text()).get("generator") or {}
+    generator = json.loads(pathlib.Path("project.json").read_text(encoding="utf-8")).get("generator") or {}
     recorded = generator.get("languages") or {}
 except (OSError, ValueError, AttributeError):
     recorded = {}

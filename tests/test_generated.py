@@ -1,0 +1,89 @@
+"""A project, generated, and read back off the disk.
+
+This is the first test that runs the whole keel end to end: the catalogue merged with a package, the
+registry built from it, the scaffold assembling a tree, and the files written. Until slice 3.8 put the
+toy package in the directory there was nothing to generate with, and until 4.1 brought `generate` there
+was no verb to do it.
+
+It is slow — it writes seven hundred files — so it is in the Makefile's `SLOW` list and runs in
+`make verify` rather than `make unit`. That is the two-gate split working as intended: the fast gate
+stays worth running and the expensive proof still happens before anything merges.
+"""
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+import checkout_packages
+
+REPOSITORY = Path(__file__).resolve().parents[1]
+TOY = "toy-plain"
+
+
+@unittest.skipUnless(checkout_packages.installed("toy"), "needs the toy package: slice 3.8")
+class GeneratedProjectTest(unittest.TestCase):
+    """One generation, read several ways. Generated once for the class: it is the slow part."""
+
+    project: Path
+    scratch: tempfile.TemporaryDirectory[str]
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.scratch = tempfile.TemporaryDirectory()
+        done = subprocess.run(
+            [sys.executable, "-m", "slipwai", "generate", "demo", "--backend", TOY,
+             "--frontend", "none", "--target", "none", "--output", cls.scratch.name],
+            cwd=REPOSITORY, capture_output=True, text=True,
+            env={**os.environ, "PYTHONPATH": str(REPOSITORY / "src"),
+                 "SLIPWAI_LANGUAGES": str(checkout_packages.PACKAGES)},
+        )
+        if done.returncode != 0:
+            raise AssertionError(done.stdout + done.stderr)
+        cls.project = Path(cls.scratch.name) / "demo"
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.scratch.cleanup()
+
+    def test_a_project_is_written(self) -> None:
+        self.assertTrue((self.project / "project.json").is_file())
+        self.assertGreater(len(list(self.project.rglob("*"))), 100)
+
+    def test_every_file_written_is_utf_8(self) -> None:
+        """Generation wrote in the platform's locale codec until slice 4.1 — cp1252 on Windows, which
+        cannot encode the first em dash in the toolkit and failed the generation outright. An asset is
+        bytes the keel copies into somebody's repository, and the machine must not change them."""
+        for path in sorted(self.project.rglob("*")):
+            if path.is_file() and path.suffix in (".md", ".py", ".json", ".yml", ".yaml", ".txt"):
+                with self.subTest(file=str(path.relative_to(self.project))):
+                    path.read_text(encoding="utf-8")
+
+    def test_something_written_actually_carries_a_non_ascii_character(self) -> None:
+        """Otherwise the check above passes on a tree of pure ASCII and proves nothing."""
+        found = [path for path in self.project.rglob("*.md") if path.is_file()
+                 and any(ord(ch) > 127 for ch in path.read_text(encoding="utf-8"))]
+        self.assertTrue(found, "no generated file has a character cp1252 would have choked on")
+
+    def test_the_manifest_records_the_keel_and_the_package_that_made_it(self) -> None:
+        recorded = json.loads((self.project / "project.json").read_text(encoding="utf-8"))
+        self.assertEqual(recorded["generator"]["generatedWith"],
+                         (REPOSITORY / "VERSION").read_text(encoding="utf-8").strip())
+        self.assertIn("toy", recorded["generator"]["languages"])
+
+    def test_the_keel_left_no_placeholder_behind(self) -> None:
+        """`__APP__`, `__VERIFY__`, `__IMAGE__` and the rest are substituted, never shipped."""
+        for path in sorted(self.project.rglob("*")):
+            if path.is_file() and path.suffix in (".md", ".py", ".json", ".yml"):
+                text = path.read_text(encoding="utf-8")
+                for placeholder in ("__APP__", "__VERIFY__", "__IMAGE__", "__REPOSITORY__"):
+                    with self.subTest(file=str(path.relative_to(self.project)), placeholder=placeholder):
+                        self.assertNotIn(placeholder, text)
+
+
+if __name__ == "__main__":  # pragma: no cover
+    unittest.main()

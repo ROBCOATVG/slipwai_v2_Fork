@@ -42,7 +42,7 @@ def pinned_in(answer: NpmWorkspace | None = None) -> tuple[Path, ...]:
 def biome_version(answer: NpmWorkspace | None = None) -> str:
     """The exact `@biomejs/biome` the manifests pin."""
     pins = {
-        json.loads(path.read_text())["devDependencies"]["@biomejs/biome"] for path in pinned_in(answer)
+        json.loads(path.read_text(encoding="utf-8"))["devDependencies"]["@biomejs/biome"] for path in pinned_in(answer)
     }
     if len(pins) != 1:
         raise AssertionError(f"the manifests pin more than one Biome: {sorted(pins)}")
@@ -56,6 +56,6 @@ def biome_files(apps: list[App]) -> dict[str, str]:
     # The workspace runs one Biome, the first workspace language's: the one a browser app is written in.
     answer = workspace(browser_language())
     return {
-        "biome.jsonc": (answer.biome / "biome.jsonc").read_text().replace(VERSION, biome_version(answer)),
-        PLUGIN: (answer.biome / "domain-purity.grit").read_text(),
+        "biome.jsonc": (answer.biome / "biome.jsonc").read_text(encoding="utf-8").replace(VERSION, biome_version(answer)),
+        PLUGIN: (answer.biome / "domain-purity.grit").read_text(encoding="utf-8"),
     }
