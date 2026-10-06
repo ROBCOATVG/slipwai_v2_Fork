@@ -36,7 +36,7 @@ version 1, it uses version 1's own names and says so.
 | **Chandlery** | The index of packages that slipwai can install: languages and extensions, each with a version, a compatibility range, a checksum and a publisher. `slipwai chandlery` lists it. `slipwai install <name>` installs from it | "marketplace", "index" |
 | **Slice** | One unit of product work that an actor can use when it is done. Unchanged from version 1 | Same word |
 | **Fairway** | One bounded context's slices, in split order, with one release flag and one holder. The fairway is the unit of scope, of ownership and of release. Several fairways run side by side into the same harbour. A vessel keeps to its own fairway | "value stream", "workstream" |
-| **Berth** | The provisioned place where one captain works: a git worktree, environment variables, an allocated block of ports, a database, and scratch directories. `slipwai berth add`, `slipwai berth status` and `slipwai berth remove` manage berths | "workstation", "lane" |
+| **Berth** | The provisioned place where one captain works: a sandbox or container, a git worktree, environment variables, an allocated block of ports, a database, and scratch directories. A berth holds no cloud or forge credential. `slipwai berth add`, `slipwai berth status` and `slipwai berth remove` manage berths | "workstation", "lane" |
 | **Captain** | The outer loop for one fairway, in both modes. The captain reads the logs, works out the state of the fairway from the logs and trunk, gives clearance, claims a slice, dispatches an iteration, enforces every stage boundary, and appends to the deck log. There is one captain per fairway. Under `/drive` the captain brings every question and demo to the person. Under `/cruise` the skipper answers and the hand demos | "runner", `cruise.py run` |
 | **Harbourmaster** | The part the captains share, one process per harbour. It allocates berths, is the only writer of the harbour log, draws the fleet board and the bridge, holds the flags, and answers the telegraph. Under `/drive` it runs inside the person's session; under `/cruise` it runs on its own. It is not a merge queue | "integrator" |
 | **Deck log** | A fairway's own append-only log at `.slipwai/logs/<feature>/<fairway>.jsonl`, ignored by git and written only by that fairway's captain. The harbourmaster syncs it between machines through the ref `refs/slipwai/logs`, never through trunk. Its lines are: claimed, mark set, demo, accepted, merged, decision, told, read, heartbeat, stowed, parked | "stream log" |
@@ -339,6 +339,16 @@ appends `read` at its next boundary, and a message older than N minutes forces a
 **Reused without change.** The stop table, the ladder in `drive.md`, the benchmark bracket, the stop hook, the
 harness registry, and the control-file guard (the rule that an iteration never edits a gate, a `Makefile`, CI, or
 a hook).
+
+**Permissions and credentials.** A captain runs unattended with edits accepted and nothing more. Every berth
+is a sandbox or a container that the berth provisioning creates, and the captain inside it holds no credential
+for the forge, the cloud or the chandlery. Anything that needs one goes through the harbourmaster: the push of
+a slice branch, the merge to `main`, a deploy, a flag change, a publish. The harbourmaster holds the credentials,
+checks each request against the list of things a run never does (destroy data or history, release what nobody
+asked for, spend money, expose a secret, weaken security, discard a person's commits, change a gate to make it
+pass), and refuses with the reason. Under `/drive` the person's session is the harbourmaster, so the person's
+own credentials are used and never copied into a berth. Version 1's `--sandbox` flag, which let a run bypass
+permissions, does not exist in version 2: the sandbox is the berth, not a flag.
 
 **Harnesses.** Version 2 supports every agent harness that Spec Kit supports, and at least Claude Code, Codex,
 Cursor, Gemini CLI, OpenCode and Kiro. The harness registry stays the mechanism: one row per harness that says
@@ -849,6 +859,9 @@ Resolved:
 - [Should → section 7, "Where version 2 lives"] Which forge runs version 2's CI and the chandlery. Answer:
   GitHub for everything, public, because Actions is free for public repositories; Gitea's role is decided at the
   merge back.
+- [Should → section 1, theme D, "Permissions and credentials"] Unattended permissions and credentials.
+  Answer: a sandbox per berth with no credentials in it; every credentialed action goes through the
+  harbourmaster, which holds the keys and the refusal list.
 - [Blocker → theme D, "The bridge"] How a click on the dashboard becomes a `told` line. Answer: `slipwai
   bridge` serves the page locally from the harbourmaster's seat and its controls post to it; the Pages copy is
   the same page without controls.
@@ -859,7 +872,6 @@ Resolved:
 
 Open, in order:
 
-- [Should] Unattended permissions and credentials per berth.
 - [Should] Windows and WSL scope.
 - [Should] Whether the chart is a committed file on the event profile; what a typed mark looks like on the standard profile.
 - [Should] Which languages must exist at 2.0.0.
