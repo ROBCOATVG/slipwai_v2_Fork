@@ -1,0 +1,47 @@
+# The keel's own local and CI entry points. There are two gates, not one, and this file is where the
+# difference is spelled: `make unit` with `make lint` and `make typecheck` is what an increment inside a
+# slice runs, and `make verify` is what runs once on the rebased branch before `main` and again in CI.
+# Never the full gate in the inner loop — that rule cost the first attempt more than any other.
+.DEFAULT_GOAL := help
+
+.PHONY: help
+help: ## Show the available targets
+	@grep -hE '^[a-z][a-zA-Z0-9_-]*:.*?## ' $(MAKEFILE_LIST) | awk -F':.*?## ' '{ printf "  %-18s %s\n", $$1, $$2 }'
+
+.PHONY: install
+install: ## Install the pinned development tooling into .python-tools
+	./scripts/verify --install-only
+
+.PHONY: lint
+lint: ## Run ruff over the keel's own source, scripts and tests
+	./scripts/verify --lint-only
+
+.PHONY: typecheck
+typecheck: ## Byte-compile everything, then type-check it with mypy
+	python3 -m compileall -q src scripts tests
+	./scripts/verify --typecheck-only
+
+# The suite, or a slice of it: `TESTS="test_registry test_cli"` runs those modules, `SKIP="test_registry"`
+# every module but those. CI holds the gate in parallel jobs this way; `make verify` still runs the whole
+# suite.
+ALL_TESTS := $(patsubst tests/%.py,%,$(wildcard tests/test_*.py))
+TESTS ?= $(if $(SKIP),$(filter-out $(SKIP),$(ALL_TESTS)),)
+.PHONY: test
+test: ## Run the keel's test suite, or a slice: TESTS="test_a test_b", or SKIP="test_a"
+	$(if $(TESTS),PYTHONPATH=src:tests python3 -m unittest -v $(TESTS),PYTHONPATH=src python3 -m unittest discover -s tests -v)
+
+# The fast half of the suite: everything that does not generate a project, shell out, or reach the network.
+# A slice that adds a test of that kind adds its module to SLOW in the same commit, because the value of
+# this target is entirely in it staying quick — an increment that waits on the full suite stops being run.
+SLOW :=
+UNIT_TESTS := $(filter-out $(SLOW),$(ALL_TESTS))
+.PHONY: unit
+unit: ## The fast tests only — the per-increment gate, with the slow modules left out
+	$(if $(UNIT_TESTS),PYTHONPATH=src:tests python3 -m unittest $(UNIT_TESTS),@echo 'unit: no test modules yet')
+
+# `check-structure` joins this list in slice 1.3, with the script that holds the import surface. It is not
+# listed here yet because a gate that names a check it does not run is worse than one that does not claim it.
+.PHONY: verify
+verify: lint typecheck test ## Full local gate — the same one CI runs
+	@echo
+	@echo 'verify: all gates passed'

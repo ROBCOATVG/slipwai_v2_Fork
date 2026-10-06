@@ -1099,8 +1099,8 @@ against.
 | Slice | What | From | Size | Done when |
 |---|---|---|---|---|
 | 1.1 | `pyproject.toml`, `VERSION` at `2.0.0.dev0`, `requirements-dev.txt`, the `slipwai` launcher, and `src/slipwai/` as `__init__`, `__main__` and a `cli.py` that answers `--version` | upstream | S | A checkout, an editable install and a built wheel all print `2.0.0.dev0` through `slipwai`, `python -m slipwai` and `./slipwai`; ruff, mypy and `tests/test_cli.py` are green |
-| 1.2 | `Makefile` with `lint`, `typecheck`, `check-structure`, `unit`, `test`, `verify`; `verify` is the four | upstream, `unit` new | S | `make verify` green on the empty package |
-| 1.3 | `scripts/check-structure.py` with its tiers, and the import surface as a tier that reads a list file | cruise-2 | M | The gate refuses an import against the direction; the surface list is empty and held |
+| 1.2 | `Makefile` with `lint`, `typecheck`, `unit`, `test` and `verify`, and `scripts/verify` behind them; `verify` is lint, typecheck and test, and `unit` is the fast half, named by a `SLOW` list | upstream, `unit` new | S | `make verify` green from a clean checkout, `.python-tools` installed on demand; `make unit` runs the fast tests alone |
+| 1.3 | `scripts/check-structure.py` with its tiers, and the import surface as a tier that reads a list file; `check-structure` added to the `Makefile` and to `verify` | cruise-2 | M | The gate refuses an import against the direction; the surface list is empty and held |
 | 1.4 | CI: `verify.yml` with lint, typecheck, structure and unit on Linux, macOS, Windows and WSL; no matrix, no languages | upstream, cut down | M | Green on the fork, public, under Actions |
 | 1.5 | `AGENTS.md` for the fork: section 8's rules, the two gates, and nothing about versioning yet | new | S | A session reads it and knows the rules |
 | 1.6 | `GLOSSARY.md` at the repository root, extracted from section 1 and kept in step with it | new | S | The `wtf` skill and every session read one glossary |
