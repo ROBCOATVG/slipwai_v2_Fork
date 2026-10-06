@@ -1141,7 +1141,7 @@ open decision left either.
 
 ## 11. The implementation plan
 
-**Progress: 15 of 74 slices done** — phase 1 6/6, phase 2 7/9, phase 3 2/11, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 16 of 75 slices done** — phase 1 6/6, phase 2 7/9, phase 3 3/12, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1339,8 +1339,9 @@ refuses by and which nothing else imports. Found on 2026-10-06 while doing the s
 |---|---|---|---|---|---|
 | 3.1 | The parts that wait on nothing: `backends.py`, `naming.py`, `probes.py`, `layout.py`, `selection.py`, `origin.py`, `ecosystems.py`, `npm_workspace.py`, `changelog.py`, then `services.py` | upstream + cruise-2 | L | `make next` shows the first wave empty; each module is in a tier and the gate is green after every one | done |
 | 3.2 | `assets.py` grown to the asset trees, `examples.py`, `tooling.py`, `capabilities.py` and `toolkit.py`: the first slice that reads an asset tree | upstream | L | Toolkit files materialise for both profiles | done |
-| 3.3 | The `project/*.py` parts, cut against `make next` rather than against assembly order, one slice per wave: the forty that wait on nothing, then composition and flags, then the pages and the workflows, then the rest | upstream | 6 × M | After each group, `make starters` diffs empty against cruise-2 for the variants that group touches |  |
-| 3.3b | `scaffold.py`, last of the parts and not first: it imports forty of them | upstream + cruise-2 | M | `project_files()` returns a tree for one typescript variant equal to cruise-2's |  |
+| 3.3 | The `project/*.py` parts, cut against `make next` rather than against assembly order. Each group below is one slice, and the groups are named as they are reached rather than guessed in advance — what is ready changes as modules land | upstream | 5 × M | After each group, `make starters` diffs empty against cruise-2 for the variants that group touches |  |
+| 3.3a | The parts that write pieces of a repository: `project/`, `pruner`, `flags`, `flag_route`, `entry_stores`, `shared_packages`, `compose`, `ci_services`, `provisioning`, `repository`, `rules` | upstream | M | Each holds its mechanism with no language named; the `E501` ignore for embedded file content is back | done |
+| 3.3z | `scaffold.py`, last of the parts and not first: it imports forty of them, and the suites that generate a project come back with it | upstream + cruise-2 | L | `project_files()` returns a tree for one typescript variant equal to cruise-2's, and `test_services.py`, `test_layout.py`, `test_toolkit.py` and `test_harness.py` run again |  |
 | 3.4 | Targets `aws` and `azure`, their stacks and docs, as the **liner** shape | upstream | L | Stack validation tests green |  |
 | 3.4b | The **skiff** shape for both targets: a Lightsail container service and a scale-to-zero Container App, one environment, the shape question in the interview, `converge --shape`; the compute named in one row of the target's table, not spread through its stack | new | L | Both shapes validate against the real providers; a slipway project generates a skiff by default; changing a skiff's compute is one row and its stack file |  |
 | 3.5 | Frontends and backing services, the `react-vite` npm-workspace contract | upstream + cruise-2 | M | The frontend variants match |  |
