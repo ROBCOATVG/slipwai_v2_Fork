@@ -220,7 +220,7 @@ index and the installed directory:
    package's releases: name, version, the keel range it fits, the framework's family range, a URL for the
    release file, its sha256, and the publisher's signature.
 2. The keel picks the newest release that fits this keel, resolves the family first (`java`), downloads each
-   release file, checks its sha256, stages it, and renames it into `~/.slipwai/languages/<name>/`. A package is
+   release file, checks its sha256, stages it, and renames it into `~/.slipwai/packages/<name>/`. A package is
    whole in that directory or not there.
 3. From then on the loader reads the directory. It merges each `language.json` into the catalogue, imports each
    package's `LANGUAGE` object, and answers every question about that backend from it. The keel never names a
@@ -230,8 +230,25 @@ index and the installed directory:
    record and says what to install; `slipwai migrate` installs it. The repository the package came from is not
    recorded anywhere a user reads.
 
+**The two kinds of package.** A package is a language or an extension. Both are found, signed, installed,
+loaded and released the same way. They differ in what they declare, and in when the keel asks them anything.
+
+| | Language | Extension |
+|---|---|---|
+| Manifest | `language.json`: the backends it provides, the axis options each answers, its targets, and the family it belongs to | `extension.json`: version 1's catalogue entry (`name`, `description`, and `ignore`, the gitignore lines its local state needs) plus the keel range, the publisher and tags |
+| Executable half | a `LANGUAGE` object keyed by `Member` constants, family resolved before framework | `init.py`, with the `project_guidance()` and the `check-<key>.py` gate that `docs/extensions.md` already specifies |
+| When the keel asks it | at `slipwai generate`, to write the skeleton | at `./init`, after the skeleton exists. An extension never changes generated code |
+| What conformance proves | every `Member` the manifest claims is answered, and the matrix is green | the six obligations of `docs/extensions.md`: replaceably idempotent; installs what it needs and is non-fatal when it cannot; projects a marker-fenced block into `AGENTS.md`; gates whatever state can go stale; names the recovery command on every failure path; and merges rather than overwrites a file a person hand-edits |
+
+The loader does one merge into two destinations: `language.json` into the backends catalogue, `extension.json`
+into the catalogue's `extensions` map, which is what `./init`'s extension menu already reads. Because the two
+kinds sit beside each other on disk, the installed directory is `~/.slipwai/packages/<name>/` and the keel
+pins its own first-party packages as submodules under `packages/`. Neither is called `languages/`, as the
+experiment's was: a directory of that name holding `codegraph` is the sort of small lie that costs an hour
+later. `slipwai migrate` moves an install made before the rename. Decided 2026-10-06.
+
 **How a package is linked at development time.** The keel's own repository pins each first-party package as a git
-submodule under `languages/`, so the keel's gate can run the conformance suite and the matrix against the
+submodule under `packages/`, so the keel's gate can run the conformance suite and the matrix against the
 packages it ships with, at a known commit. That pin is for the keel's tests only. A package repository's own CI
 runs the same suite against a pinned keel. Publishing is `slipwai package release` in the package repository,
 which tags, builds the release file, signs it and uploads it as a release asset, followed by `slipwai package
@@ -260,7 +277,7 @@ install anything it cannot attribute. Three rules make both true at once.
 
 This costs the keel nothing at build time. Like Maven shipping Central's address and a trust store and resolving
 artefacts at run time, the keel reads the index when a person installs, verifies the signature then, and from
-then on loads whatever is whole in `~/.slipwai/languages/`. A package placed there by hand, as a developer does
+then on loads whatever is whole in `~/.slipwai/packages/`. A package placed there by hand, as a developer does
 with `SLIPWAI_LANGUAGES`, loads without a signature and is shown as `unsigned` by `slipwai list`, so a machine
 never mistakes a development copy for a release. Decided 2026-10-06.
 
@@ -279,7 +296,10 @@ first two items of cruise-2's CI proposal. Decided 2026-10-06 (section 10).
 2. The chart points at the six packages. The real `java-spring` repository is created. The six are rebuilt
    onto the template that `slipwai package new` writes, so a first-party package and a contributor's are the
    same shape.
-3. Extensions become packages on the same loader. `codegraph`, `uipro` and `ux-gates` move out of the keel.
+3. Extensions become packages on the same loader, in the shape above. `codegraph`, `uipro` and `ux-gates`
+   move out of the keel and out of `assets/toolkit/scripts/extensions/`. What stays in the keel is the
+   `./init --extension` flag, the menu, the election record in `.slipwai/extensions.json` and the projection
+   pass: the keel names no extension in its own code, exactly as it names no language.
 4. The chandlery: one `index.json` per channel. It lists languages and extensions alike, each with a version, a
    compatibility range, a checksum, a publisher, a one-line description and tags. An organisation can run a
    private chandlery.
@@ -297,15 +317,20 @@ first two items of cruise-2's CI proposal. Decided 2026-10-06 (section 10).
    build and sign and no bundled copy to drift from the chandlery's. Decided 2026-10-06.
 7. **Making a package is a verb, not a fork of the template.** `slipwai package` is `generate` for packages,
    with the same shape as the product path:
-   - `slipwai package new <name>` asks what the product interview asks, for a package: language or extension;
-     family, or framework of which family; which backends it provides and which axis options each answers;
-     which targets. It writes the repository from the template with `language.json` filled in, the `LANGUAGE`
-     object as a skeleton with one `Member` per answer and a failing test per Member, the conformance suite and
-     the matrix wired into `make verify`, a CI workflow that runs them against the pinned keel and signs a
-     release with Sigstore, `make release`, and a `README` that says what is left to write. Like `generate`, it
-     makes one commit on `main`, and like `./init` it offers to create the repository on the forge and push.
-   - `slipwai package check` runs the conformance suite and the matrix locally against the installed keel, and
-     prints the same lines the channel's CI will.
+   - `slipwai package new <name>` asks what the product interview asks, for a package. The first question is
+     the kind, and it decides the rest. For a **language**: family, or framework of which family; which
+     backends it provides and which axis options each answers; which targets. It writes `language.json`
+     filled in, the `LANGUAGE` object as a skeleton with one `Member` per answer and a failing test per
+     Member, and the matrix. For an **extension**: what the tool is and what it installs; where its state
+     goes and what to add to `.gitignore`; which capability it waits for, if any; and whether it leaves state
+     that can go stale. It writes `extension.json` filled in, `init.py` as a skeleton with `main()` and
+     `project_guidance()`, `ready()` and `installed()` where it waits, a `check-<key>.py` where it leaves
+     stale state, and a failing test per obligation. Either kind also gets the conformance suite wired into
+     `make verify`, a CI workflow that runs it against the pinned keel and signs a release with Sigstore,
+     `make release`, and a `README` that says what is left to write. Like `generate`, it makes one commit on
+     `main`, and like `./init` it offers to create the repository on the forge and push.
+   - `slipwai package check` runs the conformance suite locally against the installed keel, with the matrix
+     where the package is a language, and prints the same lines the channel's CI will.
    - `slipwai package release` tags, builds the release file, signs it, and uploads it as a release asset. It
      refuses when `check` is red or the version is not new.
    - `slipwai package register [--channel <url>]` opens the pull request that adds the entry to the channel's
@@ -838,7 +863,7 @@ on an empty `src/`.
 **Phase 2. The registry and the chart.** Bring back `registry.py`, `loaded.py`, `manifest/`, `catalog_merge.py`,
 `language_directory.py`, `language_shape.py`, `conformance/`, `matrix/`, and their tests. Source:
 `slipwai-cruise-2`. Bring back the keel's `catalog.json` with no backends in it. Create the real `java-spring`
-repository first, then pin the six packages as submodules under `languages/`. Done when the gate loads every
+repository first, then pin the six packages as submodules under `packages/`. Done when the gate loads every
 package and runs the conformance suite, before any scaffold exists.
 
 **Phase 3. The scaffold pipeline.** Bring back `assets.py`, `toolkit.py`, `scaffold.py`, and then the
@@ -860,7 +885,7 @@ afterwards: the `/chart` stage, clearance, the one-setter-per-mark rule, typed a
 refactor stage, the two gates, the ceiling on decisions, bounded waits, the inbox at every boundary, the four
 release modes, and the flag hygiene gate.
 
-**Phase 6. The chandlery.** Extensions become packages. The index gains publishers and checksums.
+**Phase 6. The chandlery.** Extensions become packages, with a manifest and an entry point of their own and a conformance profile that holds the obligations `docs/extensions.md` already sets. The index gains publishers and checksums.
 `slipwai install` handles both kinds. An organisation can run a private chandlery. `generate` offers to install
 what the answers need.
 
@@ -966,7 +991,7 @@ Resolved:
   harbour; captains write their deck log and nothing else; the harbourmaster copies across what others need.
 - [Blocker → theme A, "Where the first-party packages live"] Where the package repositories live and how a
   package is linked at usage time. Answer: under `ROBCOATVG`, public, before phase 2; at usage time the link is
-  the chandlery index and `~/.slipwai/languages/`, never a repository.
+  the chandlery index and `~/.slipwai/packages/`, never a repository.
 - [Should → section 6] How fairways are worked out when a version 1 project migrates. Answer: `migrate`
   proposes them on both profiles from the model or from the plans and `project.json`, marks them proposed, and
   claims nothing until a person confirms.
@@ -1091,7 +1116,7 @@ Depends on: the fork public (section 7). Phase 5 may start when 1.2 is green.
 | 2.3 | `catalog.json` with no backends, `catalog_merge.py`, `catalog.py` | cruise-2 | M | A fragment merges; a duplicate backend is refused with one line |
 | 2.4 | `language_directory.py`, `language_shape.py`, the loader and admission in two phases | cruise-2 | M | A package directory loads whole or not at all; a bad one reports every fault in one line |
 | 2.5 | `conformance/` and `matrix/` as `python -m` entry points | cruise-2 | M | Both run against the template's toy package |
-| 2.6 | The six packages pinned as submodules under `languages/`; CI runs conformance across all six | cruise-2 | S | Six green rows in the gate, no language variant generated yet |
+| 2.6 | The six packages pinned as submodules under `packages/`; CI runs conformance across all six | cruise-2 | S | Six green rows in the gate, no language variant generated yet |
 | 2.7 | The one refusal shape: a fault type that renders to one line ending with the fixing command | new | M | Every refusal in 2.3 and 2.4 goes through it; the S20 wording tests collapse to one table |
 
 Depends on: phase 1. 2.1 can start on day one.
@@ -1153,10 +1178,10 @@ most worth running in two fairways themselves, once 5.3 exists.
 
 | Slice | What | From | Size | Done when |
 |---|---|---|---|---|
-| 6.1 | Extensions as packages on the same loader; `codegraph`, `uipro`, `ux-gates` out of the keel | new | L | `./init --extension` installs from a directory package |
+| 6.1 | The extension package shape: `extension.json`, `init.py` as the entry point, and the conformance profile for the six obligations of `docs/extensions.md`; `codegraph`, `uipro` and `ux-gates` out of the keel | new | L | `./init --extension codegraph` installs from a directory package, and the keel names no extension in its own code |
 | 6.2 | The index schema with publishers, checksums, the signature field, descriptions and tags; the public channel as a Pages site | cruise-2 + new | M | `slipwai search` and `slipwai install` read it for both kinds |
 | 6.3 | A private channel per organisation, `SLIPWAI_LANGUAGE_INDEX` generalised to `SLIPWAI_CHANDLERY` | cruise-2 | S | An organisation's index serves its own packages |
-| 6.4 | `slipwai package new / check / release / register`, and `make release` in the template behind them | new | L | A package made by `new` on an empty machine passes `check`, releases, and registers into a local channel without a hand edit |
+| 6.4 | `slipwai package new / check / release / register`, branching on the kind answer, and `make release` in the template behind them | new | L | One language package and one extension package, each made by `new` on an empty machine, pass `check`, release, and register into a local channel without a hand edit |
 | 6.5 | Signed releases and the trust store: Sigstore or minisign verification, `trust.json`, the `ROBCOATVG` root, the confirm-once prompt, `unsigned` in `slipwai list` | new | M | A new publisher is confirmed once and then installs silently; a mismatched signature is refused; a hand-placed package loads and says `unsigned` |
 | 6.6 | The public channel's contribution path, which `slipwai package register` targets: the index repository, its CI (signature matches publisher, conformance passes, no name collision), and the contributor page | new | M | A package from outside `ROBCOATVG` is listed by a merged pull request and installs with one confirmation |
 
