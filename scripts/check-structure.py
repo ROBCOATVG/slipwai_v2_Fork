@@ -59,13 +59,14 @@ TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
     # to do.
     ("answers", ("selection", "origin", "layout", "services", "tooling", "capabilities",
                  "toolkit", "platform", "convergence", "delivery_facts", "programme", "quick_wins",
-                 "uncommitted", "wrappers", "strategy", "survey", "structure")),
+                 "uncommitted", "wrappers", "strategy", "survey", "structure", "manifest")),
     # One module per part of the repository being generated.
     ("parts", ("project",)),
     # The whole of a project, assembled and written, and the whole of it again from a newer keel.
-    ("assembly", ("unlabel", "next_steps")),
+    ("assembly", ("unlabel", "next_steps", "scaffold", "adopt_report")),
     # The command line, and the entry point the executable is built from.
-    ("edge", ("cli", "__main__", "preflight", "upgrade")),
+    ("edge", ("cli", "__main__", "preflight", "upgrade", "cli_confirm", "cli_init",
+              "cli_prompts")),
     # The package's own `__init__`: last, so it may name anything and nothing may name it.
     ("package", ("__init__",)),
 )
