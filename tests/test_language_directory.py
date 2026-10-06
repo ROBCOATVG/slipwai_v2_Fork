@@ -18,7 +18,7 @@ from pathlib import Path
 import checkout_packages
 
 from slipwai import language_directory
-from slipwai.assets import ROOT
+from slipwai.assets import ROOT, this_command
 from slipwai.language_directory import VARIABLE, Package, Refused, directory, import_package, read
 
 # The keel schema version the fakes are written against; `catalog.py` passes the real one.
@@ -38,7 +38,15 @@ INIT = (
 
 @contextlib.contextmanager
 def environment(**changes: str | None) -> Iterator[None]:
-    """Set or unset environment variables for the block, and put them back."""
+    """Set or unset environment variables for the block, and put them back.
+
+    `home=` moves the home directory on every platform: `Path.home()` reads `HOME` on POSIX and
+    `USERPROFILE` on Windows, so a test that sets only `HOME` passes on a laptop and fails on the Windows
+    leg, which is how this was found.
+    """
+    if "home" in changes:
+        where = changes.pop("home")
+        changes["HOME"] = changes["USERPROFILE"] = where
     before = {key: os.environ.get(key) for key in changes}
     for key, value in changes.items():
         if value is None:
@@ -91,12 +99,12 @@ def pin_beside(packages: Path) -> Path:
 
 class DirectoryTest(unittest.TestCase):
     def test_the_variable_names_the_directory_and_replaces_the_default_whole(self) -> None:
-        with environment(SLIPWAI_LANGUAGES="/tmp/l", HOME="/tmp/h"):
+        with environment(SLIPWAI_LANGUAGES="/tmp/l", home="/tmp/h"):
             self.assertEqual(directory(), Path("/tmp/l"))
 
     def test_without_the_variable_the_directory_is_under_home(self) -> None:
-        with environment(SLIPWAI_LANGUAGES=None, HOME="/tmp/h"):
-            self.assertEqual(directory(), Path("/tmp/h/.slipwai/languages"))
+        with environment(SLIPWAI_LANGUAGES=None, home=str(Path("/tmp/h"))):
+            self.assertEqual(directory(), Path("/tmp/h") / ".slipwai/languages")
 
     def test_a_directory_that_does_not_exist_holds_no_language_and_is_no_fault(self) -> None:
         with tempfile.TemporaryDirectory() as parent:
@@ -167,7 +175,7 @@ class FragmentTest(unittest.TestCase):
         self.assertEqual(
             self.refused(fragment={**FRAGMENT, "core": ">=9.1,<10"}),
             ["language bad (<dir>): needs core schema >=9.1,<10, and this core speaks 9.0: "
-             f"{ROOT / 'slipwai'} upgrade"],
+             f"{this_command()} upgrade"],
         )
 
     def test_a_core_newer_than_the_range_is_told_to_get_a_newer_package(self) -> None:
