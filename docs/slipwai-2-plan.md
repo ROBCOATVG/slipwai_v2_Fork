@@ -681,7 +681,7 @@ down.
 
 | Shape | For | What it is on AWS | What it is on Azure | What it drops |
 |---|---|---|---|---|
-| **Skiff** | A staff or internal tool: the team, or named colleagues; an outage is an inconvenience | One environment. App Runner from the same image, with the smallest RDS or an Aurora Serverless v2 instance at its floor, staff identity through Cognito, flags through SSM, no CloudFront unless there is a site, no load balancer, rolling deploys | One environment. One Container App that scales to zero, the smallest Flexible Server, Entra app roles | The second environment, the per-service balancer, blue/green, CloudFront for an API, the customer identity pool. Roughly a third of the idle bill |
+| **Skiff** | A staff or internal tool: the team, or named colleagues; an outage is an inconvenience | One environment. A Lightsail container service from the same image, with the smallest RDS or an Aurora Serverless v2 instance at its floor, staff identity through Cognito, flags through SSM, no CloudFront unless there is a site, no load balancer, rolling deploys | One environment. One Container App that scales to zero, the smallest Flexible Server, Entra app roles | The second environment, the per-service balancer, blue/green, CloudFront for an API, the customer identity pool. Roughly a third of the idle bill |
 | **Liner** | A product with customers, or anything whose outage is an incident | Today's stack, unchanged | Today's stack, unchanged | Nothing |
 
 Rules that hold the shapes to the same bar:
@@ -693,6 +693,14 @@ Rules that hold the shapes to the same bar:
   for the liner shape, keeps the database and its data, writes the runbook for the one step a person does by
   hand (the DNS move), and records the change in the convergence map's platform axis. Nothing moves a project
   down a shape without a person asking.
+- **The skiff's compute is a row, because managed services get retired.** Version 2's skiff was written
+  around AWS App Runner. App Runner is being sunsetted, and the first real project generated on the shape —
+  warbook — had to be moved to Lightsail before version 2 had built any of it. The lesson is not that
+  Lightsail is the right answer forever; it is that the answer has a shelf life. So the compute a skiff
+  runs on is one named row in the target's table and one stack file, never a choice spread through the
+  infrastructure, the deploy pipeline and the docs. Replacing it should cost a day, not a phase. The same
+  holds for the liner. Decided 2026-10-06, on warbook's evidence.
+
 - **The same gate, the same flags, the same images.** A skiff runs the same `make verify`, the same release
   modes, the same flag reader and the same images as a liner; languages answer nothing new. Only the
   infrastructure module and the pipeline differ, which is what keeps the shape a target decision and not a
@@ -1224,7 +1232,7 @@ refuses by and which nothing else imports. Found on 2026-10-06 while doing the s
 | 3.2 | `scaffold.py` and `services.py`, asking the registry | upstream + cruise-2 | L | `project_files()` returns a tree for one typescript variant equal to cruise-2's |  |
 | 3.3 | The `project/*.py` parts, in assembly order, one slice per group: Makefile and CI; README and AGENTS; docs; flags and composition; event model; the rest | upstream | 6 × M | After each group, `make starters` diffs empty against cruise-2 for the variants that group touches |  |
 | 3.4 | Targets `aws` and `azure`, their stacks and docs, as the **liner** shape | upstream | L | Stack validation tests green |  |
-| 3.4b | The **skiff** shape for both targets: App Runner and a scale-to-zero Container App, one environment, the shape question in the interview, `converge --shape` | new | L | Both shapes validate against the real providers; a slipway project generates a skiff by default |  |
+| 3.4b | The **skiff** shape for both targets: a Lightsail container service and a scale-to-zero Container App, one environment, the shape question in the interview, `converge --shape`; the compute named in one row of the target's table, not spread through its stack | new | L | Both shapes validate against the real providers; a slipway project generates a skiff by default; changing a skiff's compute is one row and its stack file |  |
 | 3.5 | Frontends and backing services, the `react-vite` npm-workspace contract | upstream + cruise-2 | M | The frontend variants match |  |
 | 3.6 | The pruner with rows emitted as data | cruise-2 | S | `scripts/backing-services.py` in a generated project carries no language name |  |
 | 3.7 | `make starters` and the full matrix per package, run from each package's CI, not the keel's | cruise-2 | M | The keel's gate stays under ten minutes; each package's CI proves its variants |  |
