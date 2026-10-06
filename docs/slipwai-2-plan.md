@@ -239,7 +239,7 @@ loaded and released the same way. They differ in what they declare, and in when 
 | | Language | Extension |
 |---|---|---|
 | Manifest | `language.json`: the backends it provides, the axis options each answers, its targets, and the family it belongs to | `extension.json`: version 1's catalogue entry (`name`, `description`, and `ignore`, the gitignore lines its local state needs) plus the keel range, the publisher and tags |
-| Executable half | a `LANGUAGE` object keyed by `Member` constants, family resolved before framework | `init.py`, with the `project_guidance()` and the `check-<key>.py` gate that `docs/extensions.md` already specifies |
+| Executable half | a `LANGUAGE` object keyed by `Member` constants, family resolved before framework | scripts attached to the keel's **hook points** — `init`, `project`, `check`, `before-stage`, `after-stage`, `boundary`, `before-merge` — declared in the manifest's `hooks` block; `init.py`, `project_guidance()` and `check-<key>.py` are the first three, named (section 12, 6.1) |
 | When the keel asks it | at `slipwai generate`, to write the skeleton | at `./init`, after the skeleton exists. An extension never changes generated code |
 | What conformance proves | every `Member` the manifest claims is answered, and the matrix is green | the six obligations of `docs/extensions.md`: replaceably idempotent; installs what it needs and is non-fatal when it cannot; projects a marker-fenced block into `AGENTS.md`; gates whatever state can go stale; names the recovery command on every failure path; and merges rather than overwrites a file a person hand-edits |
 
@@ -1490,7 +1490,7 @@ most worth running in two fairways themselves, once 5.3 exists.
 
 | Slice | What | From | Size | Done when | Status |
 |---|---|---|---|---|---|
-| 6.1 | The extension package shape: `extension.json`, `init.py` as the entry point, and the conformance profile for the six obligations of `docs/extensions.md`; `codegraph`, `uipro` and `ux-gates` out of the keel | new | L | `./init --extension codegraph` installs from a directory package, and the keel names no extension in its own code |  |
+| 6.1 | The extension package shape: `extension.json` with a `hooks` block over the keel's closed set of hook points, `init.py` as the first of them, the conformance profile for the six obligations of `docs/extensions.md` plus one per declared point, `slipwai hooks`, and `.slipwai/hooks.json` as a controlled file; `codegraph`, `uipro`, `ux-gates` out of the keel | new | L | `./init --extension codegraph` installs from a directory package; a hook that fails is a `hook` line and never a failed stage; the captain runs with every hook removed |  |
 | 6.2 | The index schema with publishers, checksums, the signature field, descriptions and tags; the public channel as a Pages site | cruise-2 + new | M | `slipwai search` and `slipwai install` read it for both kinds |  |
 | 6.3 | A private channel per organisation, `SLIPWAI_LANGUAGE_INDEX` generalised to `SLIPWAI_CHANDLERY` | cruise-2 | S | An organisation's index serves its own packages |  |
 | 6.4 | `slipwai package new / check / release / register`, branching on the kind answer, and `make release` in the template behind them | new | L | One language package and one extension package, each made by `new` on an empty machine, pass `check`, release, and register into a local channel without a hand edit |  |
@@ -1647,7 +1647,9 @@ adversary, mutation, merge — with each stage's model role read from `stage_mod
 that `drive.md` *reads* it and says, at the implement stage, which width it is running at and why it fell
 back if it did. The refusal of `story` as a cycle and the two fallbacks are already in
 `assets/toolkit/scripts/agents/drive.py`; the slice is the prose that explains them where the agent reads
-it. Test: a generated project's `drive.md` names every rung of `STAGES` and no rung `STAGES` has not got.
+it. Under `/drive` it also fires the extension hook points around each rung (6.1), so a hook behaves the
+same with a person present as under a captain. Test: a generated project's `drive.md` names every rung of
+`STAGES` and no rung `STAGES` has not got, and names the hook points in the order they fire.
 
 **5.17 — Example mapping on both profiles.** Move `assets/profiles/event-modelling/commands/example-map.md`
 to `assets/toolkit/commands/example-map.md`. Its first section branches on the profile: on event
@@ -1832,6 +1834,60 @@ hand-edited file). `codegraph`, `uipro` and `ux-gates` move out of `assets/toolk
 into three package repositories under `ROBCOATVG`, which is the owner's push again. The keel keeps the
 `--extension` flag, the menu, `.slipwai/extensions.json` and the projection pass.
 
+**Hook points, which is what an extension's three obligations already were.** Version 1's extension does
+three things at three moments — it installs at `./init`, it re-projects its `AGENTS.md` block on `make
+agents` and `migrate`, and it contributes a gate to `make verify` — and each is a hook on a moment the
+keel owns, written as a convention rather than declared. Version 2 declares them, and adds the moments
+the loop has that version 1 had no way to reach. The set is the keel's and closed, like the axes: an
+extension attaches to a point, it does not invent one.
+
+| Point | When the keel fires it | What is passed | Version 1 had it as |
+|---|---|---|---|
+| `init` | `./init --extension <key>`, once per election | the project root | `init.py` |
+| `project` | every re-projection: `make agents`, `migrate`, `./init --integration` | the project root, the harnesses installed | `project_guidance()` |
+| `check` | `make verify`, as one more gate | the project root | `scripts/check-<key>.py` |
+| `before-stage`, `after-stage` | around each rung of the ladder, under `/drive` and the captain alike | stage, slice, fairway, berth | nothing — `codegraph` reached "sync after each delegate" through Claude Code's own hooks, so it worked on one harness |
+| `boundary` | every captain boundary, after the inbox is read | slice, fairway, the lines since the last boundary | nothing |
+| `before-merge` | on the rebased branch, before the full gate runs | slice, fairway, the diff | nothing |
+
+`extension.json` declares them:
+
+```json
+{"name": "codegraph", "kind": "extension", "core": ">=9.0,<10",
+ "hooks": {"init": "hooks/init.py", "project": "hooks/project.py", "check": "hooks/check.py",
+           "after-stage": {"run": "hooks/sync.py", "stages": ["implement", "converge"], "budget": "30s"}}}
+```
+
+A hook is a script in the package, run as `python3 <path> --point <name> --stage <s> --slice <id>
+--fairway <f>` with the project root as its working directory, inside the berth, with the berth's
+permissions and no credential. Exit 0 is fine. Anything else is a `hook` line in the deck log naming the
+extension, the point and the last line it printed — reported, and never fatal to the stage, which is the
+non-fatal obligation generalised. Every hook has a budget, from the declaration or `harbour.json`'s
+default, and is ended at it. Several extensions on one point run in name order and independently; one
+failing does not stop the next. A hook is idempotent, as `init.py` already had to be: the captain may
+fire `after-stage` twice for one stage if it restarts one.
+
+Three rules make this safe to have. **The captain depends on no hook.** Its controls — the last line, the
+controlled-files diff, the waits, the inbox receipt — all work with every hook removed; a hook is a
+second belt, which is already the rule for the harnesses' hooks and now holds for the extensions' too.
+**The resolved registry is a controlled file.** `.slipwai/hooks.json` is written at `init` and `project`
+time from every elected extension's manifest, and an iteration that edits it is refused by the
+control-file guard like an iteration that edits a gate — so a run cannot register a hook on itself.
+**A hook runs where the extension was trusted to run.** Electing an extension is trusting its publisher
+(6.5), and the sandbox is the berth; a hook has exactly what the extension's `init.py` has, which is edits
+to the project and nothing outside it.
+
+The conformance profile for extensions (above) gains a check per declared point: the script exists, it
+exits 0 run twice against a generated project, and it finishes inside its budget. `slipwai hooks` lists
+what is attached to what, in firing order, with each extension's name. `project/run_skill.py` (back since
+3.3d) is where the keel already runs a script at a stage and reads its last line, and is what fires
+these.
+
+Which moments are on the list is a decision taken here and revisable at a slice: the six above are the
+ones an existing extension asked for or the loop makes obvious. `generate` is deliberately not one —
+extensions are elected at `./init`, after a project exists, and a hook at generation would have nothing
+elected to fire.
+
 **6.2 — The index schema.** `index.json` v2: per entry `name`, `kind`, `version`, `file`, `sha256`,
 `signature` (the Sigstore bundle or minisign signature, base64), `publisher` (an identity string: a
 Sigstore subject or a minisign key id), `core`, `description`, `tags`, and the fragment. `language_index.py`
@@ -1905,7 +1961,10 @@ captain knows from the deck log lines the iteration writes — read the inbox an
 process and append `parked` with the reason; on `accepted`, request the merge through the harbourmaster;
 on `merged`, next slice. Everything it relies on is in the logs — an iteration that wrote no line made
 no progress, and that is the inversion the runner lacked. Reuse from `cruise.py`: the stop table, the
-last-line protocol, the benchmark bracket, the control-file guard. Test: a fairway with two slices and a
+last-line protocol, the benchmark bracket, the control-file guard. The captain fires the extension hook
+points (6.1) — `before-stage` and `after-stage` around each rung, `boundary` after each inbox read,
+`before-merge` on the rebased branch — through `run_skill.py`, and depends on none of them; a hook that
+exits 2 produces a `hook` line and the stage still completes. Test: a fairway with two slices and a
 fake `/drive` that writes the expected lines runs to `merged` twice; a fake that writes nothing is parked
 at the bound.
 
@@ -2039,6 +2098,9 @@ Collected from above, so they can be taken before the slice that needs them.
    the first; worth confirming.
 5. **The phase 7 greenfield**: which small product, two bounded contexts by design, becomes the first
    thing version 2 builds for real.
+6. **The hook points** (6.1): the six named are the ones an existing extension asked for or the loop
+   makes obvious. Whether `generate` should be one after all, and whether a hook may *block* a stage
+   (today none can — reported, never fatal), are both worth a view before 6.1 starts.
 
 ### A realistic shape for the calendar
 
