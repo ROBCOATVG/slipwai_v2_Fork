@@ -267,7 +267,9 @@ first two items of cruise-2's CI proposal. Decided 2026-10-06 (section 10).
 3. Extensions become packages on the same loader. `codegraph`, `uipro` and `ux-gates` move out of the keel.
 4. The chandlery: one `index.json` per channel. It lists languages and extensions alike, each with a version, a
    compatibility range, a checksum and a publisher. An organisation can run a private chandlery.
-5. When nothing is installed, `slipwai generate` names what to install and offers to do it.
+5. When nothing is installed, `slipwai generate` names what to install and offers to do it. The standalone
+   executable bundles no language: it is the keel alone, the same as the wheel, so there is one artefact to
+   build and sign and no bundled copy to drift from the chandlery's. Decided 2026-10-06.
 
 **What stays in the keel.** Profiles, targets, frontends, axes, adoption, and the toolkit. This is the line that
 issue #26 drew.
@@ -897,14 +899,13 @@ The first attempt paid for these rules. They apply from phase 1, inside the fork
 - **A review and refactor stage before the merge.** Theme B, item 8.
 - **Four release modes, chosen by product state.** Theme E.
 - **The README rewrite is the last phase.** Phase 9.
+- **The executable bundles no language; `generate` offers to install.** Theme A, item 5.
 - **Signed releases and a trusted-publisher list, verified at install time, never at build time.** Theme A, "Trust".
 - **The six package repositories move under `ROBCOATVG`, public, before phase 2.** Theme A, "Where the first-party packages live".
 
 ### Still open
 
-1. **Whether the standalone executable bundles any language.** Issue #26 left it open. The experiment chose none
-   (decision D5). Recommended: none, with `generate` offering to install.
-2. **Whether issues #30, #32 and #29 also ship on 1.x**, for users who will not wait for 2.0. Under the second
+1. **Whether issues #30, #32 and #29 also ship on 1.x**, for users who will not wait for 2.0. Under the second
    settled decision above, the default answer is no.
 
 ## 10. Gaps review, 2026-10-06
