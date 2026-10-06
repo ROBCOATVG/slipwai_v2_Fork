@@ -1091,8 +1091,24 @@ with the measured median, and keep doing so.
 ### The baseline
 
 The token target in theme B, half the experiment's median per accepted slice, needs a baseline measured the
-same way the fleet board will measure it. The baseline is the experiment's own `benchmark.md`: median input
-tokens per accepted slice across its nineteen slices, recomputed from that file in phase 1 and written here.
+same way the fleet board will measure it. The baseline is the experiment's own `benchmark.md`, recomputed in
+phase 1 on 2026-10-06:
+
+| | Input tokens per slice |
+|---|---|
+| Median, the 18 accepted slices of 19 | **128.6M** |
+| Mean, the same 18 | 140.0M |
+| Range | 34.3M (S18) to 323.2M (S10) |
+| All nineteen slices together | 2.66B |
+
+So the 2.0.0 target is **a median at or below 64M input tokens per accepted slice**. Input here is prompt
+plus cache read plus cache creation, which is what the experiment counted and what the fleet board will
+count, so the two numbers are comparable. Three cautions on the baseline. Eight of the nineteen slices have
+an unread session, so their figures are floors and the true median is higher than 128.6M — the target is
+conservative by however much that is. S08, the one slice never accepted, is left out, and it is also the
+largest-scoped: excluding it flatters the baseline slightly. And a token is not a price; the model mix
+moves, and the comparison is like-for-like only against a run that counts the same way.
+
 The first measured comparison is the phase 7 greenfield, two bounded contexts by design. Until then the
 numbers come from the benchmark bracket version 1 already writes, on whatever generated project phase 5 runs
 against.
