@@ -61,9 +61,16 @@ class TickTest(unittest.TestCase):
         done = progress.shipped()
         for line in page.splitlines():
             if (match := progress.ROW.match(line)) and line.rstrip().endswith("|"):
-                ticked = "done " in line.rsplit("|", 2)[1]
+                ticked = line.rsplit("|", 2)[1].strip() == "done"
                 with self.subTest(slice=match.group(1)):
                     self.assertEqual(ticked, match.group(1) in done)
+
+    def test_a_tick_survives_the_commit_that_writes_it_being_amended(self) -> None:
+        """The cell said `done <hash>` once, and folding the tick into the slice's own commit changed the
+        hash it had just recorded, so the gate went red on the commit that made it green."""
+        page = progress.rendered()
+        self.assertNotRegex(page, r"\| done [0-9a-f]{7,} \|")
+        self.assertIn("| done |", page)
 
     def test_the_slices_that_predate_the_trailer_are_a_closed_list(self) -> None:
         """It was written once and is never added to; everything after carries its own trailer."""

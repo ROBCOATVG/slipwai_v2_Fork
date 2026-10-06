@@ -1129,12 +1129,12 @@ against.
 
 | Slice | What | From | Size | Done when | Status |
 |---|---|---|---|---|---|
-| 1.1 | `pyproject.toml`, `VERSION` at `2.0.0.dev0`, `requirements-dev.txt`, the `slipwai` launcher, and `src/slipwai/` as `__init__`, `__main__` and a `cli.py` that answers `--version` | upstream | S | A checkout, an editable install and a built wheel all print `2.0.0.dev0` through `slipwai`, `python -m slipwai` and `./slipwai`; ruff, mypy and `tests/test_cli.py` are green | done 5209785 |
-| 1.2 | `Makefile` with `lint`, `typecheck`, `unit`, `test` and `verify`, and `scripts/verify` behind them; `verify` is lint, typecheck and test, and `unit` is the fast half, named by a `SLOW` list | upstream, `unit` new | S | `make verify` green from a clean checkout, `.python-tools` installed on demand; `make unit` runs the fast tests alone | done 0ba7af6 |
-| 1.3 | `scripts/check-structure.py` with its tiers, `import-surface.txt` as the list it reads, and `check-structure` added to the `Makefile` and to `verify` | cruise-2 | M | The gate refuses an import against the direction, a cycle, an oversized module, a missing docstring, a keel import of a package and a package import off the surface, each proven by a test; the surface list is empty and held | done a6ef34f |
-| 1.4 | CI: `verify.yml` with lint, typecheck, structure and the suite on Linux, macOS and Windows, plus an install-and-ask-its-version smoke on each; no matrix, no languages. WSL is deferred — see below | upstream, cut down | M | Green on the fork under Actions, on all three platforms | done 941f7c8 |
-| 1.5 | `AGENTS.md` for the fork: section 8's rules, the two-gate table, how to bring a module back, and nothing about versioning yet; `tests/test_agents.py` holds it to section 8 | new | S | A session reads it and knows the rules; a rule added to the plan and not to the page fails the gate | done 7001d7c |
-| 1.6 | `GLOSSARY.md` at the repository root, written from section 1 by `scripts/glossary.py`, with `make glossary` and a `--check` the suite runs | new | S | The `wtf` skill and every session read one glossary, and it cannot drift from the plan without the gate saying so | done 37cf944 |
+| 1.1 | `pyproject.toml`, `VERSION` at `2.0.0.dev0`, `requirements-dev.txt`, the `slipwai` launcher, and `src/slipwai/` as `__init__`, `__main__` and a `cli.py` that answers `--version` | upstream | S | A checkout, an editable install and a built wheel all print `2.0.0.dev0` through `slipwai`, `python -m slipwai` and `./slipwai`; ruff, mypy and `tests/test_cli.py` are green | done |
+| 1.2 | `Makefile` with `lint`, `typecheck`, `unit`, `test` and `verify`, and `scripts/verify` behind them; `verify` is lint, typecheck and test, and `unit` is the fast half, named by a `SLOW` list | upstream, `unit` new | S | `make verify` green from a clean checkout, `.python-tools` installed on demand; `make unit` runs the fast tests alone | done |
+| 1.3 | `scripts/check-structure.py` with its tiers, `import-surface.txt` as the list it reads, and `check-structure` added to the `Makefile` and to `verify` | cruise-2 | M | The gate refuses an import against the direction, a cycle, an oversized module, a missing docstring, a keel import of a package and a package import off the surface, each proven by a test; the surface list is empty and held | done |
+| 1.4 | CI: `verify.yml` with lint, typecheck, structure and the suite on Linux, macOS and Windows, plus an install-and-ask-its-version smoke on each; no matrix, no languages. WSL is deferred — see below | upstream, cut down | M | Green on the fork under Actions, on all three platforms | done |
+| 1.5 | `AGENTS.md` for the fork: section 8's rules, the two-gate table, how to bring a module back, and nothing about versioning yet; `tests/test_agents.py` holds it to section 8 | new | S | A session reads it and knows the rules; a rule added to the plan and not to the page fails the gate | done |
+| 1.6 | `GLOSSARY.md` at the repository root, written from section 1 by `scripts/glossary.py`, with `make glossary` and a `--check` the suite runs | new | S | The `wtf` skill and every session read one glossary, and it cannot drift from the plan without the gate saying so | done |
 
 Depends on: the fork public (section 7). Phase 5 may start when 1.2 is green.
 
@@ -1149,15 +1149,15 @@ launcher — the first code where the distinction can go wrong. Decided 2026-10-
 
 | Slice | What | From | Size | Done when | Status |
 |---|---|---|---|---|---|
-| 2.1 | The seven package repositories under `ROBCOATVG`, public, each with its history; `slipwai-language-java-spring` built from the experiment's `slice/S10-java-spring` lineage rather than the empty placeholder | cruise-2 | M | Seven public repositories, each with its history, each secret-scanned in tree and in history | done e998040 |
-| 2.2 | `assets.py` as the path head, `registry.py`, `family_only.py`, `docs/backend-protocol.md` and their tests | cruise-2 | M | The registry answers Members for a fake package in tests, and the contract page and `PROTOCOL` cannot drift | done 1841091 |
+| 2.1 | The seven package repositories under `ROBCOATVG`, public, each with its history; `slipwai-language-java-spring` built from the experiment's `slice/S10-java-spring` lineage rather than the empty placeholder | cruise-2 | M | Seven public repositories, each with its history, each secret-scanned in tree and in history | done |
+| 2.2 | `assets.py` as the path head, `registry.py`, `family_only.py`, `docs/backend-protocol.md` and their tests | cruise-2 | M | The registry answers Members for a fake package in tests, and the contract page and `PROTOCOL` cannot drift | done |
 | 2.3 | `catalog.json` with no backends, `catalog_merge.py`, `catalog.py` | cruise-2 | L | A fragment merges; a duplicate backend is refused with one line |  |
-| 2.4 | `versions.py`, `language_shape.py`, `language_directory.py`: the package directory, read and admitted in two phases | cruise-2 | L | A package directory loads whole or not at all; a bad one reports every fault in one line | done b291062 |
+| 2.4 | `versions.py`, `language_shape.py`, `language_directory.py`: the package directory, read and admitted in two phases | cruise-2 | L | A package directory loads whole or not at all; a bad one reports every fault in one line | done |
 | 2.5 | `conformance/` and `matrix/` as `python -m` entry points | cruise-2 | M | Both run against the template's toy package |  |
 | 2.6 | *Moved to phase 3 as 3.8 — see below.* | | |  |
 | 2.8 | The catalogue's validators, which `catalog.py` reads: `features.py`, `targets.py`, `extensions.py`, `axes.py` | upstream | M | Each refuses a malformed catalogue through `Fault`, and nothing in them names a language |  |
 | 2.9 | `loaded.py` and `registry()`: the registry built once from the catalogue and the directory | cruise-2 | M | `registry()` answers for a package installed into a temporary directory, and a faulty package is refused with every fault at once |  |
-| 2.7 | The one refusal shape: `errors.py` with `Fault`, `Refusal` and `refuse`. **Runs before 2.3 and 2.4**, not after them | new + upstream | M | Every refusal in 2.3 and 2.4 goes through it; the experiment's nine wording-test files collapse to one table | done 357700a |
+| 2.7 | The one refusal shape: `errors.py` with `Fault`, `Refusal` and `refuse`. **Runs before 2.3 and 2.4**, not after them | new + upstream | M | Every refusal in 2.3 and 2.4 goes through it; the experiment's nine wording-test files collapse to one table | done |
 
 Depends on: phase 1. 2.1 can start on day one.
 

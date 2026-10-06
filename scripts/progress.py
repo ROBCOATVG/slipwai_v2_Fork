@@ -80,7 +80,7 @@ def ticked(page: str, done: dict[str, str]) -> str:
             out.append("|" + "---|" * (out[-1].count("|") - 1))
         elif match := ROW.match(line):
             short = done.get(match.group(1))
-            out.append(without_status(line) + (f" {DONE} {short} |" if short else f" {TODO} |"))
+            out.append(without_status(line) + (f" {DONE} |" if short else f" {TODO} |"))
         else:
             out.append(line)
     return "\n".join(out) + "\n"
@@ -89,12 +89,21 @@ def ticked(page: str, done: dict[str, str]) -> str:
 def without_status(row: str) -> str:
     """A header or row with the Status cell this script last wrote removed, and nothing else touched.
 
-    Not for separators: `---` is what every cell of one holds, so there is no telling this script's from
-    a real column. `ticked` rebuilds those from the header's width instead.
+    Every trailing cell that *says* status — `done`, the older `done <hash>`, or the `Status` header — is
+    taken off, because a row can carry more than one: changing the cell's shape once left `| done <hash> |
+    done |` behind, and stripping only the last of those is how a column quietly doubles. After those, at
+    most one empty cell is taken, which is what an unticked row's cell is. No more than one, because a
+    table row may legitimately end in an empty cell of its own.
+
+    Not for separators: `---` is what every cell of one holds, so there is no telling this script's from a
+    real column. `ticked` rebuilds those from the header's width instead.
     """
     body = row.rstrip()
-    if re.search(r"\|\s*(done [0-9a-f]{7,}|Status|)\s*\|$", body):
-        body = body[: body.rstrip().rfind("|", 0, len(body) - 1) + 1]
+    said = re.compile(r"\|\s*(done(?: [0-9a-f]{7,})?|Status)\s*\|$")
+    while said.search(body):
+        body = body[: body.rfind("|", 0, len(body) - 1) + 1].rstrip()
+    if re.search(r"\|\s*\|$", body):
+        body = body[: body.rfind("|", 0, len(body) - 1) + 1].rstrip()
     return body
 
 
@@ -115,6 +124,9 @@ def summary(page: str, done: dict[str, str]) -> str:
     )
 
 
+# The cell says `done` and not the commit that did it, on purpose: a slice is committed with its trailer
+# and ticked in the same commit, and amending to fold the tick in changes the hash the tick just recorded.
+# The history holds the hashes; the plan holds the fact.
 def rendered() -> str:
     page = PLAN.read_text(encoding="utf-8")
     done = shipped()
