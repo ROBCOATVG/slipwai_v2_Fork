@@ -10,7 +10,10 @@ them. There are no language or extension assets to name: those live in their pac
 """
 from __future__ import annotations
 
+import shlex
+import shutil
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 FROZEN = bool(getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"))
@@ -33,3 +36,26 @@ VERSION = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
 # Where a package is installed to, whichever kind it is. Not `languages/`, as the experiment had it: a
 # directory of that name holding `codegraph` is a small lie that costs an hour later.
 PACKAGES = Path.home() / ".slipwai/packages"
+
+
+def this_command(kind: str | None = None, executable: Path | None = None,
+                 on_path: Callable[[str], str | None] = shutil.which, root: Path | None = None) -> str:
+    """This command as the person would type it here: `slipwai` installed, the executable by its path where
+    it is not the `slipwai` on the `PATH`, and a checkout's launcher by its absolute path.
+
+    The arguments are the seam a test sets: how this copy is installed (read off `FROZEN` and `INSTALLED`
+    where not given), the running executable, the lookup of `slipwai` on the `PATH`, and the checkout's
+    root. A path is shell-quoted, so the command pastes and runs wherever this copy is.
+
+    It lives here, in the tier every other may read, because every refusal that names a fix names this: a
+    refusal ending in a command the reader cannot run is worse than one that ends in nothing.
+    """
+    if kind is None:
+        kind = "executable" if FROZEN else "environment" if INSTALLED else "checkout"
+    if kind == "checkout":
+        return shlex.quote(str((ROOT if root is None else root) / "slipwai"))
+    if kind == "executable":
+        own = (Path(sys.executable) if executable is None else executable).resolve()
+        found = on_path("slipwai")
+        return "slipwai" if found and Path(found).resolve() == own else shlex.quote(str(own))
+    return "slipwai"

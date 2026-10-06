@@ -1063,7 +1063,7 @@ open decision left either.
 
 ## 11. The implementation plan
 
-**Progress: 9 of 69 slices done** — phase 1 6/6, phase 2 3/7, phase 3 0/9, phase 4 0/7, phase 5 0/16, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 10 of 71 slices done** — phase 1 6/6, phase 2 4/9, phase 3 0/9, phase 4 0/7, phase 5 0/16, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1149,15 +1149,37 @@ launcher — the first code where the distinction can go wrong. Decided 2026-10-
 
 | Slice | What | From | Size | Done when | Status |
 |---|---|---|---|---|---|
-| 2.1 | The seven package repositories under `ROBCOATVG`, public, each with its history; `slipwai-language-java-spring` built from the experiment's `slice/S10-java-spring` lineage rather than the empty placeholder | cruise-2 | M | Seven public repositories, each with its history, each secret-scanned in tree and in history | done 676ae2a |
+| 2.1 | The seven package repositories under `ROBCOATVG`, public, each with its history; `slipwai-language-java-spring` built from the experiment's `slice/S10-java-spring` lineage rather than the empty placeholder | cruise-2 | M | Seven public repositories, each with its history, each secret-scanned in tree and in history | done e998040 |
 | 2.2 | `assets.py` as the path head, `registry.py`, `family_only.py`, `docs/backend-protocol.md` and their tests | cruise-2 | M | The registry answers Members for a fake package in tests, and the contract page and `PROTOCOL` cannot drift | done 1841091 |
-| 2.3 | `catalog.json` with no backends, `catalog_merge.py`, `catalog.py` | cruise-2 | M | A fragment merges; a duplicate backend is refused with one line |  |
-| 2.4 | `language_directory.py`, `language_shape.py`, `loaded.py`, the loader and admission in two phases, and `registry()` as the built-once entry point | cruise-2 | M | A package directory loads whole or not at all; a bad one reports every fault in one line |  |
+| 2.3 | `catalog.json` with no backends, `catalog_merge.py`, `catalog.py` | cruise-2 | L | A fragment merges; a duplicate backend is refused with one line |  |
+| 2.4 | `versions.py`, `language_shape.py`, `language_directory.py`: the package directory, read and admitted in two phases | cruise-2 | L | A package directory loads whole or not at all; a bad one reports every fault in one line | done b291062 |
 | 2.5 | `conformance/` and `matrix/` as `python -m` entry points | cruise-2 | M | Both run against the template's toy package |  |
 | 2.6 | *Moved to phase 3 as 3.8 — see below.* | | |  |
+| 2.8 | The catalogue's validators, which `catalog.py` reads: `features.py`, `targets.py`, `extensions.py`, `axes.py` | upstream | M | Each refuses a malformed catalogue through `Fault`, and nothing in them names a language |  |
+| 2.9 | `loaded.py` and `registry()`: the registry built once from the catalogue and the directory | cruise-2 | M | `registry()` answers for a package installed into a temporary directory, and a faulty package is refused with every fault at once |  |
 | 2.7 | The one refusal shape: `errors.py` with `Fault`, `Refusal` and `refuse`. **Runs before 2.3 and 2.4**, not after them | new + upstream | M | Every refusal in 2.3 and 2.4 goes through it; the experiment's nine wording-test files collapse to one table | done 357700a |
 
 Depends on: phase 1. 2.1 can start on day one.
+
+**The order inside phase 2, which is not the order of the numbers.** Slice numbers are append-only
+here — renumbering is what version 2 exists partly to stop — so the sequence is written out instead:
+
+```
+2.1  the repositories          2.7  the refusal shape       2.2  the registry
+  └─► 2.4  versions, language_shape, language_directory
+        └─► 2.8  features, targets, extensions, axes
+              └─► 2.3  catalog.json, catalog_merge, catalog
+                    └─► 2.9  loaded, registry()
+                          └─► 2.5  conformance, matrix        then 3.8  the submodules
+```
+
+This was computed from the imports rather than guessed, on 2026-10-06, after 2.3 turned out to be
+unbuildable in its written position for the third time in a phase: `catalog.py` reads `axes`, `targets`,
+`extensions` and `catalog_merge`, `catalog_merge` reads `language_directory`, and `language_directory`
+reads `language_shape` and `versions`. The catalogue is near the top of the graph, not the bottom. The
+four validators had no slice at all — `catalog.py` imports them and nothing brought them back — so 2.8 is
+new, and 2.9 takes `loaded.py` back off 2.4, where the previous correction had put it: `loaded` reads the
+catalogue, so it cannot land with the directory.
 
 **Why 2.6 moved to phase 3.** Pinning the packages as submodules makes `check-structure` read them,
 and it refuses every import that is not on the surface. The six packages import 46 names across exactly
