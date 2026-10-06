@@ -7,7 +7,7 @@ The plan was written on 2026-10-06 and revised the same day. Its sources are thi
 `slipwai-cruise-2` checkout, GitHub issues #26, #30, #32, #27 and #29 on `ROBCOATVG/slipwai`, and an
 unposted write-up of a five-berth run on a product called MANDA.
 
-The document has nine sections:
+The document has ten sections:
 
 1. The words this plan uses.
 2. Where things stand today.
@@ -18,6 +18,7 @@ The document has nine sections:
 7. The order of work.
 8. The rules for doing the work.
 9. Decisions taken, and decisions still open.
+10. The gaps review log.
 
 ## 1. The words this plan uses
 
@@ -439,7 +440,8 @@ For an adopted repository, the bridge gains one instrument: the convergence map,
 rung and the rung the strategy aims at.
 
 A mockup of the bridge and the fleet board, with example data for a product called Ledger, is at
-`docs/mockups/ledger-bridge.html`. Open it in a browser.
+`docs/mockups/ledger-bridge.html`. Open it in a browser. A published copy is at
+https://claude.ai/artifact/AX1ehrF1s3AmEouGxW7LBx and the plan itself at https://claude.ai/artifact/717r1H4WSJAP5b7DmiWmou.
 
 **Done when.** A run's status can be answered from the logs alone, after the fact, for every iteration. A
 stopped run records why it stopped. Two captains on one feature never renumber a decision. The ids make
@@ -627,6 +629,15 @@ short `README.md` that says what this repository is and points at this plan. Mak
 until phase 1 has a green gate. The history stays: `git log` still reaches 1.5.2.dev0 and every upstream commit.
 This phase was done on 2026-10-06. The real README is phase 9's.
 
+**How phases 1 to 4 are driven.** No slipwai loop runs on the fork before phase 5: no `/drive`, no captain, no
+adoption of the fork by 1.5.2. Plain agent sessions work from this plan and from the rules in section 8, and
+people merge. The quality bar comes from the toolkit's skills, not from the ladder: all 53 skills under
+upstream's `assets/toolkit/skills` are copied into the fork's `.claude/skills/` as part of phase 0, unchanged,
+so that `testing`, `tdd`, `codebase-design`, `hexagonal-architecture`, `cli-design`, `refactoring`,
+`find-gaps`, `acceptance-review`, `adversarial-testing`, `architecture-decisions`, `technical-writing` and `wtf`
+are available to every session from the first commit. Phase 5 brings the toolkit back properly, renamed, and
+replaces this copy. Decided 2026-10-06 in the gaps review (section 10).
+
 **Phase 1. The keel's gate.** Bring back `pyproject.toml`, `VERSION` at `2.0.0.dev0`, a `Makefile` whose
 `verify` target runs lint, typecheck, `check-structure` and test, `scripts/check-structure.py` with its tiers and
 with the import surface as a tier, and CI with the fast jobs only. Source: upstream. Done when the gate is green
@@ -748,3 +759,38 @@ The first attempt paid for these rules. They apply from phase 1, inside the fork
    (decision D5). Recommended: none, with `generate` offering to install.
 4. **Whether issues #30, #32 and #29 also ship on 1.x**, for users who will not wait for 2.0. Under the second
    settled decision above, the default answer is no.
+
+## 10. Gaps review, 2026-10-06
+
+The plan was reviewed with the toolkit's `find-gaps` skill: the Plans checklist (scope, prerequisites,
+sequencing, failure and recovery, state and data, observability, security, testing, unstated knowledge),
+cross-checked against the dashboard mockup. 4 blockers, 10 should-address, 6 nice-to-have were found. Each
+answer is written into the section it belongs to; this section is the log.
+
+Resolved:
+
+- [Blocker → section 7, "How phases 1 to 4 are driven"] What runs the ladder on the fork before it has a
+  toolkit. Answer: nothing does; plain sessions with the toolkit's skills copied in, people merge.
+
+Open, in order:
+
+- [Blocker] The harbour log is one shared append-only file every captain writes, which the plan's own rule forbids.
+- [Blocker] Answering in the dashboard needs a channel back to the logs; the plan calls the bridge a static page.
+- [Blocker] Where the package repositories live (section 9).
+- [Should] How fairways are worked out when a version 1 project migrates (section 6 has a first answer).
+- [Should] Supported harnesses in version 2.
+- [Should] GitHub or the Gitea instance for CI and tokens.
+- [Should] Unattended permissions and credentials per berth.
+- [Should] Windows and WSL scope.
+- [Should] Whether the chart is a committed file on the event profile; what a typed mark looks like on the standard profile.
+- [Should] Which languages must exist at 2.0.0.
+- [Should] Effort per phase.
+- [Should] The first product to migrate or dogfood.
+- [Should] An explicit out-of-scope list.
+- [Should] A baseline run for the token target.
+- [Nice] A one-line problem statement and the cost of doing nothing.
+- [Nice] Log format versioning and retention.
+- [Nice] The notification channel.
+- [Nice] A `GLOSSARY.md` the `wtf` skill can read.
+- [Nice] How version 1 users hear about the change.
+- [Nice] Team size.
