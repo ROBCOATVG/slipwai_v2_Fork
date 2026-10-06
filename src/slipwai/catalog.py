@@ -17,7 +17,7 @@ from .targets import required_axes
 
 # The keel's own file: the backends it still carries, each with an `order`, and the schema version a language
 # package's `core` range is held to.
-CORE = json.loads((ROOT / "catalog.json").read_text())
+CORE = json.loads((ROOT / "catalog.json").read_text(encoding="utf-8"))
 SCHEMA_VERSION = "9.0"
 # Phase 1 of the package directory: the fragments this keel can load, then the merge, which refuses a
 # fragment alone. `PACKAGES` are the ones that merged; `REFUSALS` say, a line each, why the others did not.

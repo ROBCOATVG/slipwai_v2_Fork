@@ -29,7 +29,7 @@ else:
 # A checkout scaffolds beside itself; a command installed or frozen has no "beside", so it scaffolds where it
 # is run.
 DEFAULT_OUTPUT = Path.cwd() if FROZEN or INSTALLED else ROOT.parent
-VERSION = (ROOT / "VERSION").read_text().strip()
+VERSION = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
 # Where a factory command leaves something for the project to act on and then throw away: `migrate` writes
 # its catch-up notes here and `/catch-up` reads them. Spelled here, in the tier every other may read, because
 # three of them need it — the module that writes the page, the `.gitignore` that keeps it out of the history,
@@ -97,7 +97,7 @@ def source_text(root: Path, relative: str, package: Path | None = None) -> str:
         raise GenerationError(f"{relative} is missing under {root}")
     if not path.is_file():
         raise GenerationError(f"{relative} is not a file under {root}")
-    return path.read_text()
+    return path.read_text(encoding="utf-8")
 
 
 def contained(destination: Path, relative: str) -> Path:
@@ -152,12 +152,19 @@ def asset_files(root: Path) -> list[Path]:
 
 
 def read_faithfully(path: Path) -> str:
-    """The file's text with its own line endings — `read_text(newline="")`, spelled for Python 3.11.
+    """The file's text, in UTF-8, with its own line endings.
 
-    `Path.read_text` only grew a `newline` parameter in 3.13; on the 3.11 the README promises it raises
-    `TypeError` before the first asset is read. `open` has taken `newline` all along.
+    Two things are spelled out here and both had to be. `newline=""` keeps whatever line endings the file
+    holds, because `mvnw.cmd` is CRLF throughout and re-reads itself with `Get-Content -Raw`; it is
+    written as `open(newline="")` rather than `read_text(newline=...)` because that parameter only
+    arrived in 3.13 and the floor is 3.11.
+
+    And `encoding="utf-8"`, because without it Python uses the platform's locale codec: cp1252 on
+    Windows, which cannot decode the first non-ASCII byte in the toolkit and raised `UnicodeDecodeError`
+    before any project was written. An asset is bytes the keel copies into somebody's repository, and the
+    machine it is copied on must not change them.
     """
-    with path.open(newline="") as handle:
+    with path.open(encoding="utf-8", newline="") as handle:
         return handle.read()
 
 

@@ -70,6 +70,18 @@ class FaithfulReadTest(unittest.TestCase):
         path.write_bytes(b"#!/bin/sh\nexit 0\n")
         self.assertEqual(read_faithfully(path), "#!/bin/sh\nexit 0\n")
 
+    def test_an_asset_is_utf_8_whatever_the_machine_reading_it_thinks(self) -> None:
+        """Without an explicit encoding Python uses the platform's locale codec, which on Windows is
+        cp1252 and cannot decode the first em dash in the toolkit. An asset is bytes the keel copies
+        into somebody's repository, and the machine it is copied on must not change them."""
+        path = self.root / "prose.md"
+        path.write_bytes("a — dash, a ✓ tick, a £ sign\n".encode())
+        self.assertEqual(read_faithfully(path), "a — dash, a ✓ tick, a £ sign\n")
+
+    def test_the_whole_toolkit_reads_on_this_machine(self) -> None:
+        """The regression itself: one non-ASCII byte anywhere in 250 files was enough to stop a build."""
+        self.assertGreater(len(asset_tree(TOOLKIT_ROOT)), 100)
+
 
 class ContainmentTest(unittest.TestCase):
     """What stops a package reading a file that is not its own."""

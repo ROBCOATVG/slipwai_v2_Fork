@@ -47,7 +47,7 @@ def markers(profile: str) -> frozenset[tuple[str, str]]:
     return frozenset(
         (match.group(1), match.group(2))
         for source in [*sources, *own.values()]
-        for match in EXAMPLE_MARKER.finditer(source.read_text())
+        for match in EXAMPLE_MARKER.finditer(source.read_text(encoding="utf-8"))
     )
 
 
