@@ -15,6 +15,7 @@ import shutil
 import sys
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 FROZEN = bool(getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"))
 # What the wheel carries beside the package: `VERSION`, placed there by the `force-include` table in
@@ -32,6 +33,11 @@ else:
 # it is run.
 DEFAULT_OUTPUT = Path.cwd() if FROZEN or INSTALLED else ROOT.parent
 VERSION = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+
+# The one asset tree the keel reads for itself rather than to write it into a project: the backing-service
+# pruner. `PRUNER` loads it, and `axes.py` and `targets.py` hold the catalogue's tables to its, because two
+# implementations of one prune would be two sets of bugs. The rest of the asset trees arrive in phase 3.
+BACKING_SERVICE_ROOT = ROOT / "assets/backing-services"
 
 # Where a package is installed to, whichever kind it is. Not `languages/`, as the experiment had it: a
 # directory of that name holding `codegraph` is a small lie that costs an hour later.
@@ -59,3 +65,25 @@ def this_command(kind: str | None = None, executable: Path | None = None,
         found = on_path("slipwai")
         return "slipwai" if found and Path(found).resolve() == own else shlex.quote(str(own))
     return "slipwai"
+
+
+def _load_pruner() -> Any:
+    """The keel's own copy of the pruner a generated project gets as `scripts/backing-services.py`.
+
+    The keel needs the same operation the project needs — cut a tree down to what was selected — and two
+    implementations of one prune would be two sets of bugs, so this loads that file rather than restating
+    it. This copy carries no language's rows: the checks read its features, axes and markers here, and a
+    generation prunes with the same file plus every loaded family's rows from the registry.
+    """
+    import importlib.util
+
+    source = BACKING_SERVICE_ROOT / "prune.py"
+    spec = importlib.util.spec_from_file_location("delivery_backing_services", source)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load the backing-service pruner from {source}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+PRUNER = _load_pruner()

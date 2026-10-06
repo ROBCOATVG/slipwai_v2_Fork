@@ -51,7 +51,8 @@ TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
     # What a caller may ask for, what an option declares about the feature it owns, what an optional
     # dev-tooling hook is, where a project goes to production, what differs per package and where each
     # backend answers its probes. The registry and the loader land here in phase 2.
-    ("contract", ("registry", "family_only", "language_shape", "language_directory")),
+    ("contract", ("registry", "family_only", "language_shape", "language_directory",
+                  "features", "extensions", "targets", "axes")),
     # One validated answer per axis, which applications a project has, and what they add up to being able
     # to do.
     ("answers", ()),

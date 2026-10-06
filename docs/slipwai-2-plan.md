@@ -1063,7 +1063,7 @@ open decision left either.
 
 ## 11. The implementation plan
 
-**Progress: 10 of 71 slices done** — phase 1 6/6, phase 2 4/9, phase 3 0/9, phase 4 0/7, phase 5 0/16, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 11 of 71 slices done** — phase 1 6/6, phase 2 5/9, phase 3 0/9, phase 4 0/7, phase 5 0/16, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1155,11 +1155,20 @@ launcher — the first code where the distinction can go wrong. Decided 2026-10-
 | 2.4 | `versions.py`, `language_shape.py`, `language_directory.py`: the package directory, read and admitted in two phases | cruise-2 | L | A package directory loads whole or not at all; a bad one reports every fault in one line | done |
 | 2.5 | `conformance/` and `matrix/` as `python -m` entry points | cruise-2 | M | Both run against the template's toy package |  |
 | 2.6 | *Moved to phase 3 as 3.8 — see below.* | | |  |
-| 2.8 | The catalogue's validators, which `catalog.py` reads: `features.py`, `targets.py`, `extensions.py`, `axes.py` | upstream | M | Each refuses a malformed catalogue through `Fault`, and nothing in them names a language |  |
+| 2.8 | The catalogue's validators, which `catalog.py` reads: `features.py`, `targets.py`, `extensions.py`, `axes.py`, and `assets/backing-services/prune.py`, the one asset tree the keel reads for itself | cruise-2 | L | Each refuses a malformed option, entry or extension, named by axis and option; nothing in them names a language. The whole-catalogue checks are 2.3's, with the `catalog.json` they mirror | done |
 | 2.9 | `loaded.py` and `registry()`: the registry built once from the catalogue and the directory | cruise-2 | M | `registry()` answers for a package installed into a temporary directory, and a faulty package is refused with every fault at once |  |
 | 2.7 | The one refusal shape: `errors.py` with `Fault`, `Refusal` and `refuse`. **Runs before 2.3 and 2.4**, not after them | new + upstream | M | Every refusal in 2.3 and 2.4 goes through it; the experiment's nine wording-test files collapse to one table | done |
 
 Depends on: phase 1. 2.1 can start on day one.
+
+**Why 2.8 carries an asset, and why two of its checks are 2.3's.** `axes.py` and `targets.py` hold the
+catalogue's tables against `assets/backing-services/prune.py` — the same tables kept in two places,
+because a generated project prunes itself with the second and two implementations of one prune would be
+two sets of bugs. So the keel's own copy of the pruner is a phase 2 dependency, not a phase 3 asset, and
+it comes in verbatim; slice 3.6 reworks how its rows get there. The mirror also means `validate_axes` and
+`validate_targets` cannot be tested against a catalogue built in a test — a synthetic one fails on the
+mirror before it reaches the rule under test — so those two are tested in 2.3, against the `catalog.json`
+they mirror. Found on 2026-10-06 while doing the slice.
 
 **The order inside phase 2, which is not the order of the numbers.** Slice numbers are append-only
 here — renumbering is what version 2 exists partly to stop — so the sequence is written out instead:
