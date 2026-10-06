@@ -338,7 +338,7 @@ first two items of cruise-2's CI proposal. Decided 2026-10-06 (section 10).
      refuses when `check` is red or the version is not new.
    - `slipwai package register [--channel <url>]` opens the pull request that adds the entry to the channel's
      index, with the entry generated from the release. For a private channel it pushes the entry directly.
-   The `add-language`, `add-framework` and `add-extension` skills become the prose around these four commands.
+   The `add-language`, `add-framework` and `add-extension` skills become the prose around these four commands, which is slice 9.5. In version 1 they are 1,368 lines in `.claude/skills/` describing a manual procedure — fork the template, fill in `language.json` by hand, wire the matrix, remember the release — and almost every line of that is a verb's job now.
 
 **What stays in the keel.** Profiles, targets, frontends, axes, adoption, and the toolkit. This is the line that
 issue #26 drew.
@@ -915,6 +915,12 @@ of using it, in the order a person meets it, and moves every explanation to a re
   chart, the split, one slice through its demo); a second person joins (fairways, berths, the fleet board); let it
   sail (captains, the telegraph, the inbox, and what a person still decides); bring an existing codebase (adopt). A
   reader stops when they have what they came for.
+- **The contributor path is documentation too.** `add-language`, `add-framework` and `add-extension` are
+  maintainer skills in `.claude/skills/`, and version 2 never brought them back: the procedures they
+  describe were replaced by `slipwai package new`, `check`, `release` and `register`, and by the two
+  package shapes in theme A. They are rewritten here, last, because a skill that describes a verb has to
+  be written against the verb that shipped. Slice 9.5.
+
 - **Every verb shown as an experience, once.** Each page has the command, its output, and the one decision the
   person makes there. The vocabulary is introduced by use, with a glossary page behind it. The vocabulary is
   never a table first.
@@ -1260,6 +1266,7 @@ Depends on: everything before it.
 | 9.2 | The reference pages under `docs/reference/` | L | Every rule the plan names has a page |
 | 9.3 | The captures: the bridge, the fleet board, a demo-stop board, a `/chart` output | S | From real runs, not drawn |
 | 9.4 | `make test-docs`: every command in the first three pages run against a fresh generation | M | The README cannot drift |
+| 9.5 | `add-language`, `add-framework` and `add-extension` rewritten as prose around the four `slipwai package` verbs and the two package shapes; `extension.json` and `init.py` in `add-extension`, not a template fork | new | M | A contributor who has not seen this repository publishes a package by following one skill; no skill names a step a verb already does; each is a fraction of version 1's 1,368 lines |
 
 ### Order, and what runs in parallel
 
