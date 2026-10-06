@@ -51,6 +51,14 @@ progress: ## Tick off in the plan the slices the history says are done
 next: ## What can be brought back next, and what each remaining module waits on
 	python3 scripts/bring-back.py
 
+.PHONY: executable
+executable: ## Build the standalone slipwai executable
+	./scripts/build-executable
+
+.PHONY: test-executable
+test-executable: executable ## Build it, then prove it scaffolds with Git alone
+	python3 scripts/smoke-executable.py dist/slipwai$(if $(filter Windows_NT,$(OS)),.exe,)
+
 .PHONY: starters
 starters: ## Materialise every starter combination under build/ for inspection
 	python3 scripts/regenerate-starters.py

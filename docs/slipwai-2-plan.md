@@ -1210,7 +1210,7 @@ open decision left either.
 
 ## 11. The implementation plan
 
-**Progress: 34 of 90 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 5/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 36 of 90 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1454,10 +1454,10 @@ Depends on: phase 2.
 | 4.1 | `generate` and the interview, menus from the registry; `cli_offered.py` for what this copy can be asked for, with the offer to install arriving at 4.5 | upstream + new | M | A fresh project from one answer sequence, and the conformance suite's generation probes pass against the toy | done |
 | 4.2 | `adopt`, the survey, `converge`, and with them `replay`, `migrate`, `catch_up`, `resurvey`, `confirm` | upstream | L | Every verb dispatches; `test_replay.py` is in the tree, skipped on the language the keel never installs | done |
 | 4.3 | `add-service`, `add-frontend`, `describe-service` | upstream | M | Mid-flight additions dispatch; their suites run where a real language is installed | done |
-| 4.4 | `./init` and the installer, with the language record read and reported | upstream + cruise-2 | M | A clone with a missing language is told what to install |  |
+| 4.4 | `./init` and the installer, with the language record read and reported | upstream + cruise-2 | M | `cli_init` is wired into `generate`; a clone with a missing language is told what to install | done |
 | 4.5 | `slipwai list`, `search`, `show`, `install`, `language upgrade / remove`, the index client, and `cli_offered.py`'s stand-ins replaced by the real refusals | cruise-2 + new | M | `search postgres` finds a package by the option it answers rather than by its name; every refusal for something absent ends on the command that installs it | done |
 | 4.6 | `upgrade`, with `after_core` moving any installed package the new keel would refuse | upstream | S | `test_upgrade.py` runs: twelve tests, green | done |
-| 4.7 | The standalone executable, bundling no language | upstream | M | `make test-executable` green on four platforms |  |
+| 4.7 | The standalone executable, bundling no package: `slipwai.spec`, `make executable`, `make test-executable`, and the build pins | upstream | M | The recipe is held by the gate — every file it carries exists, it bundles no package, and `collect_submodules` is still there; the build itself is `make test-executable` and the release job's | done |
 
 Depends on: phase 3.
 
@@ -1517,7 +1517,7 @@ Depends on: 5.13 and 5.14. 7.1 first, then 7.2, then the rest in any order.
 
 | Slice | What | From | Size | Done when | Status |
 |---|---|---|---|---|---|
-| 8.1 | `AGENTS.md`'s versioning rules, `changelog.d/`, `make release`, `make changelog`, and `requirements-build.txt` and `requirements-publish.txt`, which come back with the machinery that proves them rather than sitting unused from phase 1 | upstream | M | The fork's own release machinery is green |  |
+| 8.1 | `AGENTS.md`'s versioning rules, `changelog.d/`, `make release`, `make changelog`, `requirements-publish.txt`, and `CHANGELOG.md` and `changelog.d/` back in `slipwai.spec`'s datas | upstream | M | The fork's own release machinery is green |  |
 | 8.2 | One 2.0.0 changelog entry written from the fork's history | new | M | Every user-visible change since 1.5.2 is in it, with its catch-up |  |
 | 8.3 | `migrate`: base from an installed 1.x, languages first, the rename table, in-flight work as data (section 6) | upstream + cruise-2 + new | L | `make test-migration` green for every profile and backend and the adopted fixtures |  |
 | 8.4 | The release backstop: one job that runs the matrix across the published packages against the keel about to ship, and the root matrix retired | cruise-2 + new | M | A keel release is refused when a published package fails against it; no per-commit job reads a package |  |
