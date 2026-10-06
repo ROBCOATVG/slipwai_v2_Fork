@@ -32,7 +32,7 @@ text{fill:#172129}.lbl{fill:#44525c}.arr{stroke:#172129;stroke-width:1.2;fill:no
 <rect class="box hl" x="1120" y="40" width="350" height="80" rx="3"/>
 <text x="1295.0" y="68.2" text-anchor="middle" font-size="12" font-weight="600">Chandlery · public channel</text>
 <text x="1295.0" y="84.2" text-anchor="middle" font-size="12">index.json: name · version · core range</text>
-<text x="1295.0" y="100.2" text-anchor="middle" font-size="12">sha256 · publisher · signature</text>
+<text x="1295.0" y="100.2" text-anchor="middle" font-size="12">sha256 · publisher identity · signature</text>
 <rect class="box hl" x="1120" y="130" width="350" height="80" rx="3"/>
 <text x="1295.0" y="158.2" text-anchor="middle" font-size="12" font-weight="600">Chandlery · an organisation&#x27;s channel</text>
 <text x="1295.0" y="174.2" text-anchor="middle" font-size="12">SLIPWAI_LANGUAGE_INDEX → its own index.json</text>
@@ -137,8 +137,8 @@ text{fill:#172129}.lbl{fill:#44525c}.arr{stroke:#172129;stroke-width:1.2;fill:no
 <rect class="box " x="800" y="648" width="330" height="90" rx="3"/>
 <text x="965.0" y="673.2" text-anchor="middle" font-size="12" font-weight="600">Anyone</text>
 <text x="965.0" y="689.2" text-anchor="middle" font-size="12">from the template, in their own repository</text>
-<text x="965.0" y="705.2" text-anchor="middle" font-size="12">publishes: version, core range, sha256, signature</text>
-<text x="965.0" y="721.2" text-anchor="middle" font-size="12">listed when the signature is trusted</text>
+<text x="965.0" y="705.2" text-anchor="middle" font-size="12">signed release + a pull request to the index</text>
+<text x="965.0" y="721.2" text-anchor="middle" font-size="12">confirmed once by each person who installs</text>
 <path class="arr " d="M 195,648 L 195,590" marker-end="url(#ah)"/>
 <text class="lbl" x="203" y="622" text-anchor="start" font-size="11">releases</text>
 <path class="arr " d="M 580,648 L 580,590" marker-end="url(#ah)"/>
@@ -146,7 +146,7 @@ text{fill:#172129}.lbl{fill:#44525c}.arr{stroke:#172129;stroke-width:1.2;fill:no
 <path class="arr " d="M 965,648 L 965,590" marker-end="url(#ah)"/>
 <text class="lbl" x="973" y="622" text-anchor="start" font-size="11">releases</text>
 <path class="arr hl " d="M 1130,693 L 1138,693 L 1138,226 L 1490,226 L 1490,80 L 1472,80" marker-end="url(#ah-hl)"/>
-<text class="lbl" x="1150" y="612" text-anchor="start" font-size="11">publish → listed on the public channel</text>
+<text class="lbl" x="1150" y="612" text-anchor="start" font-size="11">pull request → checks pass → listed</text>
 <path class="arr hl dash" d="M 580,738 L 580,756 L 1146,756 L 1146,238 L 1300,238 L 1300,212" marker-end="url(#ah-hl)"/>
 <text class="lbl" x="580" y="772" font-size="11" text-anchor="middle">an organisation publishes to its own channel</text>
 <text x="30" y="804" font-size="11" class="bandt">Two compatibility ranges, both declared by the package and checked before anything is written: package → core (schemaVersion 9.x) and framework → family. The keel never names a language.</text>

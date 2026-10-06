@@ -236,19 +236,31 @@ packages it ships with, at a known commit. That pin is for the keel's tests only
 runs the same suite against a pinned keel. Publishing is `make release` in the package repository: it tags,
 builds the release file, uploads it as a release asset, and appends the release to the channel's index.
 
-**Trust: signed releases and a trusted-publisher list.** Loading a package runs its Python, so the keel will
-not install from an index entry it cannot attribute. Every release file is signed by its publisher, with
-Sigstore's keyless signing from the package's CI or a minisign key where CI has no identity. The keel ships
-with one trust root, the `ROBCOATVG` publisher, the way a JDK ships a trust store and Maven ships Central's
-address. An organisation adds its own publishers and channels in `~/.slipwai/trust.json` or in the project's
-configuration. An entry from a publisher the keel does not trust is still listed by `slipwai chandlery`, and
-`slipwai install` refuses it with the command that trusts the publisher.
+**Trust: an open channel, signed releases, and a publisher confirmed once.** Anyone may publish a language or
+an extension; the ecosystem is open or it is not one. Loading a package runs its Python, so the keel will not
+install anything it cannot attribute. Three rules make both true at once.
 
-This costs the keel nothing at build time. Like Maven scanning a repository, discovery is at run time: the
-keel reads the index when a person installs, verifies the signature against the trust store then, and from
-then on loads whatever is whole in `~/.slipwai/languages/`. A package placed there by hand, as a developer
-does with `SLIPWAI_LANGUAGES`, loads without a signature and is shown as `unsigned` by `slipwai list`, so a
-machine never mistakes a development copy for a release. Decided 2026-10-06.
+1. **Every release is signed by the identity that publishes it.** Sigstore keyless signing from the package's
+   CI binds the release file to the repository and workflow that built it; a publisher without CI uses a
+   minisign key. The index entry names the publisher identity, and the keel refuses a release whose signature
+   does not match it. Nobody can publish as someone else.
+2. **The public channel takes contributions by pull request.** A contributor forks the template, builds the
+   package, cuts a signed release, and opens a pull request that adds the entry to the public `index.json`. The
+   channel's CI checks that the signature matches the publisher, that the package passes the conformance suite
+   against the keel range it claims, and that its name does not collide. Merged means listed. No approval by a
+   person at `ROBCOATVG` is needed beyond the merge, and the checks are the same for a first-party package.
+3. **A person confirms a new publisher once.** `slipwai install` shows a publisher it has not seen before, the
+   repository behind the identity, and what the package will answer for, and asks once. The answer goes to
+   `~/.slipwai/trust.json`, and every later release from that publisher installs without a question, the way
+   an SSH host key or a Homebrew tap works. `ROBCOATVG` is in the file from the start, and nothing else is.
+   `slipwai chandlery` marks each entry `first-party`, `confirmed` or `new to you`. An organisation can pre-seed
+   the file for its machines, and can pin its channel to publishers it has reviewed.
+
+This costs the keel nothing at build time. Like Maven shipping Central's address and a trust store and resolving
+artefacts at run time, the keel reads the index when a person installs, verifies the signature then, and from
+then on loads whatever is whole in `~/.slipwai/languages/`. A package placed there by hand, as a developer does
+with `SLIPWAI_LANGUAGES`, loads without a signature and is shown as `unsigned` by `slipwai list`, so a machine
+never mistakes a development copy for a release. Decided 2026-10-06.
 
 **Which languages 2.0.0 ships with.** All six from the experiment: `typescript`, `python`, `go`, `java`,
 `java-quarkus` and `java-spring`, each passing the conformance suite and its own matrix against the 2.0.0 keel.
@@ -901,7 +913,7 @@ The first attempt paid for these rules. They apply from phase 1, inside the fork
 - **The README rewrite is the last phase.** Phase 9.
 - **The executable bundles no language; `generate` offers to install.** Theme A, item 5.
 - **Nothing ships on the 1.x line.** The `slipwai-workstreams` commit is salvaged into slice 5.3 and not released on its own; version 1 users get a final 1.5.x that points at 2.0 (slice 8.6).
-- **Signed releases and a trusted-publisher list, verified at install time, never at build time.** Theme A, "Trust".
+- **An open public channel: anyone publishes by pull request, every release is signed by its publisher, and a person confirms a new publisher once at first install.** Theme A, "Trust".
 - **The six package repositories move under `ROBCOATVG`, public, before phase 2.** Theme A, "Where the first-party packages live".
 
 ### Still open
@@ -1115,7 +1127,8 @@ most worth running in two fairways themselves, once 5.3 exists.
 | 6.2 | The index schema with publishers, checksums and the signature field; the public channel as a Pages site | cruise-2 + new | M | `slipwai install` reads it for both kinds |
 | 6.3 | A private channel per organisation, `SLIPWAI_LANGUAGE_INDEX` generalised to `SLIPWAI_CHANDLERY` | cruise-2 | S | An organisation's index serves its own packages |
 | 6.4 | `make release` in the package template: tag, build, upload, append to the index | new | M | A release from the template lands in a local index |
-| 6.5 | Signed releases and the trust store: Sigstore or minisign verification, `trust.json`, the `ROBCOATVG` root, `unsigned` in `slipwai list` | new | M | An unknown-publisher entry is refused with the command that trusts it; a hand-placed package loads and says `unsigned` |
+| 6.5 | Signed releases and the trust store: Sigstore or minisign verification, `trust.json`, the `ROBCOATVG` root, the confirm-once prompt, `unsigned` in `slipwai list` | new | M | A new publisher is confirmed once and then installs silently; a mismatched signature is refused; a hand-placed package loads and says `unsigned` |
+| 6.6 | The public channel's contribution path: the index repository, its CI (signature matches publisher, conformance passes, no name collision), and the contributor page | new | M | A package from outside `ROBCOATVG` is listed by a merged pull request and installs with one confirmation |
 
 Depends on: phase 4. Runs beside phase 7.
 
