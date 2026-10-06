@@ -1577,3 +1577,472 @@ each other. Nothing in phase 8 starts before phases 6 and 7 are done. Phase 9 is
 | The chart on the standard profile is a design nobody has used | 5.4 is sized L and lands before 5.5 and 5.6 build on it; MANDA (event profile) does not depend on it |
 | The migration of in-flight work meets a case section 6 did not foresee | `make test-migration`'s fixtures carry a claimed slice and both flag states; the first real migration is after 2.0.0, on a branch, with `--check` first |
 | The token target is missed | The baseline above, measured at 7.x on the greenfield, with time to tune the telegraph positions |
+
+## 12. How phases 5 to 10 are built
+
+Written on 2026-10-06, after phases 1 to 4 closed and every one of the experiment's 174 modules was back.
+Section 11 says *what* each remaining slice delivers and when it is done. This section says *how*: the
+files each one touches, the shapes it introduces, the order inside each phase and why, what its tests
+hold, and which decisions are still a person's. It is written to be worked through in order, one slice a
+sitting, with the gate green after each.
+
+Three things frame all of it.
+
+**The remaining work is new, not brought back.** Phases 1 to 4 were the experiment's code renamed into the
+vocabulary, and the ledger made the order mechanical. Phases 5 to 7 are the system this plan was written to
+specify — the chart, the logs, the captains, the harbourmaster, the telegraph, the fleet board, the bridge —
+and most of it has no source commit to read first. Where version 1 has a precedent (`cruise.py`, the
+`slipwai-workstreams` fairway work, the stop table) it is named; where it has none, the design below is the
+first draft and the slice is where it gets corrected.
+
+**One prerequisite gates everything, and it is not a slice.** The six real language packages carry
+version 1's `language.json`: no `axes` block, and their transports lived in the keel's catalogue, which no
+longer declares them (slice 3.6). Until each is rebuilt onto the shape the toy has — an `axes` block
+declaring its transport with label, capabilities, features, targets, `app-in-compose`,
+`repository-owned` and `web-app-owned`, and `defaults.http` naming it — nothing generates in Go, Python,
+TypeScript or Java, 55 tests stay skipped, and phase 5's loop has nothing real to run against. Six
+repositories under `ROBCOATVG`, one commit each, and the pushes are the owner's. Do this first.
+
+**Every slice here lands the same way the first 36 did.** A branch per slice; `make unit` and lint per
+increment; `make verify` once before the merge; a commit ending `Slice-done: <n>.<m>`; `make progress`;
+merge to `main`; push; watch the three platforms. The ledger (`make next`) has nothing left to say, so the
+order below is the order.
+
+### Phase 5. The loop, in the toolkit
+
+Everything in phase 5 lands under `assets/toolkit/` — the skills, commands, scripts and agent definitions a
+generated project receives — plus a handful of keel modules that write them. It is proven on a generated
+project, so the first act of the phase is `slipwai generate` with a real language, which is why the
+prerequisite above is not optional. The phase's own gate is `make starters` diffing against cruise-2 for
+the groups that do not change, and a generated project's `make verify` for the ones that do.
+
+**Order, and why.** The skills are renamed first because every later slice cites them by their new names.
+The ladder follows because it is what the stages hang off. Example mapping is the first stage of the
+ladder, so it comes before the chart it reads. The chart comes before clearance, scope and fairways, which
+all read it. The two gates and the review stage reshape the ladder's middle. The adversary, mutation and
+careen reshape its end. The logs come before the ids, because the ids are read off the logs. Then the
+composition root, release modes, berths, inbox and domain knowledge, each of which stands alone.
+
+```
+5.1 skills ─► 5.2 ladder ─► 5.17 example map ─► 5.4 chart ─► 5.5 clearance ─► 5.6 scope ─► 5.3 fairways
+   ─► 5.7 two gates ─► 5.8 review ─► 5.9 adversary, careen ─► 5.13 logs ─► 5.10 ids
+   ─► 5.11 composition ─► 5.12 release modes ─► 5.14 berths ─► 5.15 inbox ─► 5.16 domain
+```
+
+**5.1 — The skills, renamed.** The 53 skills are already in `assets/toolkit/skills/` from slice 3.2 and in
+`.claude/skills/` from phase 0. This slice is the rename: every skill that names a version 1 word
+(workstation, workstream, lane, runner, integrator, stream log) gets the vocabulary word, and
+`docs/rename.json` is begun as the table `migrate` will read — one row per rename, old name to new, with
+the kind of thing renamed (skill, command, file, field). Hold it with a test that greps every skill for
+the retired words and finds none outside quoted version 1 references; `test_glossary` already has the
+word list. Then delete `.claude/skills/` and point the fork's own `AGENTS.md` at the toolkit copy, so there
+is one set of skills and not two. Size M because it is tedious, not because it is hard.
+
+**5.2 — The ladder in `drive.md`, the stop table, and `.specify/drive.json`.** `drive.md` is the command
+that runs one slice through every stage; it exists in version 1 and is rewritten here to the ladder
+section 5 draws — example map, gaps, plan and tasks, implement, converge and demo, review and reshape,
+adversary, mutation, merge — with each stage's model role read from `stage_models.STAGES`. The stop table
+(`project/cruise_stops.py`, back since 3.3c) stays as it is. `.specify/drive.json` is written by
+`project/drive_settings.py` (back since 3.3b) with `delegate: story` and `cycle: rule`; what is new is
+that `drive.md` *reads* it and says, at the implement stage, which width it is running at and why it fell
+back if it did. The refusal of `story` as a cycle and the two fallbacks are already in
+`assets/toolkit/scripts/agents/drive.py`; the slice is the prose that explains them where the agent reads
+it. Test: a generated project's `drive.md` names every rung of `STAGES` and no rung `STAGES` has not got.
+
+**5.17 — Example mapping on both profiles.** Move `assets/profiles/event-modelling/commands/example-map.md`
+to `assets/toolkit/commands/example-map.md`. Its first section branches on the profile: on event
+modelling it reads the slice's given/when/then from `model.yaml` and writes them as rules and examples; on
+standard it reads the slice's story from `spec.md` and the marks it sets from `chart.yaml` (5.4), and
+*writes* the rules and examples from scratch, one example per rule, plus the questions it cannot answer
+as inbox lines. Both write `specs/<feature>/slices/<id>/examples.md` in one shape: a numbered rule, its
+examples beneath, each example one line a test can be named after. `/drive` refuses to implement a slice
+whose `examples.md` has no example. The done-when is the standard profile reaching its demo with examples a
+stage produced, which means the test generates a standard-profile project and runs the stage.
+
+**5.4 — The chart.** The largest design in the phase, and new. `specs/<feature>/chart.yaml`:
+
+```yaml
+v: 1
+feature: ordering
+fairways:
+  ORD: {context: ordering, service: apps/orders, owns: [apps/orders/**, packages/orders-contracts/**]}
+  BIL: {context: billing,  service: apps/billing, owns: [apps/billing/**]}
+marks:
+  OrderPlaced:   {kind: event,  schema: contracts/events/OrderPlaced.json}
+  POST /orders:  {kind: route,  operation: contracts/openapi.yaml#/paths/~1orders/post}
+  PricingPort:   {kind: port,   inputs: contracts/ports/PricingPort.in.json, outputs: contracts/ports/PricingPort.out.json}
+slices:
+  ORD-01: {fairway: ORD, sets: [OrderPlaced, POST /orders], steers_by: []}
+  BIL-01: {fairway: BIL, sets: [InvoiceRaised],              steers_by: [OrderPlaced]}
+```
+
+Four mark kinds — event, schema, route, port — each with a typed body in a file the mark names, because
+a mark is a contract and a contract is a file a reader can diff. On the event profile `make chart`
+renders this from `model.yaml` (`project/model_to_code.py` already knows the mapping) and `check-chart`
+fails when they disagree, exactly as `check-drawio` holds the canvas today. On the standard profile a
+`/chart` stage, run once before the split, interviews for the fairways and writes the slices' marks from
+the plan's Structure Decisions. `check-chart` holds four things on both profiles: every mark is typed and
+its file exists; every mark a slice steers by is set by some slice; no mark is set by two slices; and no
+mark is deleted from a frozen chart (an amendment goes in `fairways/<name>/chart.d/`, folded by the
+harbourmaster). The keel module is `src/slipwai/project/chart.py`, parts tier, writing the schema check
+into `scripts/check-chart.py`. Test against a hand-written chart for each rule, and against the toy's
+generated project for the end-to-end.
+
+**5.5 — Clearance.** The rule issue #32 asked for. A slice may start when every mark it steers by is set
+by a slice that is `planned` or `implemented`; its own marks it sets itself, at its first stage. The
+one-setter-per-mark rule is `check-chart`'s already (5.4); clearance is a function in
+`project/chart.py` — `cleared(chart, deck_logs, slice_id) -> bool | str`, where the string is why not —
+that the captain (7.2) and `/drive` both call. State comes from the logs (5.13) and trunk, never from
+`model.yaml`'s `status` field: a mark is set when a `mark-set` line for it is in some deck log, and a slice
+is planned when its `claimed` line is. Until 5.13 lands, the function reads a list of lines handed to it,
+which is also how it is tested. The split writes typed attributes and a minimal `examples.md` per slice,
+so slices arrive `planned` and a fresh fairway fans out on iteration one.
+
+**5.6 — `check-slice-scope` reads the chart.** The script exists in the toolkit. Today it finds the
+boundary from `model.yaml` and holds nothing on the standard profile. It gains one source: the `owns`
+paths of the slice's fairway in `chart.yaml`, read on both profiles, with the model's answer kept as a
+second check where there is a model. A slice touching a path another fairway owns is refused with both
+fairways named. Test: two fairways in a chart, a diff touching the other's path, one line.
+
+**5.3 — Fairways.** Mostly brought: the `slipwai-workstreams` checkout holds the first version of the
+`## Fairways` table in the split, `/drive fairway=<name>`, and boards grouped by lane. It is renamed as it
+lands — lane and workstream to fairway throughout — and the split's table is derived from `chart.yaml`'s
+`fairways` block rather than typed. Done when two fairways on one machine merge independently, which is
+the first thing the plan ever promised.
+
+**5.7 — Two gates in generated projects.** The keel has had `make unit` since slice 1.2. A generated
+project gets the same: `project/makefile.py` writes `unit` as the fast subset — the language's unit tests
+only, no integration, no mutation, no image — and `drive.md`'s implement stage runs `make unit`, lint and
+typecheck per increment and nothing else. `make verify` runs once, at the merge stage, on the rebased
+branch. The language packages declare which of their targets are fast: a new optional member on the
+protocol, `FAST_TARGETS`, defaulting to the test target alone, so a package can say its integration suite
+is quick if it is. Test: the toy's generated `Makefile` has `unit`, and `drive.md` never names `verify`
+before the merge stage.
+
+**5.8 — Review and reshape as a stage.** New rung between demo and adversary, named `review` in
+`stage_models.STAGES` with role `strong` and `writes=NONE` — a reviewer that can write is one that edits.
+The command `review.md` gives a fresh context the slice's whole diff and the examples it was built from,
+and asks for findings in the shape the gaps stage uses, so one triage reads both. The slice's own
+delegate then fixes the findings and runs a reshape pass — the slice's diff as a whole, not one cycle's
+code — with `make unit` green after each step. The model table gains a `review` role so a project can put
+a different model on reviewing than on writing. Done when a slice cannot reach adversary with an open
+review finding.
+
+**5.9 — Adversary once, mutation as a gate, budgets, stow, the careen.** Issue #29's work. Adversary runs
+one round, with a severity bar read from `harbour.json` (7.3; a default of `MEDIUM` until then): findings
+above the bar must close before merge, LOW ones are *stowed* — written to `fairways/<name>/careen.md` with
+the slice id — and the careen is a slice of its own that each fairway runs when its planned slices are
+done. Mutation becomes a gate with a threshold rather than a report; a slice under it does not merge. Every
+stage gets a budget in tokens and wall time, written in `harbour.json`; a stage over budget stows what is
+left and parks for a person if what is left is above the bar. CRITICAL is never stowed. The keel modules
+are `project/adversary.py` and `project/mutation.py` (both back) and a new `project/careen.py` for the
+stowed list and the careen slice's own command. Test each rule against a written `careen.md`.
+
+**5.13 — The deck log and the harbour log.** The shape everything after it reads. One line per event,
+JSON, append-only:
+
+```json
+{"v": 1, "t": "2026-10-07T09:12:03Z", "fairway": "ORD", "kind": "mark-set", "slice": "ORD-01",
+ "mark": "OrderPlaced", "by": "captain", "berth": "orca"}
+```
+
+Deck log kinds: `claimed`, `mark-set`, `demo`, `accepted`, `merged`, `decision`, `told`, `read`,
+`heartbeat`, `stowed`, `parked`. Harbour log kinds: `mark-set` (copied from a deck log), `flag-hoisted`,
+`flag-struck`, `berth-allocated`, `fires-banked`, `park`, `telegraph`. Each kind has a fixed set of
+fields, declared once in `src/slipwai/logs.py` (foundation tier: it imports nothing) as dataclasses with
+a `line()` and a `read(line)` that refuses a newer `v` naming the upgrade. Paths:
+`.slipwai/logs/<feature>/<fairway>.jsonl` and `.slipwai/logs/harbour.jsonl`, both already in
+`.gitignore`. `/drive` writes to its fairway's deck log at every stage boundary from this slice on, so the
+format is proven by use before anything depends on it. The sync is `git push origin
+refs/slipwai/logs/<fairway>:refs/slipwai/logs/<fairway>` of a blob holding the file, and the matching
+fetch; a small `scripts/agents/logs.py` in the toolkit does both. Tests: every kind round-trips; a line
+with `v: 2` is refused with the upgrade named; two appends from two processes interleave without a torn
+line (write with `O_APPEND`, one `write()` per line).
+
+**5.10 — Ids with the fairway in them, and rendered aggregates.** `D-ORD-07`, `A-BIL-03`,
+`ADR-ORD-2026-10-07-event-store`. The counter per fairway is the count of `decision` lines in its deck
+log plus one, so two fairways cannot mint the same id and nothing is ever renumbered. Every append-only
+artefact becomes per fairway: `fairways/<name>/decisions.md`, `adversary-log.md`, `benchmark.jsonl`, the
+register. The feature-level files are *rendered* from the fairway files by `make decisions` (new target,
+new `project/decisions.py` behaviour — the module is back) and are never edited by hand; `check-rendered`
+fails when a rendered file differs from what its sources render to, which is `scripts/glossary.py
+--check`'s pattern applied in the generated project. Test: two fairways each decide once and the
+rendered `decisions.md` has both, in timestamp order, with neither id changed.
+
+**5.11 — Composition root rendered, one file per event.** `project/composition.py` (back) gains a
+render-from-chart path: one `wire_*` line per use case the chart's slices name, generated into the
+composition root behind a marked region, so a merge is a regeneration. The events module becomes a
+directory, one file per event named after the mark, with a generated `__init__`/`index` that imports each.
+`model_to_code.py` already maps a slice to its code; this is that mapping made to emit a file per mark.
+Test: two slices each add an event, both diffs apply to one base, no line is touched by both.
+
+**5.12 — The four release modes.** `project.json` gains `state: slipway | sea-trials | in-service` and
+`shape: skiff | liner`, asked at `generate` and changed by `slipwai converge --state`/`--shape`. The
+release mode follows from the state — `open` for slipway, `keystone` for sea trials, `flagged` or
+`promoted` for in service — and `drive.md`'s merge stage reads it to decide how dark a merge is. Flags
+exist at the entry wiring only (`project/flag_route.py`, back), so a slipway project runs the whole loop
+with no flag reader generated. The flag hygiene gate, `check-flags` in the toolkit, refuses a flag older
+than N releases with no `struck` line. Test: generate at each state, assert what is and is not written.
+
+**5.14 — Berths.** `slipwai berth add <name> [--sandbox container|sandbox|none]`, `status`, `remove`.
+A berth is a record in `.slipwai/berths/<name>.json` — worktree path, allocated port block (a base plus
+the per-app offsets `services.py` already computes), database name `app_<name>`, scratch directory, and
+the sandbox kind — and the provisioning that makes the record true. The allocation policy lives in the
+keel (`src/slipwai/berths.py`, answers tier): ports from 8100 upward in blocks of 20, databases suffixed
+by berth, so two berths on one machine cannot collide and no operator holds the table in their head. The
+sandbox is a container under Docker where it is present, a `sandbox-exec` profile on macOS, `bwrap` on
+Linux, and Windows Sandbox on native Windows; the berth holds no credential for the forge, the cloud or
+the chandlery. Tests: two berths allocate disjoint ports and databases; `remove` leaves nothing; the
+sandbox kind is proven on each platform in CI, which is the WSL and Windows work section 7 promised.
+
+**5.15 — The decision ceiling, bounded waits, the inbox at every boundary.** Three small rules the
+captain will enforce and `/drive` learns first. The count of `decision` lines with no `read` from a
+person is capped (`harbour.json: decision_ceiling`, default 10); over it, the fairway parks. Every wait a
+stage can enter — for a mark, for a person, for a lock — has a bound in `harbour.json` and ends with a
+`parked` line when it is reached. The inbox (`told` lines addressed to this fairway) is read at every
+stage boundary and each is answered with a `read` line carrying the `told` line's timestamp as a receipt;
+a `told` older than N minutes with no `read` forces a boundary. Pure functions over log lines, in
+`src/slipwai/logs.py`; tested against written lines.
+
+**5.16 — Domain knowledge for the skipper.** Issue #27. `.specify/domain/*.md` holds facts about the
+product's domain — glossary, invariants, regulatory rules — and the skipper's command cites a fact's file
+and heading when it decides a product question from one, or says it found none and parked. A fact is
+never summarised into the decision without its citation. Test: a decision line's `cites` field names a
+file that exists and a heading in it.
+
+### Phase 6. The chandlery
+
+Phase 6 runs beside phase 7, as the order diagram says. It is mostly keel code and the template package,
+plus two repositories: the public channel (an index repository served as a Pages site) and, for 6.5, a
+trust root the owner holds.
+
+**Order.** 6.1 extensions first, so every later slice handles both kinds. Then 6.2 the index schema, 6.3
+the private channel, 6.4 the four verbs, 6.5 signing, 6.6 the public channel. 6.4 before 6.5 because the
+verbs are how a signed release is cut.
+
+**6.1 — Extensions as packages.** `extension.json` carries `name`, `description`, `ignore`, `core` (the
+keel range), `publisher`, `tags`, `kind: extension`. The entry point is `init.py` at the package root,
+with the six obligations `docs/extensions.md` sets. `language_directory.read` learns to read either
+manifest and tag the `Package` with its kind; the loader merges `extension.json` into `CATALOG["extensions"]`,
+which `./init`'s menu already reads. The conformance suite gains a second profile:
+`python -m slipwai.conformance <dir> <name>` detects the kind and runs the six obligations as checks
+(idempotent twice, non-fatal with the tool missing, projects a marked block, ships a `check-<key>.py` if
+it declared stale state, names a recovery command on each failure path, merges rather than overwrites a
+hand-edited file). `codegraph`, `uipro` and `ux-gates` move out of `assets/toolkit/scripts/extensions/`
+into three package repositories under `ROBCOATVG`, which is the owner's push again. The keel keeps the
+`--extension` flag, the menu, `.slipwai/extensions.json` and the projection pass.
+
+**6.2 — The index schema.** `index.json` v2: per entry `name`, `kind`, `version`, `file`, `sha256`,
+`signature` (the Sigstore bundle or minisign signature, base64), `publisher` (an identity string: a
+Sigstore subject or a minisign key id), `core`, `description`, `tags`, and the fragment. `language_index.py`
+reads v1 and v2, since published indexes exist in v1. `search` and `show` print the new fields. The public
+channel is a GitHub Pages site serving `index.json` and the release files, built by the index
+repository's CI from its `entries/*.json` — one file per release, so two publishers never touch one line,
+which is `changelog.d/`'s pattern again.
+
+**6.3 — A private channel.** `SLIPWAI_LANGUAGE_INDEX` becomes `SLIPWAI_CHANDLERY`, a list of channel
+base URLs in order; the old name is read with a deprecation line until 2.1. `search` reads every channel
+and says which one a result came from. An organisation's channel is the same Pages shape, or a
+`file:` URL, which the suite already tests.
+
+**6.4 — The four verbs.** `slipwai package new <name>` is `generate` for packages: it asks the kind;
+for a language, family or framework-of-which-family, the backends and the axis options each answers,
+the targets; for an extension, what it installs and where, which capability it waits for, whether it
+leaves stale state. It writes the repository from the template (`packages/toy` is the template's
+content), with `language.json` or `extension.json` filled in, the `LANGUAGE` object or `init.py` as a
+skeleton with a failing test per Member or per obligation, the conformance suite in `make verify`, a
+CI workflow that calls `.github/workflows/package.yml`, `make release`, and a `README` that says what is
+left. `check` runs conformance locally. `release` tags, builds the release file, signs it (6.5) and
+uploads it as a release asset; it refuses when `check` is red or the version is not new. `register
+[--channel <url>]` opens the pull request adding the entry file to the channel's `entries/`, or pushes
+directly to a private channel. The keel module is `src/slipwai/cli_package.py`, edge tier, with the
+template content read from `assets/package-template/`. Test: `new` on an empty machine, then `check`,
+`release --dry-run`, and `register` into a `file:` channel, for one of each kind.
+
+**6.5 — Signed releases and the trust store.** `release` signs with Sigstore keyless from CI (the OIDC
+identity of the workflow run) or a minisign key from a laptop. `install` verifies: the signature matches
+the `publisher` the index names, and the publisher is in `~/.slipwai/trust.json`, or the person confirms
+it once and it is added. `ROBCOATVG` is pre-seeded. A hand-placed package loads and `list` says
+`unsigned`. Verification is at install and never at build — the Maven analogy. The decision still open
+here is which Sigstore verifier to depend on: `sigstore-python` is a dependency the keel does not have,
+and the keel ships with none. The options are to vendor a minimal bundle verifier, to shell out to
+`cosign` when present and refuse otherwise, or to make minisign the only laptop path and Sigstore the
+only CI path. **Owner's decision; the slice cannot start without it.**
+
+**6.6 — The public channel's contribution path.** The index repository under `ROBCOATVG`, with CI that
+checks a pull request's entry: the signature matches the named publisher, the release file's sha256
+matches, conformance passes against the entry's `core` range, and the name does not collide with an
+existing publisher's. The contributor page says the four verbs and nothing else. This is the repository
+`register` targets by default.
+
+### Phase 7. Captains and the harbourmaster
+
+The system itself. Everything here is Python in the toolkit, run inside a generated project, and it
+replaces `cruise.py` (1,742 lines, one iteration per checkout, trusting the iteration). The order is
+fixed by what each reads: the logs (5.13) exist; the harbourmaster writes the harbour log and allocates
+berths; the captain reads both logs and runs one fairway; the telegraph sets the numbers both read; the
+fleet board and the bridge render what the logs hold.
+
+**7.1 — The harbourmaster.** `assets/toolkit/scripts/agents/harbourmaster.py`. One process per harbour.
+Its loop: fetch `refs/slipwai/logs/*`; read every deck log since its last cursor; for each `mark-set`,
+`parked`, `decision` and flag change, append the harbour-log line other fairways need; allocate a berth
+when a captain asks (a `berth-request` line in the deck log, answered by `berth-allocated` in the harbour
+log, using `slipwai berth add`); push the harbour log; sleep for the telegraph's interval. It holds the
+credentials: a captain asks for a push, a merge, a deploy, a flag change or a publish by writing a
+`request` line, and the harbourmaster checks it against the never-list (destroy data or history, release
+what nobody asked for, spend money, expose a secret, weaken security, discard a person's commits, change a
+gate to make it pass), does it or refuses with the reason, and writes the outcome. Under `/drive` it runs
+in the person's session with their credentials; under `/cruise` as its own process. Test it with two
+fake deck logs and assert what reaches the harbour log, and with a request on the never-list and assert
+the refusal.
+
+**7.2 — The captain.** `assets/toolkit/scripts/agents/captain.py`. The outer loop for one fairway. Each
+turn: fetch trunk and both logs; derive the fairway's state from `claimed`/`merged` lines plus trunk;
+pick the next slice in split order that `cleared()` (5.5) allows; append `claimed`; dispatch `/drive`
+for that slice in the berth with the stage budgets from `harbour.json`; at every boundary — which the
+captain knows from the deck log lines the iteration writes — read the inbox and enforce the receipt
+(5.15); write `heartbeat` on an interval; if a stage exceeds its wall budget with no new line, end the
+process and append `parked` with the reason; on `accepted`, request the merge through the harbourmaster;
+on `merged`, next slice. Everything it relies on is in the logs — an iteration that wrote no line made
+no progress, and that is the inversion the runner lacked. Reuse from `cruise.py`: the stop table, the
+last-line protocol, the benchmark bracket, the control-file guard. Test: a fairway with two slices and a
+fake `/drive` that writes the expected lines runs to `merged` twice; a fake that writes nothing is parked
+at the bound.
+
+**7.3 — The telegraph.** `harbour.json` at the harbour root: `position` (one of `full-ahead`,
+`half-ahead`, `slow-ahead`, `dead-slow`, `stop`), and the numbers each position sets as a group —
+`boilers` (berths lit), `fanout` (delegates per captain), `bunker_per_slice`, `bunker_per_day`, the
+stage budgets, the adversary bar, the decision ceiling, the wait bounds — plus `delegate` and `cycle`
+mirrored from `.specify/drive.json`. `slipwai telegraph <position>` writes the group; `slipwai telegraph
+--set boilers=2 fanout=1` changes one, and the fleet board then shows `half-ahead, adjusted`; ringing a
+position again resets every number. `/model-delegation-settings` edits the model role per stage the same
+checked way. The harbourmaster watches the file and writes a `telegraph` line when it changes; captains
+read the line and adjust at their next boundary. Banking the fires: when the day's bunker is spent, the
+harbourmaster steps the position down one notch at a time in the fixed order, writing `fires-banked`
+each time, and `stop` parks every captain at its next boundary. Keel module `src/slipwai/telegraph.py`
+for the schema and the group table; tests against the file.
+
+**7.4 — The fleet board.** `slipwai fleet` prints it; `slipwai fleet watch` redraws it. Every column is
+computed from the logs and `git rev-list`, and the board keeps no state: the berth table (which berth,
+which fairway, which slice, which stage, last heartbeat, tokens so far); the slice graph per fairway
+(planned, claimed, implemented, merged, with the marks between); the swimlanes with cost per slice; the
+event feed (the last N log lines, both logs merged by time); the pressure gauge (position, boilers lit,
+fanout) and the bunker (today's spend against the budget); and the inbox (open `told` lines and parks).
+A stalled berth is one whose heartbeat is older than the bound and is drawn differently from a finished
+one. The harbourmaster renders the same thing as a static page, which is what the bridge's read-only
+copy serves. Test every column from a written pair of logs.
+
+**7.5 — The bridge.** The dashboard mockup (`docs/mockups/ledger-bridge.html`) made real. `slipwai
+bridge` serves a local page from the harbourmaster's render: the Project and Agents tabs, the inbox with
+answer boxes, the speed dial, and the fine-tune panel that writes `harbour.json`. An answer typed on the
+page becomes a `told` line in the right deck log, which is the whole point: a person answers from one
+seat. The read-only copy is the same page without the controls, published to Pages by the harbourmaster
+when it is configured to. Plain labels in the UI, per the mockup — the nautical words are the method's,
+not the dashboard's. The server is the standard library's `http.server` with no dependency; the page is
+the mockup's HTML with its data section replaced by the render. Test the render and the `told` line;
+drive the page once by hand.
+
+**7.6 — The harness rows.** `assets/toolkit/scripts/agents/registry.json` gains or updates one row per
+harness — Claude Code, Codex, Cursor, Gemini CLI, OpenCode, Kiro — saying how it is invoked headless,
+whether it has a turn-end hook that can refuse the end, whether it has a before-edit hook, and the
+projection into its settings file. Each row carries `proven: false` until the captain has run one feature
+end to end on it, and `slipwai` says `unproven` when an unproven harness is chosen. The captain's controls
+depend on none of the hooks — it reads the last line itself, diffs the controlled files, owns the waits —
+so a hook is a second belt where it exists.
+
+**7.7 — Retire `cruise.py`.** `/cruise` starts the harbourmaster and one captain per fairway in the
+chart, under the telegraph's position, and exits. The runner is deleted. `test_cruise_parts` and the
+seat tests already name what the commands must say; they are re-pointed at the captain. Done when no
+runner is left in the toolkit and the greenfield of phase 7 — a small product with two bounded contexts,
+generated with the 2.0.0 keel — has run two captains on two machines from start to finish.
+
+### Phase 8. 2.0.0
+
+**8.1 — The release machinery.** Bring `make release`, `make changelog`, `scripts/tag-release.py`,
+`scripts/changelog-draft.py`, `scripts/snapshot-version.py`, `scripts/publish-wheel.py`, `changelog.d/`
+with its README, `requirements-publish.txt`, and the versioning section of `AGENTS.md`, all from upstream
+`e1a9e43`. `CHANGELOG.md` and `changelog.d/` go back into `slipwai.spec`'s `datas`. The 16 tests skipped
+on this since slices 1.1 and 3.1 run again. This is the slice where `VERSION` is allowed to move.
+
+**8.2 — The 2.0.0 changelog entry.** Written from `git log` of the fork: every user-visible change since
+1.5.2, grouped by theme, each with its catch-up — what a project built on 1.x has to do about it. The
+fragments in `changelog.d/` are the source; the entry is rendered.
+
+**8.3 — `migrate`.** Section 6's design. Base from an installed 1.x: read the project's
+`generator.generatedWith`, install the languages its `generator.languages` names first (via the chandlery),
+then replay the project at 2.0.0 and merge, as version 1's `migrate` does. The rename table
+(`docs/rename.json`, begun in 5.1) renames files, fields and skills. In-flight work is data: open slices,
+their status, decisions and flags are read from the 1.x files and written as log lines and per-fairway
+files, with the fairway derived from the slice's context (event profile) or asked (standard). `make
+test-migration` generates fixtures at the last 1.x tag for every profile and backend, with a split, two
+slices implemented, one claimed, flags in both states, plus the adopted fixtures, and holds each
+migration to its own gate. **Nothing real is migrated before 2.0.0**; MANDA is the first candidate after.
+
+**8.4 — The release backstop.** One job in `verify.yml`, on a tag only, that installs every package the
+public channel lists and runs `python -m slipwai.matrix` against each with the keel about to ship. A keel
+release is refused when a published package fails. This is the once-at-release half of the division
+3.7 drew, and the root matrix is retired for good.
+
+**8.5 — The release and the merge back.** `make release` to 2.0.0; `v2.0.0` tagged and published to PyPI
+and as the executable; the fork merged to upstream `main` as one merge with the whole history; the Gitea
+decision taken — whether `git.treyco.dev` stays canonical with GitHub mirroring, or GitHub becomes
+canonical. **Owner's decision.**
+
+**8.6 — The last 1.5.x.** A final version 1 release whose `slipwai upgrade --check` names 2.0.0 and
+links the migration page, so a version 1 user is told where version 2 is and what moving costs.
+
+### Phase 9. The README and the docs
+
+Last, after everything it describes exists, and written from real sessions rather than from this plan.
+
+**9.1 — The five pages**, in the order a person meets them: start here; your first feature; a second
+person joins; let it sail; bring an existing codebase. Each from a real transcript, trimmed to what the
+person sees, with a fifteen-minute target to a demoed slice. **9.2 — Reference pages** under
+`docs/reference/`, one per rule this plan names, linked from the five. **9.3 — The captures**: the
+bridge, the fleet board, a demo stop, a `/chart` output, from real runs. **9.6 — From a spec to a
+delegate**, one figure per profile, drawn with the same generator that drew section 5's. **9.4 — `make
+test-docs`**: every command in the first three pages run against a fresh generation, so the README cannot
+drift; the pattern is `scripts/glossary.py --check`. **9.5 — The five maintainer skills** rewritten as
+prose around the four `slipwai package` verbs and the two package shapes, with `add-target` covering the
+skiff and the liner and `add-backing-service` a catalogue that no longer holds backends. Order: 9.5 can
+start as soon as 6.4 lands; 9.1 to 9.4 and 9.6 wait for 7.7.
+
+### Phase 10. The clouds as packages
+
+After 2.0.0, for the reason theme A gives. The shape is the language move again, measured: 47 asset
+files, 29 modules naming a cloud in 112 places.
+
+**10.1 — The target protocol.** `TARGET` as a registry object keyed by `Member` constants the way
+`LANGUAGE` is — the members are what `targets.py`, `project/infra.py`, `project/production.py`,
+`project/deploy_workflow.py` and `preflight.py` currently read per target: the stack assets, the
+provisioning per axis option, the docs page, the preflight tools, the image builder, the two shapes.
+`target.json` as the manifest; `kind: target` through the chandlery, `search --kind target`, and `slipwai
+package new --kind target`; a third conformance profile that generates a project on the target and runs
+`tofu validate`. **10.2** — the import surface widened to what a target package reads, held both ways.
+**10.3, 10.4** — `aws` then `azure` out, each as one repository under `ROBCOATVG` built by `package new`,
+with the keel's `make verify` green with no cloud installed after each. **10.5** — the twenty-three
+passing mentions, until `grep -ri aws src/slipwai` finds only a comment saying there is nothing. **10.6** —
+`check-structure` refuses a `slipwai_target_*` import as it refuses a language one.
+
+### What is still a person's to decide
+
+Collected from above, so they can be taken before the slice that needs them.
+
+1. **Which Sigstore verifier** (6.5): vendor a minimal bundle verifier, shell out to `cosign`, or
+   minisign-only on laptops with Sigstore only in CI. The keel ships with no dependency and this is the
+   first that would be hard to avoid.
+2. **Gitea or GitHub as canonical** after the merge back (8.5).
+3. **The sandbox on macOS** (5.14): `sandbox-exec` is deprecated by Apple and undocumented; the
+   alternative is a container for every berth, which costs a Docker dependency on laptops.
+4. **Where the harbourmaster runs under `/cruise`** (7.1): one machine with captains reaching it through
+   the forge, as written, or a small hosted process — the plan says no hosted service before 2.0.0, so
+   the first; worth confirming.
+5. **The phase 7 greenfield**: which small product, two bounded contexts by design, becomes the first
+   thing version 2 builds for real.
+
+### A realistic shape for the calendar
+
+Phase 5 is seventeen slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
+beside each other and are each about three weeks. Phase 8 is a week of machinery and a release. Phase 9
+is a fortnight of writing against real runs. Phase 10 is after the release and is its own month. The
+prerequisite — the six packages rebuilt — is a day, and it is the day that has to come first.
