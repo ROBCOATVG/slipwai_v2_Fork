@@ -293,8 +293,8 @@ first two items of cruise-2's CI proposal. Decided 2026-10-06 (section 10).
    The same search runs inside `generate` when an answer names something not installed, so the interview can
    say "three packages answer that; install one?" instead of refusing.
 6. When nothing is installed, `slipwai generate` names what to install and offers to do it. The standalone
-      executable bundles no language: it is the keel alone, the same as the wheel, so there is one artefact to
-      build and sign and no bundled copy to drift from the chandlery's. Decided 2026-10-06.
+   executable bundles no language: it is the keel alone, the same as the wheel, so there is one artefact to
+   build and sign and no bundled copy to drift from the chandlery's. Decided 2026-10-06.
 7. **Making a package is a verb, not a fork of the template.** `slipwai package` is `generate` for packages,
    with the same shape as the product path:
    - `slipwai package new <name>` asks what the product interview asks, for a package: language or extension;
