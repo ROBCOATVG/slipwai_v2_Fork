@@ -900,13 +900,14 @@ The first attempt paid for these rules. They apply from phase 1, inside the fork
 - **Four release modes, chosen by product state.** Theme E.
 - **The README rewrite is the last phase.** Phase 9.
 - **The executable bundles no language; `generate` offers to install.** Theme A, item 5.
+- **Nothing ships on the 1.x line.** The `slipwai-workstreams` commit is salvaged into slice 5.3 and not released on its own; version 1 users get a final 1.5.x that points at 2.0 (slice 8.6).
 - **Signed releases and a trusted-publisher list, verified at install time, never at build time.** Theme A, "Trust".
 - **The six package repositories move under `ROBCOATVG`, public, before phase 2.** Theme A, "Where the first-party packages live".
 
 ### Still open
 
-1. **Whether issues #30, #32 and #29 also ship on 1.x**, for users who will not wait for 2.0. Under the second
-   settled decision above, the default answer is no.
+None. Every decision this plan needed on 2026-10-06 is taken. New ones go to the deck logs' `decision` lines
+and, where a person must take them, to the bridge's inbox.
 
 ## 10. Gaps review, 2026-10-06
 
@@ -977,8 +978,8 @@ Resolved:
 
 All six nice-to-haves were accepted as written on 2026-10-06 and moved into the sections they name.
 
-Open: none. Every blocker, should-address and nice-to-have found on 2026-10-06 is closed. The three
-decisions in section 9 are the only open items, and they are decisions, not gaps.
+Open: none. Every blocker, should-address and nice-to-have found on 2026-10-06 is closed. Section 9 has no
+open decision left either.
 
 ## 11. The implementation plan
 
