@@ -7,7 +7,7 @@ The plan was written on 2026-10-06 and revised the same day. Its sources are thi
 `slipwai-cruise-2` checkout, GitHub issues #26, #30, #32, #27 and #29 on `ROBCOATVG/slipwai`, and an
 unposted write-up of a five-berth run on a product called MANDA.
 
-The document has ten sections:
+The document has eleven sections:
 
 1. The words this plan uses.
 2. Where things stand today.
@@ -19,6 +19,7 @@ The document has ten sections:
 8. The rules for doing the work.
 9. Decisions taken, and decisions still open.
 10. The gaps review log.
+11. The implementation plan.
 
 ## 1. The words this plan uses
 
@@ -227,6 +228,10 @@ submodule under `languages/`, so the keel's gate can run the conformance suite a
 packages it ships with, at a known commit. That pin is for the keel's tests only. A package repository's own CI
 runs the same suite against a pinned keel. Publishing is `make release` in the package repository: it tags,
 builds the release file, uploads it as a release asset, and appends the release to the channel's index.
+
+**Which languages 2.0.0 ships with.** All six from the experiment: `typescript`, `python`, `go`, `java`,
+`java-quarkus` and `java-spring`, each passing the conformance suite and its own matrix against the 2.0.0 keel.
+Parity with 1.5, with `java-spring` needing its real repository first (phase 2). Decided 2026-10-06.
 
 **Where the first-party packages live.** Under `ROBCOATVG`, beside the keel, public from the start, moved
 before phase 2. Public repositories need no token for the keel's CI to read the submodules, which removes the
@@ -880,6 +885,10 @@ Resolved:
   standard profile. Answer: one committed `chart.yaml` per feature on both profiles, rendered from the model
   on the event profile; events and schemas typed with JSON Schema, routes as OpenAPI operations, ports as
   names with typed inputs and outputs.
+- [Should → theme A, "Which languages 2.0.0 ships with"] Which languages must exist at 2.0.0. Answer: all six.
+- [Should → section 11] Effort per phase, the first dogfood product, the out-of-scope list and the token
+  baseline. Answer: written into the implementation plan as sizes in slices, a proposed first product, an
+  out-of-scope list and a baseline run; the product is confirmed below.
 - [Blocker → theme D, "The bridge"] How a click on the dashboard becomes a `told` line. Answer: `slipwai
   bridge` serves the page locally from the harbourmaster's seat and its controls post to it; the Pages copy is
   the same page without controls.
@@ -890,14 +899,199 @@ Resolved:
 
 Open, in order:
 
-- [Should] Which languages must exist at 2.0.0.
-- [Should] Effort per phase.
-- [Should] The first product to migrate or dogfood.
-- [Should] An explicit out-of-scope list.
-- [Should] A baseline run for the token target.
 - [Nice] A one-line problem statement and the cost of doing nothing.
 - [Nice] Log format versioning and retention.
 - [Nice] The notification channel.
 - [Nice] A `GLOSSARY.md` the `wtf` skill can read.
 - [Nice] How version 1 users hear about the change.
 - [Nice] Team size.
+
+## 11. The implementation plan
+
+This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
+hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
+increment and the full gate before the merge (section 8). Every slice names the commit it comes from:
+upstream `main` at `e1a9e43` (1.5.2.dev0) or `slipwai-cruise-2` `main` at `c6f1e74`. "New" means written for
+version 2.
+
+**Sizes are estimates, not commitments.** A slice is sized S (a session), M (a day), or L (two to three days,
+and a candidate for splitting). The first two phases calibrate the rest: after phase 2, replace the sizes below
+with the measured median, and keep doing so.
+
+### Out of scope for 2.0.0
+
+- New targets (nothing beyond AWS, Azure and `none`), new frontends, new axes, new profiles.
+- A hosted service of any kind. The bridge's writable copy is a local server; the chandlery is static files.
+- Mobile or native clients for the bridge.
+- Replacing Spec Kit. Version 2 pins it as version 1 does.
+- Forges other than GitHub and Gitea for the harbourmaster's push and fetch.
+- Signing packages with anything beyond the trust model decided in section 9.
+- Any change to what a generated project's `make verify` checks, beyond `make unit` and the two-gate split.
+
+### The first products
+
+- **The first migration is MANDA.** It is the largest version 1 product that exists (37 slices, five lanes run
+  by hand), it is on the event-modelling profile, and its run is the source of half of section 3. Migrating it
+  proves section 6 on real in-flight work, and its five lanes become the first real fairways. Proposed; a
+  person confirms.
+- **The first greenfield is a small product generated with the 2.0.0 keel at phase 7**, two bounded contexts
+  by design, so that two captains on two machines can be proven on a product that was never version 1.
+- **The fork itself is not driven by the loop** (section 7). It is a dogfood for the keel's verbs and the
+  skills, not for the captain.
+
+### The baseline
+
+The token target in theme B, half the experiment's median per accepted slice, needs a baseline measured the
+same way the fleet board will measure it. The baseline is the experiment's own `benchmark.md`: median input
+tokens per accepted slice across its nineteen slices, recomputed from that file in phase 1 and written here.
+The first measured comparison is MANDA's migration fairways under the phase 5 loop; the second is the phase 7
+greenfield. Until phase 7 the numbers come from the benchmark bracket version 1 already writes.
+
+### Phase 1. The keel's gate
+
+| Slice | What | From | Size | Done when |
+|---|---|---|---|---|
+| 1.1 | `pyproject.toml`, `VERSION` at `2.0.0.dev0`, `requirements-*.txt`, the `slipwai` launcher script | upstream | S | `pip install -e .` works on an empty `src/slipwai/` with a `cli.py` that prints the version |
+| 1.2 | `Makefile` with `lint`, `typecheck`, `check-structure`, `unit`, `test`, `verify`; `verify` is the four | upstream, `unit` new | S | `make verify` green on the empty package |
+| 1.3 | `scripts/check-structure.py` with its tiers, and the import surface as a tier that reads a list file | cruise-2 | M | The gate refuses an import against the direction; the surface list is empty and held |
+| 1.4 | CI: `verify.yml` with lint, typecheck, structure and unit on Linux, macOS, Windows and WSL; no matrix, no languages | upstream, cut down | M | Green on the fork, public, under Actions |
+| 1.5 | `AGENTS.md` for the fork: section 8's rules, the two gates, and nothing about versioning yet | new | S | A session reads it and knows the rules |
+
+Depends on: the fork public (section 7). Phase 5 may start when 1.2 is green.
+
+### Phase 2. The registry and the chart
+
+| Slice | What | From | Size | Done when |
+|---|---|---|---|---|
+| 2.1 | Move the six package repositories under `ROBCOATVG`, public; create `slipwai-language-java-spring` from the `slice/S10-java-spring` content | cruise-2 | M | Six public repositories, each with its history, each with a green CI of its own |
+| 2.2 | `registry.py`, `loaded.py`, `manifest/` and their tests | cruise-2 | M | The registry answers Members for a fake package in tests |
+| 2.3 | `catalog.json` with no backends, `catalog_merge.py`, `catalog.py` | cruise-2 | M | A fragment merges; a duplicate backend is refused with one line |
+| 2.4 | `language_directory.py`, `language_shape.py`, the loader and admission in two phases | cruise-2 | M | A package directory loads whole or not at all; a bad one reports every fault in one line |
+| 2.5 | `conformance/` and `matrix/` as `python -m` entry points | cruise-2 | M | Both run against the template's toy package |
+| 2.6 | The six packages pinned as submodules under `languages/`; CI runs conformance across all six | cruise-2 | S | Six green rows in the gate, no language variant generated yet |
+| 2.7 | The one refusal shape: a fault type that renders to one line ending with the fixing command | new | M | Every refusal in 2.3 and 2.4 goes through it; the S20 wording tests collapse to one table |
+
+Depends on: phase 1. 2.1 can start on day one.
+
+### Phase 3. The scaffold pipeline
+
+| Slice | What | From | Size | Done when |
+|---|---|---|---|---|
+| 3.1 | `assets.py`, `toolkit.py`, `layout.py`, and the asset trees they read | upstream | M | Toolkit files materialise for both profiles |
+| 3.2 | `scaffold.py` and `services.py`, asking the registry | upstream + cruise-2 | L | `project_files()` returns a tree for one typescript variant equal to cruise-2's |
+| 3.3 | The `project/*.py` parts, in assembly order, one slice per group: Makefile and CI; README and AGENTS; docs; flags and composition; event model; the rest | upstream | 6 × M | After each group, `make starters` diffs empty against cruise-2 for the variants that group touches |
+| 3.4 | Targets `aws` and `azure`, their stacks and docs | upstream | L | Stack validation tests green |
+| 3.5 | Frontends and backing services, the `react-vite` npm-workspace contract | upstream + cruise-2 | M | The frontend variants match |
+| 3.6 | The pruner with rows emitted as data | cruise-2 | S | `scripts/backing-services.py` in a generated project carries no language name |
+| 3.7 | `make starters` and the full matrix per package, run from each package's CI, not the keel's | cruise-2 | M | The keel's gate stays under ten minutes; each package's CI proves its variants |
+
+Depends on: phase 2.
+
+### Phase 4. The verbs
+
+| Slice | What | From | Size | Done when |
+|---|---|---|---|---|
+| 4.1 | `generate` and the interview, menus from the registry, the offer to install | upstream + new | M | A fresh project from an empty machine with one answer sequence |
+| 4.2 | `adopt`, the survey, `converge` | upstream | L | The adopted fixtures survey as before |
+| 4.3 | `add-service`, `add-frontend`, `describe-service` | upstream | M | Mid-flight additions match cruise-2 |
+| 4.4 | `./init` and the installer, with the language record read and reported | upstream + cruise-2 | M | A clone with a missing language is told what to install |
+| 4.5 | `slipwai list`, `slipwai install`, `language list / upgrade / remove`, the index client | cruise-2 | M | Install from a local index end to end |
+| 4.6 | `upgrade` without its 1.x paths | upstream | S | The keel upgrades itself from the index |
+| 4.7 | The standalone executable, bundling no language | upstream | M | `make test-executable` green on four platforms |
+
+Depends on: phase 3.
+
+### Phase 5. The toolkit and the loop
+
+| Slice | What | From | Size | Done when |
+|---|---|---|---|---|
+| 5.1 | The skills, renamed to the vocabulary where a name changed, `docs/rename.json` begun | upstream | M | Every skill present; the rename table has a row per rename |
+| 5.2 | The commands and agents, the ladder in `drive.md`, the stop table | upstream | L | `/drive` runs one slice to a demo on a generated project |
+| 5.3 | Fairways: the `## Fairways` table in the split, `/drive fairway=<name>`, the boards grouped by fairway | `slipwai-workstreams` | M | Two fairways on one machine, merges independent |
+| 5.4 | The chart: `chart.yaml` schema, `make chart` on the event profile, `/chart` on the standard profile, `check-chart` | new | L | Both profiles produce a chart a reader can diff |
+| 5.5 | Clearance and the one-setter-per-mark rule in `check-model` and `check-chart`; typed attributes and `examples.md` at the split | new (#32) | M | A fresh fairway fans out on its first iteration |
+| 5.6 | `check-slice-scope` reads the chart for owned paths on both profiles | upstream + new | M | The standard profile holds a context boundary |
+| 5.7 | Two gates: `make unit` in generated projects, the ladder's fast checks per increment, the full gate before `main` | new | M | A slice's increments never run the full suite |
+| 5.8 | Review and refactor as a ladder stage, with a review role in the model table | new | M | A slice merges with review findings closed |
+| 5.9 | Adversary once with a bar, mutation as a gate, stage budgets, stow, the careen | new (#29) | L | A stage over budget stows; CRITICAL never does |
+| 5.10 | Ids with the fairway in them; per-fairway `decisions.md`, adversary log, register; rendered aggregates on `main` | new | L | Two fairways decide in parallel and nothing renumbers |
+| 5.11 | Composition root rendered from the chart; one file per event with a rendered index | new | M | Two slices add an event each and merge without touching one line |
+| 5.12 | The four release modes, the product state in `project.json`, flags at the entry wiring only, the hygiene gate | new | L | A slipway product runs the loop with no flag reader; an in-service one keeps every guarantee |
+| 5.13 | The deck log and harbour log formats, written by `/drive`; `.slipwai/logs/` ignored; `refs/slipwai/logs` sync | new | M | A run's status is answerable from the logs after the fact |
+| 5.14 | Berths: `slipwai berth add / status / remove`, allocation policy, the sandbox | new | L | Two berths on one machine do not collide on ports or databases |
+| 5.15 | The decision ceiling, bounded waits, the inbox read at every boundary with receipts | new | M | A message is read within one boundary or forces one |
+| 5.16 | Domain knowledge for the skipper | new (#27) | M | A fact in `.specify/domain/` is cited, not guessed |
+
+Depends on: 1.2 for 5.1 and 5.2; phase 4 for a generated project to run against. 5.3 to 5.16 are the slices
+most worth running in two fairways themselves, once 5.3 exists.
+
+### Phase 6. The chandlery
+
+| Slice | What | From | Size | Done when |
+|---|---|---|---|---|
+| 6.1 | Extensions as packages on the same loader; `codegraph`, `uipro`, `ux-gates` out of the keel | new | L | `./init --extension` installs from a directory package |
+| 6.2 | The index schema with publishers, checksums and the signature field; the public channel as a Pages site | cruise-2 + new | M | `slipwai install` reads it for both kinds |
+| 6.3 | A private channel per organisation, `SLIPWAI_LANGUAGE_INDEX` generalised to `SLIPWAI_CHANDLERY` | cruise-2 | S | An organisation's index serves its own packages |
+| 6.4 | `make release` in the package template: tag, build, upload, append to the index | new | M | A release from the template lands in a local index |
+| 6.5 | The trust model as decided in section 9 | new | M | An unsigned or unknown-publisher entry is refused with the reason |
+
+Depends on: phase 4. Runs beside phase 7.
+
+### Phase 7. Captains and the harbourmaster
+
+| Slice | What | From | Size | Done when |
+|---|---|---|---|---|
+| 7.1 | The harbourmaster process: the only writer of the harbour log, the log sync, berth allocation, credentials | new | L | Two captains' marks reach each other through the harbour log |
+| 7.2 | The captain: the outer loop for one fairway, clearance, claim, dispatch, boundaries, heartbeat, ending a wedged stage | new + `cruise.py` | L | One fairway runs unattended for a day with every line in its deck log |
+| 7.3 | The telegraph: positions, `harbour.json`, `--set`, banking the fires in order | new | M | Over budget, the run slows in the fixed order before it stops |
+| 7.4 | The fleet board: `slipwai fleet`, `fleet watch`, the rendered page | new | M | Every column folds from the logs; a stalled berth is told from a finished one |
+| 7.5 | The bridge: `slipwai bridge` local server with controls, the read-only Pages copy | new | L | A question answered from the page becomes a `told` line |
+| 7.6 | The harness registry rows for Claude Code, Codex, Cursor, Gemini CLI, OpenCode and Kiro; `unproven` until run | upstream + new | M | Each row says how it is invoked and which hooks it has |
+| 7.7 | Retire `cruise.py`; `/cruise` starts captains | new | S | No runner left in the toolkit |
+
+Depends on: 5.13 and 5.14. 7.1 first, then 7.2, then the rest in any order.
+
+### Phase 8. 2.0.0
+
+| Slice | What | From | Size | Done when |
+|---|---|---|---|---|
+| 8.1 | `AGENTS.md`'s versioning rules, `changelog.d/`, `make release`, `make changelog` | upstream | M | The fork's own release machinery is green |
+| 8.2 | One 2.0.0 changelog entry written from the fork's history | new | M | Every user-visible change since 1.5.2 is in it, with its catch-up |
+| 8.3 | `migrate`: base from an installed 1.x, languages first, the rename table, in-flight work as data (section 6) | upstream + cruise-2 + new | L | `make test-migration` green for every profile and backend and the adopted fixtures |
+| 8.4 | MANDA migrated on a branch | new | L | Its gate green; its five lanes are fairways; a person confirmed them |
+| 8.5 | The CI proposal's remaining items (per-package jobs, the root matrix retired) | cruise-2 | S | The keel's gate under ten minutes on CI |
+| 8.6 | `make release` to 2.0.0; the merge back to upstream; the Gitea decision | new | M | `v2.0.0` tagged, published, and upstream `main` is version 2 |
+
+Depends on: everything before it.
+
+### Phase 9. The README and the docs
+
+| Slice | What | Size | Done when |
+|---|---|---|---|
+| 9.1 | The five pages of section 7, phase 9, written from a real session transcript | L | A first-time reader reaches a demoed slice in fifteen minutes following them |
+| 9.2 | The reference pages under `docs/reference/` | L | Every rule the plan names has a page |
+| 9.3 | The captures: the bridge, the fleet board, a demo-stop board, a `/chart` output | S | From real runs, not drawn |
+| 9.4 | `make test-docs`: every command in the first three pages run against a fresh generation | M | The README cannot drift |
+
+### Order, and what runs in parallel
+
+```
+Phase 1 ──► Phase 2 ──► Phase 3 ──► Phase 4 ──► Phase 6 ──┐
+   │                                       │              ├──► Phase 8 ──► Phase 9
+   └──► Phase 5 (toolkit, from 1.2) ───────┴──► Phase 7 ──┘
+```
+
+Phase 5 starts as soon as 1.2 is green and runs beside phases 2 to 4 on the toolkit assets, which do not import
+the scaffold; its slices from 5.3 on need a generated project, so they wait for 4.1. Phases 6 and 7 run beside
+each other. Nothing in phase 8 starts before phases 6 and 7 are done. Phase 9 is last.
+
+### Risks the plan carries, and where each is caught
+
+| Risk | Caught by |
+|---|---|
+| The scaffold parts drift from cruise-2's output as they come back one by one | 3.3's `make starters` diff after every group |
+| The two-gate split hides a failure until the merge | 5.7's rule that the full gate runs on the rebased branch, plus CI |
+| Sandbox per berth on native Windows is harder than it reads | 5.14 proves it on all four platforms before 7.2 depends on it |
+| The chart on the standard profile is a design nobody has used | 5.4 is sized L and lands before 5.5 and 5.6 build on it; MANDA (event profile) does not depend on it |
+| The migration of in-flight work meets a case section 6 did not foresee | 8.4 migrates MANDA before 8.6 cuts the release |
+| The token target is missed | The baseline above, measured at 5.x on MANDA and at 7.x on the greenfield, with time to tune the telegraph positions |
