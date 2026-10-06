@@ -70,6 +70,12 @@ Two version 1 terms appear in this document when it describes version 1:
 
 ## 2. Where things stand today
 
+### The problem in one line
+
+Version 1 delivers one product well with one runner, and gets no faster when people or machines join; its
+gate grows with every language. The cost of doing nothing is the experiment's own numbers: 104 hours and 180
+million input tokens per accepted slice at the median, and a gate that nobody runs locally.
+
 ### The checkouts
 
 | Checkout | What it is | State on 2026-10-06 |
@@ -390,7 +396,10 @@ numbers would only shrink the window. Version 2 removes both the counter and the
   not committed: they live under `.slipwai/logs/`, which `.gitignore` lists, because heartbeat and token lines
   arrive every few seconds and have no place in trunk's history. The harbourmaster pushes and fetches them
   through the ref `refs/slipwai/logs`, so a captain on another machine reads the same lines without a commit
-  on `main`. What is committed is what the logs render: the decisions, the register, the chart fragments. The feature-level
+  on `main`. What is committed is what the logs render: the decisions, the register, the chart fragments. Every log line
+  carries `v: 1`; a reader refuses a line from a newer format and names the upgrade that reads it. The logs are
+  kept for the life of the feature and archived into the feature's directory, compressed, when it closes, so the
+  bill and the decisions stay auditable after the berths are gone. The feature-level
   `decisions.md`, adversary log and register are rendered from the fairway files on `main` by the
   harbourmaster. They are never edited by hand. This is the same pattern as `make model`, which renders the
   diagrams.
@@ -465,7 +474,9 @@ One source, three renderings, plus a push. Every view is computed from the deck 
 in `model.yaml` did. `slipwai fleet` prints the berth table and the inbox in the terminal. `slipwai fleet watch`
 keeps that live, with the feed beneath it. The harbourmaster renders the full board (swimlanes, slice graph, pressure
 gauge and bunker, inbox) to a static page on the project's existing Pages site, next to the event model, and refreshes it
-on every harbour log line. A push notification on parks, banked fires and stalls reaches a person who is not looking.
+on every harbour log line. A push notification on parks, banked fires and stalls reaches a person who is not looking: through the harness's
+own notification hook where it has one, and otherwise through a webhook URL in `harbour.json`, which covers
+Slack, Teams and a phone.
 
 **Under `/drive` and under `/cruise`.** The data is the same. Who refreshes it, and who answers it, differ.
 
@@ -934,22 +945,24 @@ Resolved:
 - [Should → theme D, "The telegraph"] Whether the numbers under a position can be tuned alone. Answer: yes,
   `slipwai telegraph --set` and `/model-delegation-settings`; the board shows the position as adjusted.
 
+All six nice-to-haves were accepted as written on 2026-10-06 and moved into the sections they name.
+
 Open, in order:
 
-- [Nice, proposed → section 2] A one-line problem statement: version 1 delivers one product well with one
+- [Nice → section 2, "The problem in one line"] A one-line problem statement: version 1 delivers one product well with one
   runner, and gets no faster when people or machines join; its gate grows with every language. The cost of
   doing nothing is the experiment's numbers: 104 hours and 180M tokens per accepted slice at the median, and a
   gate nobody runs locally.
-- [Nice, proposed → theme D] Log lines carry `v: 1`; a reader refuses a line from a newer format and names the
+- [Nice → theme D, "Ids and shared files"] Log lines carry `v: 1`; a reader refuses a line from a newer format and names the
   upgrade. Logs under `.slipwai/logs/` are kept for the life of the feature and archived into the feature's
   directory when it closes, compressed, so the bill and the decisions stay auditable.
-- [Nice, proposed → theme D] The push for parks, banked fires and stalls uses the harness's own notification
+- [Nice → theme D, "The fleet board"] The push for parks, banked fires and stalls uses the harness's own notification
   hook where it has one, and otherwise a webhook URL in `harbour.json`, which covers Slack, Teams and a phone.
-- [Nice, proposed → section 1] Section 1 of this plan is extracted into `GLOSSARY.md` at the repository root
+- [Nice → section 11, slice 1.6] Section 1 of this plan is extracted into `GLOSSARY.md` at the repository root
   in phase 1, so the `wtf` skill and every session read one glossary.
-- [Nice, proposed → phase 8] Version 1 users hear about version 2 from the 2.0.0 changelog entry, the README
+- [Nice → section 11, slice 8.6] Version 1 users hear about version 2 from the 2.0.0 changelog entry, the README
   rewrite, and a final 1.5.x release whose `slipwai upgrade --check` names 2.0.0 and its migration page.
-- [Nice, proposed → section 7] The plan assumes one person with agents, and a second person or machine
+- [Nice → section 11, "Who does the work"] The plan assumes one person with agents, and a second person or machine
   joining from phase 5 to prove the fairways. The slice sizes are for that team; a larger one shortens the
   calendar, not the slice.
 
@@ -960,6 +973,10 @@ hours of work, one module or one skill, reviewed and refactored before it merges
 increment and the full gate before the merge (section 8). Every slice names the commit it comes from:
 upstream `main` at `e1a9e43` (1.5.2.dev0) or `slipwai-cruise-2` `main` at `c6f1e74`. "New" means written for
 version 2.
+
+**Who does the work.** The plan assumes one person with agents, and a second person or machine joining
+from phase 5 to prove the fairways. The slice sizes are for that team; a larger team shortens the calendar,
+not the slice.
 
 **Sizes are estimates, not commitments.** A slice is sized S (a session), M (a day), or L (two to three days,
 and a candidate for splitting). The first two phases calibrate the rest: after phase 2, replace the sizes below
@@ -1004,6 +1021,7 @@ against.
 | 1.3 | `scripts/check-structure.py` with its tiers, and the import surface as a tier that reads a list file | cruise-2 | M | The gate refuses an import against the direction; the surface list is empty and held |
 | 1.4 | CI: `verify.yml` with lint, typecheck, structure and unit on Linux, macOS, Windows and WSL; no matrix, no languages | upstream, cut down | M | Green on the fork, public, under Actions |
 | 1.5 | `AGENTS.md` for the fork: section 8's rules, the two gates, and nothing about versioning yet | new | S | A session reads it and knows the rules |
+| 1.6 | `GLOSSARY.md` at the repository root, extracted from section 1 and kept in step with it | new | S | The `wtf` skill and every session read one glossary |
 
 Depends on: the fork public (section 7). Phase 5 may start when 1.2 is green.
 
@@ -1109,6 +1127,7 @@ Depends on: 5.13 and 5.14. 7.1 first, then 7.2, then the rest in any order.
 | 8.3 | `migrate`: base from an installed 1.x, languages first, the rename table, in-flight work as data (section 6) | upstream + cruise-2 + new | L | `make test-migration` green for every profile and backend and the adopted fixtures |
 | 8.4 | The CI proposal's remaining items (per-package jobs, the root matrix retired) | cruise-2 | S | The keel's gate under ten minutes on CI |
 | 8.5 | `make release` to 2.0.0; the merge back to upstream; the Gitea decision | new | M | `v2.0.0` tagged, published, and upstream `main` is version 2 |
+| 8.6 | A final 1.5.x release whose `slipwai upgrade --check` names 2.0.0 and its migration page | upstream | S | A version 1 user is told where version 2 is and what moving costs |
 
 Depends on: everything before it.
 
