@@ -1143,9 +1143,13 @@ launcher — the first code where the distinction can go wrong. Decided 2026-10-
 | 2.4 | `language_directory.py`, `language_shape.py`, `loaded.py`, the loader and admission in two phases, and `registry()` as the built-once entry point | cruise-2 | M | A package directory loads whole or not at all; a bad one reports every fault in one line |
 | 2.5 | `conformance/` and `matrix/` as `python -m` entry points | cruise-2 | M | Both run against the template's toy package |
 | 2.6 | The six packages pinned as submodules under `packages/`; CI runs conformance across all six | cruise-2 | S | Six green rows in the gate, no language variant generated yet |
-| 2.7 | The one refusal shape: a fault type that renders to one line ending with the fixing command | new | M | Every refusal in 2.3 and 2.4 goes through it; the S20 wording tests collapse to one table |
+| 2.7 | The one refusal shape: `errors.py` with `Fault`, `Refusal` and `refuse`. **Runs before 2.3 and 2.4**, not after them | new + upstream | M | Every refusal in 2.3 and 2.4 goes through it; the experiment's nine wording-test files collapse to one table |
 
 Depends on: phase 1. 2.1 can start on day one.
+
+**Why 2.7 runs first.** Its own done-when says every refusal in 2.3 and 2.4 goes through the fault type,
+which cannot be true if the fault type arrives after them. It is written before them and the numbering is
+left alone: renumbering a slice is the thing version 2 exists partly to stop doing.
 
 **Why 2.2 is not what it first said.** It named `registry.py`, `loaded.py` and `manifest/` as one slice.
 They cannot be one: `loaded.py` imports `catalog`, `catalog_merge` and `language_directory`, which are 2.3
