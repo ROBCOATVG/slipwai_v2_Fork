@@ -171,10 +171,18 @@ class SurfaceTest(unittest.TestCase):
         listing = "# a comment\n\nslipwai.registry\n  slipwai.loaded  # why\n"
         self.assertEqual(structure.import_surface(listing), {"slipwai.registry", "slipwai.loaded"})
 
-    def test_the_surface_this_repository_ships_is_empty_and_still_read(self) -> None:
-        """Phase 1 promises nothing. The file exists so the gate holds it from the first package onward."""
+    def test_every_module_this_repository_promises_is_one_it_has(self) -> None:
+        """A surface line is a promise. One naming a module the keel has not got cannot be kept."""
         self.assertTrue(structure.SURFACE.is_file())
-        self.assertEqual(structure.import_surface(structure.SURFACE.read_text(encoding="utf-8")), set())
+        promised = structure.import_surface(structure.SURFACE.read_text(encoding="utf-8"))
+        self.assertTrue(promised, "the surface should not be empty once a module is promised")
+        self.assertLessEqual(promised, structure.keel_modules())
+
+    def test_the_surface_stays_under_the_ceiling(self) -> None:
+        """Twenty is what the six packages actually import, and the plan's ceiling. Past it, a package is
+        reaching into the keel rather than being answered by it."""
+        promised = structure.import_surface(structure.SURFACE.read_text(encoding="utf-8"))
+        self.assertLessEqual(len(promised), 20, sorted(promised))
 
 
 class RepositoryTest(unittest.TestCase):

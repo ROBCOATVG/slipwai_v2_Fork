@@ -6,10 +6,36 @@
 #
 # One dotted module name per line. Blank lines and `#` comments are ignored.
 #
-# The surface is empty until phase 2 brings the registry back. It grows one line at a time, and each line
-# is a promise: a module on this list cannot be renamed or removed without breaking a package built
-# somewhere this repository cannot see. The list being short is the point — twenty modules is the ceiling
-# the plan sets, not a target.
+# Every line is a promise: a module on this list cannot be renamed or removed without breaking a package
+# built somewhere this repository cannot see. The list being short is the point — twenty modules is the
+# ceiling the plan sets, not a target.
 #
 # Extensions are not on this schema. An extension's executable half is the `init.py` that runs inside a
 # generated project, where the keel is not installed and nothing of it can be imported.
+
+slipwai.assets
+slipwai.errors
+slipwai.registry
+
+# The rest of the twenty, with the phase that brings each. Read off the six packages on 2026-10-06: they
+# import 46 names across exactly 20 modules, which is where the plan's "exactly twenty" comes from. A line
+# moves up into the list above in the slice that lands its module, and not before — the gate refuses a
+# surface that promises a module the keel has not got.
+#
+#   slipwai.backends                      phase 3
+#   slipwai.images                        phase 3
+#   slipwai.naming                        phase 3
+#   slipwai.npm_workspace                 phase 3
+#   slipwai.probes                        phase 3
+#   slipwai.selection                     phase 3
+#   slipwai.services                      phase 3
+#   slipwai.tooling                       phase 3
+#   slipwai.project.backing_services      phase 3
+#   slipwai.project.ci_workflows          phase 3
+#   slipwai.project.composition           phase 3
+#   slipwai.project.entry_stores          phase 3
+#   slipwai.project.flag_route            phase 3
+#   slipwai.project.flags                 phase 3
+#   slipwai.project.openapi               phase 3
+#   slipwai.project.renovate              phase 3
+#   slipwai.project.shared_packages       phase 3

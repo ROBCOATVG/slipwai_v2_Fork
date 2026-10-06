@@ -1063,7 +1063,7 @@ open decision left either.
 
 ## 11. The implementation plan
 
-**Progress: 8 of 68 slices done** — phase 1 6/6, phase 2 2/7, phase 3 0/8, phase 4 0/7, phase 5 0/16, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 9 of 69 slices done** — phase 1 6/6, phase 2 3/7, phase 3 0/9, phase 4 0/7, phase 5 0/16, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1149,15 +1149,29 @@ launcher — the first code where the distinction can go wrong. Decided 2026-10-
 
 | Slice | What | From | Size | Done when | Status |
 |---|---|---|---|---|---|
-| 2.1 | Move the six package repositories under `ROBCOATVG`, public; create `slipwai-language-java-spring` from the `slice/S10-java-spring` content | cruise-2 | M | Six public repositories, each with its history, each with a green CI of its own |  |
+| 2.1 | The seven package repositories under `ROBCOATVG`, public, each with its history; `slipwai-language-java-spring` built from the experiment's `slice/S10-java-spring` lineage rather than the empty placeholder | cruise-2 | M | Seven public repositories, each with its history, each secret-scanned in tree and in history | done 676ae2a |
 | 2.2 | `assets.py` as the path head, `registry.py`, `family_only.py`, `docs/backend-protocol.md` and their tests | cruise-2 | M | The registry answers Members for a fake package in tests, and the contract page and `PROTOCOL` cannot drift | done 1841091 |
 | 2.3 | `catalog.json` with no backends, `catalog_merge.py`, `catalog.py` | cruise-2 | M | A fragment merges; a duplicate backend is refused with one line |  |
 | 2.4 | `language_directory.py`, `language_shape.py`, `loaded.py`, the loader and admission in two phases, and `registry()` as the built-once entry point | cruise-2 | M | A package directory loads whole or not at all; a bad one reports every fault in one line |  |
 | 2.5 | `conformance/` and `matrix/` as `python -m` entry points | cruise-2 | M | Both run against the template's toy package |  |
-| 2.6 | The six packages pinned as submodules under `packages/`; CI runs conformance across all six | cruise-2 | S | Six green rows in the gate, no language variant generated yet |  |
+| 2.6 | *Moved to phase 3 as 3.8 — see below.* | | |  |
 | 2.7 | The one refusal shape: `errors.py` with `Fault`, `Refusal` and `refuse`. **Runs before 2.3 and 2.4**, not after them | new + upstream | M | Every refusal in 2.3 and 2.4 goes through it; the experiment's nine wording-test files collapse to one table | done 357700a |
 
 Depends on: phase 1. 2.1 can start on day one.
+
+**Why 2.6 moved to phase 3.** Pinning the packages as submodules makes `check-structure` read them,
+and it refuses every import that is not on the surface. The six packages import 46 names across exactly
+twenty keel modules — which is where the plan's "exactly twenty" comes from, read off them on 2026-10-06 —
+and in phase 2 the keel has three of those twenty. Pinning them any earlier means either a red gate or a
+surface that promises modules the keel has not got, and the gate refuses that too, by design. It becomes
+3.8, after the parts land. `import-surface.txt` carries the other seventeen as comments meanwhile, so the
+contract is visible before it is enforceable.
+
+**Why 2.1 no longer asks for CI.** Its done-when said "each with a green CI of its own". None of the seven
+has a workflow: they were built inside the experiment, whose CI ran conformance over them as submodules.
+Giving each its own CI needs `python -m slipwai.conformance` to exist, which is 2.5, and the packages
+rebuilt onto the version 2 template, which is phase 2's build list. Slice 3.7 already owns per-package CI,
+so 2.1 was holding a requirement that belonged to another slice and could not be met where it stood.
 
 **Why 2.7 runs first.** Its own done-when says every refusal in 2.3 and 2.4 goes through the fault type,
 which cannot be true if the fault type arrives after them. It is written before them and the numbering is
@@ -1183,6 +1197,7 @@ refuses by and which nothing else imports. Found on 2026-10-06 while doing the s
 | 3.5 | Frontends and backing services, the `react-vite` npm-workspace contract | upstream + cruise-2 | M | The frontend variants match |  |
 | 3.6 | The pruner with rows emitted as data | cruise-2 | S | `scripts/backing-services.py` in a generated project carries no language name |  |
 | 3.7 | `make starters` and the full matrix per package, run from each package's CI, not the keel's | cruise-2 | M | The keel's gate stays under ten minutes; each package's CI proves its variants |  |
+| 3.8 | The seven packages pinned as submodules under `packages/`, and the import surface filled in to the twenty modules they import (was 2.6) | cruise-2 | M | `check-structure` reads every package and finds no import off the surface; the surface is twenty lines and every one names a module the keel has |  |
 
 Depends on: phase 2.
 
