@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -295,7 +296,7 @@ class ReplayTest(FactoryTestCase):
 
     def test_replay_is_a_verb_with_its_own_help(self) -> None:
         shown = subprocess.run(
-            [str(ROOT / "slipwai"), "replay", "--help"], check=True, text=True, stdout=subprocess.PIPE
+            [sys.executable, "-m", "slipwai", "replay", "--help"], check=True, text=True, stdout=subprocess.PIPE
         )
         self.assertTrue(shown.stdout.startswith("usage: slipwai replay"), shown.stdout.splitlines()[0])
         self.assertIn("--into", shown.stdout)

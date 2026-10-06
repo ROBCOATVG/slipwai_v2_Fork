@@ -13,6 +13,7 @@ import base64
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 import unittest
@@ -102,7 +103,7 @@ class UpgradeTest(unittest.TestCase):
 
     def run_upgrade(self, *arguments: str, **environment: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
-            [str(ROOT / "slipwai"), "upgrade", *arguments],
+            [sys.executable, "-m", "slipwai", "upgrade", *arguments],
             text=True,
             capture_output=True,
             env={**os.environ, **environment},

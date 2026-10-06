@@ -18,7 +18,7 @@ from pathlib import Path
 import checkout_packages
 
 from slipwai import language_directory
-from slipwai.assets import ROOT, this_command
+from slipwai.assets import this_command
 from slipwai.language_directory import VARIABLE, Package, Refused, directory, import_package, read
 
 # The keel schema version the fakes are written against; `catalog.py` passes the real one.
@@ -298,7 +298,7 @@ class EndToEndTest(unittest.TestCase):
         environment.pop("CRUISE_RUNNER", None)
         environment.pop("CRUISE_ITERATION", None)
         return subprocess.run(
-            [str(ROOT / "slipwai"), *arguments, "--output", str(output)],
+            [sys.executable, "-m", "slipwai", *arguments, "--output", str(output)],
             capture_output=True, text=True, env=environment, check=False,
         )
 

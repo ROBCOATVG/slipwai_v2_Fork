@@ -8,12 +8,12 @@ from __future__ import annotations
 import os
 import socket
 import subprocess
+import sys
 import unittest
 from pathlib import Path
 
 import checkout_packages  # noqa: F401
 
-from slipwai.assets import ROOT
 from slipwai.catalog import CATALOG
 from slipwai.scaffold import NO_MAINTENANCE
 
@@ -65,6 +65,14 @@ def commit_all(repo: Path, message: str) -> None:
     )
 
 
+
+# `./slipwai` is a `#!/bin/sh` launcher, which Windows cannot execute — so a test that runs the command
+# runs it the way `python -m` does, which works everywhere and is the same code. The launcher itself is
+# proven by the CI smoke step, on all three platforms, which is where proving it belongs.
+def command(*arguments: str) -> list[str]:
+    """The argv that runs this checkout's slipwai, on any platform."""
+    return [sys.executable, "-m", "slipwai", *arguments]
+
 class FactoryTestCase(unittest.TestCase):
     """A test that can scaffold a project the way a caller would: through `./slipwai generate`."""
 
@@ -81,7 +89,7 @@ class FactoryTestCase(unittest.TestCase):
         `auth="keycloak"` — and any axis left unnamed keeps its catalog default. `target="none"` passes the
         production target the same way."""
         arguments = [
-            str(ROOT / "slipwai"),
+            *command(),
             "generate",
             name,
             "--profile",
@@ -114,7 +122,7 @@ class FactoryTestCase(unittest.TestCase):
 
     def refuse(self, parent: str | Path, name: str, **options: str) -> str:
         """Generate and expect a refusal, returning what it said."""
-        arguments = [str(ROOT / "slipwai"), "generate", name, "--output", str(parent)]
+        arguments = [*command("generate", name, "--output", str(parent))]
         for key, value in options.items():
             arguments += [f"--{key.replace('_', '-')}", value]
         result = subprocess.run(arguments, text=True, capture_output=True)
