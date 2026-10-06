@@ -1152,7 +1152,7 @@ open decision left either.
 
 ## 11. The implementation plan
 
-**Progress: 25 of 83 slices done** — phase 1 6/6, phase 2 7/9, phase 3 12/19, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 26 of 83 slices done** — phase 1 6/6, phase 2 7/9, phase 3 13/19, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1262,6 +1262,15 @@ dependency order, and cutting slices by it is what produced those two.
 So the slices are cut against the waves, and `make next` is how the next one is chosen. The ledger is
 data, re-read rather than remembered: `scripts/bring-back.py --check` runs in the gate and fails when the
 keel holds a module the ledger does not know, so the next reading is never stale.
+
+**What 3.9 can and cannot prove, and why that is right.** The conformance suite runs against the toy
+on every commit, which is the keel's half of the bargain: a package's own CI is then running something
+known to work. Two of its seven checks are generation probes and stay red until `generate` exists at
+4.1, which is honest — the suite is reporting that this keel cannot yet generate, because it cannot.
+The matrix cannot run against the toy at all: the toy answers no HTTP option but `none`, so there are
+no variants to generate and nothing to run a native gate against. That is the toy being inert by
+design, not a gap. The matrix is proven in a package's own CI, which slice 3.7 already owns, and its
+refusal now names the toy's missing transport and points at the suite that does hold a package like it.
 
 **Why 3.8 runs before 3.4.** It was last in the phase, after the targets and the frontends. By the end
 of 3.3z thirty-one tests were skipped on it, nearly all of them the suites that generate a project —
@@ -1375,7 +1384,7 @@ refuses by and which nothing else imports. Found on 2026-10-06 while doing the s
 | 3.5 | Frontends and backing services, the `react-vite` npm-workspace contract | upstream + cruise-2 | M | The frontend variants match |  |
 | 3.6 | The pruner with rows emitted as data | cruise-2 | S | `scripts/backing-services.py` in a generated project carries no language name |  |
 | 3.7 | `make starters`, and the full matrix per package run from each package's CI against a pinned keel, never from the keel's | cruise-2 | M | The keel's gate stays under ten minutes and reads one package, the toy; each package's CI proves its own variants |  |
-| 3.9 | `conformance/` and `matrix/` as `python -m` entry points (was 2.5) | cruise-2 | L | Both run against the template's toy package |  |
+| 3.9 | `conformance/` and `matrix/` as `python -m` entry points (was 2.5) | cruise-2 | L | `python -m slipwai.conformance packages toy` runs in the gate and its five static checks pass; the matrix refuses the toy by name and says what to run instead. The two generation probes need the `generate` verb and light up at 4.1 | done |
 
 Depends on: phase 2.
 

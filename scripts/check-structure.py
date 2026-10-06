@@ -66,7 +66,10 @@ TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("assembly", ("unlabel", "next_steps", "scaffold", "adopt_report")),
     # The command line, and the entry point the executable is built from.
     ("edge", ("cli", "__main__", "preflight", "upgrade", "cli_confirm", "cli_init",
-              "cli_prompts")),
+              "cli_prompts",
+              # The conformance suite a package runs against itself, and its generated-variant
+              # matrix: entry points the keel exports rather than modules it reads.
+              "conformance", "matrix")),
     # The package's own `__init__`: last, so it may name anything and nothing may name it.
     ("package", ("__init__",)),
 )
