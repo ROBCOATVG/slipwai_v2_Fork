@@ -1116,7 +1116,7 @@ open decision left either.
 
 ## 11. The implementation plan
 
-**Progress: 12 of 72 slices done** — phase 1 6/6, phase 2 6/9, phase 3 0/9, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 13 of 72 slices done** — phase 1 6/6, phase 2 7/9, phase 3 0/9, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1209,7 +1209,7 @@ launcher — the first code where the distinction can go wrong. Decided 2026-10-
 | 2.5 | `conformance/` and `matrix/` as `python -m` entry points | cruise-2 | M | Both run against the template's toy package |  |
 | 2.6 | *Moved to phase 3 as 3.8 — see below.* | | |  |
 | 2.8 | The catalogue's validators, which `catalog.py` reads: `features.py`, `targets.py`, `extensions.py`, `axes.py`, and `assets/backing-services/prune.py`, the one asset tree the keel reads for itself | cruise-2 | L | Each refuses a malformed option, entry or extension, named by axis and option; nothing in them names a language. The whole-catalogue checks are 2.3's, with the `catalog.json` they mirror | done |
-| 2.9 | `loaded.py` and `registry()`: the registry built once from the catalogue and the directory | cruise-2 | M | `registry()` answers for a package installed into a temporary directory, and a faulty package is refused with every fault at once |  |
+| 2.9 | `loaded.py`, `registry()`, and `inside`/`located` in `assets.py` so a package reads its own `assets/` and nothing else | cruise-2 | M | `registry()` builds once per process and is empty with nothing installed; a faulty package is a line and not a crash | done |
 | 2.7 | The one refusal shape: `errors.py` with `Fault`, `Refusal` and `refuse`. **Runs before 2.3 and 2.4**, not after them | new + upstream | M | Every refusal in 2.3 and 2.4 goes through it; the experiment's nine wording-test files collapse to one table | done |
 
 Depends on: phase 1. 2.1 can start on day one.

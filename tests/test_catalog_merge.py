@@ -18,7 +18,7 @@ from slipwai.assets import ROOT
 from slipwai.catalog_checks import validate_backends
 from slipwai.catalog_merge import merge, retract
 from slipwai.language_directory import Package, read
-from slipwai.registry import RegistryError, check_catalog, load
+from slipwai.registry import RegistryError, check_catalog, registry
 
 # Every package this checkout pins, in the order the directory reads them. None until slice 3.8.
 PINNED = sorted(
@@ -238,7 +238,7 @@ class OverTheMergeTest(unittest.TestCase):
     def test_the_registry_check_sees_a_merged_row_no_registry_object_answers(self) -> None:
         merged, _ = merge(copy.deepcopy(CORE), [package("zed", 25, defaults={"http": "none"})])
         with self.assertRaisesRegex(RegistryError, "backend zed is in catalog.json with no registry object"):
-            check_catalog(merged, load([]))
+            check_catalog(merged, registry())
 
 
 class RetractTest(unittest.TestCase):

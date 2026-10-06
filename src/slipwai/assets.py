@@ -10,6 +10,7 @@ them. There are no language or extension assets to name: those live in their pac
 """
 from __future__ import annotations
 
+import posixpath
 import shlex
 import shutil
 import sys
@@ -65,6 +66,34 @@ def this_command(kind: str | None = None, executable: Path | None = None,
         found = on_path("slipwai")
         return "slipwai" if found and Path(found).resolve() == own else shlex.quote(str(own))
     return "slipwai"
+
+
+def inside(root: Path, relative: str, package: Path | None = None) -> Path:
+    """`root / relative`, or a refusal where that path leaves `root`: a package reads its own `assets/` only.
+
+    Where `package` is named, `root` is held inside it as well, once resolved: an `assets/` that is itself
+    a link out of the package is the same escape as a `..`, and `root.resolve()` alone would call it home.
+    """
+    if package is not None and not root.resolve().is_relative_to(package.resolve()):
+        raise ValueError(f"reaches outside its directory for {relative}")
+    if not (root / relative).resolve().is_relative_to(root.resolve()):
+        raise ValueError(f"reaches outside its directory for {relative}")
+    return root / relative
+
+
+def located(roots: tuple[Path, ...], relative: str, tree: bool = False) -> tuple[Path, Path] | None:
+    """The first of `roots` whose `assets/<relative>` is a file (a directory for a tree), and that path;
+    None where none holds it. The path is normalised first, so `<backend>/../<family>/x` is found under a
+    family's root that has no `<backend>/`, and each root is still held by `inside`."""
+    normal = posixpath.normpath(relative)
+    for root in roots:
+        try:
+            path = inside(root / "assets", normal, root)
+        except ValueError:
+            continue
+        if path.is_dir() if tree else path.is_file():
+            return root, path
+    return None
 
 
 def _load_pruner() -> Any:
