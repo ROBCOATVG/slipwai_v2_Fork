@@ -1141,7 +1141,7 @@ open decision left either.
 
 ## 11. The implementation plan
 
-**Progress: 13 of 73 slices done** — phase 1 6/6, phase 2 7/9, phase 3 0/10, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 13 of 74 slices done** — phase 1 6/6, phase 2 7/9, phase 3 0/11, phase 4 0/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1239,6 +1239,19 @@ launcher — the first code where the distinction can go wrong. Decided 2026-10-
 
 Depends on: phase 1. 2.1 can start on day one.
 
+**How phase 3's slices are cut, and why not by assembly order.** `docs/bring-back.tsv` records what
+every module of the experiment imports and which asset trees it reads; `make next` reads it against this
+keel and says what is buildable. Run on 2026-10-06 with phase 2 complete, it gives 157 modules in
+fourteen waves, and it contradicted two slices outright. 3.1 bundled `layout.py`, which waits on nothing,
+with `toolkit.py`, which is ten waves later and needs two asset trees. 3.2 paired `services.py` with
+`scaffold.py`: `services` is in the first wave and `scaffold` imports forty modules and is in the last
+but four. Assembly order — the order `scaffold.project_files` puts a project together in — is not
+dependency order, and cutting slices by it is what produced those two.
+
+So the slices are cut against the waves, and `make next` is how the next one is chosen. The ledger is
+data, re-read rather than remembered: `scripts/bring-back.py --check` runs in the gate and fails when the
+keel holds a module the ledger does not know, so the next reading is never stale.
+
 **Why 2.5 moved to phase 3.** The conformance suite proves a package by generating a project with it:
 `conformance/generation.py` reads `images` and `project.flag_route`, `probe.py` reads `examples`,
 `rows.py` reads `services` and `project.backing_services`, `version_rule.py` reads `changelog`, and
@@ -1324,9 +1337,10 @@ refuses by and which nothing else imports. Found on 2026-10-06 while doing the s
 
 | Slice | What | From | Size | Done when | Status |
 |---|---|---|---|---|---|
-| 3.1 | `assets.py`, `toolkit.py`, `layout.py`, and the asset trees they read | upstream | M | Toolkit files materialise for both profiles |  |
-| 3.2 | `scaffold.py` and `services.py`, asking the registry | upstream + cruise-2 | L | `project_files()` returns a tree for one typescript variant equal to cruise-2's |  |
-| 3.3 | The `project/*.py` parts, in assembly order, one slice per group: Makefile and CI; README and AGENTS; docs; flags and composition; event model; the rest | upstream | 6 × M | After each group, `make starters` diffs empty against cruise-2 for the variants that group touches |  |
+| 3.1 | The parts that wait on nothing: `backends.py`, `naming.py`, `probes.py`, `layout.py`, `selection.py`, `origin.py`, `ecosystems.py`, `npm_workspace.py`, `changelog.py`, then `services.py` | upstream + cruise-2 | L | `make next` shows the first wave empty; each module is in a tier and the gate is green after every one |  |
+| 3.2 | `assets.py` grown to the asset trees, `examples.py`, `tooling.py`, `capabilities.py` and `toolkit.py`: the first slice that reads an asset tree | upstream | L | Toolkit files materialise for both profiles |  |
+| 3.3 | The `project/*.py` parts, cut against `make next` rather than against assembly order, one slice per wave: the forty that wait on nothing, then composition and flags, then the pages and the workflows, then the rest | upstream | 6 × M | After each group, `make starters` diffs empty against cruise-2 for the variants that group touches |  |
+| 3.3b | `scaffold.py`, last of the parts and not first: it imports forty of them | upstream + cruise-2 | M | `project_files()` returns a tree for one typescript variant equal to cruise-2's |  |
 | 3.4 | Targets `aws` and `azure`, their stacks and docs, as the **liner** shape | upstream | L | Stack validation tests green |  |
 | 3.4b | The **skiff** shape for both targets: a Lightsail container service and a scale-to-zero Container App, one environment, the shape question in the interview, `converge --shape`; the compute named in one row of the target's table, not spread through its stack | new | L | Both shapes validate against the real providers; a slipway project generates a skiff by default; changing a skiff's compute is one row and its stack file |  |
 | 3.5 | Frontends and backing services, the `react-vite` npm-workspace contract | upstream + cruise-2 | M | The frontend variants match |  |

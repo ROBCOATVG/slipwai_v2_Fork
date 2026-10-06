@@ -1,0 +1,178 @@
+# Every module version 2 has to bring back, what it imports, and the asset trees it reads.
+# Read from slipwai-cruise-2 c6f1e74 on 2026-10-06 by scripts/bring-back.py --read.
+# Data, not a plan: scripts/bring-back.py turns it into what is buildable now.
+module	lines	needs	assets
+__init__	6		
+__main__	6		
+add_service	320	assets catalog errors layout manifest origin project.pruner scaffold selection services targets toolkit	PRUNER
+adopt	297	adopt_report assets errors layout origin platform project.adopted project.adopted_ci project.agent_settings project.gitignore project.pin_commands project.run_skill project.strangle_command project.structure_page scaffold services strategy structure survey toolkit wrappers	
+adopt_report	312	assets convergence harness layout origin programme services survey wrappers	
+assets	243	errors	ADOPTION_ROOT BACKING_SERVICE_ROOT FRONTEND_ROOT LANGUAGE_ROOT PROFILE_ROOT PRUNER TOOLKIT_ROOT
+axes	198	assets features targets	PRUNER
+backends	90		
+browser_app	130	assets catalog language_directory language_index language_install language_plan loaded npm_workspace versions	
+capabilities	100	catalog services	
+catalog	350	assets axes catalog_merge errors extensions language_directory registry targets	PRUNER
+catalog_merge	291	assets language_directory versions	
+catch_up	296	assets catalog changelog manifest versions	
+changelog	98	assets versions	
+cli	330	assets browser_app catalog cli_add cli_adopt cli_language cli_prompts errors language_directory language_upkeep loaded preflight registry scaffold selection services targets upgrade	
+cli_add	309	add_service assets browser_app catalog cli_language converge errors language_directory language_index language_plan manifest migrate npm_workspace registry replay upgrade	
+cli_adopt	340	adopt catalog cli_confirm cli_init cli_interview cli_prompts confirm ecosystems errors harness layout manifest next_steps origin resurvey survey	
+cli_confirm	64	errors	
+cli_init	125	harness	
+cli_interview	91	cli_prompts origin services survey	
+cli_language	350	browser_app catalog errors language_directory language_index language_install language_plan language_upkeep loaded registry targets versions	
+cli_prompts	346	catalog errors services targets	
+confirm	198	adopt ecosystems errors layout manifest manifest.languages origin resurvey services survey uncommitted	
+conformance	12	conformance.case conformance.run	
+conformance.__main__	62	assets conformance.run	
+conformance.case	68	conformance.run	
+conformance.child	76	conformance.lines	
+conformance.generation	146	catalog conformance.child images project.flag_route registry	
+conformance.lines	10		
+conformance.probe	209	catalog conformance.generation conformance.rows errors examples language_directory loaded registry	
+conformance.rows	71	assets catalog conformance.generation project.backing_services registry services	PRUNER
+conformance.run	114	conformance.child conformance.version_rule	
+conformance.version_rule	181	assets changelog conformance.lines versions	
+converge	266	assets errors layout manifest migrate origin project.adopted project.gitignore replay scaffold unlabel	
+convergence	255	origin services	
+delivery_facts	147	ecosystems	
+ecosystems	349		
+errors	48		
+examples	184	assets catalog errors registry	PROFILE_ROOT TOOLKIT_ROOT
+extensions	37		
+family_only	141		
+features	99	errors	
+harness	155	assets	TOOLKIT_ROOT
+images	194	backends registry	
+language_directory	308	assets errors language_shape registry versions	
+language_index	309	assets errors language_shape upgrade versions	
+language_install	334	assets catalog catalog_merge errors language_directory language_release language_shape loaded registry	
+language_plan	350	catalog errors language_index language_install language_release manifest versions	
+language_release	229	errors language_directory language_shape	
+language_shape	99	versions	
+language_upkeep	301	assets errors language_directory language_index language_install language_plan language_release upgrade versions	
+layout	133	errors	
+loaded	229	assets catalog catalog_merge errors language_directory registry	
+manifest	35	manifest.languages manifest.reading origin	
+manifest.languages	188	assets catalog errors language_directory language_shape registry services versions	
+manifest.reading	297	assets catalog errors loaded manifest.languages npm_workspace registry selection services	
+matrix	15	matrix.case matrix.rows matrix.run	
+matrix.__main__	96	assets conformance.run matrix.case matrix.run matrix.suite	
+matrix.case	141	matrix.images matrix.rows matrix.run	
+matrix.images	135		
+matrix.plan	58	catalog conformance.probe images matrix.rows probes registry	
+matrix.rows	76	axes	
+matrix.run	126	conformance conformance.run matrix.rows	
+matrix.suite	73	conformance.run matrix.case	
+migrate	350	assets catch_up errors layout manifest replay scaffold unlabel	
+naming	36		
+next_steps	195	convergence layout origin services	
+npm_workspace	85	errors registry	
+origin	194	errors	
+platform	319	assets ecosystems origin services	ADOPTION_ROOT
+preflight	97	catalog errors targets	
+probes	39	registry	
+programme	224	ecosystems origin services	
+project	6		
+project.add_commands	238	catalog services toolkit	
+project.adopted	337	catalog layout origin project.adopted_ci project.drive_adoption project.shared_packages services	
+project.adopted_ci	151	layout services	
+project.adopted_targets	84	layout services	
+project.adversary	136		
+project.agent_settings	191	catalog layout npm_workspace project.compose registry services targets	
+project.agent_targets	48		
+project.agents	299	layout project.converge_stage project.cruise_agents project.design_stage project.stage_models	
+project.aws_docs	259	images probes project.flags project.provisioning services	
+project.azure_docs	271	images probes project.flags project.provisioning services	
+project.backing_service_prose	237	catalog registry services toolkit	
+project.backing_services	149	assets project.compose project.pruner registry selection services toolkit	BACKING_SERVICE_ROOT
+project.benchmark	141	layout	
+project.biome	61	assets npm_workspace project.shared_packages services	FRONTEND_ROOT
+project.catch_up_command	132	assets catalog services targets toolkit	
+project.ci_services	49		
+project.ci_workflows	246	backends layout npm_workspace project.ci_services registry services tooling	
+project.commands	345	catalog layout origin project.add_commands project.adversary project.benchmark project.catch_up_command project.converge_stage project.cruise project.cruise_seat project.demo_stop project.design_stage project.drive_adoption project.drive_settings project.existing project.flags project.mutation project.parallel_slices project.stage_models project.whats_next project.where_are_we services targets	
+project.compose	135	backends npm_workspace probes registry services tooling	
+project.composition	85	project.entry_stores registry selection	
+project.constitution_journey	98	assets convergence	PROFILE_ROOT
+project.converge_stage	75		
+project.convergence_page	63	convergence layout	
+project.cruise	331	layout origin project.cruise_agents project.cruise_hand project.cruise_record project.cruise_seat project.cruise_stops project.cruise_told project.cruise_unblock services	
+project.cruise_agents	163	layout	
+project.cruise_hand	43	project.cruise_agents project.cruise_record	
+project.cruise_record	63	project.cruise_agents	
+project.cruise_seat	155	layout project.cruise_agents project.cruise_record project.cruise_told	
+project.cruise_stops	89	origin project.cruise_agents	
+project.cruise_told	47	project.cruise_agents	
+project.cruise_unblock	68	project.cruise_agents	
+project.decisions	100	project.cruise project.cruise_agents project.cruise_record	
+project.demo_stop	115		
+project.deploy_workflow	348	images project.ci_workflows services	
+project.design_page	163	project.openapi services	
+project.design_stage	72		
+project.docs	284	catalog project.backing_service_prose project.commands project.design_page project.event_model project.evolving project.existing project.flags project.pins project.skills_page registry services targets	
+project.docs_index	76		
+project.drive_adoption	197	layout services	
+project.drive_settings	127	layout	
+project.entry_stores	72		
+project.event_model	287	assets backends project.model_to_code registry	TOOLKIT_ROOT
+project.evolving	52		
+project.existing	133	catalog origin project.flags services targets	
+project.flag_route	166	assets catalog registry selection targets	
+project.flags	275	assets catalog errors registry services targets	
+project.frontend	252	assets backends catalog errors npm_workspace probes project.openapi project.shared_packages services targets tooling	FRONTEND_ROOT PRUNER
+project.gitignore	153	assets catalog extensions npm_workspace project.cruise_record project.openapi project.shared_packages registry services targets	TOOLKIT_ROOT
+project.ground_command	342	convergence layout origin services	
+project.guidance	333	catalog npm_workspace project.compose project.existing project.flags project.rules registry services targets	
+project.infra	183	assets catalog images probes project.flag_route project.provisioning project.target_docs registry services targets tooling	TARGET_ROOT
+project.init_languages	41		
+project.init_production	74		
+project.init_script	349	catalog extensions layout project.init_languages project.init_production project.pins project.rules services targets	
+project.integration	79	project.native_commands services tooling	
+project.languages	39	registry services tooling	
+project.makefile	326	backends catalog layout probes project.adopted_targets project.agent_targets project.compose project.flags project.integration project.model_targets project.mutation project.native_commands project.openapi project.production project.shared_packages registry services targets tooling	
+project.metadata	77	assets capabilities catalog layout manifest origin project.pins project.shared_packages services	
+project.model_targets	51		
+project.model_to_code	60		
+project.mutation	54	backends registry services	
+project.native_commands	173	npm_workspace registry services tooling	
+project.openapi	158	catalog naming project.shared_packages registry selection services targets tooling	
+project.parallel_slices	138	layout	
+project.pin_commands	173	layout project.add_commands services	
+project.pins	97	backends project.shared_packages registry services	
+project.production	154	images services targets	TARGET_ROOT
+project.provisioning	24	catalog services targets	
+project.pruner	67	assets registry	BACKING_SERVICE_ROOT PRUNER
+project.readme	350	catalog project.backing_service_prose project.event_model project.existing project.rules project.target_docs services targets	
+project.renovate	189	project.shared_packages registry services	
+project.repository	165	catalog services targets	
+project.rules	256	services	
+project.run_skill	335	layout probes services	
+project.shared_packages	161	catalog npm_workspace services targets	
+project.skills_page	97	assets capabilities services toolkit	TOOLKIT_ROOT
+project.stage_models	317	assets layout	TOOLKIT_ROOT
+project.strangle_command	229	assets catalog layout origin programme services strategy targets	ADOPTION_ROOT
+project.structure_page	202	assets layout origin programme structure	
+project.target_docs	104	errors project.aws_docs project.azure_docs services	
+project.whats_next	69	project.cruise_seat project.demo_stop	
+project.where_are_we	95	catalog project.cruise_seat project.demo_stop targets	
+quick_wins	211	ecosystems	
+registry	347	assets family_only	
+replay	306	assets errors layout manifest origin project.adopted project.design_page project.pruner scaffold services	
+resurvey	348	adopt adopt_report convergence errors layout manifest origin platform programme project.adopted project.structure_page scaffold services strategy structure survey toolkit uncommitted wrappers	
+scaffold	248	assets catalog layout origin project.adopted project.agent_settings project.agents project.backing_services project.biome project.ci_workflows project.commands project.constitution_journey project.convergence_page project.cruise project.decisions project.deploy_workflow project.docs project.docs_index project.drive_settings project.event_model project.existing project.frontend project.gitignore project.ground_command project.guidance project.infra project.init_script project.languages project.makefile project.metadata project.pin_commands project.pins project.pruner project.readme project.renovate project.repository project.run_skill project.shared_packages project.stage_models project.strangle_command services targets toolkit	ADOPTION_ROOT
+selection	237	assets catalog errors features	PRUNER
+services	350	backends catalog errors npm_workspace selection	
+strategy	207	convergence layout origin programme services	
+structure	350	ecosystems services survey	
+survey	321	delivery_facts ecosystems origin quick_wins	
+targets	270	assets errors	PRUNER TARGET_ROOT
+tooling	75	backends registry services	
+toolkit	223	assets capabilities catalog examples registry services tooling	PROFILE_ROOT TOOLKIT_ROOT
+uncommitted	93	assets errors	
+unlabel	155	layout	
+upgrade	336	assets errors versions	
+versions	177		
+wrappers	147	assets ecosystems layout services	ADOPTION_ROOT

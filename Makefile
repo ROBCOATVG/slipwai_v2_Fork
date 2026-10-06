@@ -47,9 +47,14 @@ glossary: ## Rewrite GLOSSARY.md from the plan's vocabulary (tests/test_glossary
 progress: ## Tick off in the plan the slices the history says are done
 	python3 scripts/progress.py
 
+.PHONY: next
+next: ## What can be brought back next, and what each remaining module waits on
+	python3 scripts/bring-back.py
+
 .PHONY: check-structure
 check-structure: ## Fail when a module imports against the declared direction, cycles, or outgrows its budget
 	python3 scripts/check-structure.py
+	python3 scripts/bring-back.py --check
 
 .PHONY: verify
 verify: lint typecheck check-structure test ## Full local gate — the same one CI runs
