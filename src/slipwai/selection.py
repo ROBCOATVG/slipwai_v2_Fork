@@ -2,7 +2,15 @@
 from __future__ import annotations
 
 from .assets import PRUNER
-from .catalog import CATALOG, axis_applies, axis_choices, axis_default, axis_options, axis_required
+from .catalog import (
+    CATALOG,
+    axis_applies,
+    axis_choices,
+    axis_default,
+    axis_inferred,
+    axis_options,
+    axis_required,
+)
 from .errors import GenerationError
 from .features import axis_of, feature_declaring, known_features
 
@@ -142,7 +150,12 @@ def resolve_selection(
         chosen = named.get(axis)
         offered = axis_options(axis, backend, target)
         if chosen is None:
-            if axis_applies(axis, profile, backend, target):
+            # An axis nobody answered takes its default when it was a question, and when it was never one
+            # because the answer follows from the backend: an inferred axis is not asked, but its answer
+            # is still the backend's own — `--backend go` is a net/http service, not a project with no
+            # transport that happens to be in Go.
+            inferred = axis_inferred(axis) and profile in spec["profiles"]
+            if axis_applies(axis, profile, backend, target) or inferred:
                 choices[axis] = axis_default(axis, backend, target)
             continue
         if chosen not in axis_choices(axis):

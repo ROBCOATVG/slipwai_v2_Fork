@@ -20,6 +20,7 @@ from slipwai.assets import PRUNER, ROOT
 from slipwai.catalog import CATALOG, axis_applies, axis_default
 from slipwai.catalog_options import declare_options
 from slipwai.language_directory import Package
+from slipwai.selection import resolve_selection
 
 KEEL = json.loads((ROOT / "catalog.json").read_text(encoding="utf-8"))
 
@@ -117,6 +118,19 @@ class InferredTest(unittest.TestCase):
 
     def test_the_answer_is_the_backends_own_default(self) -> None:
         self.assertEqual(axis_default("http", "toy-plain", "none"), "toy-serve")
+
+    def test_a_project_given_no_http_flag_gets_the_backends_transport(self) -> None:
+        """Not asked is not "none": the first real packages exposed a selection that skipped the inferred
+        axis along with the questions, so every generated service had no transport and `--auth keycloak`
+        was refused for want of a redirect endpoint."""
+        for profile in KEEL["profiles"]:
+            with self.subTest(profile=profile):
+                selection = resolve_selection({}, profile, "toy-plain", "none")
+                self.assertEqual(selection.option("http"), "toy-serve")
+
+    def test_none_is_still_an_answer_when_given(self) -> None:
+        selection = resolve_selection({"http": "none"}, "event-modelling", "toy-plain", "none")
+        self.assertEqual(selection.option("http"), "none")
 
     def test_a_backend_that_serves_nothing_still_answers_none(self) -> None:
         """`none` is not a choice any more; it is what a backend with no transport, or an adopted

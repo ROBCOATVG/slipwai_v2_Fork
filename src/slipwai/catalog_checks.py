@@ -24,6 +24,7 @@ from .axes import validate_axes
 from .catalog import PACKAGES, SCHEMA_VERSION, catalog_families
 from .errors import Fault, Refusal
 from .extensions import validate_extensions
+from .features import known_features
 from .registry import PRUNE_ROWS, Registry, check_catalog, registry
 from .targets import validate_targets
 
@@ -60,7 +61,7 @@ def _check_catalog(catalog: dict, loaded: Registry | None = None) -> None:
     # The pruner runs inside a generated project and reads each family's rows, which the registry supplies;
     # rows it cannot read would fail at the first prune, inside generation, naming nothing a reader would
     # connect to the language that wrote them. So they are held to the script up front.
-    check_prune_rows(registered, PRUNER)
+    check_prune_rows(registered, PRUNER, catalog)
     if set(catalog.get("frontends", {})) != {"none", "react-vite"}:
         raise ValueError("catalog must define the none and react-vite frontend capabilities")
     default = catalog["default"]
@@ -121,8 +122,13 @@ def _escapes(owner: str, key: str, paths: object) -> list[str]:
     ]
 
 
-def row_faults(owner: str, rows: object, pruner: ModuleType) -> list[str]:
-    """What the pruning script could not read in one family's `prune_rows`, each fault a phrase naming `owner`."""
+def row_faults(owner: str, rows: object, pruner: ModuleType, brought: frozenset[str] = frozenset()) -> list[str]:
+    """What the pruning script could not read in one family's `prune_rows`, each fault a phrase naming `owner`.
+
+    `brought` is every feature a loaded package's option declared. The shipped pruner's `FEATURES` are the
+    keel's own; a transport's — `fastify`, `net-http` — arrives with the option that owns it and is folded
+    into the project's copy at generation, so a family's rows may name it as readily as `postgres`.
+    """
     if not isinstance(rows, dict) or set(rows) != set(ROW_KEYS):
         keys = sorted(rows) if isinstance(rows, dict) else type(rows).__name__
         return [f"{owner} answers prune_rows with keys {keys}, where the contract fixes {ROW_KEYS}"]
@@ -143,7 +149,7 @@ def row_faults(owner: str, rows: object, pruner: ModuleType) -> list[str]:
         faults += _escapes(owner, "owned_files", paths)
     faults += [
         f"{owner}'s prune_rows name {feature}, which is not a feature the pruner knows"
-        for feature in sorted({*owned, *edits} - set(pruner.FEATURES))
+        for feature in sorted({*owned, *edits} - set(pruner.FEATURES) - brought)
     ]
     if manifest is not None and (not isinstance(manifest, str) or manifest not in pruner.UNINSTALLERS):
         faults.append(f"{owner}'s manifest {manifest!r} is not one the pruner can uninstall from")
@@ -163,7 +169,7 @@ def _emitted(rows: object) -> object:
         return repr(rows)
 
 
-def check_prune_rows(loaded: Registry, pruner: ModuleType) -> None:
+def check_prune_rows(loaded: Registry, pruner: ModuleType, catalog: dict | None = None) -> None:
     """Refuse `prune_rows` the pruning script cannot read, and two backends of one family answering differently.
 
     The script reads a service's `language`, which is the family, so a family has one set of rows; a backend
@@ -171,12 +177,13 @@ def check_prune_rows(loaded: Registry, pruner: ModuleType) -> None:
     """
     faults: list[str] = []
     first: dict[str, tuple[str, object]] = {}
+    brought = frozenset(known_features(catalog)) if catalog else frozenset()
     for key, backend in loaded.backends.items():
         rows = loaded.answer(key, PRUNE_ROWS)
         family = backend.family
         if family not in first:
             first[family] = (key, rows)
-            faults += row_faults(f"family {family}", rows, pruner)
+            faults += row_faults(f"family {family}", rows, pruner, brought)
         elif _emitted(rows) != _emitted(first[family][1]):
             faults.append(
                 f"backend {key} answers prune_rows differently from backend {first[family][0]} of "

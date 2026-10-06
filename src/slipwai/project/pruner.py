@@ -17,8 +17,8 @@ The format is fixed in `specs/001-slipwai-2-language-addons/contracts/backend-pr
 from __future__ import annotations
 
 import functools
-import importlib.util
 import json
+import sys
 from collections.abc import Iterable
 from types import ModuleType
 from typing import Any
@@ -93,11 +93,16 @@ def emitted(families: Iterable[str], source: str | None = None) -> str:
 
 @functools.cache
 def pruner() -> ModuleType:
-    """The keel's pruner: the keel's script, loaded, with every loaded family's rows in the shape a project reads."""
-    spec = importlib.util.spec_from_file_location("slipwai_factory_pruner", SOURCE)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"cannot load the backing-service pruner from {SOURCE}")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    vars(module)["ROWS"] = json.loads(json.dumps(prune_rows(registry().families)))
+    """The keel's pruner: the script a project of every loaded family would carry, loaded.
+
+    It is `emitted` run as a module rather than the shipped file with rows patched in afterwards, because the
+    script folds the brought options into its tables — `FEATURES`, what puts the app in Compose, what a
+    transport owns — as it loads, so a copy that learned of them after loading would still refuse `fastify`
+    as a feature it does not know. The same text is what the project gets, so the two cannot disagree.
+    """
+    module = ModuleType("slipwai_factory_pruner")
+    module.__file__ = str(SOURCE)
+    # Registered before it runs: `dataclasses` looks the defining module up by name while it builds a class.
+    sys.modules[module.__name__] = module
+    exec(compile(emitted(registry().families), str(SOURCE), "exec"), vars(module))
     return module
