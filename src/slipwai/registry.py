@@ -10,12 +10,16 @@ and it never imports a language: a package is found through the loader, by name,
 are fixed in `docs/backend-protocol.md`, and `tests/test_registry.py` holds that page's member table to
 `PROTOCOL` — the page and the code cannot drift.
 
-`registry()`, the built-once-per-process entry point, arrives with `loaded.py` in slice 2.4. Until then a
-caller builds one with `load`.
+`registry()` is the built-once-per-process entry point. Its body reaches for `slipwai.loaded` by name at
+call time, not at import, which is what lets the catalogue import this module while the loader imports the
+catalogue. `loaded.py` itself arrives in slice 2.9; until it does, a caller passes a registry built with
+`load` rather than asking for the process's own.
 """
 
 from __future__ import annotations
 
+import functools
+import importlib
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -335,3 +339,11 @@ def check_catalog(catalog: dict[str, Any], registry: Registry) -> None:
     ]
     if faults:
         raise RegistryError("; ".join(faults))
+
+
+@functools.cache
+def registry() -> Registry:
+    """Every package in the package directory, built once per process. `loaded` is reached by name at
+    call time, not imported here: it reads the catalogue, the catalogue reads this module, and a static
+    import either way round is a cycle."""
+    return cast(Registry, importlib.import_module("slipwai.loaded").registry())

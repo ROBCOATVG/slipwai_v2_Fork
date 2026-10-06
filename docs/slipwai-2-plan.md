@@ -1071,7 +1071,7 @@ open decision left either.
 
 ## 11. The implementation plan
 
-**Progress: 11 of 71 slices done** — phase 1 6/6, phase 2 5/9, phase 3 0/9, phase 4 0/7, phase 5 0/16, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 12 of 71 slices done** — phase 1 6/6, phase 2 6/9, phase 3 0/9, phase 4 0/7, phase 5 0/16, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1159,7 +1159,7 @@ launcher — the first code where the distinction can go wrong. Decided 2026-10-
 |---|---|---|---|---|---|
 | 2.1 | The seven package repositories under `ROBCOATVG`, public, each with its history; `slipwai-language-java-spring` built from the experiment's `slice/S10-java-spring` lineage rather than the empty placeholder | cruise-2 | M | Seven public repositories, each with its history, each secret-scanned in tree and in history | done |
 | 2.2 | `assets.py` as the path head, `registry.py`, `family_only.py`, `docs/backend-protocol.md` and their tests | cruise-2 | M | The registry answers Members for a fake package in tests, and the contract page and `PROTOCOL` cannot drift | done |
-| 2.3 | `catalog.json` with no backends, `catalog_merge.py`, `catalog.py` | cruise-2 | L | A fragment merges; a duplicate backend is refused with one line |  |
+| 2.3 | `catalog.json` with no backends, `catalog_merge.py`, `catalog.py` split into what the catalogue is and `catalog_checks.py` for what makes one valid, the `Fault` boundary, and `assets/targets/` so the managed targets have the infrastructure the catalogue claims | cruise-2 | L | A fragment merges; a duplicate backend is refused with one line; the shipped catalogue validates with nothing installed | done |
 | 2.4 | `versions.py`, `language_shape.py`, `language_directory.py`: the package directory, read and admitted in two phases | cruise-2 | L | A package directory loads whole or not at all; a bad one reports every fault in one line | done |
 | 2.5 | `conformance/` and `matrix/` as `python -m` entry points | cruise-2 | M | Both run against the template's toy package |  |
 | 2.6 | *Moved to phase 3 as 3.8 — see below.* | | |  |
@@ -1168,6 +1168,16 @@ launcher — the first code where the distinction can go wrong. Decided 2026-10-
 | 2.7 | The one refusal shape: `errors.py` with `Fault`, `Refusal` and `refuse`. **Runs before 2.3 and 2.4**, not after them | new + upstream | M | Every refusal in 2.3 and 2.4 goes through it; the experiment's nine wording-test files collapse to one table | done |
 
 Depends on: phase 1. 2.1 can start on day one.
+
+**Why 2.3 carries `assets/targets/` too.** `validate_targets` refuses a managed target with no
+`assets/targets/<name>/` behind it — a catalogue entry with nothing behind it generates projects claiming
+a destination they cannot reach. The first attempt was to ship the catalogue with only `none` and
+`existing` and let 3.4 add the managed rows, which is the rule read straight. It does not work: the
+pruner's tables name `aws` and `azure` per option, and the catalogue is held to the pruner, so trimming
+the catalogue means trimming an asset that ships verbatim into every generated project and untrimming it
+later. Copying the two target trees in — 47 files, unchanged — costs nothing and keeps both files whole.
+3.4's work is their stacks, their docs and their validation tests, which is what its done-when always
+said.
 
 **Why 2.8 carries an asset, and why two of its checks are 2.3's.** `axes.py` and `targets.py` hold the
 catalogue's tables against `assets/backing-services/prune.py` — the same tables kept in two places,

@@ -1,0 +1,126 @@
+"""The catalogue the keel ships, and the one boundary where a fault in it becomes a refusal.
+
+`catalog.json` is the questions the keel asks. It carries no backend at all: a backend is a package's to
+declare, and a keel that named one would be a keel a new language has to be edited into. What it does
+carry — the four axes, the targets, the profiles, the frontends, the extensions — is held here against
+three things at once: its own schema, the pruner that ships into every generated project, and the
+registry of whatever is loaded.
+
+`validate_axes` and `validate_targets` are tested here rather than in `test_validators.py` because both
+hold the catalogue against `assets/backing-services/prune.py`, and a catalogue built in a test fails on
+that mirror before it reaches the rule under test. This is the file that has the real one.
+"""
+from __future__ import annotations
+
+import copy
+import json
+import unittest
+
+import checkout_packages  # noqa: F401
+
+from slipwai.assets import PRUNER, ROOT
+from slipwai.axes import validate_axes
+from slipwai.catalog import CATALOG, PACKAGES, SCHEMA_VERSION
+from slipwai.catalog_checks import validate_catalog
+from slipwai.errors import Refusal
+from slipwai.registry import load
+from slipwai.targets import validate_targets
+
+EMPTY = load([])
+SHIPPED = json.loads((ROOT / "catalog.json").read_text(encoding="utf-8"))
+
+
+class ShippedCatalogTest(unittest.TestCase):
+    def test_the_keel_ships_no_backend(self) -> None:
+        """Theme A's line, in one assertion: the keel declares the questions, a package the answers."""
+        self.assertEqual(SHIPPED["backends"], {})
+
+    def test_the_whole_catalogue_validates_with_nothing_installed(self) -> None:
+        """A keel with no package is a usable keel with a short menu, not a broken one."""
+        validate_catalog(CATALOG, loaded=EMPTY)
+
+    def test_the_axes_are_the_four_the_keel_asks_about(self) -> None:
+        self.assertEqual(set(SHIPPED["axes"]), {"event-store", "http", "auth", "users"})
+
+    def test_the_schema_version_is_the_one_the_code_speaks(self) -> None:
+        self.assertEqual(SHIPPED["schemaVersion"], SCHEMA_VERSION)
+
+    def test_no_package_is_installed_in_a_checkout_that_pins_none(self) -> None:
+        self.assertEqual(PACKAGES, [] if not checkout_packages.pinned() else PACKAGES)
+
+
+class MirrorTest(unittest.TestCase):
+    """The catalogue and the pruner hold the same tables, and each refuses a catalogue that drifts.
+
+    The pruner ships into a generated project as `scripts/backing-services.py` and prunes it to what was
+    selected. Two implementations of one prune would be two sets of bugs, so there is one file and the
+    catalogue is held to it — which is the check that cannot be tested against a catalogue made up here.
+    """
+
+    def test_the_axes_agree_with_the_pruner(self) -> None:
+        validate_axes(CATALOG)
+
+    def test_the_targets_agree_with_the_pruner(self) -> None:
+        validate_targets(CATALOG)
+
+    def test_the_pruner_knows_every_feature_the_catalogue_offers(self) -> None:
+        offered = {feature for axis in CATALOG["axes"].values()
+                   for option in axis["options"].values() for feature in option.get("features", [])}
+        self.assertEqual(set(PRUNER.FEATURES), offered)
+
+    def test_an_option_offered_somewhere_the_pruner_does_not_know_about_is_refused(self) -> None:
+        """Drift in either direction is a project that prunes to something the catalogue did not promise."""
+        drifted = copy.deepcopy(CATALOG)
+        axis = drifted["axes"]["event-store"]
+        name = next(n for n in axis["options"] if n != axis["absent"])
+        axis["options"][name]["targets"] = ["none"]
+        with self.assertRaises(ValueError) as raised:
+            validate_axes(drifted)
+        self.assertIn("prune.py", str(raised.exception))
+
+    def test_a_managed_target_with_no_infrastructure_behind_it_is_refused(self) -> None:
+        """A catalogue entry with nothing behind it generates projects claiming a destination they
+        cannot reach, which is the half-ported shape the keel refuses everywhere else."""
+        drifted = copy.deepcopy(CATALOG)
+        drifted["targets"]["gcp"] = {"label": "GCP", "managed": True, "requires": []}
+        with self.assertRaises(ValueError) as raised:
+            validate_targets(drifted)
+        self.assertIn("assets/targets/gcp", str(raised.exception))
+
+
+class RefusalBoundaryTest(unittest.TestCase):
+    """Where a schema fault becomes something a person reads.
+
+    The validators underneath raise `ValueError` and say what is wrong; only here is it known whether a
+    reader can do anything about it. With packages loaded the catalogue is theirs as much as the keel's,
+    and `list` shows whose. With none, a wrong catalogue is a bug in this keel, and the refusal ends
+    without a command rather than sending the reader somewhere useless.
+    """
+
+    def refuse(self, catalog: dict) -> Refusal:
+        with self.assertRaises(Refusal) as raised:
+            validate_catalog(catalog, loaded=EMPTY)
+        return raised.exception
+
+    def test_a_fault_reaches_the_reader_as_one_line(self) -> None:
+        said = str(self.refuse({**CATALOG, "schemaVersion": "1.0"}))
+        self.assertEqual(len(said.splitlines()), 1)
+        self.assertIn('catalog schemaVersion must be "9.0"', said)
+
+    def test_a_refusal_is_a_refusal_and_not_a_bare_value_error(self) -> None:
+        """So a verb catches one kind of thing. `ValueError` is the validators' word, not the keel's."""
+        self.assertIsInstance(self.refuse({**CATALOG, "schemaVersion": "1.0"}), Refusal)
+
+    def test_with_no_package_installed_the_refusal_names_no_command(self) -> None:
+        refusal = self.refuse({**CATALOG, "schemaVersion": "1.0"})
+        self.assertEqual([fault.fix for fault in refusal.faults], [None])
+
+    def test_the_underlying_value_error_is_kept_as_the_cause(self) -> None:
+        """A keel bug should still have a traceback that points at the rule that fired."""
+        with self.assertRaises(Refusal) as raised:
+            validate_catalog({**CATALOG, "schemaVersion": "1.0"}, loaded=EMPTY)
+        self.assertIsInstance(raised.exception.__cause__, ValueError)
+
+
+if __name__ == "__main__":  # pragma: no cover
+    unittest.main()
