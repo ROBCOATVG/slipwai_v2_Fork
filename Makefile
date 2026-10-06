@@ -39,6 +39,10 @@ UNIT_TESTS := $(filter-out $(SLOW),$(ALL_TESTS))
 unit: ## The fast tests only — the per-increment gate, with the slow modules left out
 	$(if $(UNIT_TESTS),PYTHONPATH=src:tests python3 -m unittest $(UNIT_TESTS),@echo 'unit: no test modules yet')
 
+.PHONY: glossary
+glossary: ## Rewrite GLOSSARY.md from the plan's vocabulary (tests/test_glossary.py holds them in step)
+	python3 scripts/glossary.py
+
 .PHONY: check-structure
 check-structure: ## Fail when a module imports against the declared direction, cycles, or outgrows its budget
 	python3 scripts/check-structure.py
