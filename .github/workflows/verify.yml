@@ -1,0 +1,79 @@
+name: verify
+
+# The keel's gate, on every platform someone runs `slipwai` from. Version 1's `verify.yml` is a different
+# animal — ten jobs on a self-hosted runner, generating a project per backend and holding each to its own
+# gate — and none of that applies yet: there are no languages in the keel to generate with. What is here is
+# the fast half, which is the half that has to stay fast. The slow jobs come back in phase 6 as per-package
+# jobs in the packages' own repositories, not as a matrix here.
+on:
+  # `push:` unfiltered fires on a pull request branch too, so every commit on an open PR would run this
+  # suite twice at the same second. A PR branch is covered by `pull_request`; `push` only has to cover the
+  # branch no PR reports on.
+  push:
+    branches:
+      - main
+  pull_request:
+
+# A second push while the first is still running supersedes it: the older run is testing a commit nobody is
+# waiting on any more. `main` is excluded — every commit that lands there gets its own verdict.
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    # 3.11 is the floor `pyproject.toml` promises, so the gate runs on the floor rather than on whatever is
+    # newest: a syntax or a standard-library call that needs 3.12 is a broken promise, and only the floor
+    # catches it.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      # On Unix the gate runs exactly as it runs on a laptop, `.python-tools` install and all, because a CI
+      # gate that is a different command from the local one is a gate people stop trusting.
+      - if: runner.os != 'Windows'
+        run: make verify
+
+      # Windows runs the same four checks without make. `make` and a POSIX `scripts/verify` are not a given
+      # there, and what Windows has to prove is that *slipwai* works on it, not that the keel's Makefile
+      # does — nobody running the command on Windows will ever type `make`.
+      - if: runner.os == 'Windows'
+        run: python -m pip install --disable-pip-version-check -r requirements-dev.txt
+      - if: runner.os == 'Windows'
+        run: python -m ruff check src scripts tests
+      - if: runner.os == 'Windows'
+        run: python -m compileall -q src scripts tests
+      - if: runner.os == 'Windows'
+        run: python -m mypy
+      - if: runner.os == 'Windows'
+        run: python scripts/check-structure.py
+      - if: runner.os == 'Windows'
+        run: python -m unittest discover -s tests -v
+        env:
+          PYTHONPATH: src
+
+      # The command itself, on every platform: installed the way a user installs it, then asked what it is
+      # through both routes. This is the step that catches a packaging mistake the gate above cannot see —
+      # a file left out of the wheel, an entry point that does not resolve, a console script that is not on
+      # PATH.
+      - run: python -m pip install --disable-pip-version-check -e .
+      - name: The installed command says which keel it is
+        shell: bash
+        run: |
+          set -eu
+          expected=$(cat VERSION)
+          test "$(slipwai --version)" = "$expected"
+          test "$(python -m slipwai --version)" = "$expected"
+          echo "slipwai --version = $expected on ${{ runner.os }}"
