@@ -67,7 +67,11 @@ TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("assembly", ("unlabel", "next_steps", "scaffold", "adopt_report")),
     # The command line, and the entry point the executable is built from.
     ("edge", ("cli", "__main__", "preflight", "upgrade", "cli_confirm", "cli_init",
-              "cli_prompts", "cli_interview", "cli_offered",
+              "cli_prompts", "cli_interview", "cli_offered", "cli_language", "cli_search",
+              # The chandlery client: the index, a release file, an install as one
+              # transaction, the plan a verb shows first, and upkeep after a keel moves.
+              "language_index", "language_release", "language_install", "language_plan",
+              "language_upkeep", "browser_app",
               # The conformance suite a package runs against itself, and its generated-variant
               # matrix: entry points the keel exports rather than modules it reads.
               "conformance", "matrix")),

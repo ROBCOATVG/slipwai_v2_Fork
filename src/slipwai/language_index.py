@@ -1,0 +1,309 @@
+"""Where the language index is, what it lists, and the release a verb fetches from it.
+
+The index is a tree of files under a base URL, found the way `slipwai upgrade` finds its own (`upgrade.index_of`):
+`SLIPWAI_INDEX`, else the uv receipt's index, else a documented default. Its document,
+`<base>/slipwai-languages/index.json`, lists each release with its file, the file's `sha256` and the release's
+`language.json`, so a verb can say which releases speak this keel, which family a framework needs and which framework
+a family brings without fetching one (`contracts/language-index.md`).
+
+An index that cannot be read is `Unreachable`, said with its URL and the reason, and never an empty list: a project
+maker is not told "nothing available" when the truth is "could not ask". Nothing is published at the default
+yet, so until a person publishes there every verb that needs it says so.
+"""
+from __future__ import annotations
+
+import base64
+import hashlib
+import http.client
+import json
+import os
+import re
+import sys
+import threading
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
+
+from .assets import VERSION
+from .errors import GenerationError
+from .language_shape import name_fault
+from .upgrade import FORGE, INDEX, RECEIPT, credentials, following_snapshots, index_of, refusal
+from .versions import is_prerelease, key, parse, satisfies
+
+# The raw files of a forge repository a person creates and pushes the index to; `upgrade.index_of`'s own default is
+# PyPI's simple index, which cannot serve this tree.
+DEFAULT = f"{FORGE.rsplit('/', 1)[0]}/slipwai-index/raw/branch/main"
+DOCUMENT = "slipwai-languages/index.json"
+FORMAT = 1
+TIMEOUT: float = 15
+DOCUMENT_LIMIT = 4 * 1024 * 1024  # bytes the index document may be
+RELEASE_LIMIT = 64 * 1024 * 1024  # bytes a release file may be
+DIGEST = re.compile(r"[0-9a-f]{64}")
+# The declared-never-required family members an entry's `answers` may name: what a verb needs to know a release
+# answers before it is installed (D122, ADR 0010). A value a reader does not know is ignored.
+ANSWERS = ("npm_workspace",)
+
+
+class Unreachable(GenerationError):
+    """The index could not be read: not there, not answering, refusing, or not an index. `url` is the document's."""
+
+    def __init__(self, url: str, reason: str) -> None:
+        super().__init__(f"the language index at {url} could not be reached ({reason})")
+        self.url = url
+
+
+@dataclass(frozen=True)
+class Release:
+    """One release the index lists: its version, where its file is, the file's digest and its `language.json`."""
+
+    name: str
+    version: str
+    url: str
+    sha256: str
+    fragment: dict[str, Any]
+    answers: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class Index:
+    """The index document as read: its URL, the index's name (for credentials), and each name's releases."""
+
+    url: str
+    name: str
+    releases: dict[str, list[Release]] = field(default_factory=dict)
+    source: str = field(default="", repr=False)  # the URL as given, credentials and all: only `fetch` reads it
+
+
+def location(receipt: Path | None = None) -> tuple[str, str]:
+    """(index name, document URL): the base `upgrade.index_of` gives, or the documented default where it gives
+    PyPI's for want of a variable or a receipt."""
+    name, base = index_of(Path(sys.prefix) / RECEIPT if receipt is None else receipt)
+    if base == INDEX and not os.environ.get("SLIPWAI_INDEX"):
+        base = DEFAULT
+    return name, f"{base.rstrip('/')}/{DOCUMENT}"
+
+
+def bare(url: str) -> str:
+    """A URL with any credentials it carries taken out of it, as every line that shows one shows it."""
+    parsed = urllib.parse.urlsplit(url)
+    return urllib.parse.urlunsplit(parsed._replace(netloc=parsed.netloc.rpartition("@")[2]))
+
+
+PORTS = {"http": 80, "https": 443}
+
+
+def origin_of(url: str) -> tuple[str, str, int | None]:
+    """A URL's scheme, host and port, a scheme's default port made explicit, whatever credentials it carries."""
+    parsed = urllib.parse.urlsplit(url)
+    try:
+        port = parsed.port
+    except ValueError:
+        port = -1
+    port = port if port is not None else PORTS.get(parsed.scheme)
+    return parsed.scheme.lower(), (parsed.hostname or "").lower(), port
+
+
+def same_origin(one: str, other: str) -> bool:
+    return origin_of(one) == origin_of(other)
+
+
+class Guarded(urllib.request.HTTPRedirectHandler):
+    """Follows a redirect without the credentials where it leaves the origin the request was first sent to."""
+
+    def redirect_request(self, req: Any, fp: Any, code: Any, msg: Any, headers: Any, newurl: str) -> Any:
+        found = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if found is not None and not same_origin(req.full_url, newurl):
+            found.remove_header("Authorization")
+        return found
+
+
+def fetch(url: str, index_name: str, document: str | None = None, limit: int | None = None) -> bytes:
+    """The bytes at `url`, or `Unreachable` saying why not. This is the one place the index fetches a URL: the
+    index's credentials (the environment's, or the userinfo of `document`, the index document's own URL as given)
+    go only to the origin of `document`, never to another host a release entry names, and never across a redirect to
+    one. The whole read, headers and body, has `TIMEOUT` seconds, not each socket operation; an answer longer than
+    `limit` bytes (`DOCUMENT_LIMIT` unless the caller says a release's) is refused; and a `file:` URL is read only for
+    an index that is itself a `file:` tree."""
+    shown, home = bare(url), document or url
+    limit = DOCUMENT_LIMIT if limit is None else limit
+    if urllib.parse.urlsplit(url).scheme == "file" and urllib.parse.urlsplit(home).scheme != "file":
+        raise Unreachable(shown, "an index that is not a file: tree may not name a file: release")
+    outcome: dict[str, Any] = {}
+
+    def work() -> None:
+        try:
+            outcome["data"] = read(url, home, index_name, shown, limit, time.monotonic() + TIMEOUT)
+        except BaseException as error:  # handed to the caller's thread, which raises it
+            outcome["error"] = error
+
+    reader = threading.Thread(target=work, daemon=True)
+    reader.start()
+    reader.join(TIMEOUT)
+    if reader.is_alive():  # a server that drips headers, or a byte a second: the socket's own timeout never fires
+        raise Unreachable(shown, f"it did not finish answering within {TIMEOUT:g} seconds")
+    if "error" in outcome:
+        raise outcome["error"]
+    return bytes(outcome["data"])
+
+
+def read(url: str, home: str, index_name: str, shown: str, limit: int, deadline: float) -> bytes:
+    """`fetch`'s read of one URL, in chunks, against the deadline and the size limit."""
+    request = urllib.request.Request(shown, headers={"User-Agent": f"slipwai/{VERSION}"})
+    secret = credentials(index_name, home) if same_origin(url, home) else None
+    if secret is not None:
+        request.add_header("Authorization", "Basic " + base64.b64encode(":".join(secret).encode()).decode())
+    try:
+        with urllib.request.build_opener(Guarded).open(request, timeout=TIMEOUT) as answer:
+            length = answer.headers.get("Content-Length", "")
+            if length.isdigit() and int(length) > limit:
+                raise Unreachable(shown, f"it is larger than {limit} bytes")
+            chunks: list[bytes] = []
+            total = 0
+            while chunk := answer.read1(65536):
+                total += len(chunk)
+                if total > limit:
+                    raise Unreachable(shown, f"it is larger than {limit} bytes")
+                if time.monotonic() > deadline:
+                    raise Unreachable(shown, f"it did not finish answering within {TIMEOUT:g} seconds")
+                chunks.append(chunk)
+            if length.isdigit() and total < int(length):
+                raise Unreachable(shown, "the answer was cut short")
+            return b"".join(chunks)
+    except urllib.error.HTTPError as error:
+        error.close()
+        if error.code == 404:
+            raise Unreachable(shown, "nothing is published there") from error
+        if error.code in (401, 403):
+            raise Unreachable(shown, refusal(error.code, index_name, shown)) from error
+        raise Unreachable(shown, f"it answered {error.code}") from error
+    except urllib.error.URLError as error:
+        raise Unreachable(shown, str(error.reason)) from error
+    except http.client.HTTPException as error:  # not HTTP at all, or an invalid URL; a chunked answer cut short
+        raise Unreachable(shown, f"it did not answer as HTTP: {error or type(error).__name__}") from error
+    except (OSError, ValueError) as error:  # a silent server's bare TimeoutError, a URL urllib cannot open
+        raise Unreachable(shown, str(error) or type(error).__name__) from error
+
+
+def names_of(name: str, fragment: dict[str, Any]) -> list[Any]:
+    """Every name an entry supplies besides its key: its `name`, `family`, `default_framework`, and each backend's key
+    and `framework`, so that none is printed or joined into a path before it has been held to `name_fault`."""
+    found: list[Any] = [fragment.get("name"), name]
+    found += [fragment[k] for k in ("family", "default_framework") if k in fragment]
+    rows = fragment.get("backends")
+    for key_, row in (rows.items() if isinstance(rows, dict) else []):
+        found.append(key_)
+        if isinstance(row, dict) and "framework" in row:
+            found.append(row["framework"])
+    return found
+
+
+def shaped(fragment: dict[str, Any]) -> bool:
+    """Whether the keys a line is made from have their shape: `backends` an object of objects, each `options` an
+    object of lists of strings. A fragment the loader would refuse for other reasons is for the loader to say."""
+    rows = fragment.get("backends", {})
+    if not isinstance(rows, dict) or not all(isinstance(row, dict) for row in rows.values()):
+        return False
+    for row in rows.values():
+        options = row.get("options", {})
+        if not isinstance(options, dict) or not all(
+                isinstance(found, list) and all(isinstance(each, str) for each in found) for found in options.values()):
+            return False
+    return True
+
+
+def entry_of(document: str, name: str, entry: Any) -> Release | None:
+    """One entry of the document as a `Release`, or None where it is not the contract's shape."""
+    if not isinstance(entry, dict):
+        return None
+    version, file, digest, fragment = (entry.get(k) for k in ("version", "file", "sha256", "language"))
+    if not (isinstance(version, str) and len(version) <= 64 and parse(version) and isinstance(file, str) and file):
+        return None
+    if not (isinstance(digest, str) and DIGEST.fullmatch(digest)):
+        return None
+    if not (isinstance(fragment, dict) and fragment.get("name") == name and isinstance(fragment.get("core"), str)):
+        return None
+    if not shaped(fragment):
+        return None
+    if not all(isinstance(each, str) and name_fault("language", each) is None for each in names_of(name, fragment)):
+        return None
+    said = entry.get("answers")
+    answers = tuple(each for each in said if each in ANSWERS) if isinstance(said, list) else ()
+    return Release(name, version, urllib.parse.urljoin(document, file), digest, fragment, answers)
+
+
+def parsed(url: str, index_name: str, body: bytes) -> Index:
+    """The document's releases, or `Unreachable` where what answered is not a language index. Each release's URL is
+    joined against `url` as given, credentials and all, so a private index's files are fetched as its document was;
+    `Index.url`, which lines show, is `bare`."""
+    shown = bare(url)
+    try:
+        data = json.loads(body.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError, RecursionError) as error:
+        raise Unreachable(shown, "it is not a language index") from error
+    if not isinstance(data, dict) or data.get("index") != FORMAT or not isinstance(data.get("languages"), dict):
+        raise Unreachable(shown, "it is not a language index")
+    releases: dict[str, list[Release]] = {}
+    for name, entries in data["languages"].items():
+        found = [entry_of(url, name, entry) for entry in entries] if isinstance(entries, list) else []
+        kept = [release for release in found if release is not None]
+        if kept:
+            releases[name] = kept
+    return Index(shown, index_name, releases, url)
+
+
+READ: dict[str, Index] = {}
+
+
+def read_index() -> Index:
+    """The index for this environment, read once per process and URL."""
+    index_name, url = location()
+    if url not in READ:
+        READ[url] = parsed(url, index_name, fetch(url, index_name))
+    return READ[url]
+
+
+def compatible(release: Release, schema: str) -> bool:
+    """Whether the release's `core` range admits this keel's schema; a range that does not parse admits nothing."""
+    try:
+        return satisfies(schema, release.fragment["core"])
+    except ValueError:
+        return False
+
+
+def counted(version: str, prerelease: bool) -> bool:
+    """A release, or a snapshot too where snapshots are followed (`upgrade.following_snapshots`)."""
+    return prerelease or not is_prerelease(version)
+
+
+def snapshots(asked: bool = False) -> bool:
+    return following_snapshots(asked)
+
+
+def newest(index: Index, name: str, schema: str, prerelease: bool, where: Any = None) -> Release | None:
+    """The newest counted release of `name` that speaks `schema` and that `where` (a predicate) accepts."""
+    found = [
+        release for release in index.releases.get(name, [])
+        if counted(release.version, prerelease) and compatible(release, schema) and (where is None or where(release))
+    ]
+    return max(found, key=lambda release: key(release.version), default=None)
+
+
+def offered(index: Index, schema: str, prerelease: bool) -> dict[str, Release]:
+    """Each name with a counted release that speaks `schema`, and its newest such release."""
+    found = {name: newest(index, name, schema, prerelease) for name in index.releases}
+    return {name: release for name, release in found.items() if release is not None}
+
+
+def download(index: Index, release: Release) -> bytes:
+    """The release file's bytes, refused unless they are the bytes the index publishes a digest of."""
+    data = fetch(release.url, index.name, index.source or index.url, RELEASE_LIMIT)
+    if hashlib.sha256(data).hexdigest() != release.sha256:
+        raise GenerationError(
+            f"the release file for {release.name} {release.version} does not match the hash the index publishes "
+            f"({bare(release.url)}): refusing to install it"
+        )
+    return data

@@ -7,6 +7,7 @@ import tempfile
 from pathlib import Path
 
 from .assets import DEFAULT_OUTPUT, VERSION
+from .browser_app import frontend_menu, no_browser
 from .catalog import (
     CATALOG,
     PACKAGES,
@@ -16,16 +17,16 @@ from .catalog import (
     families,
 )
 from .catalog_checks import validate_catalog
-from .cli_offered import (
+from .cli_language import (
     braced,
-    frontend_menu,
-    no_browser,
+    language_main,
+    list_main,
     not_installed_frameworks,
     not_installed_languages,
     nothing_loaded,
-    resolve_requested_backend,
     undeclared_target,
 )
+from .cli_offered import resolve_requested_backend
 from .cli_prompts import (
     prompt_application_name,
     prompt_axis,
@@ -39,6 +40,7 @@ from .cli_prompts import (
     prompt_target,
     validate_project_name,
 )
+from .cli_search import search_main, show_main
 from .errors import GenerationError, failure, refuse
 from .language_directory import Package, refusal
 from .loaded import refusals
@@ -51,7 +53,7 @@ from .targets import check_project_name, offered_backends
 
 # One verb so far. Each of the others is registered here by the slice that brings its module
 # back, so an unknown argument is argparse's refusal rather than a stub that half-answers.
-VERBS = ("generate",)
+VERBS = ("generate", "list", "search", "show", "install", "language")
 
 
 def main() -> None:
@@ -107,6 +109,24 @@ def dispatch(argv: list[str]) -> None:
     """Run the verb `argv` names, or say that none was given."""
     if argv[:1] == ["generate"]:
         generate_main(argv[1:])
+        return
+    if argv[:1] == ["list"]:
+        list_main(argv[1:])
+        return
+    if argv[:1] == ["search"]:
+        search_main(argv[1:])
+        return
+    if argv[:1] == ["show"]:
+        show_main(argv[1:])
+        return
+    # `slipwai install <name>` is `slipwai language install <name>`. The short form is what a reader
+    # types after a search result tells them a package exists; the long one stays, because `language
+    # upgrade` and `language remove` have no short form worth having.
+    if argv[:1] == ["install"]:
+        language_main(["install", *argv[1:]])
+        return
+    if argv[:1] == ["language"]:
+        language_main(argv[1:])
         return
     parser = argparse.ArgumentParser(
         prog="slipwai",
