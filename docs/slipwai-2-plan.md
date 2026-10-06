@@ -204,6 +204,34 @@ except data and a protocol. The keel never names a language.
 
 ![How packages, the chandlery, the keel and a product repository link](images/ecosystem.svg)
 
+**How a package is linked at usage time.** A user never touches a package repository. The link is the chandlery
+index and the installed directory:
+
+1. `slipwai install java-quarkus` asks the chandlery for the index (`index.json`, served from the public channel,
+   or from the organisation's own channel when `SLIPWAI_LANGUAGE_INDEX` names one). The index lists each
+   package's releases: name, version, the keel range it fits, the framework's family range, a URL for the
+   release file, its sha256, and the publisher's signature.
+2. The keel picks the newest release that fits this keel, resolves the family first (`java`), downloads each
+   release file, checks its sha256, stages it, and renames it into `~/.slipwai/languages/<name>/`. A package is
+   whole in that directory or not there.
+3. From then on the loader reads the directory. It merges each `language.json` into the catalogue, imports each
+   package's `LANGUAGE` object, and answers every question about that backend from it. The keel never names a
+   language in its own code.
+4. A generated project records what it was made with in `project.json`: `generator.generatedWith` for the keel
+   and `generator.languages` for family and framework, with versions. On another machine, `./init` reads that
+   record and says what to install; `slipwai migrate` installs it. The repository the package came from is not
+   recorded anywhere a user reads.
+
+**How a package is linked at development time.** The keel's own repository pins each first-party package as a git
+submodule under `languages/`, so the keel's gate can run the conformance suite and the matrix against the
+packages it ships with, at a known commit. That pin is for the keel's tests only. A package repository's own CI
+runs the same suite against a pinned keel. Publishing is `make release` in the package repository: it tags,
+builds the release file, uploads it as a release asset, and appends the release to the channel's index.
+
+**Where the first-party packages live.** Under `ROBCOATVG`, beside the keel, public from the start, moved
+before phase 2. Public repositories need no token for the keel's CI to read the submodules, which removes the
+first two items of cruise-2's CI proposal. Decided 2026-10-06 (section 10).
+
 **What version 2 builds.**
 
 1. The keel is brought back one module at a time, in the order of the import surface (section 7). Each module
@@ -311,6 +339,15 @@ appends `read` at its next boundary, and a message older than N minutes forces a
 **Reused without change.** The stop table, the ladder in `drive.md`, the benchmark bracket, the stop hook, the
 harness registry, and the control-file guard (the rule that an iteration never edits a gate, a `Makefile`, CI, or
 a hook).
+
+**Harnesses.** Version 2 supports every agent harness that Spec Kit supports, and at least Claude Code, Codex,
+Cursor, Gemini CLI, OpenCode and Kiro. The harness registry stays the mechanism: one row per harness that says
+how it is invoked headless, whether it has a hook that fires when a turn ends and can refuse the end, whether it
+has a hook before an editing tool, and what the projection into its settings file looks like. The captain's
+controls are designed so that none of them depends on a hook: the captain reads the last line of every
+iteration itself, compares the controlled files before and after, and owns the waits. Where a harness has a
+hook, the hook is a second belt. A harness is listed as supported when the captain has run one feature end to
+end on it; until then its row says `unproven`, and `slipwai` says so when it is chosen.
 
 #### Ids and shared files
 
@@ -613,7 +650,7 @@ this. The table says what happens to each thing.
 
 | In the version 1 project | What `migrate` does |
 |---|---|
-| `specs/<feature>/story-split.md` with a slice graph and no fairways | Event profile: it renders one fairway per context from each slice's `context`, into the chart, for a person to confirm. Standard profile: it creates one fairway named `main`, puts the whole split in it, and adds a catch-up task to run `/chart` before the next slice is claimed |
+| `specs/<feature>/story-split.md` with a slice graph and no fairways | It proposes fairways on both profiles and marks them proposed. Event profile: one fairway per context, from each slice's `context` in `model.yaml`. Standard profile: one fairway per context it can read from the slices' plans (the Structure Decision names the service and context) and from each service's `contexts` in `project.json`; a slice whose plan names no context goes into a fairway called `unplaced`. A person confirms the proposal, edits it, or runs `/chart`. No slice is claimed while its fairway is proposed. A project where every slice lands in one context gets one fairway and sees no change |
 | `decisions.md` with `D1` to `Dn`, `adversary-log.md` with `A1` to `An`, and numbered ADRs | It freezes them where they are, as the files of the `main` fairway. Existing ids stay valid and keep resolving. Every new id carries its fairway. Nothing is renumbered, including by the migration |
 | The `status` fields in `model.yaml` | It reconciles them against trunk once, which MANDA showed they need. A slice whose code is on `main` is `implemented`, whatever the field said. It seeds the deck log with one `merged` line per such slice. From then on `status` is rendered |
 | Open `slice/<id>` claims | If a claim branch is ahead of `main`, `migrate` refuses and names the branches: finish or merge them first. With `--with-claims`, it migrates `main` and leaves each claim to rebase, with the rename table applied to the claim's branch too |
@@ -767,16 +804,15 @@ The first attempt paid for these rules. They apply from phase 1, inside the fork
 - **A review and refactor stage before the merge.** Theme B, item 8.
 - **Four release modes, chosen by product state.** Theme E.
 - **The README rewrite is the last phase.** Phase 9.
+- **The six package repositories move under `ROBCOATVG`, public, before phase 2.** Theme A, "Where the first-party packages live".
 
 ### Still open
 
-1. **The package repositories.** They are private under `luke-gee`. Recommended: move them under `ROBCOATVG`,
-   next to the keel, before phase 2, so that CI tokens and publishing have one owner.
-2. **The trust model of the chandlery.** Signed entries from named publishers, or a list of allowed chandlery
+1. **The trust model of the chandlery.** Signed entries from named publishers, or a list of allowed chandlery
    URLs. Decide before phase 6 writes the index schema.
-3. **Whether the standalone executable bundles any language.** Issue #26 left it open. The experiment chose none
+2. **Whether the standalone executable bundles any language.** Issue #26 left it open. The experiment chose none
    (decision D5). Recommended: none, with `generate` offering to install.
-4. **Whether issues #30, #32 and #29 also ship on 1.x**, for users who will not wait for 2.0. Under the second
+3. **Whether issues #30, #32 and #29 also ship on 1.x**, for users who will not wait for 2.0. Under the second
    settled decision above, the default answer is no.
 
 ## 10. Gaps review, 2026-10-06
@@ -792,6 +828,15 @@ Resolved:
   toolkit. Answer: nothing does; plain sessions with the toolkit's skills copied in, people merge.
 - [Blocker → section 1, theme D] Who writes the harbour log. Answer: only the harbourmaster, one process per
   harbour; captains write their deck log and nothing else; the harbourmaster copies across what others need.
+- [Blocker → theme A, "Where the first-party packages live"] Where the package repositories live and how a
+  package is linked at usage time. Answer: under `ROBCOATVG`, public, before phase 2; at usage time the link is
+  the chandlery index and `~/.slipwai/languages/`, never a repository.
+- [Should → section 6] How fairways are worked out when a version 1 project migrates. Answer: `migrate`
+  proposes them on both profiles from the model or from the plans and `project.json`, marks them proposed, and
+  claims nothing until a person confirms.
+- [Should → theme D, "Harnesses"] Which harnesses version 2 supports. Answer: every one Spec Kit supports, at
+  least Claude Code, Codex, Cursor, Gemini CLI, OpenCode and Kiro; the captain's controls depend on no hook;
+  a harness is `unproven` until a captain has run a feature on it.
 - [Blocker → theme D, "The bridge"] How a click on the dashboard becomes a `told` line. Answer: `slipwai
   bridge` serves the page locally from the harbourmaster's seat and its controls post to it; the Pages copy is
   the same page without controls.
@@ -802,9 +847,6 @@ Resolved:
 
 Open, in order:
 
-- [Blocker] Where the package repositories live (section 9).
-- [Should] How fairways are worked out when a version 1 project migrates (section 6 has a first answer).
-- [Should] Supported harnesses in version 2.
 - [Should] GitHub or the Gitea instance for CI and tokens.
 - [Should] Unattended permissions and credentials per berth.
 - [Should] Windows and WSL scope.
