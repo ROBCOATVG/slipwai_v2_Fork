@@ -77,6 +77,12 @@ known-first-party = ["slipwai"]
 # so a script or a test that imports `slipwai` resolves it from `src/` the way `PYTHONPATH=src` does at run
 # time. 3.11 because that is the floor this keel promises.
 python_version = "3.11"
+# One platform's view, on every platform. `cli_prompts` imports `termios` and `tty` behind a try/except
+# because raw-mode reading is POSIX only and Windows asks the typed question instead; typeshed marks both
+# modules POSIX-only, so mypy run *on* Windows reports five attribute errors for code that never executes
+# there. Checking one view keeps the gate the same question wherever it runs, and the Windows leg still
+# runs the suite, which is what actually proves the guard — a type checker cannot.
+platform = "linux"
 files = ["src", "scripts", "tests"]
 mypy_path = "src"
 check_untyped_defs = true
