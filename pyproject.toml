@@ -2,10 +2,11 @@
 # beside the package as `slipwai/_bundle/`, which is where the keel looks when it finds no checkout around
 # it. The version is the `VERSION` file, read rather than repeated.
 #
-# Version 2 ships the keel alone. `assets/`, `catalog.json`, `CHANGELOG.md` and `changelog.d/` are not
-# force-included here because they are not back yet: each returns with the phase that brings it, and the
+# Version 2 ships the keel alone: `assets/` and `catalog.json` beside `VERSION`, and no language — the
 # languages and extensions that version 1 bundled are packages now, installed into `~/.slipwai/packages/`
-# from the chandlery rather than carried in this wheel.
+# from the chandlery rather than carried in this wheel. `CHANGELOG.md` and `changelog.d/` return with the
+# release machinery (slice 8.1), which is what writes them; a `force-include` of a file that is not there
+# fails the build.
 [build-system]
 requires = ["hatchling==1.32.0"]
 build-backend = "hatchling.build"
@@ -41,12 +42,14 @@ packages = ["src/slipwai"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "VERSION" = "slipwai/_bundle/VERSION"
+"catalog.json" = "slipwai/_bundle/catalog.json"
+"assets" = "slipwai/_bundle/assets"
 
 # The source distribution is what the wheel is built from, so it needs the same files and nothing of the
 # keel's own tests, docs or CI.
 [tool.hatch.build.targets.sdist]
 # Anchored to the root: unanchored, `VERSION` would also match a worktree's copy under .claude/.
-include = ["/src/slipwai", "/VERSION", "/README.md", "/LICENSE", "/NOTICE", "/pyproject.toml"]
+include = ["/src/slipwai", "/assets", "/catalog.json", "/VERSION", "/README.md", "/LICENSE", "/NOTICE", "/pyproject.toml"]
 exclude = ["**/__pycache__"]
 
 [tool.ruff]
