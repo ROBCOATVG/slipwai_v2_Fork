@@ -1,0 +1,54 @@
+"""What the keel answers before it can do anything: which keel this is.
+
+The version is read from the `VERSION` file rather than repeated in code, and where that file sits depends
+on how slipwai is being run — a checkout, an installed wheel, or a frozen executable. Only the checkout
+case can be gated from here, so what this file holds is the part that is the same in all three: the string
+the command prints is the string the file holds, and `--version` is a clean exit rather than an error.
+"""
+from __future__ import annotations
+
+import contextlib
+import io
+import sys
+import unittest
+
+from slipwai.cli import ROOT, VERSION, main
+
+
+class VersionTest(unittest.TestCase):
+    def test_the_version_is_the_file_rather_than_a_copy_of_it(self) -> None:
+        """A number repeated in two places is a number that will disagree with itself at a release."""
+        self.assertEqual(VERSION, (ROOT / "VERSION").read_text(encoding="utf-8").strip())
+
+    def test_the_root_of_a_checkout_is_the_repository_root(self) -> None:
+        """`src/slipwai/cli.py` is two directories below the root; an installed wheel reads `_bundle`."""
+        self.assertTrue((ROOT / "pyproject.toml").is_file())
+
+    def test_version_prints_the_version_and_exits_clean(self) -> None:
+        """A tool asked what it is answers on stdout and exits 0, so a script can read it."""
+        out = io.StringIO()
+        with self.assertRaises(SystemExit) as raised, contextlib.redirect_stdout(out):
+            main_with(["--version"])
+        self.assertEqual(raised.exception.code, 0)
+        self.assertEqual(out.getvalue().strip(), VERSION)
+
+    def test_no_arguments_prints_the_help(self) -> None:
+        """There is no verb yet, so the useful answer to a bare `slipwai` is what it can be asked."""
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            main_with([])
+        self.assertIn("--version", out.getvalue())
+
+
+def main_with(arguments: list[str]) -> None:
+    """`main` reads `sys.argv`; this runs it against a given argument list and puts `sys.argv` back."""
+    argv = sys.argv
+    sys.argv = ["slipwai", *arguments]
+    try:
+        main()
+    finally:
+        sys.argv = argv
+
+
+if __name__ == "__main__":  # pragma: no cover
+    unittest.main()

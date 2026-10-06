@@ -1,0 +1,77 @@
+# The keel as a pip-installable package. `slipwai` is the one console command; the wheel carries `VERSION`
+# beside the package as `slipwai/_bundle/`, which is where the keel looks when it finds no checkout around
+# it. The version is the `VERSION` file, read rather than repeated.
+#
+# Version 2 ships the keel alone. `assets/`, `catalog.json`, `CHANGELOG.md` and `changelog.d/` are not
+# force-included here because they are not back yet: each returns with the phase that brings it, and the
+# languages and extensions that version 1 bundled are packages now, installed into `~/.slipwai/packages/`
+# from the chandlery rather than carried in this wheel.
+[build-system]
+requires = ["hatchling==1.32.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "slipwai"
+dynamic = ["version"]
+description = "One-shot scaffolder for product monorepos: a walking skeleton, a verify gate, a path to production, and a repository set up for coding agents."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+# The toolkit's vendored skills carry their own licences and are declared here again when phase 5 brings
+# `assets/toolkit/` back. A glob that matches nothing is a build error, so the list holds what exists.
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "Volaris Group" }]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/ROBCOATVG/slipwai"
+Repository = "https://git.treyco.dev/ROBCOATVG/slipwai"
+Issues = "https://github.com/ROBCOATVG/slipwai/issues"
+Changelog = "https://github.com/ROBCOATVG/slipwai/blob/main/CHANGELOG.md"
+
+[project.scripts]
+slipwai = "slipwai.cli:main"
+
+[tool.hatch.version]
+path = "VERSION"
+pattern = '^(?P<version>\S+)\s*$'
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/slipwai"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"VERSION" = "slipwai/_bundle/VERSION"
+
+# The source distribution is what the wheel is built from, so it needs the same files and nothing of the
+# keel's own tests, docs or CI.
+[tool.hatch.build.targets.sdist]
+# Anchored to the root: unanchored, `VERSION` would also match a worktree's copy under .claude/.
+include = ["/src/slipwai", "/VERSION", "/README.md", "/LICENSE", "/NOTICE", "/pyproject.toml"]
+exclude = ["**/__pycache__"]
+
+[tool.ruff]
+target-version = "py311"
+# Wider than the 100 a generated Python project gets, for one reason: this codebase's job is to hold the
+# text of other projects' files, and a line of somebody else's Makefile or YAML cannot be rewrapped to suit
+# this repository's margin without changing what gets generated.
+line-length = 120
+extend-exclude = [".python-tools", ".build-tools", "build", "dist", "assets"]
+
+[tool.ruff.lint]
+# The same rule set a generated Python project is held to.
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["slipwai"]
+
+[tool.mypy]
+# What `make typecheck` runs. `files` rather than arguments so the gate and a bare `mypy` agree; `mypy_path`
+# so a script or a test that imports `slipwai` resolves it from `src/` the way `PYTHONPATH=src` does at run
+# time. 3.11 because that is the floor this keel promises. `scripts` joins the list in the slice that
+# creates it — mypy fails on a path that is not there.
+python_version = "3.11"
+files = ["src", "tests"]
+mypy_path = "src"
+check_untyped_defs = true
+warn_unused_ignores = true
+warn_redundant_casts = true

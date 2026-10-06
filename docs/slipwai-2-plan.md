@@ -1098,7 +1098,7 @@ against.
 
 | Slice | What | From | Size | Done when |
 |---|---|---|---|---|
-| 1.1 | `pyproject.toml`, `VERSION` at `2.0.0.dev0`, `requirements-*.txt`, the `slipwai` launcher script | upstream | S | `pip install -e .` works on an empty `src/slipwai/` with a `cli.py` that prints the version |
+| 1.1 | `pyproject.toml`, `VERSION` at `2.0.0.dev0`, `requirements-dev.txt`, the `slipwai` launcher, and `src/slipwai/` as `__init__`, `__main__` and a `cli.py` that answers `--version` | upstream | S | A checkout, an editable install and a built wheel all print `2.0.0.dev0` through `slipwai`, `python -m slipwai` and `./slipwai`; ruff, mypy and `tests/test_cli.py` are green |
 | 1.2 | `Makefile` with `lint`, `typecheck`, `check-structure`, `unit`, `test`, `verify`; `verify` is the four | upstream, `unit` new | S | `make verify` green on the empty package |
 | 1.3 | `scripts/check-structure.py` with its tiers, and the import surface as a tier that reads a list file | cruise-2 | M | The gate refuses an import against the direction; the surface list is empty and held |
 | 1.4 | CI: `verify.yml` with lint, typecheck, structure and unit on Linux, macOS, Windows and WSL; no matrix, no languages | upstream, cut down | M | Green on the fork, public, under Actions |
@@ -1205,7 +1205,7 @@ Depends on: 5.13 and 5.14. 7.1 first, then 7.2, then the rest in any order.
 
 | Slice | What | From | Size | Done when |
 |---|---|---|---|---|
-| 8.1 | `AGENTS.md`'s versioning rules, `changelog.d/`, `make release`, `make changelog` | upstream | M | The fork's own release machinery is green |
+| 8.1 | `AGENTS.md`'s versioning rules, `changelog.d/`, `make release`, `make changelog`, and `requirements-build.txt` and `requirements-publish.txt`, which come back with the machinery that proves them rather than sitting unused from phase 1 | upstream | M | The fork's own release machinery is green |
 | 8.2 | One 2.0.0 changelog entry written from the fork's history | new | M | Every user-visible change since 1.5.2 is in it, with its catch-up |
 | 8.3 | `migrate`: base from an installed 1.x, languages first, the rename table, in-flight work as data (section 6) | upstream + cruise-2 + new | L | `make test-migration` green for every profile and backend and the adopted fixtures |
 | 8.4 | The CI proposal's remaining items (per-package jobs, the root matrix retired) | cruise-2 | S | The keel's gate under ten minutes on CI |
