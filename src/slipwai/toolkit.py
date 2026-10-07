@@ -6,13 +6,16 @@ a change under `assets/` reaches every combination the moment it is generated.
 """
 from __future__ import annotations
 
+import json
 import re
 from functools import lru_cache
 
 from .assets import PROFILE_ROOT, ROOT, TOOLKIT_ROOT, asset_files
 from .capabilities import declared_for, pruning_capabilities, serves
-from .catalog import CATALOG, family_of, framework_of
+from .catalog import CATALOG, EXTENSIONS, family_of, framework_of
 from .examples import Speaker, resolve_examples_for, stamp_pseudocode_notes
+from .extension_directory import files as package_files
+from .hooks import declared
 from .registry import EXECUTABLES, registry
 from .services import APPLICATIONS, FIRST_SERVICE, FIRST_WEB, App, families_of, services_of, web_apps, wrapped_of
 from .tooling import for_app, verify_path
@@ -194,6 +197,41 @@ def toolkit_files_from_assets(profile: str, apps: list[App]) -> dict[str, str]:
     if CANON not in families:
         stamp_pseudocode_notes(files, families)
     return files
+
+
+#: Where an extension package's files land in a generated project. The path `./init` already looks under,
+#: so an extension that arrives from the chandlery is run by the loop that ran the keel's own three.
+EXTENSION_ROOT = "scripts/extensions"
+#: What each offered extension attaches to, written beside them. The manifest itself is not copied — a project
+#: is not where one is read — but the hooks are, because `./init` has to write the registry from what was
+#: elected and there is no keel in a project to ask.
+EXTENSION_HOOKS = f"{EXTENSION_ROOT}/available.json"
+
+
+def extension_files() -> dict[str, str]:
+    """Every installed extension's files, at the paths a generated project runs them from.
+
+    The project gets the files at generation, not at election, because the menu `./init` shows is built from
+    the catalogue and the election happens inside the project — there is no keel there to fetch anything.
+    What is offered is what was installed when the project was generated, which is also what `./init` can
+    actually run, and those being the same list is the whole point.
+
+    A file that is not text is skipped rather than refused: the keel writes a project as text, an extension
+    that ships a binary is shipping something the generator has no way to place, and one unreadable file is
+    not a reason the other extensions do not arrive. `check-extensions` is where that is said out loud.
+    """
+    written: dict[str, str] = {}
+    attached: dict[str, dict] = {}
+    for extension in EXTENSIONS:
+        attached[extension.name] = declared(extension.manifest)
+        for relative in package_files(extension.root):
+            try:
+                text = (extension.root / relative).read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            written[f"{EXTENSION_ROOT}/{extension.name}/{relative.as_posix()}"] = text
+    written[EXTENSION_HOOKS] = json.dumps(attached, indent=2, sort_keys=True) + "\n"
+    return written
 
 
 def executable_paths(profile: str, apps: list[App]) -> set[str]:

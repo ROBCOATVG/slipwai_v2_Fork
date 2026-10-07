@@ -15,8 +15,8 @@ import checkout_packages  # noqa: F401
 
 from slipwai import extension_shape as shape
 
-WHOLE = {"name": "codegraph", "description": "A code index for agents", "kind": "extension",
-         "core": ">=9.0,<10"}
+WHOLE = {"key": "codegraph", "name": "CodeGraph", "description": "A code index for agents",
+         "kind": "extension", "core": ">=9.0,<10"}
 
 
 class ValidationTest(unittest.TestCase):
@@ -84,3 +84,22 @@ class ObligationTest(unittest.TestCase):
 
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()
+
+
+class KeyTest(unittest.TestCase):
+    """`key` is what a person types and what the directory is called; `name` is the product's own."""
+
+    def test_a_key_that_is_not_a_slug_is_refused_saying_what_it_becomes(self) -> None:
+        with self.assertRaises(ValueError) as refused:
+            shape.validate({**WHOLE, "key": "UI/UX Pro Max"})
+        said = str(refused.exception)
+        self.assertIn("--extension", said)
+        self.assertIn("`name`", said)
+
+    def test_the_name_is_free_to_be_a_product_name(self) -> None:
+        shape.validate({**WHOLE, "key": "uipro", "name": "UI/UX Pro Max"})
+
+    def test_the_catalogue_entry_carries_the_name_not_the_key(self) -> None:
+        entry = shape.catalogue_entry({**WHOLE, "key": "uipro", "name": "UI/UX Pro Max"})
+        self.assertEqual(entry["name"], "UI/UX Pro Max")
+        self.assertNotIn("key", entry)

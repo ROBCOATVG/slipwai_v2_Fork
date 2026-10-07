@@ -1,0 +1,146 @@
+# Contract — an extension package
+
+An **extension** is optional dev tooling a project elects at `./init`. It never changes generated code, so
+it is not a product-architecture choice and has no answer in `slipwai generate`; it is installed into the
+package directory beside the languages, offered by `./init`'s menu in every project generated after that,
+and elected there or later with `./init --extension <key>`.
+
+This page is the whole contract: what the manifest declares, what the entry point has to do, where the files
+land, and what the keel refuses. `src/slipwai/extension_shape.py` holds the manifest half and
+`tests/test_extension_package.py` holds the loader and installer half, so this page and the code move
+together or the gate is red.
+
+## Where it lives
+
+| Thing | Module | Tier (`scripts/check-structure.py`) |
+|---|---|---|
+| What a manifest declares, and the six obligations | `src/slipwai/extension_shape.py` | contract |
+| Reading a package off disk | `src/slipwai/extension_directory.py` | contract |
+| Folding one into the catalogue | `src/slipwai/extensions.py` | contract |
+| The points a hook may attach to | `src/slipwai/hooks.py` | contract |
+| Installing and removing one | `src/slipwai/extension_install.py` | edge |
+| Writing a new one | `src/slipwai/package_new.py`, `slipwai package new` | edge |
+| Firing a point inside a project | `assets/toolkit/scripts/extensions/hooks.py` | the toolkit's, not the keel's |
+
+The last row is the rule that has been learned twice: **anything a generated project runs is a toolkit
+script**, because a generated project has no slipwai to import. The keel decides what an extension *is*; the
+toolkit runs it.
+
+## The manifest
+
+`extension.json`, at the root of the package directory.
+
+| Field | Required | What it is |
+|---|---|---|
+| `key` | yes | What a person types — `./init --extension <key>` — and what the installed directory is called. A lower-case slug. |
+| `name` | yes | What `./init`'s menu shows. A product's own name, so "UI/UX Pro Max" is fine here and nowhere else. |
+| `description` | yes | One sentence the menu shows under the name. For most people this is the only thing they will ever read about it. |
+| `kind` | yes | `extension`. The loader reads this and `language.json` apart by the file's name; the field is how a manifest in the wrong file is refused with the right advice. |
+| `core` | yes | The keel schema range it is built for, e.g. `>=9.0,<10`. Outside it, the refusal names the command that moves whichever of the two is behind. |
+| `ignore` | no | gitignore text for whatever local state it leaves. |
+| `publisher` | no | Who published it, which the chandlery's index shows. |
+| `tags` | no | What `slipwai search` matches against. |
+| `hooks` | no | The points it attaches to — below. |
+
+`key` and `name` are separate because they are different things, and this is the one way an extension's
+manifest differs from a language's, where the name is both. The catalogue entry a project gets carries
+`name`, `description` and `ignore`; the rest is the keel's business.
+
+## The six obligations
+
+Each is a failure somebody had. `slipwai extension check <dir>` prints them; the conformance suite runs them.
+
+1. **Idempotent** — running `./init --extension <key>` twice does what running it once did. Anything else
+   turns "did it work?" into "how many times has it run?".
+2. **Non-fatal** — a dev tool that is not on this machine is not a reason a project cannot be set up. It
+   says what is missing, and the project still works.
+3. **Projects** — its `AGENTS.md` block sits between markers, so the next projection replaces exactly that
+   block and leaves what a person wrote around it.
+4. **Gated** — an extension that writes an index, a cache or a lock ships a `check-<key>.py`, because stale
+   state nothing checks is state nobody trusts and everybody rebuilds.
+5. **Recovers** — every failure path names the command that fixes it. A message saying what is wrong and
+   not what to do about it costs its reader a search.
+6. **Merges** — a file a person hand-edited is merged, never overwritten. Anything else means an edit lost
+   to an install run for an unrelated reason, which is how a tool becomes one people avoid running.
+
+## The hook points
+
+A hook attaches to a point; it does not invent one. The set is closed, like the axes: a point is a promise
+the keel keeps about when something runs and what it is given, and a point an extension could add would be a
+promise nobody made. `slipwai hooks` prints the set with what is attached to each.
+
+| Point | Fires | Given |
+|---|---|---|
+| `init` | `./init --extension <key>`, once per election | `root` |
+| `project` | every re-projection: `make agents`, `migrate`, `./init --integration` | `root`, `harnesses` |
+| `check` | `make verify`, as one more gate | `root` |
+| `before-stage` | before each rung of the ladder | `stage`, `slice`, `fairway`, `berth` |
+| `after-stage` | after each rung of the ladder | `stage`, `slice`, `fairway`, `berth` |
+| `boundary` | every captain boundary, after the inbox is read | `slice`, `fairway`, `lines` |
+| `before-merge` | on the rebased branch, before the full gate | `slice`, `fairway`, `diff` |
+
+Declared short — `"hooks": {"init": "init.py"}` — or long, with `run`, `stages` and `budget`:
+
+```json
+{
+  "hooks": {
+    "after-stage": {"run": "hooks/sync.py", "stages": ["implement", "converge"], "budget": "30s"}
+  }
+}
+```
+
+What is given arrives in the environment as `SLIPWAI_STAGE`, `SLIPWAI_SLICE` and so on.
+
+Three rules keep a hook from becoming a second control plane:
+
+- **The captain depends on no hook.** Its controls — the last line, the controlled-files diff, the bounded
+  waits, the inbox receipt — all work with every hook removed. A hook is a second belt.
+- **A hook is never fatal to the rung.** It is reported as a `hook` line naming the extension, the point and
+  the last thing it printed, and the rung completes. An extension that could fail a stage is an extension
+  that can stop a delivery loop it was added to help.
+- **The resolved registry is a controlled file.** `.slipwai/hooks.json` is written from the elected
+  extensions, and an iteration that edits it is refused like one that edits a gate — so a run cannot
+  register a hook on itself.
+
+## Where the files land
+
+Every file of the package but `extension.json` is written into a generated project at
+`scripts/extensions/<key>/`, with `scripts/extensions/available.json` beside them carrying each offered
+extension's hooks. The manifest is not copied: a project is not where one is read, and shipping it there
+would ship a decoy that nothing reads and everybody edits.
+
+The project gets the files at **generation**, not at election, because the menu `./init` shows is built from
+the catalogue and the election happens inside the project, where there is no keel to fetch anything. What is
+offered is therefore exactly what `./init` can run. An extension installed after a project was generated
+reaches it at the next `slipwai migrate`.
+
+## Writing one
+
+```sh
+slipwai package new <key>                  # a whole package that already loads
+slipwai extension check <key>              # the manifest, and the six it is held to
+slipwai extension install <key>            # into the package directory
+slipwai extension list                     # what is installed, and what each attaches to
+slipwai hooks                              # every point, and what is on it
+```
+
+`package new` writes a manifest declaring the schema *this* keel speaks, and an entry point that already
+meets obligations 1, 3 and 6 with the rest marked `TODO`. A scaffold that does not load is a scaffold whose
+first lesson is that the tool is broken.
+
+An install takes a package directory, a release file or a git URL. A clone is shallow and its `.git` is
+dropped on the way in: what is installed is the package, not its history.
+
+## What is refused, and where
+
+A manifest is right or wrong on its publisher's machine, so everything about its shape is refused by
+`extension check` before anything is published. Two things can only be known on the machine installing it,
+and are refused there: a `key` some other package already holds, and a package whose `core` range this keel
+does not satisfy. A refused extension is refused alone — it is optional dev tooling, and a project that
+cannot be generated because something optional is malformed has the dependency backwards.
+
+## The keel ships none
+
+Version 1 carried three extensions in its own `catalog.json`. They are packages now —
+`ROBCOATVG/slipwai-extension-codegraph`, `-uipro`, `-ux-gates`. An extension that lived in the keel would be
+a dev tool every project carries the description of, whether or not anyone wanted it.

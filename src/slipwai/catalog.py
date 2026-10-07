@@ -12,6 +12,8 @@ from .assets import ROOT
 from .axes import catalog_axis_default
 from .catalog_merge import merge
 from .errors import GenerationError
+from .extension_directory import read as read_extensions
+from .extensions import merge_packages
 from .language_directory import directory, read
 from .targets import required_axes
 
@@ -24,7 +26,13 @@ SCHEMA_VERSION = "9.0"
 _FOUND, _FRAGMENT_REFUSALS = read(directory(), CORE["schemaVersion"], installed=True)
 CATALOG, _MERGE_REFUSALS = merge(CORE, _FOUND, installed=True)
 PACKAGES = [package for package in _FOUND if package.name not in _MERGE_REFUSALS]
-REFUSALS: list[str] = [*_FRAGMENT_REFUSALS, *_MERGE_REFUSALS.values()]
+# The same directory's other kind of package. An extension adds a catalogue entry and a directory of files
+# `./init` runs; it merges nothing into the backends, so it is folded in after the language merge rather
+# than through it.
+EXTENSIONS, _EXTENSION_REFUSALS = read_extensions(directory(), CORE["schemaVersion"], installed=True)
+_COLLISIONS = merge_packages(CATALOG, EXTENSIONS)
+EXTENSIONS = [one for one in EXTENSIONS if CATALOG["extensions"].get(one.name) == one.entry]
+REFUSALS: list[str] = [*_FRAGMENT_REFUSALS, *_MERGE_REFUSALS.values(), *_EXTENSION_REFUSALS, *_COLLISIONS]
 
 
 def catalog_families(catalog: dict) -> dict[str, list[str]]:

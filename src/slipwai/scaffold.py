@@ -55,7 +55,7 @@ from .project.stage_models import stage_models
 from .project.strangle_command import strangle_files
 from .services import App, prunable_features_of, services_of, web_apps, wrapped_of
 from .targets import managed
-from .toolkit import executable_paths, own_paths, toolkit_files_from_assets
+from .toolkit import executable_paths, extension_files, own_paths, toolkit_files_from_assets
 
 # `git commit` flags that keep it from starting a detached maintenance process — see `commit_all`.
 NO_MAINTENANCE = ("-c", "maintenance.auto=false", "-c", "gc.auto=0")
@@ -161,6 +161,10 @@ def project_files(
     # The copied assets first, so that anything generated above wins where both have an opinion. What a
     # copied asset means by `apps/service` and `apps/web` is spelled for this project on the way in.
     files = toolkit_files_from_assets(profile, apps)
+    # Each installed extension's own files, beside the menu that offers them. Before the generated files for
+    # the same reason the toolkit's are: nothing the keel generates is an extension's to overwrite, and
+    # nothing an extension ships is the keel's.
+    files.update(extension_files())
     files.update(generated)
     files.update(own_paths(language_files(project_name, event, apps, target), apps))
     # Last, because the frontend owns the npm workspace whenever there is one: its `package.json` and

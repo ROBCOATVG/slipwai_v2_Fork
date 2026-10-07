@@ -417,23 +417,7 @@
       "always": []
     }
   },
-  "extensions": {
-    "codegraph": {
-      "name": "CodeGraph",
-      "description": "Indexes the codebase into a local knowledge graph your coding agent can query over MCP, so it can trace callers, dependencies, and the blast radius of a change across files.",
-      "ignore": ".codegraph/\n"
-    },
-    "uipro": {
-      "name": "UI/UX Pro Max",
-      "description": "Installs the ui-ux-pro-max skill into skills/: an offline, searchable design-system generator (styles, palettes, type pairings, chart types and UX rules by product type) a slice consults before deciding what its screen looks like. Needs a browser app.",
-      "ignore": "skills/ui-ux-pro-max/\n"
-    },
-    "ux-gates": {
-      "name": "UX gates",
-      "description": "Installs the ux-ui-agent-skills kit under tools/ and adds its objective gates to make verify: no literal colour, size or duration outside the design tokens, and real-render contrast, focus, target-size, responsive and axe checks over screen previews where a browser is present. Needs a browser app.",
-      "ignore": "tools/ux-gates/\n"
-    }
-  },
+  "extensions": {},
   "profiles": {
     "standard": {
       "tier": 1,

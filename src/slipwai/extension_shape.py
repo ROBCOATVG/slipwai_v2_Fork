@@ -25,10 +25,14 @@ Everything else — found through the chandlery, signed, installed into a direct
 from __future__ import annotations
 
 from .hooks import declared as declared_hooks
+from .language_shape import name_fault
 
 KIND = "extension"
-#: What every extension's manifest declares. `core` is the keel range, as a language's manifest carries.
-REQUIRED = ("name", "description", "kind", "core")
+#: What every extension's manifest declares. `key` is what a person types — `./init --extension <key>` — and
+#: what the directory is called; `name` is what the menu shows, which is a product's name and not a slug.
+#: Separating them is the one thing a language's manifest does not have to do, because a language's name is
+#: both. `core` is the keel range, as a language's manifest carries.
+REQUIRED = ("key", "name", "description", "kind", "core")
 #: Declarable and not required. `ignore` is the gitignore text its local state needs — version 1's catalogue
 #: entry carried exactly this and nothing else, which is why it is still spelled the same.
 OPTIONAL = ("ignore", "publisher", "tags", "hooks")
@@ -54,6 +58,9 @@ def validate(manifest: dict) -> None:
     for field in REQUIRED:
         if not isinstance(manifest.get(field), str) or not manifest[field].strip():
             raise ValueError(f"an extension declares a non-empty `{field}`; this one does not")
+    if (fault := name_fault("extension", manifest["key"])) is not None:
+        raise ValueError(f"{fault}. The key becomes a directory and part of `./init --extension <key>`, so it "
+                         f"is held to what both allow; `name` is where the product's own name goes")
     if manifest["kind"] != KIND:
         raise ValueError(f"`kind` is `{KIND}` for an extension; this one says `{manifest['kind']}`. A "
                          f"language declares `language.json` instead, and the loader reads the two apart")

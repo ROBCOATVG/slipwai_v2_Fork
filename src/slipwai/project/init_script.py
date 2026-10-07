@@ -180,22 +180,22 @@ fi
 # python3. Never fatal to the rest of `./init`: Spec Kit and the agent projection are already in place by
 # here, so an extension whose own tool is missing or whose setup fails gets a message, not a failed
 # bootstrap. `scripts/extensions/<key>/init.py` is expected to be idempotent and non-fatal itself (see
-# docs/extensions.md); this loop only handles a key nothing shipped. `SLIPWAI_INTEGRATION` carries the
-# harness chosen on this run to a hook that adds to `skills/` and has to re-project it: Spec Kit records
-# the integration for later runs, but a hook running inside the same `./init` cannot rely on that record
-# being there yet.
+# docs/extensions.md); this loop only handles a key nothing shipped. The registry of what was elected is
+# written after them, from `available.json`, so a point knows what to fire before the first rung runs.
+# `SLIPWAI_INTEGRATION` carries the harness chosen on this run to a hook that adds to `skills/` and has to
+# re-project it: Spec Kit records the integration for later runs, but a hook running inside the same
+# `./init` cannot rely on that record being there yet.
 #
-# Before the agent projection, the extensions already adopted here are re-projected: an extension that names its
-# MCP server in each installed harness's project file has one more file to write when a harness is added later
-# (`./init --integration <agent>` on a project that adopted `codegraph` earlier), and Spec Kit has recorded the
-# new harness by this point. As non-fatal as everything below.
+# Before the agent projection, the extensions already adopted here are re-projected: one that names its MCP
+# server in each installed harness's project file has another file to write when a harness is added later
+# (`./init --integration <agent>` on a project that adopted it earlier), and Spec Kit has recorded the new
+# harness by this point. As non-fatal as everything below.
 #
 # Then one more projection pass, because that order has a cost: an extension points the agent at itself by
 # appending to `AGENTS.md`, and a harness whose `contextMode` is `copy` reads a file Spec Kit wrote from
 # `AGENTS.md` before any of this ran. Without the pass its copy never gains the pointer, and the extension
-# is installed but never queried. `--context` carries only the marker-fenced regions across — and writes
-# the `@AGENTS.md` include an `import` harness reads the whole file through — and it is as non-fatal as the
-# hooks above.
+# is installed but never queried. `--context` carries only the marker-fenced regions across — and writes the
+# `@AGENTS.md` include an `import` harness reads the whole file through — as non-fatal as the hooks above.
 RUN_EXTENSIONS = """
 for extension in $selected_extensions; do
   script="scripts/extensions/$extension/init.py"
@@ -206,6 +206,7 @@ for extension in $selected_extensions; do
   fi
 done
 if [ -n "$selected_extensions" ]; then
+  python3 scripts/extensions/hooks.py --elect $selected_extensions || printf '%s\n' 'The hook registry was not written; `python3 scripts/extensions/hooks.py --elect <keys>` writes it.' >&2
   if [ -n "$selected_integration" ]; then
     python3 scripts/agents/project.py --context "$selected_integration" || printf '%s\n' 'The extension pointers did not reach the agent context file; `make agents` retries it.' >&2
   else

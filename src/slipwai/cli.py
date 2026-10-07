@@ -26,6 +26,7 @@ from .cli_add import (
     replay_main,
 )
 from .cli_adopt import adopt_main
+from .cli_extension import extension_main, hooks_main
 from .cli_language import (
     braced,
     language_main,
@@ -36,6 +37,7 @@ from .cli_language import (
     undeclared_target,
 )
 from .cli_offered import resolve_requested_backend
+from .cli_package import package_main
 from .cli_prompts import (
     prompt_application_name,
     prompt_axis,
@@ -65,7 +67,8 @@ from .upgrade import main as upgrade_main
 # One verb so far. Each of the others is registered here by the slice that brings its module
 # back, so an unknown argument is argparse's refusal rather than a stub that half-answers.
 VERBS = ("generate", "add-service", "add-frontend", "describe-service", "migrate", "replay",
-         "adopt", "converge", "upgrade", "list", "search", "show", "install", "language")
+         "adopt", "converge", "upgrade", "list", "search", "show", "install", "language", "extension",
+         "hooks", "package")
 
 
 def main() -> None:
@@ -125,9 +128,12 @@ def dispatch(argv: list[str]) -> None:
     if argv[:1] == ["list"]:
         list_main(argv[1:])
         return
+    # `hooks` is a verb of its own rather than `extension hooks`: the question it answers — "why did that
+    # not run?" — is asked about the loop, by someone who may not know an extension is what to look for.
     for verb, run in (("add-service", add_service_main), ("add-frontend", add_frontend_main),
                       ("describe-service", describe_service_main), ("migrate", migrate_main),
-                      ("replay", replay_main), ("adopt", adopt_main), ("converge", converge_main)):
+                      ("replay", replay_main), ("adopt", adopt_main), ("converge", converge_main),
+                      ("extension", extension_main), ("hooks", hooks_main), ("package", package_main)):
         if argv[:1] == [verb]:
             run(argv[1:])
             return

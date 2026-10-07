@@ -29,6 +29,7 @@ from .registry import Family, Language
 from .versions import below, satisfies
 
 VARIABLE = "SLIPWAI_LANGUAGES"
+EXTENSION_MANIFEST = "extension.json"  # the other kind of package, read by `extension_directory`
 NO_FRAGMENT = "has no language.json"  # not a language at all: removed, never installed back (T017)
 # Each required key of `language.json`, with what it must be.
 REQUIRED: tuple[tuple[str, type, str], ...] = (
@@ -135,32 +136,40 @@ def reinstall(*names: str, back: bool = True) -> str:
     return f"; {command}" if command else ""
 
 
-def parse_fragment(path: Path) -> tuple[Any, str | None]:
-    """`language.json` parsed, or the fault that says why it cannot be. Only a regular file is opened: a FIFO
-    would block the verb on a read, and a directory or a device is no fragment. Whatever else the read or the
-    parse can raise is the package's fault in a line, never a traceback at import of the catalog."""
+def parse_manifest(path: Path, label: str, missing: str) -> tuple[Any, str | None]:
+    """A package's manifest parsed, or the fault that says why it cannot be. Only a regular file is opened: a
+    FIFO would block the verb on a read, and a directory or a device is no manifest. Whatever else the read or
+    the parse can raise is the package's fault in a line, never a traceback at import of the catalog.
+
+    `label` is the file's name as a message says it, and `missing` the fault for its absence, because the two
+    kinds of package differ in exactly that: an extension lacking `extension.json` is not an extension, and a
+    directory lacking `language.json` is not a language."""
     try:
         if not path.exists():
-            return None, NO_FRAGMENT
+            return None, missing
         if not path.is_file():
-            return None, "language.json is not a regular file"
-        return json.loads(path.read_text(encoding="utf-8")), None
+            return None, f"{label} is not a regular file"
+        parsed = json.loads(path.read_text(encoding="utf-8"))
     except UnicodeDecodeError:
-        return None, "language.json is not valid UTF-8"
+        return None, f"{label} is not valid UTF-8"
     except ValueError as error:  # a JSON error, or an integer past the interpreter's digit limit
-        return None, f"language.json is not valid JSON: {error}"
+        return None, f"{label} is not valid JSON: {error}"
     except RecursionError:
-        return None, "language.json is nested too deeply to read"
+        return None, f"{label} is nested too deeply to read"
     except OSError as error:
-        return None, f"language.json cannot be read: {type(error).__name__}"
+        return None, f"{label} cannot be read: {type(error).__name__}"
+    return (parsed, None) if isinstance(parsed, dict) else (None, f"{label} is not a JSON object")
+
+
+def parse_fragment(path: Path) -> tuple[Any, str | None]:
+    """`language.json` parsed, or the fault that says why it cannot be."""
+    return parse_manifest(path, "language.json", NO_FRAGMENT)
 
 
 def fault_in(name: str, root: Path, core: str, installed: bool = False) -> tuple[dict[str, Any] | None, str | None]:
     """The fragment of `root/language.json` a keel speaking schema `core` can load, or why it is refused. `installed`:
     the package is in the package directory, so the line ends on the command that fixes it there."""
     fragment, fault = parse_fragment(root / "language.json")
-    if fault is None and not isinstance(fragment, dict):
-        fault = "language.json is not a JSON object"
     if fault is None and (fault := shape_fault(name, fragment)) is None:
         try:
             fault = schema_fault(name, fragment, core, installed)
@@ -240,7 +249,10 @@ def read(root: Path, core: str, installed: bool = False) -> tuple[list[Package],
         return packages, refusals
     for entry in entries:
         try:
-            if entry.name.startswith(".") or not entry.is_dir():
+            # An extension lives in the same directory and is read by `extension_directory`. Skipped rather
+            # than refused: "has no language.json" about a thing that never claimed to be one is a line that
+            # sends its reader to fix something that is not broken.
+            if entry.name.startswith(".") or not entry.is_dir() or (entry / EXTENSION_MANIFEST).is_file():
                 continue
         except OSError:
             continue
