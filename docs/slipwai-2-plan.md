@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 54 of 100 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 18/26, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 55 of 100 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 19/26, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1604,7 +1604,7 @@ Depends on: phase 3.
 | 5.16 | Domain knowledge for the skipper | new (#27) | M | A fact in `.specify/domain/` is cited, not guessed |  |
 | 5.18 | The mock-up review as a once-per-feature stage of both profiles: `/mockups` runs a researcher that writes `research.md` from the spec, the domain knowledge and comparable workflows, reviews or drafts one HTML mock-up per surface, storyboards them, and writes `mock-states.md` from the person's approvals; the rung, and the split and the example map reading it | upstream skills + new | M | A feature handed no mock-ups reaches its split with every surface's states carrying a decision, and the rung runs before the model, the chart and the split | done |
 | 5.20 | `check-slice-scope` holds the split's *Surfaces and states* column against `mock-states.md`: every state a slice names is `approved` there, and every approved state is named by exactly one slice | new | M | A split naming a parked state is refused; a split leaving an approved state unbuilt is refused; a feature whose file says `surfaces: none` passes with the column empty |  |
-| 5.19 | The demo as a capability stop: the hand's verdict per slice written to the deck log, `demo_stop` rewritten to walk a whole capability, the trigger when a capability's last slice merges, and the bridge's two columns for accepted and hoisted | new | M | A capability's slices merge with nobody stopped; a person is stopped once, when the last of them lands, and accepting it hoists nothing |  |
+| 5.19 | The demo as a capability stop: `scripts/agents/capabilities.py` saying which are whole, due or accepted, and `demo_stop` rewritten to walk a whole capability | new | M | A capability's slices merge with nobody stopped; a person is stopped once, when the last of them lands, and accepting it hoists nothing | done |
 | 5.17 | Example mapping as a stage of **both** profiles: `example-map` moves out of `assets/profiles/event-modelling/commands/` into the toolkit, deriving its examples from the model on the event profile and writing them from the chart and the story on the standard one; the demo stage reads what it wrote | upstream + new | M | A standard-profile slice reaches its demo with examples a stage produced, and `/drive` refuses to implement a slice whose map is empty | done |
 
 Depends on: 1.2 for 5.1 and 5.2; phase 4 for a generated project to run against. 5.3 to 5.16 are the slices
@@ -2092,10 +2092,11 @@ slices and the examples each contributed, so the person is shown one coherent th
 instalment of it. The trigger is the captain's: when a `merged` line lands for the last slice the chart
 places under a capability (5.4), it writes `demo-due` and brings the stop to the person through the inbox.
 Acceptance is an `accepted` line against the capability, and it is the end of it — no flag moves, no merge
-waits on it, and nothing downstream reads it as permission to release. The bridge grows two columns,
-accepted and hoisted, side by side and never derived from each other, so a capability the business is
-deliberately holding back reads as held rather than late. Test: a chart with two capabilities over five
-slices stops a person twice, on the fifth and on the third, and never on a merge.
+waits on it, and nothing downstream reads it as permission to release. `capabilities.py` reports accepted and hoisted as
+separate columns, never deriving one from the other, so a capability the business is deliberately holding
+back reads as held rather than late; the bridge renders those two columns at 7.5, which is where the bridge
+is built. Test: a chart with two capabilities stops a person once per capability, when its last slice
+merges, and never on a merge that completes nothing.
 
 **5.11 — Composition root rendered, one file per event.** `project/composition.py` (back) gains a
 render-from-chart path: one `wire_*` line per use case the chart's slices name, generated into the

@@ -60,6 +60,25 @@ checks with the others, naming the screens, where their styles came from, and wh
 """
 DEMO_STOP = """### What the demo stop has to contain
 
+**The stop is per capability, not per slice.** A capability is the chunk of work a person's demo is of —
+usually several slices, named on the chart — and it is the smallest thing that means anything on its own to
+whoever is being shown it. At the end of each slice the hand walks that slice's examples and records a
+verdict in three words, because a test that passes and a path that works are different claims and only one
+of them is machine-checked; **nobody is stopped for that**. This stop runs when a capability's last slice
+has merged, and it walks the whole capability as one flow. Ask what is owed:
+
+```sh
+python3 scripts/agents/capabilities.py --due
+```
+
+In version 1 every slice carried a stop, and what the person was shown was a fraction of a capability they
+had to assemble in their head.
+
+**Accepting it is not a release decision.** Acceptance says the capability is right. Hoisting a flag says
+the business wants it live, which may be another quarter or never, and stays a person's act on their own
+timing. A capability may sit accepted and dark for as long as the business wants, and nothing here asks
+about a flag or moves one.
+
 The stop is a pause for feedback, so it opens with where the product stands and ends with the thing the
 actor uses and a question only they can answer.
 
