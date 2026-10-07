@@ -153,3 +153,36 @@ def detect(root: Path, environ: dict[str, str] | None = None) -> Agent:
 def chosen(key: str) -> Agent:
     """A harness a person named, which outranks anything detected."""
     return Agent(key, "named with --integration", "overridden")
+
+
+def row_of(key: str) -> dict:
+    """One harness's row, or an empty one for a key the registry has not got."""
+    return next((row for row in registry() if row.get("key") == key), {})
+
+
+def proven(key: str) -> bool:
+    """Whether a captain has run a feature end to end on this harness.
+
+    False for every row today, and said rather than left out. A harness's row records what its documentation
+    says about running it headless and about its hooks; what it does not record is whether any of that was
+    true when a run depended on it. Those are different claims, and a factory that printed the first as
+    though it were the second would be making a promise from somebody else's README.
+    """
+    return bool(row_of(key).get("proven"))
+
+
+def unproven_line(key: str) -> str:
+    """What a verb says about an unproven harness, or `''` for one a captain has driven.
+
+    Not a refusal. Every harness is unproven until somebody is the first to run one, and a factory that
+    refused them all would never get a first. It is a sentence, once, saying what is and is not known — and
+    the captain's own controls do not depend on any harness hook, which is the half of it that matters.
+    """
+    if not key or proven(key):
+        return ""
+    row = row_of(key)
+    why = str(row.get("provenWhy") or "no feature has been run end to end on it by a captain")
+    return (f"{name_of(key)} is unproven: {why}. Its row is read from its documentation, which is a "
+            f"different claim from having worked. The captain's controls depend on no harness hook — it "
+            f"reads the last line itself, diffs the controlled files and owns the waits — so what is at "
+            f"risk is a second belt, not the run")

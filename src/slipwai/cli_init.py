@@ -10,16 +10,20 @@ import json
 import subprocess
 from pathlib import Path
 
-from .harness import Agent, from_spec_kit, name_of
+from .harness import Agent, from_spec_kit, name_of, unproven_line
 
 
 def agent_line(agent: Agent) -> str:
     """What the report says about which coding agent the material is for, and how that was established."""
     if agent.harness:
         established = "named" if agent.provenance == "overridden" else agent.evidence
+        # Said here and only here: a sentence on the one line that names the harness, rather than a warning
+        # on every later command about a thing nobody can do anything about except be the first to run it.
+        unproven = unproven_line(agent.harness)
         return (
             f"Agent: {name_of(agent.harness)} ({established}), recorded in project.json. `./init` projects the "
             f"skills and commands into it without asking; `--integration <agent>` there changes it."
+            + (f"\n  {unproven}." if unproven else "")
         )
     if agent.candidates:
         named = ", ".join(name_of(key) for key in agent.candidates)
