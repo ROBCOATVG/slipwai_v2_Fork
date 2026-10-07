@@ -133,7 +133,9 @@ def run(argv: list[str]) -> int:
             print(f"release: {fault}", file=sys.stderr)
         return 1
     assert release is not None
-    whole = assembled(release, found, first=not parse_released())
+    # `first` omits the level, which is only right for a repository's genuinely first release — where
+    # "MAJOR relative to nothing" means nothing. This fork has 1.x behind it, so the level is the point.
+    whole = assembled(release, found, first=False)
     if parsed.dry_run:
         print(whole[:2000])
         print(f"release: would write VERSION {release} and delete {len(found)} fragment(s)")
@@ -148,11 +150,6 @@ def run(argv: list[str]) -> int:
     print(f"release: {release} written, committed and tagged v{release}. "
           f"`git push --follow-tags` publishes it")
     return 0
-
-
-def parse_released() -> bool:
-    """Whether `CHANGELOG.md` already holds an entry, which decides whether this one is the first."""
-    return "\n## " in CHANGELOG.read_text(encoding="utf-8")
 
 
 if __name__ == "__main__":
