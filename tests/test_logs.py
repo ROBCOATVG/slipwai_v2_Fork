@@ -56,9 +56,18 @@ class DeclarationTest(unittest.TestCase):
         self.assertEqual(logs.DECK_KINDS["read"], ("fairway", "told"))
 
     def test_the_harbour_log_holds_only_what_other_fairways_need(self) -> None:
+        """Plus the two answers the harbourmaster owes a captain that asked it for something (7.1)."""
         self.assertEqual(set(logs.HARBOUR_KINDS),
                          {"mark-set", "flag-hoisted", "flag-struck", "berth-allocated",
-                          "fires-banked", "park", "telegraph"})
+                          "fires-banked", "park", "telegraph", "granted", "refused"})
+
+    def test_a_request_is_a_deck_line_and_both_its_answers_are_harbour_lines(self) -> None:
+        """A captain holds no credential, so it asks; and a request that was refused and left no line is
+        one the captain waits on for ever and nobody can explain afterwards."""
+        self.assertIn("request", logs.DECK_KINDS)
+        self.assertIn("berth-request", logs.DECK_KINDS)
+        self.assertEqual(logs.declared("granted", harbour=True), ("fairway", "request", "what"))
+        self.assertEqual(logs.declared("refused", harbour=True), ("fairway", "request", "why"))
 
     def test_a_kind_one_log_has_and_the_other_has_not_is_refused_by_name(self) -> None:
         with self.assertRaises(logs.Unreadable) as refused:

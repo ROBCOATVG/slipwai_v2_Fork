@@ -46,6 +46,12 @@ unit: ## The fast tests only — the per-increment gate, with the slow modules l
 glossary: ## Rewrite GLOSSARY.md from the plan's vocabulary (tests/test_glossary.py holds them in step)
 	python3 scripts/glossary.py
 
+.PHONY: shared check-shared
+shared: ## Carry the modules both runtimes need from the keel into the toolkit
+	python3 scripts/shared-modules.py
+check-shared: ## Fail when a carried module is not what its keel source renders to
+	@python3 scripts/shared-modules.py --check
+
 .PHONY: skills
 skills: ## Copy the toolkit's skills into .claude/skills for this checkout's own sessions (ignored by git)
 	python3 -c "import pathlib, shutil; d = pathlib.Path('.claude/skills'); shutil.rmtree(d, ignore_errors=True); shutil.copytree('assets/toolkit/skills', d)"
@@ -77,6 +83,6 @@ check-structure: ## Fail when a module imports against the declared direction, c
 	python3 scripts/bring-back.py --check
 
 .PHONY: verify
-verify: lint typecheck check-structure test ## Full local gate — the same one CI runs
+verify: lint typecheck check-structure check-shared test ## Full local gate — the same one CI runs
 	@echo
 	@echo 'verify: all gates passed'

@@ -1,3 +1,6 @@
+# Written by scripts/shared-modules.py from src/slipwai/logs.py. Do not edit: edit the keel's module,
+# run `make shared`, and commit both. A generated project has no slipwai to import, and both runtimes need
+# this one — so there is one source and this copy, and `make check-shared` refuses a copy that has drifted.
 """The deck log and the harbour log: one line per event, and the only thing that says what happened.
 
 The first attempt had a runner that was the single source of status, and it died at iteration two. Seventeen
