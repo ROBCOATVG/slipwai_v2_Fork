@@ -11,11 +11,12 @@ every backend that has nothing to add.
 """
 from __future__ import annotations
 
+import inspect
 import unittest
 
 import checkout_packages  # noqa: F401
 
-from slipwai.project import ladder
+from slipwai.project import guidance, ladder
 from slipwai.project.native_commands import DEFAULT_FAST, TARGETS, fast_targets
 from slipwai.registry import FAST_TARGETS, PROTOCOL
 
@@ -69,6 +70,37 @@ class LadderGateTest(unittest.TestCase):
                 continue
             with self.subTest(rung=heading):
                 self.assertNotIn("make verify", body)
+
+
+class GeneratedGuidanceTest(unittest.TestCase):
+    """The rule lives where a slice in that project will read it, not in the keel's own repository.
+
+    And it names the line the architecture already draws rather than a second one: a test needing a real
+    database, process or network is exercising an adapter, so it is an integration test by construction.
+    The first draft of this reached for the keel's own mechanism — an explicit list of slow modules — which
+    the keel needs because it has no adapters to put them behind, and a product does not.
+    """
+
+    def guidance(self) -> str:
+        return " ".join(inspect.getsource(guidance.agent_guidance).split())
+
+    def test_a_project_is_told_its_two_gates_and_which_runs_when(self) -> None:
+        text = self.guidance()
+        self.assertIn("Two gates, not one", text)
+        self.assertIn("Every increment inside a slice", text)
+        self.assertIn("before the merge to `main`", text)
+
+    def test_the_fast_half_stays_fast_by_where_a_test_lives(self) -> None:
+        text = self.guidance()
+        self.assertIn("real database, a real process or the network is exercising an adapter", text)
+        self.assertIn("it is an integration test", text)
+
+    def test_it_says_what_happens_when_the_unit_suite_creeps(self) -> None:
+        """Because the consequence is the thing worth knowing, not the rule."""
+        self.assertIn("version 1's single `make verify` back again", self.guidance())
+
+    def test_the_gate_that_keeps_the_layers_apart_is_named(self) -> None:
+        self.assertIn("check-imports", self.guidance())
 
 
 if __name__ == "__main__":  # pragma: no cover

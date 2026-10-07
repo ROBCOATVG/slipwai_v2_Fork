@@ -206,8 +206,22 @@ def agent_guidance(profile: str, apps: list[App], target: str = "none") -> str:
         )
     guidance = f"""# Repository guidance
 
-Run `make verify` before declaring work complete. Keep domain logic independent of adapters and make
-changes as small end-to-end slices.
+Keep domain logic independent of adapters and make changes as small end-to-end slices.
+
+## Two gates, not one
+
+| When | What to run | Why |
+|---|---|---|
+| Every increment inside a slice | `make unit`, `make lint`, `make typecheck` | Seconds. Run them often enough that a break is one edit old |
+| Once, before the merge to `main` | `make verify`, on the rebased branch | The whole of it, including the integration suites and the gates |
+
+`make unit` is the fast half, and it stays fast because of where a test lives rather than because anybody
+remembers. **A test that needs a real database, a real process or the network is exercising an adapter, so
+it is an integration test**: it goes in the integration suite with the others, and `make unit` does not run
+it. The domain and the use cases are tested behind their ports with fakes, which is what makes them quick,
+and `make check-imports` is what keeps the three apart. A unit suite that creeps towards minutes is a
+suite nobody runs per increment, and then the only gate anyone runs is the one before the merge — which is
+version 1's single `make verify` back again, by a slower road.
 
 Never edit a Spec Kit-managed file in place; override it by name from the preset layer under
 `.specify/presets/`, because an in-place edit quietly turns every later `specify integration upgrade` into a
