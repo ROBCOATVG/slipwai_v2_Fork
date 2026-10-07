@@ -1,0 +1,155 @@
+"""`slipwai channel new`: a channel repository, ready to serve and ready to take a contribution.
+
+The same files whichever kind of channel it is. A private one is this directory on an internal host; the
+public one is this directory under `ROBCOATVG`, served by Pages. Making them the same shape is what keeps
+the public channel honest: it is tested by the code every private channel runs, not by itself.
+"""
+from __future__ import annotations
+
+from pathlib import Path
+
+from .errors import GenerationError
+from .package_release import DOCUMENT, ENTRIES
+
+SERVING = DOCUMENT.rsplit("/", 1)[0]
+
+
+def files(name: str) -> dict[str, str]:
+    """Every file a channel repository starts with."""
+    return {
+        f"{ENTRIES}/README.md": ENTRIES_README,
+        "README.md": README.format(name=name),
+        "CONTRIBUTING.md": CONTRIBUTING.format(name=name),
+        ".github/workflows/channel.yml": WORKFLOW,
+        ".gitignore": "__pycache__/\n",
+    }
+
+
+def write(name: str, into: Path) -> list[str]:
+    """Write the channel under `into`, or refuse a directory that already holds something."""
+    if into.exists() and any(into.iterdir()):
+        raise GenerationError(f"{into} already holds something. A channel is a whole repository, so it is "
+                              f"written into an empty directory or none at all")
+    for path, text in files(name).items():
+        target = into / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text, encoding="utf-8")
+    (into / SERVING).mkdir(parents=True, exist_ok=True)
+    return [str(into / path) for path in files(name)]
+
+
+ENTRIES_README = """# entries
+
+One file per release: `<name>-<version>.json`, written by `slipwai package register`.
+
+Never edit one by hand and never edit `../slipwai-languages/index.json` — it is generated from this
+directory by `slipwai channel build`, and CI refuses a pull request where the two disagree.
+
+One file per release is the point: two publishers releasing on the same afternoon touch two files and never
+meet, so nobody resolves a merge conflict in a document that clients read.
+"""
+
+README = """# {name}
+
+A slipwai chandlery channel: the languages and extensions this channel serves, and the release files
+themselves.
+
+## Installing from it
+
+```sh
+export SLIPWAI_CHANDLERY=<this channel's base URL>
+slipwai search
+slipwai install <a language>
+slipwai extension install <an extension>
+```
+
+Several channels are named in order, comma-separated — an organisation's own first, this one after it. A
+name an earlier channel lists is that channel's.
+
+## What is in here
+
+| Path | What it is |
+| --- | --- |
+| `entries/<name>-<version>.json` | One file per release. The only thing a contribution adds |
+| `slipwai-languages/index.json` | Generated from `entries/`. Never edited |
+| `slipwai-languages/*.tar.gz` | The release files themselves |
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). It is four commands.
+"""
+
+CONTRIBUTING = """# Publishing to {name}
+
+Four commands. Everything else is read off your package.
+
+```sh
+slipwai package new <name>          # a package that already loads, with TODOs where decisions go
+slipwai package check .             # the conformance suite your package's kind is held to
+slipwai package register . --channel <a checkout of this repository> --publisher <you>
+                                    # builds the release file, writes its entry, rebuilds the index
+git switch -c publish-<name>-<version> && git add -A && git commit && git push
+```
+
+Then open a pull request. CI runs `slipwai channel check`, which asks the questions a reviewer cannot
+answer by reading:
+
+- the release file the entry names is here, and its sha256 is the one the entry publishes;
+- the entry is one the client would actually read, manifest and all;
+- the index is what `entries/` renders to, because it is generated and never edited;
+- the name is not already another publisher's.
+
+**A name belongs to its first publisher.** Somebody who published `python` keeps `python`. The alternative
+is an install silently fetching a different person's code under a name a project already depends on.
+
+**A release is immutable.** Changing the file under a version somebody has installed makes a digest they
+checked into a lie. Release a new version instead; `register` refuses the other thing.
+
+Your package's own CI should call the keel's reusable workflow, which `slipwai package new` writes for you.
+"""
+
+WORKFLOW = """name: channel
+
+# What a pull request to this channel is checked against: the keel's own `slipwai channel check`, which is
+# the same code a private channel runs. The channel is not checked by itself — that is the whole reason the
+# check lives in the keel.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --disable-pip-version-check slipwai
+      - name: Check the channel
+        run: slipwai channel check .
+
+  publish:
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
+"""

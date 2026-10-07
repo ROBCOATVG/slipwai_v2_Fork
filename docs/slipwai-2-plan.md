@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 71 of 106 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 29/29, phase 6 6/9, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 72 of 106 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 29/29, phase 6 7/9, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1625,7 +1625,7 @@ most worth running in two fairways themselves, once 5.3 exists.
 | 6.4 | `slipwai package check / release / register`, branching on the kind answer, and `make release` in the template behind them. `package new` landed early, in 6.1b, because a publisher needed something to publish | new | M | One language package and one extension package, each made by `new` on an empty machine, pass `check`, release, and register into a local channel without a hand edit | done |
 | 6.5 | The trust store and the four states: `trust.json`, the `ROBCOATVG` root, the confirm-once prompt, `slipwai trust`, and `verified`/`unverified`/`unsigned`/`untrusted` wherever a package is shown. The cryptography is 6.5b | new | M | A new publisher is confirmed once and then installs silently; a hand-placed package loads and says `unsigned`; a signature nothing checked never reads as checked | done |
 | 6.5b | The verifier the trust store is waiting for, whichever of the three the owner picks: an optional `slipwai[verify]` extra, ed25519 in pure Python, or both by role. One function (`trust.check_signature`) and the signing step in `package release` | new | M | A release signed by its publisher installs as `verified`; one whose bytes were changed after signing is refused naming the publisher and the channel | blocked: owner's decision, see 6.5 |  |
-| 6.6 | The public channel's contribution path, which `slipwai package register` targets: the index repository, its CI (signature matches publisher, conformance passes, no name collision), and the contributor page | new | M | A package from outside `ROBCOATVG` is listed by a merged pull request and installs with one confirmation |  |
+| 6.6 | The public channel's contribution path, which `slipwai package register` targets: the index repository, its CI (signature matches publisher, conformance passes, no name collision), and the contributor page | new | M | A package from outside `ROBCOATVG` is listed by a merged pull request and installs with one confirmation | done |
 
 Depends on: phase 4. Runs beside phase 7.
 
@@ -2368,11 +2368,23 @@ keel that ships with no dependencies. There are three real ways out, and they ar
 The states are built either way and the verifier plugs into one seam, so whichever is chosen is a slice
 that adds a function and a test, not a redesign. **Owner's decision.**
 
-**6.6 — The public channel's contribution path.** The index repository under `ROBCOATVG`, with CI that
-checks a pull request's entry: the signature matches the named publisher, the release file's sha256
-matches, conformance passes against the entry's `core` range, and the name does not collide with an
-existing publisher's. The contributor page says the four verbs and nothing else. This is the repository
-`register` targets by default.
+**6.6 — The public channel's contribution path.** `slipwai channel new|build|check` writes a channel
+repository, regenerates its index from `entries/`, and checks a pull request against the questions a
+reviewer cannot answer by reading: the release file the entry names is there, its digest is the one the
+entry publishes, the entry is one the client would actually read, the index is what `entries/` renders to,
+and the name is not already another publisher's. The contributor page says the four package verbs and the
+two rules — a name belongs to its first publisher, and a release is immutable.
+
+**The check lives in the keel, and that is the point.** A channel checked by itself is a channel whose
+check is only as good as that channel. The public one is held to the code every private one runs, so an
+organisation's channel and `ROBCOATVG`'s are the same shape and the same quality by construction.
+
+The signature half of the check waits on 6.5b, like the client's.
+
+**The repository itself is not created here.** `ROBCOATVG/slipwai-index` is a public repository under
+somebody's organisation, which is a thing a person creates and not a thing a build does. Everything it
+holds is written by `slipwai channel new`, so creating it is: make the repository, run `channel new` into a
+checkout, push, and turn Pages on. **Owner's, when they want it.**
 
 ### Phase 7. Captains and the harbourmaster
 
