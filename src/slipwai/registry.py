@@ -78,6 +78,7 @@ GITIGNORE: Member[Any] = M("gitignore", "backend", True, str, "lines ending in a
 AGENT_PERMISSIONS: Member[Any] = M("agent_permissions", "backend", True, list, "permission entries")
 GATE_DESCRIPTION: Member[Any] = M("gate_description", "backend", True, str, "what the gate runs, in prose")
 EVENT_MODEL_PATHS: Member[Any] = M("event_model_paths", "backend", True, Callable, "(project, service) -> dict")
+FAST_TARGETS: Member[Any] = M("fast_targets", "backend", False, tuple, "targets fast enough per increment")
 MUTATION_TOOL: Member[Any] = M("mutation_tool", "backend", True, str, "the mutation tool's name")
 PROCFILE: Member[Any] = M("procfile", "backend", True, (Callable, type(None)), "(project, service) -> str")
 PIN_FILES: Member[Any] = M("pin_files", "family", True, dict, "path at the root -> text")
@@ -96,7 +97,7 @@ PROTOCOL: tuple[Member[Any], ...] = (
     DEV_COMMAND, COMPOSE_CACHES, EVENT_STORE_DIRECTORY, NATIVE_COMMANDS, FORMATTER, IMAGE_BUILDER,
     MIGRATIONS_IN_PRODUCTION, POSTGRES_SSLMODE, SERVICE_DESCRIPTORS, CI_TOOLCHAIN_SETUP, WRITE_SIDE_FILES,
     READ_SIDE_FILES, FLAG_READER, ENTRY_WIRING, FLAG_RESOURCE, ENTRY_STORE, SHARED_CODE, GITIGNORE, AGENT_PERMISSIONS,
-    GATE_DESCRIPTION, EVENT_MODEL_PATHS, MUTATION_TOOL, MUTATION_NOTE, PRUNE_ROWS, PROCFILE, PIN_FILES,
+    GATE_DESCRIPTION, EVENT_MODEL_PATHS, FAST_TARGETS, MUTATION_TOOL, MUTATION_NOTE, PRUNE_ROWS, PROCFILE, PIN_FILES,
     MAKEFILE_VARIABLES, RENOVATE_RULES, OPT_IN_FLAG_TRANSPORTS, IDENTITY_OUTSTANDING, MUTATION_SCOPING, NPM_WORKSPACE,
 )
 # What core reads from a family itself and never through a backend (`family_answer`, a family's `answers`): a

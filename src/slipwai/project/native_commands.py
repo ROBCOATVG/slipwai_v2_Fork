@@ -147,6 +147,29 @@ def format_command(apps: list[App]) -> str:
     return STEP.join(lines)
 
 
+#: What `make unit` runs where no backend says otherwise: the native test suite alone. Integration, mutation,
+#: the image build and the audit are the full gate's, before the merge.
+DEFAULT_FAST = ("test",)
+
+
+def fast_targets(apps: list[App]) -> tuple[str, ...]:
+    """Which targets are fast enough to run on every increment, as the services' backends answer it.
+
+    The intersection rather than the union: `make unit` is one target over every service, so a target is
+    only fast here where it is fast everywhere. One slow service would otherwise make the inner loop slow
+    for all of them, which is the habit theme B exists to drop.
+    """
+    from ..registry import FAST_TARGETS, registry
+
+    answers = []
+    for service in services_of(apps):
+        answered = registry().answer_or(service.backend, FAST_TARGETS, DEFAULT_FAST)
+        named = tuple(str(target) for target in answered) if answered else DEFAULT_FAST
+        answers.append({target for target in named if target in TARGETS})
+    settled = set.intersection(*answers) if answers else set(DEFAULT_FAST)
+    return tuple(target for target in TARGETS if target in settled)
+
+
 def native_commands(apps: list[App]) -> dict[str, str]:
     """Every service's commands, merged, with each browser app's own checks appended after them — and after
     the generated services', the recorded commands of every application that existed before the method did."""

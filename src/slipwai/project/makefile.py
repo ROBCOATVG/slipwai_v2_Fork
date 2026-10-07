@@ -22,7 +22,15 @@ from .flags import flag_gate, flag_gate_dependency
 from .integration import integration_targets, integration_variables
 from .model_targets import MODEL_GATES, model_targets
 from .mutation import mutation_notes
-from .native_commands import STEP, family_variables, format_command, gated, native_commands, steps
+from .native_commands import (
+    STEP,
+    family_variables,
+    fast_targets,
+    format_command,
+    gated,
+    native_commands,
+    steps,
+)
 from .openapi import exporting, openapi_targets
 from .production import deploy_role_gate, production_targets
 from .shared_packages import npm_dependency, npm_workspace_targets
@@ -150,6 +158,9 @@ def makefile(project_name: str, profile: str, apps: list[App], target: str = "no
     web = web_apps(apps)
     suites, per_suite = gated(apps)
     native = native_commands(apps)
+    # One recipe per fast target, in the contract's order. Theme B item 9: an increment pays for the
+    # fast checks and nothing else, and the full gate runs once, on the rebased branch, before `main`.
+    unit_recipe = "\n\t".join(native[target] for target in fast_targets(apps))
     # `lint` fails on formatting this project has not applied; `format` is what applies it. Written only
     # where a family in this project has a formatter at all, so no project carries a target that does
     # nothing — and never a prerequisite of `verify`, because a gate that rewrites the tree it is judging
@@ -313,7 +324,9 @@ constitution-requirements: ## Print the normative text the constitution must cov
 \t@python3 scripts/check-constitution.py --requirements
 {model_targets(event)}{api_document}
 {service_targets}
-.PHONY: test test-integration {phony_integration + ' ' if phony_integration else ''}adversarial mutation audit
+.PHONY: unit test test-integration {phony_integration + ' ' if phony_integration else ''}adversarial mutation audit
+unit: ## The fast tests only — what an increment runs, with the full gate left to the merge
+\t{unit_recipe}
 test: ## Run the complete native test suite
 \t{native['test']}
 {integration_targets(suites, per_suite)}adversarial: ## Re-run tests named or tagged adversarial
