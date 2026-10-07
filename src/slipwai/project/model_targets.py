@@ -21,6 +21,10 @@ MODEL_TARGETS = f"""
 check-model: ## Validate the global event model and its links to implemented code
 \tpython3 scripts/event-model/check.py
 
+.PHONY: chart
+chart: ## Render specs/<feature>/chart.yaml from model.yaml — the contracts every fairway steers by (no Node)
+\tpython3 scripts/event-model/chart.py
+
 .PHONY: model
 model: ## Regenerate the event-model diagrams and browsable page from model.yaml (needs Node; PNG=1 for a raster copy; MERMAID_PUPPETEER_CONFIG=<json> where Chromium cannot sandbox)
 \t{INSTALL}

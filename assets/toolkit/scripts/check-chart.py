@@ -24,6 +24,14 @@ Five rules, and each one exists because its absence fails quietly rather than lo
    loop would run to the end of a feature having stopped nobody, which reads exactly like a loop with
    nothing to show.
 
+On the event-modelling profile there is a sixth, and it is about where the chart came from rather than
+what it says: the committed chart must be what `make chart` would render from `model.yaml`. The model is
+the source of truth on that profile, so a chart edited by hand is a second answer to a question that
+already had one, and the two diverge silently because nothing else reads both. This holds it the way
+`make check-drawio` holds the committed canvas. It compares the two as data rather than as text, so a
+different YAML writer or a reordered model is not drift; a fairway, a mark or a slice that says something
+different is.
+
 Before the five, the shape: the keys that have to be there, the four mark kinds, and a slice naming a
 fairway that exists. A malformed chart is reported as a shape fault and the five rules are not run over it,
 because every one of them would then report the same damage again in its own words.
@@ -33,6 +41,7 @@ Exit 0 and say so where there is no chart yet: a project with no feature in flig
 """
 from __future__ import annotations
 
+import importlib.util
 import subprocess
 import sys
 from pathlib import Path
@@ -144,6 +153,30 @@ def rule_faults(chart: dict, path: Path) -> list[str]:
     return faults
 
 
+def model_drift(path: Path) -> list[str]:
+    """On the event profile, what the model means against what is committed. Empty where there is no model."""
+    renderer = ROOT / "scripts/event-model/chart.py"
+    if not renderer.is_file() or not (ROOT / "docs/event-model/model.yaml").is_file():
+        return []
+    spec = importlib.util.spec_from_file_location("chart_renderer", renderer)
+    if spec is None or spec.loader is None:  # pragma: no cover - a renderer that will not load
+        return []
+    module = importlib.util.module_from_spec(spec)
+    sys.dont_write_bytecode = True
+    spec.loader.exec_module(module)
+    meant = module.rendered()
+    if meant is None or module.chart_path() != path:
+        return []
+    committed = load_yaml(path.read_text(encoding="utf-8"))
+    if committed == meant:
+        return []
+    where = path.relative_to(ROOT).as_posix()
+    differing = sorted(block for block in ("fairways", "marks", "slices")
+                       if not isinstance(committed, dict) or committed.get(block) != meant[block])
+    return [f"{where}: {', '.join(differing) or 'the chart'} disagree(s) with docs/event-model/model.yaml. "
+            f"The model is the source of truth here; run `make chart` rather than editing the chart"]
+
+
 def main() -> int:
     found = charts()
     if not found:
@@ -154,7 +187,7 @@ def main() -> int:
         chart = load_yaml(path.read_text(encoding="utf-8"))
         shape = shape_faults(chart, path)
         # A malformed chart would make every rule report the same damage in its own words.
-        faults.extend(shape if shape else rule_faults(chart, path))  # type: ignore[arg-type]
+        faults.extend(shape if shape else rule_faults(chart, path) + model_drift(path))  # type: ignore[arg-type]
     if faults:
         print("check-chart: the chart does not hold\n", file=sys.stderr)
         for fault in sorted(set(faults)):

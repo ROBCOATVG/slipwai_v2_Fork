@@ -149,6 +149,14 @@ def validate(model: object, services: dict[str, list[str]] | None = None) -> lis
             valid = False
         if not valid:
             findings.append(f"{slice_id}: frames do not match the {pattern!r} pattern")
+        # What a person's demo is for. A slice in no capability never completes one, so no demo ever comes
+        # due and nothing says why — the loop reaches the end of a feature having stopped nobody, which
+        # reads exactly like a loop with nothing to show. `make chart` renders it onto the chart, and
+        # `check-chart` refuses a chart whose slices have none, so the answer is owed here.
+        capability = item.get("capability")
+        if not isinstance(capability, str) or not capability.strip():
+            findings.append(f"{slice_id}: names no `capability` — the chunk of work whose demo this slice "
+                            "is part of, which is what a person is stopped for")
         reads = item.get("reads", [])
         if pattern in {"state-view", "automation"} and not reads:
             findings.append(f"{slice_id}: {pattern} requires reads")
