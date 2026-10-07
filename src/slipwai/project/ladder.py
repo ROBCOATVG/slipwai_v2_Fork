@@ -70,11 +70,19 @@ def drive_ladder(
         """**Split** — the work is ordered vertical slices rather than one undivided outcome. Otherwise run
    `/story-splitting`."""
     )
-    if event:
-        stages.append(
-            """**Example map** — `specs/<feature>/slices/<id>/examples.md` holds the slice's rules, examples,
-   and Given/When/Then. Otherwise run `/example-map`."""
+    stages.append(
+        """**Example map** — `specs/<feature>/slices/<id>/examples.md` holds the slice's rules, an example
+   under each, and the questions nobody here can answer. Otherwise run `/example-map`, which %s. This rung
+   is not optional and not profile-specific: a slice with no examples has nothing for a test to be about
+   and nothing for the hand to walk at its demo, and the implementation rung refuses one whose map is
+   empty rather than implementing against what it inferred."""
+        % (
+            "derives them from the slice's given/when/then in `docs/event-model/model.yaml`"
+            if event
+            else "writes them from the slice's story in `specs/<feature>/spec.md` and the marks it sets in "
+                 "`specs/<feature>/chart.yaml`"
         )
+    )
     stages.append(
         """**Slice gaps** — %s
    records a gaps review for this slice: the criteria and states it added, or a `Gaps reviewed` note saying
@@ -120,7 +128,9 @@ def drive_ladder(
    version, its source, a run against it. A statement with no citation reads *assumed*, and a plan does not
    rest on it."""
         + context_decision + (PLAN_STYLING if web else ""),
-        """**Implementation** — tasks remain unchecked. Run the installed Spec Kit implement command.
+        """**Implementation** — tasks remain unchecked, and this slice's `examples.md` has at least one
+   example under a rule. A map with none is a stop, not a licence to infer: go back to the example map rung
+   and say which rule is waiting on which question. Run the installed Spec Kit implement command.
    This rung is RED-GREEN-REFACTOR and nothing else: a failing test observed failing for its own stated
    reason, the smallest code that passes it, then the code tidied before the next one. The green step's
    gate is the fast checks — `make unit`, lint and types — and never the full gate, which belongs to the

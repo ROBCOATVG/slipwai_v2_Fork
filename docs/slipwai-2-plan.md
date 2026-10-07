@@ -1307,7 +1307,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 38 of 92 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 2/19, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 39 of 92 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 3/19, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1580,7 +1580,7 @@ Depends on: phase 3.
 | 5.16 | Domain knowledge for the skipper | new (#27) | M | A fact in `.specify/domain/` is cited, not guessed |  |
 | 5.18 | The mock-up review as a once-per-feature stage of both profiles: `/mockups` runs a researcher that writes `research.md` from the spec, the domain knowledge and comparable workflows, reviews or drafts one HTML mock-up per surface, storyboards them, and writes `mock-states.md` from the person's approvals; the split, the example map and the demo read it | upstream skills + new | L | A feature handed no mock-ups reaches its split with every surface's states approved by a person, and the split refuses a slice that names a surface or state not approved |  |
 | 5.19 | The demo as a capability stop: the hand's verdict per slice written to the deck log, `demo_stop` rewritten to walk a whole capability, the trigger when a capability's last slice merges, and the bridge's two columns for accepted and hoisted | new | M | A capability's slices merge with nobody stopped; a person is stopped once, when the last of them lands, and accepting it hoists nothing |  |
-| 5.17 | Example mapping as a stage of **both** profiles: `example-map` moves out of `assets/profiles/event-modelling/commands/` into the toolkit, deriving its examples from the model on the event profile and writing them from the chart and the story on the standard one; the demo stage reads what it wrote | upstream + new | M | A standard-profile slice reaches its demo with examples a stage produced, and `/drive` refuses to implement a slice whose map is empty |  |
+| 5.17 | Example mapping as a stage of **both** profiles: `example-map` moves out of `assets/profiles/event-modelling/commands/` into the toolkit, deriving its examples from the model on the event profile and writing them from the chart and the story on the standard one; the demo stage reads what it wrote | upstream + new | M | A standard-profile slice reaches its demo with examples a stage produced, and `/drive` refuses to implement a slice whose map is empty | done |
 
 Depends on: 1.2 for 5.1 and 5.2; phase 4 for a generated project to run against. 5.3 to 5.16 are the slices
 most worth running in two fairways themselves, once 5.3 exists.

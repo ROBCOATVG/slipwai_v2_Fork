@@ -206,12 +206,14 @@ than an open question.
 
 # Every command a generated project carries, in the order `docs/skills-and-commands.md` lists them — the last
 # three reaching back out to the keel. One list, so the documentation and the files cannot disagree.
-BASE_COMMANDS = ("drive", "where-are-we", "whats-next", "gaps", "adversary", "mutation", "constitution-coverage",
+BASE_COMMANDS = ("drive", "example-map", "where-are-we", "whats-next", "gaps", "adversary", "mutation",
+                 "constitution-coverage",
                  "model-delegation-settings", "drive-settings", "benchmark", "cruise", "cruise-settings",
                  "cruise-status", "cruise-stop", "cruise-tell", "cruise-watch", "add-service", "add-frontend",
                  "catch-up")
 # Copied whole from `assets/profiles/event-modelling/commands/`; listed because the documentation names them in order.
-EVENT_COMMANDS = ("example-map", "validate-code-against-model")
+# `example-map` left this list in slice 5.17: it is a stage of both profiles now and ships from the toolkit.
+EVENT_COMMANDS = ("validate-code-against-model",)
 
 
 def command_names(event: bool) -> list[str]:

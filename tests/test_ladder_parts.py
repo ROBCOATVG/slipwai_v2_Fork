@@ -14,12 +14,15 @@ from __future__ import annotations
 import json
 import re
 import unittest
+from pathlib import Path
 
 import checkout_packages  # noqa: F401
 
+from slipwai import toolkit
 from slipwai.project import (
     adversary,
     agent_targets,
+    commands,
     demo_stop,
     docs_index,
     drive_settings,
@@ -28,6 +31,8 @@ from slipwai.project import (
     parallel_slices,
     stage_models,
 )
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class DriveSettingsTest(unittest.TestCase):
@@ -180,6 +185,63 @@ class LadderTest(unittest.TestCase):
                 continue
             with self.subTest(rung=heading):
                 self.assertNotIn("make verify", body, f"{heading} runs the full gate; only the merge may")
+
+
+class ExampleMapTest(unittest.TestCase):
+    """The example map is a stage of both profiles, and the one stage with a refusal behind it.
+
+    Version 1 shipped it from `assets/profiles/event-modelling/commands/`, so the standard profile had no
+    example-mapping stage at all and reached a demo of examples nothing had written. The file is in the
+    toolkit now, which is what both profiles are given, and it branches on the profile in its own prose
+    rather than by being two files that drift.
+    """
+
+    COMMAND = ROOT / "assets/toolkit/commands/example-map.md"
+
+    def test_the_command_ships_from_the_toolkit_and_not_from_one_profile(self) -> None:
+        self.assertTrue(self.COMMAND.is_file(), "example-map.md is not in the toolkit")
+        self.assertFalse((ROOT / "assets/profiles/event-modelling/commands/example-map.md").exists(),
+                         "the event profile still carries its own copy; two copies drift")
+
+    def test_the_toolkit_copies_it_into_either_profile(self) -> None:
+        for profile in ("event-modelling", "standard"):
+            with self.subTest(profile=profile):
+                self.assertEqual(toolkit.toolkit_treatment("commands/example-map.md", profile, set()), "copied")
+
+    def test_it_is_documented_on_both_profiles_and_is_no_longer_the_event_profile_s(self) -> None:
+        for event in (True, False):
+            with self.subTest(event=event):
+                self.assertIn("example-map", commands.command_names(event))
+        self.assertNotIn("example-map", commands.EVENT_COMMANDS)
+
+    def test_it_says_where_each_profile_reads_its_inputs(self) -> None:
+        """The one thing the profiles differ on, and the reason the file is not two files."""
+        text = " ".join(self.COMMAND.read_text(encoding="utf-8").split())
+        self.assertIn("docs/event-model/model.yaml", text)
+        self.assertIn("specs/<feature>/spec.md", text)
+        self.assertIn("specs/<feature>/chart.yaml", text)
+
+    def test_both_profiles_write_one_path_in_one_shape(self) -> None:
+        """Every stage after this one reads that path; two shapes would make each of them branch."""
+        text = " ".join(self.COMMAND.read_text(encoding="utf-8").split())
+        self.assertIn("specs/<feature>/slices/<id>/examples.md", text)
+
+    def test_a_question_is_never_closed_by_inventing_the_answer(self) -> None:
+        text = " ".join(self.COMMAND.read_text(encoding="utf-8").split())
+        self.assertIn("Never invent a fact to close a question", text)
+
+    def test_the_rung_is_on_both_profiles_and_names_that_profile_s_input(self) -> None:
+        for event, expected in ((True, "docs/event-model/model.yaml"), (False, "specs/<feature>/chart.yaml")):
+            with self.subTest(event=event):
+                rung = " ".join(rung_bodies(
+                    ladder.drive_ladder(event=event, apps=[], target="aws"))["Example map"].split())
+                self.assertIn(expected, rung)
+
+    def test_an_empty_map_refuses_the_implementation_rung(self) -> None:
+        """The done-when of slice 5.17. Implementing against an inference is demoed against the same one."""
+        rungs = rung_bodies(ladder.drive_ladder(event=False, apps=[], target="aws"))
+        self.assertIn("at least one", " ".join(rungs["Implementation"].split()))
+        self.assertIn("A map with none is a stop", " ".join(rungs["Implementation"].split()))
 
 
 class HookPointTest(unittest.TestCase):
