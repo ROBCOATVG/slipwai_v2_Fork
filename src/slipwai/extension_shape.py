@@ -1,0 +1,87 @@
+"""What an `extension.json` declares, and the six obligations an extension's entry point has to meet.
+
+An extension is a package like a language is, and this is its half of the loader's contract. The difference
+between the two kinds is narrow and worth stating: a language is asked at `slipwai generate`, to write the
+skeleton; an extension is elected at `./init`, after the skeleton exists, and never changes generated code.
+Everything else — found through the chandlery, signed, installed into a directory, loaded by the same loader
+— is the same, which is why the manifests differ only in what they declare.
+
+**The six obligations are not style.** Each is a failure somebody had.
+
+1. **Replaceably idempotent.** Running `./init --extension <key>` twice does what running it once did.
+   Anything else makes "did it work?" into "how many times has it run?".
+2. **Installs what it needs, and is non-fatal when it cannot.** A dev tool that is not on this machine is
+   not a reason a project cannot be set up. It says what is missing and the project still works.
+3. **Projects a marker-fenced block into `AGENTS.md`.** Fenced, so the next projection replaces exactly
+   that block and leaves what a person wrote around it.
+4. **Gates whatever state can go stale.** An extension that writes an index, a cache or a lock ships a
+   `check-<key>.py`, because stale state that nothing checks is state nobody trusts and everybody rebuilds.
+5. **Names a recovery command on every failure path.** The house rule for every refusal in this repository:
+   a message saying what is wrong and not what to do about it costs the reader a search.
+6. **Merges rather than overwrites a file a person hand-edited.** Anything else means a person's edit is
+   lost by an install they ran for an unrelated reason, which is how a tool becomes something people avoid
+   running.
+"""
+from __future__ import annotations
+
+from .hooks import declared as declared_hooks
+
+KIND = "extension"
+#: What every extension's manifest declares. `core` is the keel range, as a language's manifest carries.
+REQUIRED = ("name", "description", "kind", "core")
+#: Declarable and not required. `ignore` is the gitignore text its local state needs — version 1's catalogue
+#: entry carried exactly this and nothing else, which is why it is still spelled the same.
+OPTIONAL = ("ignore", "publisher", "tags", "hooks")
+#: The six, in the order `docs/extensions.md` sets them, each as the conformance suite names its check.
+OBLIGATIONS = (
+    ("idempotent", "running it twice does what running it once did"),
+    ("non-fatal", "a tool it cannot install is said, not fatal"),
+    ("projects", "its AGENTS.md block is marker-fenced and replaced whole"),
+    ("gated", "state that can go stale ships a check-<key>.py"),
+    ("recovers", "every failure path names the command that fixes it"),
+    ("merges", "a hand-edited file is merged, never overwritten"),
+)
+
+
+def validate(manifest: dict) -> None:
+    """An `extension.json`, or a refusal naming the field and what it is for.
+
+    Checked here rather than at election time: a manifest that is wrong is wrong on the publisher's machine,
+    where they can fix it, and discovering it at `./init` makes it somebody else's problem entirely.
+    """
+    if not isinstance(manifest, dict):
+        raise ValueError("an extension.json is an object")
+    for field in REQUIRED:
+        if not isinstance(manifest.get(field), str) or not manifest[field].strip():
+            raise ValueError(f"an extension declares a non-empty `{field}`; this one does not")
+    if manifest["kind"] != KIND:
+        raise ValueError(f"`kind` is `{KIND}` for an extension; this one says `{manifest['kind']}`. A "
+                         f"language declares `language.json` instead, and the loader reads the two apart")
+    if "ignore" in manifest and not isinstance(manifest["ignore"], str):
+        raise ValueError("`ignore` is gitignore text, as a string, for whatever local state this leaves")
+    if "tags" in manifest and not (isinstance(manifest["tags"], list)
+                                   and all(isinstance(tag, str) for tag in manifest["tags"])):
+        raise ValueError("`tags` is a list of strings, which is what `slipwai search` matches against")
+    unknown = set(manifest) - set(REQUIRED) - set(OPTIONAL)
+    if unknown:
+        raise ValueError(f"an extension declares {', '.join(sorted(unknown))}, which the keel does not read. "
+                         f"It may declare: {', '.join(sorted({*REQUIRED, *OPTIONAL}))}")
+    declared_hooks(manifest)
+
+
+def catalogue_entry(manifest: dict) -> dict:
+    """What the loader merges into `CATALOG["extensions"]`, which `./init`'s menu already reads.
+
+    Only the three fields the menu has ever used. An extension's manifest carries more than the catalogue
+    needs — its publisher, its hooks, its keel range — and merging all of it would make a menu that renders
+    whatever the newest manifest happened to add.
+    """
+    entry = {"name": manifest["name"], "description": manifest["description"]}
+    if manifest.get("ignore"):
+        entry["ignore"] = manifest["ignore"]
+    return entry
+
+
+def obligations() -> tuple[str, ...]:
+    """The names the conformance suite reports, in order."""
+    return tuple(name for name, _ in OBLIGATIONS)

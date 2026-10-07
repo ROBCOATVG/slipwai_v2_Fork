@@ -52,7 +52,8 @@ TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
     # dev-tooling hook is, where a project goes to production, what differs per package and where each
     # backend answers its probes. The registry and the loader land here in phase 2.
     ("contract", ("registry", "family_only", "language_shape", "language_directory",
-                  "features", "extensions", "hooks", "targets", "axes", "catalog", "catalog_checks", "catalog_merge",
+                  "features", "extensions", "extension_shape", "hooks", "targets", "axes", "catalog",
+                  "catalog_checks", "catalog_merge",
                   "catalog_options", "loaded", "backends", "probes", "ecosystems", "npm_workspace",
                   "examples", "harness",
                   "images")),
