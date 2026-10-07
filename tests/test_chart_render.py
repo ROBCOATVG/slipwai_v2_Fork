@@ -20,6 +20,20 @@ import checkout_packages  # noqa: F401
 ROOT = Path(__file__).resolve().parents[1]
 GATE = ROOT / "assets/toolkit/scripts/check-chart.py"
 
+
+def chart_module() -> object:
+    """The renderer, loaded from the toolkit. It runs in a project, so it is not importable by name."""
+    import importlib.util
+    specification = importlib.util.spec_from_file_location(
+        "toolkit_chart", ROOT / "assets/toolkit/scripts/event-model/chart.py")
+    assert specification is not None and specification.loader is not None
+    module = importlib.util.module_from_spec(specification)
+    specification.loader.exec_module(module)
+    return module
+
+
+chart = chart_module()
+
 MODEL = """
 version: 1
 slices:
@@ -130,3 +144,58 @@ class RenderedChartTest(unittest.TestCase):
 
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()
+
+
+class SingleServiceTest(unittest.TestCase):
+    """Found by generating a real project and running the loop in it, 2026-10-07.
+
+    A project with one service and a web app has two deployables and still nothing to decide about which
+    one owns a slice — so `service` is optional on the model's slice. The renderer resolved only the named
+    one, left `fairways` empty, and wrote a chart whose every slice named a fairway the chart had not got.
+    `check-chart` then refused the chart the renderer had just written, which is the worst pairing of a
+    generator and its gate there is.
+    """
+
+    def test_the_only_service_owns_a_slice_that_names_none(self) -> None:
+        deployables = {"service": {"kind": "service", "path": "apps/service"},
+                       "web": {"kind": "web", "path": "apps/web"}}
+        self.assertEqual(chart.only_service(deployables), "service")
+
+    def test_a_web_app_is_never_the_one(self) -> None:
+        """Resolving to it would put a context's code in the browser."""
+        self.assertIsNone(chart.only_service({"web": {"kind": "web", "path": "apps/web"}}))
+
+    def test_two_services_is_a_decision_and_is_left_to_the_slice(self) -> None:
+        deployables = {"a": {"kind": "service"}, "b": {"kind": "service"}}
+        self.assertIsNone(chart.only_service(deployables))
+
+    def test_a_chart_the_renderer_writes_names_every_fairway_its_slices_name(self) -> None:
+        """The pairing rule: whatever the renderer writes, the gate accepts."""
+        model = {"slices": [
+            {"id": "ORD-01", "context": "ordering", "capability": "Ordering",
+             "frames": [{"type": "evt", "name": "OrderPlaced"}]},
+            {"id": "BIL-01", "context": "billing", "capability": "Ordering",
+             "frames": [{"type": "evt", "name": "OrderCharged"}]},
+        ]}
+        found = chart.render(model, {"service": {"kind": "service", "path": "apps/service"},
+                                     "web": {"kind": "web", "path": "apps/web"}})
+        named = {body["fairway"] for body in found["slices"].values()}
+        self.assertTrue(named <= set(found["fairways"]), f"{named} vs {set(found['fairways'])}")
+
+
+class UnreadableSliceTest(unittest.TestCase):
+    """A model with three slices and no `id` on any of them rendered an empty chart and said "0 slices"
+    as a success. A renderer that drops what it cannot read makes a chart with holes in it, and a chart
+    with holes is what the whole of clearance then believes."""
+
+    def test_a_slice_with_no_id_is_named_rather_than_dropped(self) -> None:
+        found = chart.unreadable({"slices": [{"name": "Place an order"}, {"id": "ORD-01"}]})
+        self.assertEqual(len(found), 1)
+        self.assertIn("slice 1", found[0])
+
+    def test_a_model_whose_slices_all_read_has_nothing_to_say(self) -> None:
+        self.assertEqual(chart.unreadable({"slices": [{"id": "ORD-01"}]}), [])
+
+    def test_a_model_with_no_slices_at_all_is_not_a_fault(self) -> None:
+        self.assertEqual(chart.unreadable({"slices": []}), [])
+        self.assertEqual(chart.unreadable({}), [])

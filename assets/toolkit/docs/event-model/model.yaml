@@ -23,8 +23,11 @@
 #     slice's events is solved with synthetic fixtures, not by waiting for it. Cycles and
 #     "depends_on equals the producers of my reads" fail `make check-model`
 #   • status walks proposed → modelled → planned → implemented, and each step commits to more:
-#       planned      a state-change slice must name what its append is guarded by — its `stream`, or a
-#                    `guard` drawn over tags; a state-view or automation slice must
+#       planned      every slice must name the `capability` it is part of — the chunk of work a person's
+#                    demo is of, shared by several slices, because a demo of one slice is a demo of a
+#                    form that saves something and nobody can tell from it whether the thing works.
+#                    A state-change slice must also name what its append is guarded by — its `stream`,
+#                    or a `guard` drawn over tags; a state-view or automation slice must
 #                    name its `materialisation` — live, inline or async — and a `live` one the
 #                    `liveBudget` that bounds the fold it does on every query. An event may also name
 #                    its `attributes` here, marking which of them identify something (`identifies:

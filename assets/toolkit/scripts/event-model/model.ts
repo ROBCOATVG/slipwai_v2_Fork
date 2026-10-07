@@ -228,8 +228,22 @@ const sliceSchema = z.strictObject({
   id: z
     .string()
     .regex(/^[A-Za-z][A-Za-z0-9-]*$/, 'must start with a letter and contain only letters, digits, or -'),
-  /** The capability, as one observable outcome. If it needs "and", it is two slices. */
+  /** What this slice does, as one observable outcome. If it needs "and", it is two slices. */
   name: z.string().min(1),
+  /**
+   * The capability this slice is part of — the chunk of work a person's demo is of.
+   *
+   * Several slices share one. That is the whole point: a demo of a single slice is a demo of a form that
+   * saves something, and nobody can tell from it whether the thing works. A demo of "place and pay for an
+   * order" is something a person can accept or send back.
+   *
+   * Optional at `proposed` and `modelled`, where the grouping is still being argued about, and required
+   * from `planned` — which is also where `chart.py` starts writing it into the chart and `check-chart`
+   * starts refusing a slice without one. The three used to disagree: the chart required a capability, the
+   * renderer read one, and this schema had no field for it, so an event-modelling project could not
+   * produce a chart that passed its own gate.
+   */
+  capability: z.string().min(1).optional(),
   pattern: z.enum(PATTERNS),
   status: z.enum(STATUSES),
   /**

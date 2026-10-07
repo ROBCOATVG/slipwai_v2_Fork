@@ -580,6 +580,21 @@ export function validate(model: Model, workspace: Workspace): Violation[] {
       });
     }
 
+    // A capability is the chunk of work a person's demo is of, and several slices share one. Owed from
+    // `planned` because that is where `chart.py` writes it into the chart and `check-chart` starts
+    // refusing a slice without one — so a model that is planned and names none produces a chart that
+    // cannot pass its own gate, and the first anybody hears of it is the gate rather than the model.
+    if (rank >= STATUS_ORDER.planned && slice.capability === undefined) {
+      violations.push({
+        slice: slice.id,
+        rule: 'capability-before-planning',
+        message:
+          'a planned slice names the `capability` it is part of — the chunk of work a person demos. ' +
+          'Several slices share one: a demo of a single slice is a demo of a form that saves something, ' +
+          'and nobody can tell from it whether the thing works',
+      });
+    }
+
     if (
       rank >= STATUS_ORDER.planned &&
       slice.pattern === 'state-change' &&

@@ -77,6 +77,48 @@ def events_of(item: dict) -> list[str]:
             and frame.get("external") is not True and frame.get("name")]
 
 
+def unreadable(model: object) -> list[str]:
+    """Every slice in the model this renderer cannot read, said by where it is.
+
+    A model with three slices and no `id` on any of them used to render an empty chart and report
+    "0 slices" as a success. The checker then refused the chart for a different reason and nobody could
+    see that the model was the problem. A renderer that drops what it cannot read is a renderer that makes
+    a chart with holes in it, and a chart with holes is what the whole of clearance then believes.
+    """
+    slices = model.get("slices") if isinstance(model, dict) else None
+    if not isinstance(slices, list):
+        return []
+    return [f"slice {number} of the model has no `id`, so nothing can name it"
+            for number, item in enumerate(slices, start=1)
+            if not (isinstance(item, dict) and item.get("id"))]
+
+
+def only_service(deployables: dict[str, dict]) -> str | None:
+    """The one deployable a slice's code could land in, or None where there is a choice to be made.
+
+    `kind: service`, not "the only deployable": a project with one service and a web app has two
+    deployables and still nothing to decide, and resolving to the web app would put a context's code in
+    the browser.
+    """
+    found = [name for name, record in deployables.items() if record.get("kind") == "service"]
+    return found[0] if len(found) == 1 else None
+
+
+def service_for(item: dict, deployables: dict[str, dict]) -> tuple[str, dict] | None:
+    """Which deployable owns this slice: the one it names, or the only service there is.
+
+    `service` is optional on a slice while a project has one service — there is nothing to decide then —
+    so resolving only the named one left such a project with no fairways at all, and a chart
+    `check-chart` then refused for naming fairways it had not got. The renderer and the checker
+    disagreeing about what a chart is is the worst pairing of the two there is.
+    """
+    named = str(item.get("service") or "")
+    if named in deployables:
+        return named, deployables[named]
+    only = only_service(deployables)
+    return (only, deployables[only]) if only else None
+
+
 def render(model: object, deployables: dict[str, dict]) -> dict:
     """The chart this model means. Sorted throughout, so two renders of one model are one chart."""
     slices = model.get("slices") if isinstance(model, dict) else None
@@ -84,9 +126,10 @@ def render(model: object, deployables: dict[str, dict]) -> dict:
 
     service_of: dict[str, tuple[str, dict]] = {}
     for item in items:
-        context, service = str(item.get("context") or ""), str(item.get("service") or "")
-        if context and service in deployables:
-            service_of[context] = (service, deployables[service])
+        context = str(item.get("context") or "")
+        found = service_for(item, deployables)
+        if context and found is not None:
+            service_of[context] = found
 
     fairways, marks, charted = {}, {}, {}
     for context, (service, record) in sorted(service_of.items()):
@@ -128,6 +171,14 @@ def main() -> int:
     if chart is None:
         print("chart: no event model here; the chart is written by /chart on this profile")
         return 0
+    faults = unreadable(load_yaml(MODEL.read_text(encoding="utf-8")))
+    if faults:
+        print("chart: the model holds slices this cannot read, so no chart is written", file=sys.stderr)
+        for fault in faults:
+            print(f"  {fault}", file=sys.stderr)
+        print("  Run: npm run -w scripts/event-model check   (which says what each slice is missing)",
+              file=sys.stderr)
+        return 1
     try:
         import yaml  # type: ignore[import-not-found]
     except ImportError:  # pragma: no cover
