@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 58 of 101 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 22/27, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 59 of 101 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 23/27, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1601,7 +1601,7 @@ Depends on: phase 3.
 | 5.12b | Flags at the entry wiring only, and the hygiene gate: `check-flags` refuses a flag hoisted everywhere and never struck. The shape beside the target is 3.4b's | new | M | A flag lives at one `if` at the route or menu, and one overdue to be struck fails the gate |  |
 | 5.13 | The deck log and harbour log formats, written by `/drive`; `.slipwai/logs/` ignored; `refs/slipwai/logs` sync | new | M | A run's status is answerable from the logs after the fact | done |
 | 5.14 | Berths: `slipwai berth add / status / remove`, allocation policy, the sandbox | new | L | Two berths on one machine do not collide on ports or databases |  |
-| 5.15 | The decision ceiling, bounded waits, the inbox read at every boundary with receipts | new | M | A message is read within one boundary or forces one |  |
+| 5.15 | The decision ceiling, bounded waits, the inbox read at every boundary with receipts | new | M | A message is read within one boundary or forces one | done |
 | 5.16 | Domain knowledge for the skipper | new (#27) | M | A fact in `.specify/domain/` is cited, not guessed |  |
 | 5.18 | The mock-up review as a once-per-feature stage of both profiles: `/mockups` runs a researcher that writes `research.md` from the spec, the domain knowledge and comparable workflows, reviews or drafts one HTML mock-up per surface, storyboards them, and writes `mock-states.md` from the person's approvals; the rung, and the split and the example map reading it | upstream skills + new | M | A feature handed no mock-ups reaches its split with every surface's states carrying a decision, and the rung runs before the model, the chart and the split | done |
 | 5.20 | `check-surfaces` holds the split's *Surfaces and states* column against `mock-states.md`: every state a slice names is `approved` there, and every approved state is named by exactly one slice | new | M | A split naming a parked state is refused; a split leaving an approved state unbuilt is refused; a feature whose file says `surfaces: none` passes with the column empty | done |
@@ -2149,6 +2149,12 @@ sandbox is a container under Docker where it is present, a `sandbox-exec` profil
 Linux, and Windows Sandbox on native Windows; the berth holds no credential for the forge, the cloud or
 the chandlery. Tests: two berths allocate disjoint ports and databases; `remove` leaves nothing; the
 sandbox kind is proven on each platform in CI, which is the WSL and Windows work section 7 promised.
+
+**5.15's three rules live in the toolkit, not in `logs.py`.** This plan said "pure functions over log
+lines, in `src/slipwai/logs.py`", and that is the mistake 5.5 made and 5.5b undid: the things that ask —
+`/drive`, and later the captain — run inside a generated project with no slipwai to import. `logs.py` keeps
+the *format*, which the keel needs for `slipwai fleet` and the bridge; the *policy* is
+`scripts/agents/inbox.py`, where the loop can reach it. Corrected 2026-10-07 while doing it.
 
 **5.15 — The decision ceiling, bounded waits, the inbox at every boundary.** Three small rules the
 captain will enforce and `/drive` learns first. The count of `decision` lines with no `read` from a
