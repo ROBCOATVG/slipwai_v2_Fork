@@ -61,6 +61,14 @@ version 1, it uses version 1's own names and says so.
 | **Drive, cruise** | `/drive` is the main mode: a person is present, the whole fleet fans out across fairways, and every product question, park and demo comes back to that person through the inbox. `/cruise` is the same fleet with nobody at the keyboard: the skipper answers the questions and the hand runs the demos. Nothing else differs | Same words, but in version 1 only `/cruise` fanned out across a product |
 | **The ladder** | The ordered stages of `/drive`. Section 5 draws it | Same word |
 
+**Facing a person, every one of these words is paired with the ordinary one.** The vocabulary is the
+method's, not the reader's. A stop, a command, a refusal or a page that asks a person something names the
+thing both ways the first time it appears in that exchange — "the fairway (this context's slices)", "hoist
+the flag (turn it on for real users)", "the careen (the hardening slice)" — and may use the slipwai word
+alone afterwards. A person answering a question should never have to learn a vocabulary to answer it, and a
+stakeholder reading the bridge never agreed to learn one at all. Slice 7.5 already holds the bridge to plain
+labels; this is the same rule everywhere a person is asked or told. Decided 2026-10-07.
+
 Two version 1 terms appear in this document when it describes version 1:
 
 - **The runner** is version 1's `scripts/agents/cruise.py`. It starts one iteration after another in a fresh
@@ -441,7 +449,8 @@ and is scoped to a fairway.
 6. **The captain owns every wait.** A background gate gets a timeout from the captain. A delegate writes no
    polling loop of its own.
 7. **Domain knowledge for the skipper** (issue #27), so it parks less and guesses less.
-8. **Review and refactor before the merge.** After the demo is accepted, and before adversary review, a reviewer
+8. **Review and refactor before the merge.** After the hand's verdict on the slice's examples, and before
+   adversary review, a reviewer
    with a fresh context reads the slice's diff against the chart, the constitution and the slice's own examples.
    The reviewer looks for correctness, for reuse of what the keel or the service already has, for
    simplification, and for the hexagon being kept. The reviewer never edits. The slice's delegate fixes the
@@ -454,8 +463,38 @@ and is scoped to a fairway.
    once, on the rebased branch, before the merge to `main`, and again in CI. The ladder, the captain and the
    generated `Makefile` all say which gate a stage runs. The full gate is never part of the inner loop.
 
-**Done when.** Wall time and tokens per accepted slice are half of the experiment's median. No slice merges with
-carried gaps.
+10. **A person's demo is per capability, and tied to nothing else.** The hand still walks a slice's examples
+    at the end of it and records a verdict, because a test that passes and a path that works are different
+    claims and only one of them is machine-checked. What moves is the stop where a *person* watches: it runs
+    when a **capability** is whole, meaning every slice the split placed under it has merged. A capability
+    usually spans several slices, and a fairway usually holds several capabilities, so this is neither a stop
+    per slice nor a stop per fairway. It is the smallest chunk of work that means anything on its own to the
+    person being shown it. A slice merges on the hand's verdict, its review findings closed, one adversary
+    round and the mutation gate, which are the four things a machine can hold. In the experiment every slice
+    carried a stop for a person, and what the person was shown was a fraction of a capability they had to
+    assemble in their head.
+
+    **The demo is not a release gate.** It is not tied to the flag, the fairway, the careen or the release
+    mode. Accepting a demo says the capability is right. Hoisting a flag says the business wants it live,
+    which may be another day, another quarter, or never, and stays what it is today: a person's act on their
+    own timing (theme E). A capability may sit accepted and dark for as long as the business wants, and the
+    bridge shows the two states in separate columns so that neither is ever read off the other. Equally, a
+    capability under the `open` release mode has no flag at all and still has a demo. Decided 2026-10-07.
+
+    **Where a capability comes from, and what has to change for it.** Nothing names it today in a way the
+    loop can read, and this is the part of the item that is work rather than a rule. `story-splitting` names
+    one *parent* capability per split and then lists every slice flat beneath it, so a split covering three
+    capabilities names one. The only place a slice is tied to a capability at all is the release-constraint
+    stage, which names "which releasable capability the slice belongs to" in the same breath as the flag key
+    that holds it — the exact coupling this item removes, in a stage that is absent under `--target none`.
+    So the unit gets a home of its own: the split groups its slices under the capabilities they complete,
+    and the chart carries `capability` per slice (slice 5.4), on both profiles and under every release mode.
+    A captain can then count. When a `merged` line lands for the last slice of a capability, that
+    capability's demo is due. Where a flag exists it covers the same unit, which leaves theme E's rule
+    unchanged: the demo follows the unit, and the flag follows the business.
+
+**Done when.** Wall time and tokens per merged slice are half of the experiment's median. No slice merges with
+carried gaps. A person's demo stops per feature are the number of capabilities, not the number of slices.
 
 ### Theme C. Fairways, and the chart before the split
 
@@ -478,7 +517,8 @@ carried gaps.
 4. **`check-slice-scope` reads the chart for the paths a fairway owns**, on both profiles. The boundary holds
    with or without a model.
 5. **Berths**, with the allocation policy (ports, database names) in the factory, not in each operator's head.
-6. **Each fairway merges its own accepted slices to trunk.** Merges are in split order within a fairway and in
+6. **Each fairway merges its own slices to trunk**, on the evidence theme B item 10 names rather than on a
+   person's acceptance. Merges are in split order within a fairway and in
    order of arrival across fairways. Before each merge: rebase, then run the full gate. The merge is as dark as
    the release mode says. A slice with nothing holding it back parks for a person. The issue #30 work on the
    `slipwai-workstreams` checkout is the first version of this, and is renamed as it comes in.
@@ -670,7 +710,7 @@ shows.
 | Instrument | What it shows | Where the data already is |
 |---|---|---|
 | Position | The product state (slipway, sea trials, in service) and the release mode | `project.json` |
-| Heading | The feature in flight, its fairways, and for each: slices accepted of total, the next cleared slice, the holder, and the flag that covers it | The chart, the deck logs, trunk |
+| Heading | The feature in flight, its fairways, and for each: slices merged of total, the next cleared slice, the holder, and per capability whether its demo is accepted and whether its flag is hoisted — in separate columns, because a capability the business is deliberately holding back is not a late one | The chart, the deck logs, trunk |
 | The chart itself | The event model or the standard-profile chart, rendered, with each slice coloured by its deck log state | `model.yaml` or `contracts/`, the deck logs. `make model` already renders the first |
 | Flags | Every release flag: its capability, where it is hoisted, when, and whether it is due to be struck | The flag file, the harbour log |
 | Deployed | What commit each environment runs, and the pipeline's state for trunk | The forge's pipeline API, the target's deploy record |
@@ -807,7 +847,9 @@ question: where does a fairway's chart come from, and who holds it? The SVG file
    given/when/then, and the standard profile writes them from the chart and the story. They do not differ
    in whether there are any. A slice with no examples has nothing for the hand to demo and nothing for a
    test to be about, and the demo stage in both figures says "the hand walks the examples" — in version 2
-   that sentence is true because a stage put them there.
+   that sentence is true because a stage put them there. The hand walks them at the end of every slice and
+   records a verdict; the stop where a *person* watches runs once per capability, when the last slice under
+   it has merged (theme B, item 10).
 2. **The implement stage is red, green, refactor.** The ladder's `Implement` box is not "write the code":
    it is the `tdd` skill's cycle, with `make unit`, lint and types as the green step's gate. The mutation
    gate later is evidence the tests were real; it is not what makes anyone write one first.
@@ -865,7 +907,7 @@ Both are stages in the figures now. Noticed 2026-10-06.
 
 **Two refactors, and they are not the same one.** The one inside `Implement` is the third beat of each
 cycle: the code just made green, tidied before the next example. The one at `Review + reshape` is the
-slice's whole diff, after the demo, with a fresh-context reviewer on it — the shape of what was built
+slice's whole diff, after the hand's verdict, with a fresh-context reviewer on it — the shape of what was built
 rather than the shape of one cycle's code. Collapsing them loses the small one, which is the one that
 stops the big one being needed.
 
@@ -911,6 +953,7 @@ schema. On the standard profile, the same hop carries a route, a schema or a por
 | The done marker | `status: implemented` in the model. It is written at plan time and never reconciled, so in MANDA it was wrong for eight slices | A row in `specs/<feature>/slices/README.md` | The deck log's `merged` line plus trunk. The model's status and the register are rendered from the log, never written by hand |
 | Where the fairway is recorded | Derived: the slice's `context`, or its `service` where that service holds one context (the issue #30 branch) | A Workstream column in the slice graph (the issue #30 branch). The scope gate does not read it | The chart: fairway, context, service, owned paths, marks set, marks steered by, holder. One file that captains and gates both read |
 | Verification inside the loop | One `make verify` does everything, on every increment and before every merge | The same | Fast checks per increment: `make unit`, lint, typecheck, the slice's own tests. The full `make verify` once, on the rebased branch, before the merge to `main`, and in CI |
+| Where a person sees the product | A demo stop per slice, with the person assembling the capability from its instalments | The same | The hand walks each slice's examples and records a verdict; the person's stop is once per capability, when its last slice merges. It is not a release gate: accepting it is not hoisting a flag, and a capability under `open` has no flag to hoist |
 | Review before the merge | None. Convergence is the slice judging itself. Adversary review comes after the demo | The same | A fresh-context review of the slice's diff, then a refactor pass, between the accepted demo and adversary review |
 | Merge and release | Split order across the whole feature. One `main`. Phase 4 per slice. The integrator merges | The same | Split order within a fairway, order of arrival across fairways. Each fairway merges as dark as the release mode says. The careen runs before the flag is hoisted. Nobody is a merge queue |
 | Ids shared across fairways | The next number after the last one in the checkout. 54 renumbering commits in one night | The same | Every id carries its fairway (`D-ORD-07`). Every append-only file is per fairway. Feature-level views are rendered on `main`. Nothing is ever renumbered |
@@ -1159,6 +1202,15 @@ The first attempt paid for these rules. They apply from phase 1, inside the fork
 
 ### Settled on 2026-10-07
 
+- **A person's demo is per capability, not per slice.** The hand still walks a slice's examples and records
+  a verdict; the stop where a person watches runs when a capability is whole, which is the smallest chunk of
+  work that means anything on its own. A slice merges on the hand's verdict, closed review findings, one
+  adversary round and the mutation gate. Theme B, item 10.
+- **The demo is not a release gate.** It is tied to neither the flag, the fairway, the careen nor the
+  release mode. Accepting a demo says the capability is right; hoisting says the business wants it live, and
+  stays a person's act on their own timing. The bridge shows the two apart. Theme B, item 10; theme E.
+- **Facing a person, every slipwai word is paired with the ordinary one.** Section 1, after the vocabulary
+  table. A person should not have to learn a vocabulary to answer a question.
 - **A mock-up review stage, once per feature, between the specification and the model or the chart.** A
   researcher writes what good looks like from the spec and from comparable workflows, drafts the mock-ups when
   none were handed over, and a person approves the storyboard surface by surface before anything is modelled,
@@ -1255,7 +1307,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 38 of 91 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 2/18, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 38 of 92 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 2/19, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1513,7 +1565,7 @@ Depends on: phase 3.
 | 5.1 | The skills, renamed to the vocabulary where a name changed, `docs/rename.json` begun | upstream | M | Every skill present; the rename table has a row per rename | done |
 | 5.2 | The commands and agents, the ladder in `drive.md`, the stop table, and `.specify/drive.json`: the `delegate` and `cycle` widths, the refusal of `story` as a cycle unit, and the fallbacks that run a slice narrower than the setting asks | upstream | L | `/drive` runs one slice to a demo on a generated project, red-green-refactor per the configured width, and a slice with no story tag falls to `rule` rather than failing | done |
 | 5.3 | Fairways: the `## Fairways` table in the split, `/drive fairway=<name>`, the boards grouped by fairway | `slipwai-workstreams` | M | Two fairways on one machine, merges independent |  |
-| 5.4 | The chart: `chart.yaml` schema, `make chart` on the event profile, `/chart` on the standard profile, `check-chart` | new | L | Both profiles produce a chart a reader can diff |  |
+| 5.4 | The chart: `chart.yaml` schema, the capability each slice belongs to and the `story-splitting` change that groups slices under capabilities, `make chart` on the event profile, `/chart` on the standard profile, `check-chart` | new | L | Both profiles produce a chart a reader can diff; every slice names the capability whose demo it is part of, and it does so with no flag and no target |  |
 | 5.5 | Clearance and the one-setter-per-mark rule in `check-model` and `check-chart`; typed attributes and `examples.md` at the split | new (#32) | M | A fresh fairway fans out on its first iteration |  |
 | 5.6 | `check-slice-scope` reads the chart for owned paths on both profiles | upstream + new | M | The standard profile holds a context boundary |  |
 | 5.7 | Two gates: `make unit` in generated projects, the ladder's fast checks per increment, the full gate before `main` | new | M | A slice's increments never run the full suite |  |
@@ -1527,6 +1579,7 @@ Depends on: phase 3.
 | 5.15 | The decision ceiling, bounded waits, the inbox read at every boundary with receipts | new | M | A message is read within one boundary or forces one |  |
 | 5.16 | Domain knowledge for the skipper | new (#27) | M | A fact in `.specify/domain/` is cited, not guessed |  |
 | 5.18 | The mock-up review as a once-per-feature stage of both profiles: `/mockups` runs a researcher that writes `research.md` from the spec, the domain knowledge and comparable workflows, reviews or drafts one HTML mock-up per surface, storyboards them, and writes `mock-states.md` from the person's approvals; the split, the example map and the demo read it | upstream skills + new | L | A feature handed no mock-ups reaches its split with every surface's states approved by a person, and the split refuses a slice that names a surface or state not approved |  |
+| 5.19 | The demo as a capability stop: the hand's verdict per slice written to the deck log, `demo_stop` rewritten to walk a whole capability, the trigger when a capability's last slice merges, and the bridge's two columns for accepted and hoisted | new | M | A capability's slices merge with nobody stopped; a person is stopped once, when the last of them lands, and accepting it hoists nothing |  |
 | 5.17 | Example mapping as a stage of **both** profiles: `example-map` moves out of `assets/profiles/event-modelling/commands/` into the toolkit, deriving its examples from the model on the event profile and writing them from the chart and the story on the standard one; the demo stage reads what it wrote | upstream + new | M | A standard-profile slice reaches its demo with examples a stage produced, and `/drive` refuses to implement a slice whose map is empty |  |
 
 Depends on: 1.2 for 5.1 and 5.2; phase 4 for a generated project to run against. 5.3 to 5.16 are the slices
@@ -1693,7 +1746,7 @@ composition root, release modes, berths, inbox and domain knowledge, each of whi
 ```
 5.1 skills ─► 5.2 ladder ─► 5.17 example map ─► 5.18 mock-up review ─► 5.4 chart ─► 5.5 clearance ─► 5.6 scope ─► 5.3 fairways
    ─► 5.7 two gates ─► 5.8 review ─► 5.9 adversary, careen ─► 5.13 logs ─► 5.10 ids
-   ─► 5.11 composition ─► 5.12 release modes ─► 5.14 berths ─► 5.15 inbox ─► 5.16 domain
+   ─► 5.19 capability demo ─► 5.11 composition ─► 5.12 release modes ─► 5.14 berths ─► 5.15 inbox ─► 5.16 domain
 ```
 
 **5.1 — The skills, renamed.** The 53 skills are already in `assets/toolkit/skills/` from slice 3.2 and in
@@ -1884,6 +1937,19 @@ new `project/decisions.py` behaviour — the module is back) and are never edite
 fails when a rendered file differs from what its sources render to, which is `scripts/glossary.py
 --check`'s pattern applied in the generated project. Test: two fairways each decide once and the
 rendered `decisions.md` has both, in timestamp order, with neither id changed.
+
+**5.19 — The demo as a capability stop.** The ladder's demo rung (5.2) stays where it is and changes who
+is watching: the hand walks the slice's examples, records a verdict in three words, and writes a `demo` line
+to the deck log. Nobody is stopped. `project/demo_stop.py` is then rewritten for the other stop, the one a
+person attends: it takes a capability rather than a slice, and the board at its top shows that capability's
+slices and the examples each contributed, so the person is shown one coherent thing rather than the last
+instalment of it. The trigger is the captain's: when a `merged` line lands for the last slice the chart
+places under a capability (5.4), it writes `demo-due` and brings the stop to the person through the inbox.
+Acceptance is an `accepted` line against the capability, and it is the end of it — no flag moves, no merge
+waits on it, and nothing downstream reads it as permission to release. The bridge grows two columns,
+accepted and hoisted, side by side and never derived from each other, so a capability the business is
+deliberately holding back reads as held rather than late. Test: a chart with two capabilities over five
+slices stops a person twice, on the fifth and on the third, and never on a merge.
 
 **5.11 — Composition root rendered, one file per event.** `project/composition.py` (back) gains a
 render-from-chart path: one `wire_*` line per use case the chart's slices name, generated into the
@@ -2218,7 +2284,7 @@ Collected from above, so they can be taken before the slice that needs them.
 
 ### A realistic shape for the calendar
 
-Phase 5 is eighteen slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
+Phase 5 is nineteen slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
 beside each other and are each about three weeks. Phase 8 is a week of machinery and a release. Phase 9
 is a fortnight of writing against real runs. Phase 10 is after the release and is its own month. The
 prerequisite — the six packages rebuilt — took the evening of 6 October, and found four keel faults on the way.

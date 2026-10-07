@@ -140,10 +140,14 @@ def drive_ladder(
             else ""
         ),
         convergence_stage(),
-        """**Demo** — the actor-visible path is ready to show.""",
+        """**Demo** — the hand walks this slice's examples against the running thing and records a verdict
+   in three words. The verdict is evidence, not permission: a test that passes and a path that works are
+   different claims, and only one of them is machine-checked. **No person is stopped at this rung.** A
+   person's demo is per capability and runs when the capability's last slice has merged; *After the hand's
+   verdict, and after Phase 4 clears* is what happens here instead.""",
         """**Adversary** — `specs/<feature>/adversary-log.md` carries this slice's row: the attack that was
    run, or the recorded decision not to. Otherwise run `/adversary`. One round, and findings below the
-   severity bar are stowed rather than argued: *After acceptance, and after Phase 4 clears* says how.""",
+   severity bar are stowed rather than argued: *After the hand's verdict, and after Phase 4 clears* says how.""",
         """**Mutation gate** — `/mutation` has run since the last test was added, and the score is at or
    above the project's threshold. A slice under it does not merge, and nothing is carried to the next
    slice: a gap left here is a gap the next slice inherits and the one after that pays for.""",

@@ -118,8 +118,8 @@ text{fill:#172129}.lbl{fill:#44525c}.arr{stroke:#172129;stroke-width:1.2;fill:no
 <rect class="box " x="670" y="410" width="150" height="80" rx="3"/>
 <text x="745.0" y="430.2" text-anchor="middle" font-size="12" font-weight="600">Converge ≤ 2 · demo</text>
 <text x="745.0" y="446.2" text-anchor="middle" font-size="12">the hand walks</text>
-<text x="745.0" y="462.2" text-anchor="middle" font-size="12">the examples</text>
-<text x="745.0" y="478.2" text-anchor="middle" font-size="12">verdict in three words</text>
+<text x="745.0" y="462.2" text-anchor="middle" font-size="12">the examples · verdict</text>
+<text x="745.0" y="478.2" text-anchor="middle" font-size="12">no person stops here</text>
 <path class="arr " d="M 820,450.0 L 830,450.0" marker-end="url(#ah)"/>
 <rect class="box " x="830" y="410" width="150" height="80" rx="3"/>
 <text x="905.0" y="430.2" text-anchor="middle" font-size="12" font-weight="600">Review + reshape</text>
@@ -229,7 +229,8 @@ text{fill:#172129}.lbl{fill:#44525c}.arr{stroke:#172129;stroke-width:1.2;fill:no
 <text x="1627.0" y="824.2" text-anchor="middle" font-size="12">hoists and strikes flags</text>
 <text x="1627.0" y="840.2" text-anchor="middle" font-size="12">reviews decisions (ceiling)</text>
 <text x="1627.0" y="856.2" text-anchor="middle" font-size="12">answers parks</text>
-<text x="1627.0" y="872.2" text-anchor="middle" font-size="12">never a merge queue</text>
+<text x="1627.0" y="872.2" text-anchor="middle" font-size="12">accepts a capability’s demo</text>
+<text x="1627.0" y="888.2" text-anchor="middle" font-size="12">never a merge queue</text>
 <path class="arr " d="M 1680,736 L 1680,586" marker-end="url(#ah)"/>
 <text class="lbl" x="1686" y="660" text-anchor="start" font-size="11">told / read</text>
 </svg>

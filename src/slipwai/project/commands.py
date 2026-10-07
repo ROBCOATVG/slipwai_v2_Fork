@@ -78,22 +78,25 @@ Start the slice from a green `make verify`. During implementation, take one RED-
 task — one rule of the example map with its examples, where the map numbers its rules — run only the quickest
 relevant tests in the same file or area, commit that increment locally, and keep
 task checkboxes truthful. A local commit is not a push: it does not run the full gate and it does not start
-CI. Do not push increment commits until the actor has accepted the demo. Before an increment that changes a
+CI. Do not push increment commits until the hand's verdict on this slice's examples is green. Before an increment that changes a
 shared function, ask `codegraph_explore` what calls it and what the change reaches — loaded by name where the
 harness defers it — and name those callers in the delegate's manifest; a project without `.codegraph/` answers
 with a text search and says so.
 
-When the tasks are done, converge, then stop at the actor-visible demo from the unpushed slice branch. After
-acceptance — and only then — a project that has adopted CodeGraph runs `codegraph sync`, then the full
+When the tasks are done, converge, then have the hand walk this slice's examples from the unpushed slice
+branch and record its verdict. **Nobody is stopped here.** A person's demo is per capability and runs when
+the capability's last slice has merged, which is usually several slices later; this rung proves the path
+works, and the person is shown the whole thing rather than its instalments. After a green verdict — and only
+then — a project that has adopted CodeGraph runs `codegraph sync`, then the full
 `make verify`, then the first push of those increment commits (and the merge that lands them on trunk).
 That push is the integration boundary. A claim of `slice/<id>` at the start of the slice may still push a
 lock ref from `main`; that is not the implementation.
 
 {demo_stop(event, baseline)}
 
-### After acceptance, and after Phase 4 clears
+### After the hand's verdict, and after Phase 4 clears
 
-After acceptance, run `/adversary`, which decides whether the slice changed attack surface or closed the
+After a green verdict, run `/adversary`, which decides whether the slice changed attack surface or closed the
 split and records the attack or the skip — `make check-decisions` holds every done slice to that row. Close the
 adversary benchmark entry after its findings are triaged; implement confirmed defects through failing tests,
 each in an `implement` entry. Then run `/mutation`, then `make verify`. `commands/adversary.md` owns the
