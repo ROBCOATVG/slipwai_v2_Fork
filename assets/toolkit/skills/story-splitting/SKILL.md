@@ -286,7 +286,8 @@ here. `make check-chart` refuses a chart whose slices name no capability, set on
 mark nobody sets.
 
 *Surfaces and states* names what of the feature's surfaces this slice delivers, as
-`<surface> · <state>` pairs read from `specs/<feature>/mockups/mock-states.md`. A slice may only name a
+`<surface> · <state>` pairs read from `specs/<feature>/mockups/mock-states.md`, several in one cell
+separated by `;`. `make check-surfaces` reads that cell, so the separator is not a style choice. A slice may only name a
 state that file marks `approved`: a `parked` one is a question still open, and a surface or state that is
 in neither is one nobody has seen. A feature whose `mock-states.md` says `surfaces: none` leaves the column
 empty on every row. Every approved state belongs to exactly one slice by the end of the split, or the split

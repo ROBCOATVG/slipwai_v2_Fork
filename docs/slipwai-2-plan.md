@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 55 of 100 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 19/26, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 56 of 100 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 20/26, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1603,7 +1603,7 @@ Depends on: phase 3.
 | 5.15 | The decision ceiling, bounded waits, the inbox read at every boundary with receipts | new | M | A message is read within one boundary or forces one |  |
 | 5.16 | Domain knowledge for the skipper | new (#27) | M | A fact in `.specify/domain/` is cited, not guessed |  |
 | 5.18 | The mock-up review as a once-per-feature stage of both profiles: `/mockups` runs a researcher that writes `research.md` from the spec, the domain knowledge and comparable workflows, reviews or drafts one HTML mock-up per surface, storyboards them, and writes `mock-states.md` from the person's approvals; the rung, and the split and the example map reading it | upstream skills + new | M | A feature handed no mock-ups reaches its split with every surface's states carrying a decision, and the rung runs before the model, the chart and the split | done |
-| 5.20 | `check-slice-scope` holds the split's *Surfaces and states* column against `mock-states.md`: every state a slice names is `approved` there, and every approved state is named by exactly one slice | new | M | A split naming a parked state is refused; a split leaving an approved state unbuilt is refused; a feature whose file says `surfaces: none` passes with the column empty |  |
+| 5.20 | `check-surfaces` holds the split's *Surfaces and states* column against `mock-states.md`: every state a slice names is `approved` there, and every approved state is named by exactly one slice | new | M | A split naming a parked state is refused; a split leaving an approved state unbuilt is refused; a feature whose file says `surfaces: none` passes with the column empty | done |
 | 5.19 | The demo as a capability stop: `scripts/agents/capabilities.py` saying which are whole, due or accepted, and `demo_stop` rewritten to walk a whole capability | new | M | A capability's slices merge with nobody stopped; a person is stopped once, when the last of them lands, and accepting it hoists nothing | done |
 | 5.17 | Example mapping as a stage of **both** profiles: `example-map` moves out of `assets/profiles/event-modelling/commands/` into the toolkit, deriving its examples from the model on the event profile and writing them from the chart and the story on the standard one; the demo stage reads what it wrote | upstream + new | M | A standard-profile slice reaches its demo with examples a stage produced, and `/drive` refuses to implement a slice whose map is empty | done |
 
@@ -1854,6 +1854,12 @@ and `/chart` are each told to draw their UI lane or their routes from the approv
 standard-profile project given a spec and no mock-ups reaches its split with every surface's states
 carrying a decision, and the rung runs before the model, the chart and the split. The researcher's prompt
 is the design here and will take iterations against a real spec; the files it writes are plain.
+
+**It is its own gate, not `check-slice-scope`'s.** This plan said the check belonged there "since it
+already reads the split", and it does not — it names `story-split.md` as a path a slice may amend and parses
+none of it. More to the point, `check-slice-scope` exits 0 on any branch that is not `slice/<id>`, and a
+split that dropped an approved state is wrong on `main` as much as on a branch. So `check-surfaces` is a
+gate of its own in `verify`, like `check-chart`. Corrected 2026-10-07 while doing it.
 
 **The enforcement is slice 5.20, not this one.** As written this slice was L, which the plan's own sizing
 calls a candidate for splitting, and the half that holds the split's column against `mock-states.md` is a
