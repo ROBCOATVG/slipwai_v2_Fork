@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 65 of 104 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 28/29, phase 6 1/7, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 66 of 104 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 29/29, phase 6 1/7, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1602,7 +1602,7 @@ Depends on: phase 3.
 | 5.12b | Flags at the entry wiring only, and the hygiene gate: `check-flags` refuses a flag hoisted everywhere and never struck. The shape beside the target is 3.4b's | new | M | A flag lives at one `if` at the route or menu, and one overdue to be struck fails the gate | done |
 | 5.13 | The deck log and harbour log formats, written by `/drive`; `.slipwai/logs/` ignored; `refs/slipwai/logs` sync | new | M | A run's status is answerable from the logs after the fact | done |
 | 5.14a | The berth record and its allocation policy in `src/slipwai/berths.py`: a port block per berth, a database per berth, and nothing chosen by hand | new | M | Two berths on one machine collide on neither ports nor databases, and nothing in a berth's record could hold a credential | done |
-| 5.14b | Provisioning a berth: `slipwai berth add / status / remove`, the worktree, and the sandbox as `none` or `sbx` | new | M | A berth is created, used and removed leaving nothing behind, under both sandbox kinds |  |
+| 5.14b | Provisioning a berth: `slipwai berth add / status / remove`, the worktree, and the sandbox as `none` or `sbx` | new | M | A berth is created, used and removed leaving nothing behind, under both sandbox kinds | done |
 | 5.15 | The decision ceiling, bounded waits, the inbox read at every boundary with receipts | new | M | A message is read within one boundary or forces one | done |
 | 5.16 | Domain knowledge for the skipper | new (#27) | M | A fact in `.specify/domain/` is cited, not guessed | done |
 | 5.18 | The mock-up review as a once-per-feature stage of both profiles: `/mockups` runs a researcher that writes `research.md` from the spec, the domain knowledge and comparable workflows, reviews or drafts one HTML mock-up per surface, storyboards them, and writes `mock-states.md` from the person's approvals; the rung, and the split and the example map reading it | upstream skills + new | M | A feature handed no mock-ups reaches its split with every surface's states carrying a decision, and the rung runs before the model, the chart and the split | done |

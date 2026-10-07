@@ -63,7 +63,7 @@ ASSETS_HERE = trees_here()
 OWN = {"catalog_checks", "catalog_options", "cli_offered", "cli_search",
        "project.ladder", "project.careen", "project.harbour",
        "project.release", "project.domain", "logs", "berths", "hooks", "project.events_index",
-       "project.wiring"}
+       "project.wiring", "project.berth_commands"}
 # Present, but in a version 2 shape that is not the experiment's yet: `cli` answers `--version` and will
 # grow a verb per slice, `assets` holds the paths and not the asset trees, `__init__` and `__main__` are
 # the package's own. The ledger's row for each describes what it becomes, not what is here, so they are
