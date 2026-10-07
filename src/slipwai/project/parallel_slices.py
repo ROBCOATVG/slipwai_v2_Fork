@@ -59,7 +59,12 @@ def ready_set_selection(event: bool) -> str:
    forge's `slice/<id>` branches, and run every unclaimed one whose contract is settled concurrently, as
    *Running ready slices concurrently* says. Where the harness cannot delegate, claim the earliest in the
    ordered split for this session and leave the rest named, so another session can claim a sibling. Do not
-   stop merely to choose among them unless the user asks."""
+   stop merely to choose among them unless the user asks.
+7. **A fairway narrows all of the above.** Given one — `fairway=<name>` in this command's argument — ready is
+   that fairway's slices and no other; the rest of the ready set is named as *another fairway's* and left.
+   Given none, take the ready slices of every fairway nobody holds, and leave a fairway whose `held_by` names
+   somebody else to them, naming its slices as *held*. *Fairways* below says where a slice's fairway is read
+   from."""
 
 
 def concurrent_slices(event: bool, layout: Layout = AT_ROOT) -> str:
@@ -135,4 +140,46 @@ accepted, and a sibling's demo never waits on another's Phase 4. Phase 4 itself 
 `slice/<id>` branch once its Phase 4 clears: the claim is spent.
 
 **Where the harness cannot delegate**, run one slice at a time here — claim the earliest in split order,
-name the rest — and say so in the line that says which model ran (`harness cannot delegate`)."""
+name the rest — and say so in the line that says which model ran (`harness cannot delegate`).
+
+{fairways(layout)}"""
+
+
+def fairways(layout: Layout = AT_ROOT) -> str:
+    """The `### Fairways` section: what one is, where it is read from, who holds it, and how its merges stop
+    waiting on another's.
+
+    Version 1 called this a workstream and read it from a column somebody typed into the split. The chart
+    already says it — one entry per fairway, with the paths it owns — and a second field to keep in step
+    with the first is a field that goes stale. So this reads the chart, on both profiles.
+    """
+    return f"""### Fairways
+
+A **fairway** is one bounded context's slices, in split order, held by one at a time: a person, a `/drive`
+session, a captain on another machine. Two fairways share nothing but **marks** — the contracts one sets and
+another steers by — so a slice in one merges and demos without waiting on a slice in another, and a second
+person or machine joins the work by taking a fairway rather than by racing for the next slice in one list. A
+project with one context has one fairway, and nothing in this section changes for it.
+
+**The chart names them, and nothing else does.** `specs/<feature>/chart.yaml`'s `fairways` block has one
+entry per fairway — its context, its service, and the paths it owns — and each slice's entry names the
+fairway it belongs to. `/chart` writes that on the standard profile and `{layout.make} chart` renders it from
+the model on the event profile. The split's `## Fairways` table is **read from the chart**, never typed
+beside it: a second place to say which fairway a slice is in is a second place for it to be wrong, and the
+one that is wrong is always the one somebody typed. A slice whose work straddles two contexts is two slices,
+or a boundary question for the chart, and never one slice in two fairways.
+
+**A session takes one fairway, or every free one.** `/drive fairway=<name>` confines the ready set to that
+fairway. Given none, a session takes the ready slices of every fairway nobody holds. `held_by` in the split's
+table is routing, not a lock: whoever is named there gets that fairway's slices left alone, and the board
+shows them as held; the claim is still the `slice/<id>` branch, so two sessions on one fairway are two claims
+and the mutex holds. A person takes a fairway by writing their name in the row and committing it on `main`.
+
+**Merges are ordered within a fairway and not across.** Inside one, merge in split order as *Running ready
+slices concurrently* says. Across fairways, merge as each is accepted, whichever finished first. The
+composition root and the cumulative artifacts are where two merges meet and the second takes both sides; the
+events module grows additively for exactly that reason, because the merge of two additions is a union. A
+real conflict in a mark is a contract change: stop both fairways for the host, never resolve it in a branch.
+A fairway's release flag is its own, and `check-slice-scope` refuses a branch that touches a path another
+fairway owns, so the boundary is held rather than remembered. The board's lines are grouped by fairway where
+there is more than one, each with its own `N of M` and its `held_by`."""

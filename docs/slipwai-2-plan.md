@@ -1307,7 +1307,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 45 of 95 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 9/22, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 46 of 95 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 10/22, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1564,7 +1564,7 @@ Depends on: phase 3.
 |---|---|---|---|---|---|
 | 5.1 | The skills, renamed to the vocabulary where a name changed, `docs/rename.json` begun | upstream | M | Every skill present; the rename table has a row per rename | done |
 | 5.2 | The commands and agents, the ladder in `drive.md`, the stop table, and `.specify/drive.json`: the `delegate` and `cycle` widths, the refusal of `story` as a cycle unit, and the fallbacks that run a slice narrower than the setting asks | upstream | L | `/drive` runs one slice to a demo on a generated project, red-green-refactor per the configured width, and a slice with no story tag falls to `rule` rather than failing | done |
-| 5.3 | Fairways: the `## Fairways` table in the split, `/drive fairway=<name>`, the boards grouped by fairway | `slipwai-workstreams` | M | Two fairways on one machine, merges independent |  |
+| 5.3 | Fairways: the `## Fairways` table in the split, `/drive fairway=<name>`, the boards grouped by fairway | `slipwai-workstreams` | M | Two fairways on one machine, merges independent | done |
 | 5.4a | The chart's shape and its gate: the five rules in `scripts/check-chart.py`, the `check-chart` target in a generated project's `Makefile` and its `verify` chain | new | M | A hand-written chart passes; one with an untyped mark, a mark nobody sets, a mark two slices set, a withdrawn mark or a slice in no capability is refused by name | done |
 | 5.4b | `make chart` on the event profile: `chart.yaml` rendered from `model.yaml`, and `check-chart` failing when the two disagree | new | M | The rendered chart and the model cannot drift, the way `check-drawio` holds the canvas | done |
 | 5.4c | `/chart` on the standard profile, and the `story-splitting` change that groups slices under the capabilities they complete | new | M | A standard-profile feature reaches its split with a chart a reader can diff, and every slice in a capability, with no flag and no target | done |

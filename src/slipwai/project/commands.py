@@ -32,7 +32,7 @@ def drive_command(
     ladder = drive_ladder(event, apps, target, layout, adoption)
     return f"""---
 description: Drive one slice through planning, implementation, and an actor-visible demo
-argument-hint: [slice-id-or-feature]
+argument-hint: [slice-id-or-feature] [fairway=<name>]
 ---
 
 # Drive

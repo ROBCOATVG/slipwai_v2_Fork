@@ -292,6 +292,20 @@ in neither is one nobody has seen. A feature whose `mock-states.md` says `surfac
 empty on every row. Every approved state belongs to exactly one slice by the end of the split, or the split
 has left part of what a person approved unbuilt.
 
+## Fairways
+
+Read from `specs/<feature>/chart.yaml`'s `fairways` block, never typed beside it. One row per fairway,
+which is one bounded context's slices held by one person or session at a time:
+
+| Fairway | Context | Slices, in split order | held_by | Notes |
+|---|---|---|---|---|
+| ... | ... | ... | — or a name | ... |
+
+A project with one context has one fairway and this table has one row. `held_by` is routing and not a lock:
+whoever is named there gets that fairway's slices left alone, and the claim is still the `slice/<id>`
+branch. A slice whose work straddles two contexts is two slices, or a boundary question for the chart, and
+never one slice in two fairways.
+
 ## Slice graph
 | Slice | depends_on | parallel_ok_with | Notes |
 |---|---|---|---|
