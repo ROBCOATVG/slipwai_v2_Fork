@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 50 of 97 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 14/23, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 51 of 98 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 15/24, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1587,6 +1587,7 @@ Depends on: phase 3.
 | 5.4b | `make chart` on the event profile: `chart.yaml` rendered from `model.yaml`, and `check-chart` failing when the two disagree | new | M | The rendered chart and the model cannot drift, the way `check-drawio` holds the canvas | done |
 | 5.4c | `/chart` on the standard profile, and the `story-splitting` change that groups slices under the capabilities they complete | new | M | A standard-profile feature reaches its split with a chart a reader can diff, and every slice in a capability, with no flag and no target | done |
 | 5.5 | Clearance and the one-setter-per-mark rule in `check-model` and `check-chart`; typed attributes and `examples.md` at the split | new (#32) | M | A fresh fairway fans out on its first iteration | done |
+| 5.5b | Clearance where the loop can reach it: `scripts/agents/clearance.py` in the toolkit, and `/drive`'s precondition replaced by it | new (#32) | S | A session asks what may start rather than reading a status field, and version 1's "its own contract is settled" is gone from the page | done |
 | 5.6 | `check-slice-scope` reads the chart for owned paths on both profiles | upstream + new | M | The standard profile holds a context boundary | done |
 | 5.7 | Two gates: `make unit` in generated projects, the ladder's fast checks per increment, the full gate before `main` | new | M | A slice's increments never run the full suite | done |
 | 5.8 | Review and refactor as a ladder stage, with a review role in the model table | new | M | A slice merges with review findings closed | done |
@@ -1768,7 +1769,7 @@ composition root, release modes, berths, inbox and domain knowledge, each of whi
 
 ```
 5.1 skills ─► 5.2 ladder ─► 5.17 example map ─► 5.18 mock-up review ─► 5.4a chart gate ─► 5.4b make chart
-   ─► 5.4c /chart ─► 5.5 clearance ─► 5.6 scope ─► 5.3 fairways
+   ─► 5.4c /chart ─► 5.5 clearance ─► 5.5b clearance reachable ─► 5.6 scope ─► 5.3 fairways
    ─► 5.7 two gates ─► 5.8 review ─► 5.9a adversary, careen ─► 5.13 logs ─► 5.10 ids
    ─► 5.19 capability demo ─► 5.20 surfaces held ─► 5.9b budgets ─► 5.11 composition ─► 5.12 release modes ─► 5.14 berths ─► 5.15 inbox ─► 5.16 domain
 ```
@@ -1938,6 +1939,20 @@ claimed until the whole chart is there**. `/chart` writes `fairways` and `marks`
 the cutting depends on. The split writes `slices`: the fairway, the capability, the marks set and the marks
 steered by. `check-chart` is what says the chart is whole, and on the event profile `make chart` renders
 both passes at once. Resolved 2026-10-07 while doing the slice.
+
+**5.5b — Clearance where the loop can reach it.** 5.5 put the rule in `src/slipwai/project/chart.py`, as
+this plan said to, and an audit of the flow found that nothing imported it and nothing could: the things
+that ask it — a `/drive` session and, later, the captain — run **inside a generated project**, which has no
+slipwai to import. That is the same reason `check-chart` and `check-slice-scope` are toolkit scripts, and
+the rule was written down at 5.4a before it was applied here. So the module moves to
+`assets/toolkit/scripts/agents/clearance.py`, the keel's copy is deleted rather than left as a second
+implementation, and the keel's suite loads the script by path, the way a project runs it.
+
+The second half is the one that matters: `/drive`'s own precondition still read *"the contract is
+settled"*, which is the version 1 rule clearance replaces. The page a session actually reads had none of
+5.5 in it. It now asks — `python3 scripts/agents/clearance.py` — rather than judging, and says why: a
+status field was wrong for eight slices in MANDA, and a log line is written by the thing that did the work
+at the moment it did it. Found 2026-10-07 by an audit of the standard-profile flow against the code.
 
 **5.5 — Clearance.** The rule issue #32 asked for. A slice may start when every mark it steers by is set
 by a slice that is `planned` or `implemented`; its own marks it sets itself, at its first stage. The
@@ -2391,7 +2406,7 @@ Collected from above, so they can be taken before the slice that needs them.
 
 ### A realistic shape for the calendar
 
-Phase 5 is twenty-three slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
+Phase 5 is twenty-four slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
 beside each other and are each about three weeks. Phase 8 is a week of machinery and a release. Phase 9
 is a fortnight of writing against real runs. Phase 10 is after the release and is its own month. The
 prerequisite — the six packages rebuilt — took the evening of 6 October, and found four keel faults on the way.

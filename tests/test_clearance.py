@@ -13,11 +13,28 @@ fairway blocked once per blocker.
 """
 from __future__ import annotations
 
+import importlib.util
+import sys
 import unittest
+from pathlib import Path
 
 import checkout_packages  # noqa: F401
 
-from slipwai.project import chart
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def clearance_module():
+    """The toolkit script, loaded the way a generated project runs it: by path, with no slipwai around it."""
+    path = ROOT / "assets/toolkit/scripts/agents/clearance.py"
+    spec = importlib.util.spec_from_file_location("clearance_script", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.dont_write_bytecode = True
+    spec.loader.exec_module(module)
+    return module
+
+
+chart = clearance_module()
 
 CHART: dict = {
     "v": 1,
@@ -39,34 +56,40 @@ def mark_set(mark: str, by: str) -> dict:
     return {"v": 1, "kind": "mark-set", "mark": mark, "slice": by, "fairway": "ordering"}
 
 
+def marks(lines: list[dict] | None = None) -> set[str]:
+    """The set of marks those log lines set — what the script folds out of the deck logs."""
+    return {str(line["mark"]) for line in (lines or [])
+            if line.get("kind") == "mark-set" and line.get("mark")}
+
+
 class ClearanceTest(unittest.TestCase):
     def test_a_slice_steering_by_nothing_starts_at_once(self) -> None:
         """Which is what lets a fresh fairway fan out on its first iteration."""
-        self.assertIs(chart.cleared(CHART, [], "ORD-01"), True)
+        self.assertIs(chart.cleared(CHART, marks(), "ORD-01"), True)
 
     def test_a_slice_is_cleared_when_every_mark_it_steers_by_is_set(self) -> None:
         lines = [mark_set("OrderPlaced", "ORD-01"), mark_set("PricingPort", "ORD-02")]
-        self.assertIs(chart.cleared(CHART, lines, "BIL-01"), True)
+        self.assertIs(chart.cleared(CHART, marks(lines), "BIL-01"), True)
 
     def test_one_mark_short_is_not_cleared(self) -> None:
         self.assertIsInstance(chart.cleared(CHART, [mark_set("OrderPlaced", "ORD-01")], "BIL-01"), str)
 
     def test_the_refusal_names_every_missing_mark_and_who_owes_it(self) -> None:
         """A fairway told one blocker at a time is a fairway blocked once per blocker."""
-        why = chart.cleared(CHART, [], "BIL-01")
+        why = chart.cleared(CHART, marks(), "BIL-01")
         assert isinstance(why, str)
         self.assertIn("OrderPlaced (set by ORD-01)", why)
         self.assertIn("PricingPort (set by ORD-02)", why)
 
     def test_a_mark_nobody_sets_says_the_chart_is_wrong_rather_than_blaming_a_slice(self) -> None:
         broken: dict = {**CHART, "slices": {"BIL-01": {"steers_by": ["ShipmentBooked"], "sets": []}}}
-        why = chart.cleared(broken, [], "BIL-01")
+        why = chart.cleared(broken, marks(), "BIL-01")
         assert isinstance(why, str)
         self.assertIn("no slice sets it", why)
 
     def test_a_slice_the_chart_does_not_name_is_refused_and_not_cleared(self) -> None:
         """Answering True for a slice nobody charted would clear anything anyone asked about."""
-        why = chart.cleared(CHART, [], "SHP-01")
+        why = chart.cleared(CHART, marks(), "SHP-01")
         assert isinstance(why, str)
         self.assertIn("not on the chart", why)
 
@@ -75,7 +98,7 @@ class ClearanceTest(unittest.TestCase):
         merges. If a merge were the signal, every fairway would wait on every other one."""
         lines = [mark_set("OrderPlaced", "ORD-01"), mark_set("PricingPort", "ORD-02"),
                  {"kind": "claimed", "slice": "ORD-01"}]
-        self.assertIs(chart.cleared(CHART, lines, "BIL-01"), True)
+        self.assertIs(chart.cleared(CHART, marks(lines), "BIL-01"), True)
         self.assertNotIn("merged", [line.get("kind") for line in lines])
 
     def test_a_line_kind_this_reader_does_not_know_is_ignored(self) -> None:
@@ -83,19 +106,19 @@ class ClearanceTest(unittest.TestCase):
         every time one was added."""
         lines = [{"kind": "heartbeat"}, {"kind": "tokens", "mark": "OrderPlaced"},
                  mark_set("OrderPlaced", "ORD-01"), mark_set("PricingPort", "ORD-02")]
-        self.assertIs(chart.cleared(CHART, lines, "BIL-01"), True)
+        self.assertIs(chart.cleared(CHART, marks(lines), "BIL-01"), True)
 
     def test_a_mark_set_line_with_no_mark_sets_nothing(self) -> None:
-        self.assertEqual(chart.marks_set([{"kind": "mark-set", "slice": "ORD-01"}]), set())
+        self.assertEqual(marks([{"kind": "mark-set", "slice": "ORD-01"}]), set())
 
 
 class ReadySetTest(unittest.TestCase):
     def test_the_cleared_set_is_in_the_charts_own_order_which_is_split_order(self) -> None:
-        self.assertEqual(chart.cleared_slices(CHART, []), ["ORD-01", "ORD-02"])
+        self.assertEqual(chart.cleared_slices(CHART, marks()), ["ORD-01", "ORD-02"])
 
     def test_a_setter_planning_clears_what_waits_on_it(self) -> None:
         lines = [mark_set("OrderPlaced", "ORD-01"), mark_set("PricingPort", "ORD-02")]
-        self.assertEqual(chart.cleared_slices(CHART, lines), ["ORD-01", "ORD-02", "BIL-01"])
+        self.assertEqual(chart.cleared_slices(CHART, marks(lines)), ["ORD-01", "ORD-02", "BIL-01"])
 
 
 if __name__ == "__main__":  # pragma: no cover

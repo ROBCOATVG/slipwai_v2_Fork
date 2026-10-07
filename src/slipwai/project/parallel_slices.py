@@ -24,18 +24,32 @@ def done_marker(event: bool) -> str:
 
 
 def contract_precondition(event: bool) -> str:
-    """When a ready slice may run alongside a sibling: the contract it shares with them is settled."""
-    if event:
-        return """**The contract is settled.** A ready slice runs alongside its siblings only when its `status` in
-`model.yaml` is `planned`: its events carry `attributes`, its append is guarded by a named `stream` or
-`guard`, and `gwt` points at an `examples.md` that exists — `make check-model` holds each of those. That
-is the contract a concurrent sibling builds against. A ready slice still `modelled` is a stop at the
-example map — its events may yet change shape, and a sibling building on them would be building on sand —
-so it is worked here first, never delegated alongside the others."""
-    return """**The contract is settled.** A ready slice runs alongside its siblings only when what they share is
-written down: the entries it adds to `specs/<feature>/contracts/` exist, and its acceptance criteria in
-`spec.md` have had their gaps review. That is the contract a concurrent sibling builds against. A ready
-slice whose surface is still being decided is worked here first, never delegated alongside the others."""
+    """When a ready slice may run alongside a sibling: it has clearance.
+
+    This replaced version 1's "its own contract is settled", which a slice could only answer about itself —
+    so nothing said what a slice was *waiting for*, and a fresh fairway serialised behind a host example map
+    per slice. Issue #32.
+    """
+    return """**It has clearance.** A ready slice runs alongside its siblings when every mark it steers by has
+been set, and a mark is set when some slice wrote a `mark-set` line for it at its own first stage, in its
+own worktree. So a sibling unblocks this slice by having **planned**, not by having merged — if a merge
+were the signal, every fairway would wait on every other one, which is what version 1 did.
+
+Ask, never assume:
+
+```sh
+python3 scripts/agents/clearance.py           # every slice that may start now
+python3 scripts/agents/clearance.py <id>      # whether that one may, and what it waits on
+```
+
+It reads `specs/<feature>/chart.yaml` for what each slice sets and steers by, and the deck logs for the
+`mark-set` lines. **Never a status field**: in the first attempt `model.yaml` said `planned` for eight
+slices that were built and merged, because the field was written at plan time and never reconciled. A log
+line is written by the thing that did the work at the moment it did it.
+
+A slice with no clearance is not a stop — it is a slice whose turn has not come. Name what it waits on and
+take a cleared one. A mark the chart declares that *no slice sets* is a different thing and is a stop for
+the host: `make check-chart` refuses that chart, and the sentence clearance prints says so."""
 
 
 def ready_set_selection(event: bool) -> str:
