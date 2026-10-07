@@ -52,6 +52,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import fnmatch
 import re
 import subprocess
 import sys
@@ -75,6 +76,10 @@ MODEL = DELIVERY / "docs/event-model/model.yaml"
 CANVAS = DELIVERY / "docs/event-model/model.drawio"
 ADRS = (DELIVERY / "docs/adr").as_posix() + "/"
 SLICE_BRANCH = re.compile(r"^slice/(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*)$")
+#: Where the chart is, on either profile. It names what each fairway owns, which is the boundary this gate
+#: held from `model.yaml` alone before — and so held not at all on the standard profile, where any code in
+#: any deployable passed. Slice 5.6.
+SPECS = "specs"
 CANONICAL_SLOTS = ("plan.md", "research.md", "data-model.md", "quickstart.md", "tasks.md")
 FEATURE_SHARED = ("spec.md", "story-split.md", "adversary-log.md", "decisions.md")
 FEATURE_SHARED_DIRECTORIES = ("contracts", "checklists")
@@ -197,6 +202,29 @@ class Scope:
         own = slices_of(self.model).get(slice_id, {})
         self.service = own.get("service") if isinstance(own.get("service"), str) else None
         self.context = own.get("context") if isinstance(own.get("context"), str) else None
+        self.fairway, self.owns = chart_fairways(slice_id)
+
+    def fairway_violation(self, path: str) -> str | None:
+        """A path another fairway owns. The chart says who owns what, on both profiles.
+
+        Where this slice is not on a chart, or the chart claims nothing, there is nothing to hold and the
+        other rules still apply — the same reading as a branch that is not a slice branch. A path no
+        fairway claims is nobody's to refuse: `owns` is a statement about what is divided, not about
+        everything that exists.
+        """
+        if self.fairway is None:
+            return None
+        for fairway, patterns in sorted(self.owns.items()):
+            if fairway == self.fairway or not owned_by(path, patterns):
+                continue
+            if owned_by(path, self.owns.get(self.fairway, [])):
+                continue
+            return (
+                f"{path}: owned by fairway `{fairway}`, and this slice is in `{self.fairway}`. "
+                f"Two fairways share nothing but marks; if `{fairway}` has to change, that is a mark "
+                f"it sets and this slice steers by, not a file this slice edits."
+            )
+        return None
 
     def service_path(self, name: str) -> str | None:
         record = self.apps.get(name)
@@ -366,6 +394,66 @@ def lost_records() -> list[str]:
     return findings
 
 
+def owned_by(path: str, patterns: list[str]) -> bool:
+    """Whether a path falls inside one of a fairway's `owns` entries.
+
+    `apps/orders/**` is a prefix, which is what every chart writes and what a reader expects it to mean.
+    Anything else falls through to `fnmatch`, so a chart may name one file if it has reason to.
+    """
+    for pattern in patterns:
+        if pattern.endswith("/**"):
+            root = pattern[:-3]
+            if path == root or path.startswith(root + "/"):
+                return True
+        elif fnmatch.fnmatch(path, pattern):
+            return True
+    return False
+
+
+def load_chart(text: str) -> object:
+    """Parse a chart.
+
+    Deliberately not `load_model`. That one borrows the event-model checker's parser so the two agree on
+    how the model reads, and returns `None` where the checker is absent — which is every standard-profile
+    project, and the standard profile is the one this boundary never held on. A chart reader that needed
+    the event profile's checker would hold nothing exactly where there was nothing holding it before.
+    """
+    try:
+        import yaml  # type: ignore[import-not-found]
+    except ImportError:
+        checker = ROOT / DELIVERY / "scripts/event-model/check.py"
+        if not checker.is_file():
+            return None
+        spec = importlib.util.spec_from_file_location("event_model_check", checker)
+        if spec is None or spec.loader is None:
+            return None
+        module = importlib.util.module_from_spec(spec)
+        sys.dont_write_bytecode = True
+        spec.loader.exec_module(module)
+        sys.path.insert(0, str(module.TOOLS))
+        module.load_yaml()
+        import yaml  # type: ignore[import-not-found]
+    return yaml.safe_load(text)
+
+
+def chart_fairways(slice_id: str) -> tuple[str | None, dict[str, list[str]]]:
+    """This slice's fairway, and what every fairway owns, from the first chart that names the slice."""
+    for chart_path in sorted((ROOT / SPECS).glob("*/chart.yaml")) if (ROOT / SPECS).is_dir() else []:
+        chart = load_chart(chart_path.read_text(encoding="utf-8"))
+        if not isinstance(chart, dict):
+            continue
+        slices = chart.get("slices") if isinstance(chart.get("slices"), dict) else {}
+        entry = slices.get(slice_id)
+        if not isinstance(entry, dict):
+            continue
+        owns = {}
+        for name, body in (chart.get("fairways") or {}).items():
+            paths = body.get("owns") if isinstance(body, dict) else None
+            owns[str(name)] = [str(pattern) for pattern in paths] if isinstance(paths, list) else []
+        return (str(entry.get("fairway")) if entry.get("fairway") else None), owns
+    return None, {}
+
+
 def check(branch: str | None) -> tuple[list[str], str]:
     """The violations, and the one line to print when there are none."""
     violations = lost_records()
@@ -379,7 +467,7 @@ def check(branch: str | None) -> tuple[list[str], str]:
         return violations, f"check-slice-scope: slice/{slice_id} has no `main` to compare with — nothing to hold"
     scope = Scope(slice_id, base)
     for path, status in sorted(changed_files(base).items()):
-        found = scope.violation(path, status)
+        found = scope.violation(path, status) or scope.fairway_violation(path)
         if found:
             violations.append(found)
     violations.extend(scope.model_violations())
