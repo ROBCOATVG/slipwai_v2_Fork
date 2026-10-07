@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 87 of 107 slices done** — phase 1 6/6, phase 2 9/9, phase 3 17/20, phase 4 7/7, phase 5 29/29, phase 6 7/9, phase 7 7/8, phase 8 4/7, phase 9 1/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 87 of 108 slices done** — phase 1 6/6, phase 2 9/9, phase 3 17/20, phase 4 7/7, phase 5 29/29, phase 6 7/9, phase 7 7/8, phase 8 4/8, phase 9 1/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1668,6 +1668,7 @@ Depends on: 5.13 and 5.14. 7.1 first, then 7.2, then the rest in any order.
 | 8.2 | One 2.0.0 changelog entry written from the fork's history | new | M | Every user-visible change since 1.5.2 is in it, with its catch-up | done |
 | 8.3 | `migrate`: base from an installed 1.x, languages first, the rename table, in-flight work as data (section 6); the installed directory moved from `languages/` to `packages/` | upstream + cruise-2 + new | L | `make test-migration` green for every profile and backend and the adopted fixtures, and an install made under `languages/` is found, moved and loaded from `packages/` |  |
 | 8.4 | The release backstop: one job that runs the matrix across the published packages against the keel about to ship, and the root matrix retired | cruise-2 + new | M | A keel release is refused when a published package fails against it; no per-commit job reads a package | done |
+| 8.4b | The chandlery has something in it: `ROBCOATVG/slipwai-index` created from `slipwai channel new`, the language packages released at 1.0.0 and registered, Pages on. Blocks 8.5 — a 2.0.0 whose `slipwai install go` finds nothing is a 2.0.0 whose headline feature does not work | new | M | A fresh `pip install slipwai` can `search`, `install` a language and `generate` with it |  |
 | 8.5 | `make release` to 2.0.0; the merge back to upstream; the Gitea decision | new | M | `v2.0.0` tagged, published, and upstream `main` is version 2 |  |
 | 8.6 | A final 1.5.x release whose `slipwai upgrade --check` names 2.0.0 and its migration page | upstream | S | A version 1 user is told where version 2 is and what moving costs |  |
 | 8.7 | `slipwai upgrade` says what changed, read from the changelog the release carries: a line or two for a patch, and for the jump from 1.x to 2.x the whole of what version 2 is and the one command that moves a project to it | new | S | Somebody who upgrades is told what they got without being sent to a web page, and the person who crosses from 1 to 2 is told it is a crossing | done |
@@ -2698,3 +2699,73 @@ message, and it is a day's work. Everything else above can wait for somebody to 
 
 **Done when somebody asks for it.** Two people have not yet tried to run one harbour, and the first real
 multiplayer requirement will say more about what is needed than this section can.
+
+## 14. Gaps review, 2026-10-07
+
+Reviewed with the toolkit's own `find-gaps` skill against the Plans checklist, and — unlike the review in
+section 10 — **grounded in a real run**: the first project version 2 has made, generated with a language
+package installed from its own repository and driven through a captain turn. 3 blockers, 4
+should-address, 3 nice-to-have. The run found three chart faults in ten minutes that the suite could not
+see, all now fixed; what is below is what it found that is *not* fixed.
+
+The first triage was wrong in one direction and understated in another, and both corrections are worth
+keeping. It said a dead harbourmaster stops clearance: it does not, because `clearance.py` reads every
+sibling's deck log directly. It treated "nothing watches the harbourmaster" as the blocker, when the
+blocker underneath it is larger.
+
+### The loop does not close. Four links, each named in this plan as done.
+
+**1. A captain calls a slice done on a process that did nothing.** Run in the generated project with the
+default dispatch, `/drive` printed a help message, exited 0, and the captain wrote `claimed`, then
+`request: merge`, and said *ORD-01 is through its gate*. No `mark-set`, no `demo`. `captain.py`'s own
+docstring is *a stage that wrote no line made no progress*, and it applies that rule only to the wall
+budget — nothing written for N minutes — never to the turn as a whole.
+
+**2. The default dispatch is the wrong thing.** It falls back to `scripts/agents/drive.py`, which is the
+*settings reader* for `/drive`. The real `/drive` is `commands/drive.md`, a command file a harness runs
+headlessly. `registry.json` carries each harness's `headless.command` for exactly this and nothing reads
+it.
+
+**3. Nothing performs a merge.** The harbourmaster writes `granted`, and `granted` is read by no code
+anywhere; no `merged` line is written by anything. Section 7.1 says it "does it or refuses with the
+reason" — only the refusing half was built. Trunk never receives a slice and the board says `merged: 0`
+for ever.
+
+**4. Nothing pushes the logs.** Both processes run `git fetch origin refs/slipwai/logs/*`; neither
+pushes, and nothing writes the local `.slipwai/logs/*.jsonl` into those refs in the first place. The
+fetch is ceremony, and multiplayer (section 13) is downstream of this rather than beside it.
+
+### What is decided, and what is still design
+
+Decided 2026-10-07, in principle. **None of this is sliced yet: the design is worth an hour before it is
+worth a row.**
+
+- **A captain requires the ladder's completion lines.** A slice is through its gate when the log holds
+  every mark the chart says it sets and a `demo`. A turn that wrote none of them parks, naming what is
+  missing. *Open:* what the completion lines are for a slice that sets no mark; whether a demo that was
+  sent back is a park or a retry; how this reads for the standard profile.
+- **The harbourmaster performs the merge.** It holds the credentials, so it rebases, runs the full gate
+  on the rebased branch, pushes, and writes `merged` with the commit; a red gate is `refused` with the
+  reason and the captain parks. *Open:* what it does with a rebase conflict; whether the gate it runs is
+  the project's `make verify` or something narrower; what happens to the berth while it merges; whether
+  two grants can run at once.
+- **The logs travel, and a claim comes with them.** The harbourmaster writes each log into
+  `refs/slipwai/logs/<machine>` and pushes every pass; a captain takes `refs/slipwai/claims/<fairway>`
+  before it claims and refuses with who holds it and since when. *Open:* everything in section 13's four
+  questions, which this is the first half of.
+- **Packages before the keel.** Slice 8.4b: the channel exists and the languages are released and
+  registered before 2.0.0 is cut. A 2.0.0 whose `slipwai install go` finds nothing is a 2.0.0 whose
+  headline feature does not work on the day it ships.
+
+### Still open, not yet discussed
+
+- **The loop has no end-to-end test.** The three chart faults were found by hand. Nothing in the suite
+  generates a project and drives a captain in it, so that whole path regresses invisibly.
+- **No way back from `slipwai migrate`.** Section 8.6 gives a 1.5.x that names 2.0.0; nothing says what a
+  person does when a migration goes wrong, and the first user will migrate something real.
+- **A fairway is the context name, not the slice prefix.** `captain ORD` answers "the chart gives ORD no
+  slices"; it is `captain ordering`. Nothing says so anywhere.
+- **The never-list is matched against the asker's own description.** The harbourmaster reads the
+  `detail` the captain wrote, not the command that would run. It is defence in depth and the captain's
+  own controls are the belt — but it is not written down as a known limit, and with 7.1b the
+  harbourmaster starts actually running things.
