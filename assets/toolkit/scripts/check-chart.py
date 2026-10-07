@@ -46,7 +46,23 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+def project_root(script: Path, depth: int) -> Path:
+    """The repository root, which is not always one above `scripts/`.
+
+    A brownfield adoption puts the method's material under `project.json`'s `layout.delivery`, so this
+    script sits at `<repo>/<delivery>/scripts/`, while `specs/` stays at the repository root either way.
+    Hard-coding one level up found `<repo>/<delivery>/specs`, which does not exist, so the gate reported
+    `no chart yet` and exited 0 on every adopted project — a gate that is green because it is looking in
+    the wrong place. `check-slice-scope` has always resolved it this way; this one did not until it was
+    caught.
+    """
+    for candidate in script.parents:
+        if (candidate / "project.json").is_file():
+            return candidate
+    return script.parents[depth]
+
+
+ROOT = project_root(Path(__file__).resolve(), 1)
 SPECS = ROOT / "specs"
 KINDS = {"event", "schema", "route", "port"}
 # What each kind names, and what the gate opens to prove the contract is really there.
@@ -90,6 +106,12 @@ def shape_faults(chart: object, path: Path) -> list[str]:
         for key in BODIES[body["kind"]]:
             if not body.get(key):
                 faults.append(f"{where}: {body['kind']} mark `{name}` names no `{key}`")
+    for name, body in chart["fairways"].items():
+        owns = body.get("owns") if isinstance(body, dict) else None
+        if not isinstance(owns, list) or not owns:
+            faults.append(f"{where}: fairway `{name}` names no `owns`. On either profile that list is the "
+                          f"whole of the boundary `check-slice-scope` holds, so a fairway without one is a "
+                          f"fairway no gate protects")
     for name, body in chart["slices"].items():
         if not isinstance(body, dict):
             faults.append(f"{where}: slice `{name}` is not a mapping")
@@ -145,6 +167,23 @@ def rule_faults(chart: dict, path: Path) -> list[str]:
         for gone in sorted(set(was["marks"]) - set(marks)):
             faults.append(f"{where}: mark `{gone}` was on the frozen chart and is not here now. "
                           f"A mark is set once and never moved; amend in fairways/<name>/chart.d/ instead")
+
+    if (SPECS / str(chart.get("feature", "")) / "story-split.md").is_file():
+        # The split has run, so the chart's second pass is owed. Before that it is not, which is why this
+        # is conditional rather than a rule about every chart: `/chart` writes pass one and `make verify`
+        # runs this in between, and a gate that refused the state it tells you to be in is a gate people
+        # learn to skip.
+        if not slices:
+            faults.append(f"{where}: the split has run and the chart names no slices. The split writes the "
+                          f"`slices` block — fairway, capability, sets, steers_by — and nothing is claimed "
+                          f"until it has")
+        charted = set(marks)
+        spoken_for = {str(mark) for body in slices.values()
+                      for key in ("sets", "steers_by") for mark in (body.get(key) or [])}
+        for forgotten in sorted(charted - spoken_for):
+            faults.append(f"{where}: mark `{forgotten}` is declared and no slice sets or steers by it. "
+                          f"Either a slice publishes it, or it was a promise pass one made and the split "
+                          f"dropped")
 
     for slice_id, body in slices.items():
         if not body.get("capability"):

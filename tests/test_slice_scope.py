@@ -94,6 +94,47 @@ class OwnedPathsTest(unittest.TestCase):
         self.assertIsNone(module.Scope("ORD-01", "main").fairway_violation("apps/billing/src/invoice.ts"))
 
 
+class UnreadableChartTest(unittest.TestCase):
+    """A chart that is there and cannot be parsed is a refusal, never a quiet pass.
+
+    The first version of `load_chart` fell back to the event-model checker's bundled parser, which is
+    excluded on the standard profile — the profile this whole boundary was built for. So on a
+    standard-profile machine without PyYAML the boundary held nothing while the gate still printed that the
+    branch touched only what one slice may. A pass with the chart unread reads exactly like a pass with it
+    held, which is the one thing a gate must never do.
+    """
+
+    def test_a_chart_that_cannot_be_parsed_is_reported_rather_than_skipped(self) -> None:
+        tree = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tree, True)
+        (tree / "scripts").mkdir()
+        shutil.copy(GATE, tree / "scripts/check-slice-scope.py")
+        (tree / "specs/ordering").mkdir(parents=True)
+        (tree / "specs/ordering/chart.yaml").write_text(textwrap.dedent(CHART).lstrip(), encoding="utf-8")
+        (tree / "project.json").write_text('{"deployables": {}}', encoding="utf-8")
+        module = gate_module(tree)
+        # No parser, and no event-model checker to borrow one from: the standard profile without PyYAML.
+        module.load_chart = lambda text: module.UNREADABLE
+        with self.assertRaises(module.ChartUnreadable):
+            module.chart_fairways("ORD-01")
+
+    def test_the_scope_records_it_rather_than_losing_it(self) -> None:
+        tree = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tree, True)
+        (tree / "scripts").mkdir()
+        shutil.copy(GATE, tree / "scripts/check-slice-scope.py")
+        (tree / "specs/ordering").mkdir(parents=True)
+        (tree / "specs/ordering/chart.yaml").write_text(textwrap.dedent(CHART).lstrip(), encoding="utf-8")
+        (tree / "project.json").write_text('{"deployables": {}}', encoding="utf-8")
+        for argument in ("init -q -b main", "config user.email g@example.com", "config user.name g"):
+            subprocess.run(["git", *argument.split()], cwd=tree, capture_output=True, check=True)
+        module = gate_module(tree)
+        module.load_chart = lambda text: module.UNREADABLE
+        scope = module.Scope("ORD-01", "main")
+        self.assertEqual(scope.unreadable, "specs/ordering/chart.yaml")
+        self.assertIsNone(scope.fairway, "an unread chart must not read as a slice with no fairway")
+
+
 class OwnedPatternTest(unittest.TestCase):
     def setUp(self) -> None:
         self.tree = Path(tempfile.mkdtemp())

@@ -202,7 +202,11 @@ class Scope:
         own = slices_of(self.model).get(slice_id, {})
         self.service = own.get("service") if isinstance(own.get("service"), str) else None
         self.context = own.get("context") if isinstance(own.get("context"), str) else None
-        self.fairway, self.owns = chart_fairways(slice_id)
+        try:
+            self.fairway, self.owns = chart_fairways(slice_id)
+            self.unreadable: str | None = None
+        except ChartUnreadable as unreadable:
+            self.fairway, self.owns, self.unreadable = None, {}, str(unreadable)
 
     def fairway_violation(self, path: str) -> str | None:
         """A path another fairway owns. The chart says who owns what, on both profiles.
@@ -394,6 +398,10 @@ def lost_records() -> list[str]:
     return findings
 
 
+class ChartUnreadable(Exception):
+    """A chart is there and no parser is. The boundary is not held, and the gate says so rather than passing."""
+
+
 def owned_by(path: str, patterns: list[str]) -> bool:
     """Whether a path falls inside one of a fairway's `owns` entries.
 
@@ -410,6 +418,10 @@ def owned_by(path: str, patterns: list[str]) -> bool:
     return False
 
 
+#: Returned where a chart is there and cannot be parsed. Distinct from `None`, which means "no chart".
+UNREADABLE = object()
+
+
 def load_chart(text: str) -> object:
     """Parse a chart.
 
@@ -423,10 +435,14 @@ def load_chart(text: str) -> object:
     except ImportError:
         checker = ROOT / DELIVERY / "scripts/event-model/check.py"
         if not checker.is_file():
-            return None
+            # Standard profile, no parser. The first version of this fell back to the event-model checker's
+            # bundled one, which is excluded on exactly this profile — so the boundary silently held nothing
+            # on the profile it was built for, while the gate still printed that the branch was fine.
+            # Saying so is the only honest answer; a quiet pass reads identical to a held boundary.
+            return UNREADABLE
         spec = importlib.util.spec_from_file_location("event_model_check", checker)
         if spec is None or spec.loader is None:
-            return None
+            return UNREADABLE
         module = importlib.util.module_from_spec(spec)
         sys.dont_write_bytecode = True
         spec.loader.exec_module(module)
@@ -440,6 +456,8 @@ def chart_fairways(slice_id: str) -> tuple[str | None, dict[str, list[str]]]:
     """This slice's fairway, and what every fairway owns, from the first chart that names the slice."""
     for chart_path in sorted((ROOT / SPECS).glob("*/chart.yaml")) if (ROOT / SPECS).is_dir() else []:
         chart = load_chart(chart_path.read_text(encoding="utf-8"))
+        if chart is UNREADABLE:
+            raise ChartUnreadable(chart_path.relative_to(ROOT).as_posix())
         if not isinstance(chart, dict):
             continue
         slices = chart.get("slices") if isinstance(chart.get("slices"), dict) else {}
@@ -470,6 +488,12 @@ def check(branch: str | None) -> tuple[list[str], str]:
         found = scope.violation(path, status) or scope.fairway_violation(path)
         if found:
             violations.append(found)
+    if scope.unreadable is not None:
+        violations.append(
+            f"{scope.unreadable}: there is a chart and no YAML parser to read it, so the fairway boundary "
+            f"is not held on this branch. Install PyYAML (`python3 -m pip install PyYAML`) and run again; "
+            f"a pass with the chart unread would read exactly like a pass with it held."
+        )
     violations.extend(scope.model_violations())
     return violations, f"check-slice-scope: slice/{slice_id} touches only what one slice may"
 

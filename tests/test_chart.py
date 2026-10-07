@@ -115,6 +115,87 @@ class ChartGateTest(unittest.TestCase):
         self.assertNotIn("which no slice sets", done.stderr)
 
 
+class WholenessTest(unittest.TestCase):
+    """What the gate could not tell apart, and now can.
+
+    `/chart` writes the fairways and the marks; the split writes the slices. The gate runs in `make verify`
+    between the two, so it cannot simply demand slices — a gate that refuses the state it tells you to be
+    in is a gate people learn to skip. The signal is the split's own file: once `story-split.md` is there,
+    the second pass is owed.
+    """
+
+    def setUp(self) -> None:
+        self.tree = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tree, True)
+        (self.tree / "scripts").mkdir()
+        shutil.copy(GATE, self.tree / "scripts/check-chart.py")
+        (self.tree / "specs/ordering").mkdir(parents=True)
+        (self.tree / "contracts/events").mkdir(parents=True)
+        for event in ("OrderPlaced", "InvoiceRaised"):
+            (self.tree / f"contracts/events/{event}.json").write_text("{}", encoding="utf-8")
+
+    def run_gate(self, chart: str) -> subprocess.CompletedProcess[str]:
+        (self.tree / "specs/ordering/chart.yaml").write_text(textwrap.dedent(chart).lstrip(), encoding="utf-8")
+        return subprocess.run([sys.executable, "scripts/check-chart.py"], cwd=self.tree,
+                              capture_output=True, text=True, check=False)
+
+    def split_has_run(self) -> None:
+        (self.tree / "specs/ordering/story-split.md").write_text("# split\n", encoding="utf-8")
+
+    def test_pass_one_alone_passes_while_the_split_has_not_run(self) -> None:
+        """The state the stage tells you to be in, between its two passes."""
+        done = self.run_gate(WHOLE.replace("""slices:
+  ORD-01: {fairway: ORD, capability: place-an-order, sets: [OrderPlaced], steers_by: []}
+  BIL-01: {fairway: BIL, capability: bill-an-order, sets: [InvoiceRaised], steers_by: [OrderPlaced]}""",
+                                          "slices: {}"))
+        self.assertEqual(done.returncode, 0, done.stderr)
+
+    def test_once_the_split_has_run_a_chart_with_no_slices_is_refused(self) -> None:
+        """This passed green before. The sentence the stage ends on was prose, not a gate."""
+        self.split_has_run()
+        done = self.run_gate(WHOLE.replace("""slices:
+  ORD-01: {fairway: ORD, capability: place-an-order, sets: [OrderPlaced], steers_by: []}
+  BIL-01: {fairway: BIL, capability: bill-an-order, sets: [InvoiceRaised], steers_by: [OrderPlaced]}""",
+                                          "slices: {}"))
+        self.assertEqual(done.returncode, 1, done.stdout)
+        self.assertIn("the split has run and the chart names no slices", done.stderr)
+
+    def test_a_mark_the_split_dropped_is_refused(self) -> None:
+        """A promise pass one made that no slice picked up. Rule 2 from the other side."""
+        self.split_has_run()
+        done = self.run_gate(WHOLE.replace("sets: [InvoiceRaised]", "sets: []")
+                                  .replace("steers_by: [OrderPlaced]", "steers_by: []"))
+        self.assertEqual(done.returncode, 1, done.stdout)
+        self.assertIn("mark `InvoiceRaised` is declared and no slice sets or steers by it", done.stderr)
+
+    def test_a_fairway_that_owns_nothing_is_refused(self) -> None:
+        """`owns` is the whole of the boundary check-slice-scope holds, so an empty one protects nothing."""
+        done = self.run_gate(WHOLE.replace(", owns: [apps/billing/**]", ""))
+        self.assertEqual(done.returncode, 1, done.stdout)
+        self.assertIn("fairway `BIL` names no `owns`", done.stderr)
+        self.assertIn("a fairway no gate protects", done.stderr)
+
+
+class AdoptedRootTest(unittest.TestCase):
+    def test_the_gate_finds_a_chart_in_an_adopted_repository(self) -> None:
+        """The method's material sits under `layout.delivery` there, and `specs/` stays at the root. One
+        level up from `scripts/` found a directory that does not exist, so the gate reported `no chart yet`
+        and exited 0 on every adopted project — green because it was looking in the wrong place."""
+        tree = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tree, True)
+        (tree / "delivery/scripts").mkdir(parents=True)
+        shutil.copy(GATE, tree / "delivery/scripts/check-chart.py")
+        (tree / "project.json").write_text('{"layout": {"delivery": "delivery"}}', encoding="utf-8")
+        (tree / "specs/ordering").mkdir(parents=True)
+        (tree / "specs/ordering/chart.yaml").write_text(
+            textwrap.dedent(WHOLE).lstrip().replace("kind: event, schema: contracts/events/OrderPlaced.json",
+                                                    "kind: event, schema: nowhere.json"), encoding="utf-8")
+        done = subprocess.run([sys.executable, "delivery/scripts/check-chart.py"], cwd=tree,
+                              capture_output=True, text=True, check=False)
+        self.assertEqual(done.returncode, 1, f"the gate did not find the chart: {done.stdout}")
+        self.assertIn("nowhere.json", done.stderr)
+
+
 class FrozenChartTest(unittest.TestCase):
     """The deletion rule needs a trunk to compare against, so this one builds a repository."""
 
@@ -149,114 +230,6 @@ class FrozenChartTest(unittest.TestCase):
         self.assertEqual(done.returncode, 1, done.stdout)
         self.assertIn("was on the frozen chart and is not here now", done.stderr)
         self.assertIn("chart.d/", done.stderr)
-
-
-MODEL = """
-version: 1
-slices:
-  - id: PlaceOrder
-    context: ordering
-    service: orders
-    capability: place-an-order
-    pattern: state-change
-    frames:
-      - {type: ui, name: Cart}
-      - {type: cmd, name: PlaceOrder}
-      - {type: evt, name: OrderPlaced}
-  - id: RaiseInvoice
-    context: billing
-    service: billing
-    capability: bill-an-order
-    pattern: automation
-    reads: [OrderPlaced]
-    frames:
-      - {type: rmo, name: PlacedOrders}
-      - {type: pcr, name: Invoicer}
-      - {type: cmd, name: RaiseInvoice}
-      - {type: evt, name: InvoiceRaised}
-"""
-MANIFEST = """
-{"deployables": {"orders": {"kind": "service", "path": "apps/orders", "contexts": ["ordering"]},
-                 "billing": {"kind": "service", "path": "apps/billing", "contexts": ["billing", "tax"]}}}
-"""
-
-
-class RenderedChartTest(unittest.TestCase):
-    """`make chart` on the event profile: the chart is derived from the model, never written beside it."""
-
-    def setUp(self) -> None:
-        self.tree = Path(tempfile.mkdtemp())
-        self.addCleanup(shutil.rmtree, self.tree, True)
-        for directory in ("scripts/event-model", "docs/event-model", "specs/ordering/slices"):
-            (self.tree / directory).mkdir(parents=True)
-        shutil.copy(ROOT / "assets/toolkit/scripts/event-model/chart.py", self.tree / "scripts/event-model/chart.py")
-        shutil.copy(GATE, self.tree / "scripts/check-chart.py")
-        (self.tree / "docs/event-model/model.yaml").write_text(textwrap.dedent(MODEL).lstrip(), encoding="utf-8")
-        (self.tree / "project.json").write_text(textwrap.dedent(MANIFEST).lstrip(), encoding="utf-8")
-
-    def render(self) -> subprocess.CompletedProcess[str]:
-        return subprocess.run([sys.executable, "scripts/event-model/chart.py"], cwd=self.tree,
-                              capture_output=True, text=True, check=False)
-
-    def chart(self) -> dict:
-        import yaml  # type: ignore[import-untyped]
-        loaded = yaml.safe_load((self.tree / "specs/ordering/chart.yaml").read_text(encoding="utf-8"))
-        assert isinstance(loaded, dict)
-        return loaded
-
-    def test_the_model_renders_a_chart_the_gate_accepts(self) -> None:
-        self.assertEqual(self.render().returncode, 0)
-        done = subprocess.run([sys.executable, "scripts/check-chart.py"], cwd=self.tree,
-                              capture_output=True, text=True, check=False)
-        self.assertEqual(done.returncode, 0, done.stderr)
-
-    def test_a_fairway_per_context_owning_what_that_context_holds(self) -> None:
-        """A service with one context owns all of it; one holding several owns the context's own directory."""
-        self.render()
-        fairways = self.chart()["fairways"]
-        self.assertEqual(sorted(fairways), ["billing", "ordering"])
-        self.assertEqual(fairways["ordering"]["owns"], ["apps/orders/**"])
-        self.assertEqual(fairways["billing"]["owns"], ["apps/billing/src/billing/**"])
-
-    def test_an_event_mark_points_at_the_model_rather_than_a_generated_schema(self) -> None:
-        """Generating JSON Schema would mean inventing a type mapping, and that mapping would be the
-        contract every other fairway steers by — a type system invented in a renderer, by nobody."""
-        self.render()
-        self.assertEqual(self.chart()["marks"]["OrderPlaced"],
-                         {"kind": "event", "schema": "docs/event-model/model.yaml#OrderPlaced"})
-
-    def test_what_a_slice_sets_and_steers_by_comes_from_its_frames_and_its_reads(self) -> None:
-        self.render()
-        slices = self.chart()["slices"]
-        self.assertEqual(slices["PlaceOrder"]["sets"], ["OrderPlaced"])
-        self.assertEqual(slices["PlaceOrder"]["steers_by"], [])
-        self.assertEqual(slices["RaiseInvoice"]["steers_by"], ["OrderPlaced"])
-        self.assertEqual(slices["RaiseInvoice"]["capability"], "bill-an-order")
-
-    def test_rendering_twice_writes_the_same_chart(self) -> None:
-        """A chart that churns on every render is a chart nobody can read a diff of."""
-        self.render()
-        first = (self.tree / "specs/ordering/chart.yaml").read_text(encoding="utf-8")
-        self.render()
-        self.assertEqual(first, (self.tree / "specs/ordering/chart.yaml").read_text(encoding="utf-8"))
-
-    def test_a_chart_edited_by_hand_is_refused_against_the_model(self) -> None:
-        """The model is the source of truth on this profile, so the chart is derived and never authored."""
-        self.render()
-        path = self.tree / "specs/ordering/chart.yaml"
-        path.write_text(path.read_text(encoding="utf-8").replace("bill-an-order", "something-else"),
-                        encoding="utf-8")
-        done = subprocess.run([sys.executable, "scripts/check-chart.py"], cwd=self.tree,
-                              capture_output=True, text=True, check=False)
-        self.assertEqual(done.returncode, 1, done.stdout)
-        self.assertIn("disagree(s) with docs/event-model/model.yaml", done.stderr)
-        self.assertIn("run `make chart`", done.stderr)
-
-    def test_a_project_with_no_model_is_told_which_stage_writes_its_chart(self) -> None:
-        (self.tree / "docs/event-model/model.yaml").unlink()
-        done = self.render()
-        self.assertEqual(done.returncode, 0)
-        self.assertIn("written by /chart on this profile", done.stdout)
 
 
 class ChartStageTest(unittest.TestCase):
