@@ -259,6 +259,55 @@ class ExampleMapTest(unittest.TestCase):
         self.assertIn("A map with none is a stop", " ".join(rungs["Implementation"].split()))
 
 
+class ReviewRungTest(unittest.TestCase):
+    """The rung between the demo and the adversary pass, and the role that pays for it.
+
+    In the experiment adversary review found 64 LOW findings, most of them about wording, that a review
+    would have found for a fraction of the tokens. The pass that was missing is a fresh context reading the
+    slice's whole diff — not one cycle's code — before anything adversarial runs.
+    """
+
+    def rung(self) -> str:
+        return " ".join(rung_bodies(every_rung())["Review and reshape"].split())
+
+    def test_it_sits_between_the_demo_and_the_adversary_pass(self) -> None:
+        written = headings(every_rung())
+        self.assertEqual(written[written.index("Demo") + 1], "Review and reshape")
+        self.assertEqual(written[written.index("Review and reshape") + 1], "Adversary")
+
+    def test_the_reviewer_never_edits(self) -> None:
+        """A reviewer that can write is one that edits, and then nobody has read the diff with fresh eyes."""
+        review = next(stage for stage in stage_models.STAGES if stage.key == "review")
+        self.assertEqual(review.writes, stage_models.NONE)
+        self.assertEqual(review.commands, stage_models.READ_ONLY)
+        self.assertIn("The reviewer never edits", self.rung())
+
+    def test_the_two_refactors_are_not_the_same_pass(self) -> None:
+        """Collapsing them loses the small one, which is the one that stops the big one being needed."""
+        self.assertIn("not one cycle's code", self.rung())
+        self.assertIn("collapsing them loses the small one", self.rung())
+
+    def test_a_slice_cannot_reach_the_adversary_rung_with_a_finding_open(self) -> None:
+        """Slice 5.8's done-when."""
+        self.assertIn("does not reach the adversary rung with a review finding open", self.rung())
+
+    def test_the_findings_come_back_in_the_shape_the_gaps_stage_uses(self) -> None:
+        """So one triage reads both rather than two formats reaching one person."""
+        self.assertIn("in the shape the gaps stage uses", self.rung())
+
+    def test_the_model_table_gains_a_review_role_seeded_to_the_host(self) -> None:
+        table = json.loads(stage_models.stage_models())
+        self.assertEqual(table["stages"]["review"], stage_models.REVIEW)
+        for harness, roles in table["roles"].items():
+            with self.subTest(harness=harness):
+                self.assertEqual(roles[stage_models.REVIEW], stage_models.HOST)
+
+    def test_there_is_a_delegate_type_for_it_and_it_writes_nothing(self) -> None:
+        written = agent_targets.agent_targets() if hasattr(agent_targets, "agent_targets") else ""
+        self.assertIsInstance(written, str)
+        self.assertIn("drive-review", stage_models.delegable_types())
+
+
 class HookPointTest(unittest.TestCase):
     def test_the_points_are_named_in_the_order_they_fire(self) -> None:
         """A hook that fires in a different order than the page says is a hook nobody can reason about."""

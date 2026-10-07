@@ -4,17 +4,17 @@
 Every stage ran on whatever model the harness happened to be set to, at the same price for gauging whether a
 slice converged as for turning `examples.md` into tests. The table puts the choice in the project,
 versioned with it, keyed by the command each stage runs: `strong` where a stage decides what to build or
-whether it was built, `fast` where the input is already fully specified on paper. Roles rather than model
-names, because identifiers are provider-specific and go stale; the roles are mapped to identifiers under
-`roles`, per harness, in the one place the project owner edits. The split is a hypothesis until benchmarking measures
-it, which is why every stage says out loud which model ran it.
+whether it was built, `fast` where the input is already fully specified on paper, `review` where a slice's
+whole diff is read by someone who did not write it. Roles rather than model names, because identifiers are
+provider-specific and go stale; they are mapped under `roles`, per harness, in the one place the project
+owner edits. The split is a hypothesis until benchmarking measures it, which is why every stage says out
+loud which model ran it.
 
-`host` is a value, not an absence: the model running `/drive` itself, with no delegation. `strong` maps to it
-everywhere, since a strong host handing its judgement stages to a named model would be a downgrade as often
-as not. `fast` is seeded only where the identifier is verified — Claude Code's Agent tool takes `sonnet` as an
-alias — and is `null` on every other harness that can switch, which `scripts/agents/models.py` reports as "no
-identifier mapped" rather than pretending. A harness the registry records no mechanism for gets no row: the
-script says every stage runs on the host model there, whatever the table asks.
+`host` is a value, not an absence: the model running `/drive` itself, with no delegation. `strong` and
+`review` both map to it, since a strong host handing its judgement away is as often a downgrade as not.
+`fast` is seeded only where the identifier is verified — Claude Code's Agent tool takes `sonnet` as an alias
+— and is `null` on every other harness that can switch, which `scripts/agents/models.py` reports as "no
+identifier mapped" rather than pretending. A harness the registry records no mechanism for gets no row.
 """
 from __future__ import annotations
 
@@ -33,10 +33,8 @@ NONE, MANIFEST, REPORT, TASKS = "none", "manifest", "report", "tasks"
 READ_ONLY, TASK_COMMAND, ANY = "read-only", "tasks-command", "any"
 # The prefix every projected agent type carries, so a project's own agents are never shadowed by the keel's.
 AGENT = "drive-"
-# A type that takes no stage's model. `/drive`'s slice delegate runs a whole slice — its example map
-# through its converged verdict — and *Who runs each stage* still chooses the model stage by stage inside it,
-# so resolving one for the delegate itself would pick a model for fourteen stages at once. It inherits, and the
-# projection says which of the two reasons it carries no model.
+# A type that takes no stage's model. `/drive`'s slice delegate runs a whole slice, and *Who runs each stage*
+# chooses stage by stage inside it, so resolving one here would pick a model for fourteen stages at once.
 NO_STAGE = "none"
 
 
@@ -75,6 +73,9 @@ class Stage:
 
 
 # The default split, in ladder order. Projections are a Python script here and have no row.
+# What the role buys is the option of a different model on reading a diff than on writing it.
+REVIEW = "review"
+
 STAGES: tuple[Stage, ...] = (
     Stage("principles", "strong", title="Principles"),
     Stage("specify", "strong", title="Product specification"),
@@ -95,6 +96,9 @@ STAGES: tuple[Stage, ...] = (
     Stage("implement", "fast", writes=MANIFEST, commands=ANY, title="Implementation"),
     Stage("converge", "strong", writes=MANIFEST, commands=ANY, title="Convergence"),
     Stage("demo", "strong", title="Demo"),
+    # `writes=NONE` is the whole of it: a reviewer that can write is one that edits, and then nobody has
+    # read this diff with fresh eyes after all.
+    Stage("review", REVIEW, writes=NONE, commands=READ_ONLY, title="Review and reshape"),
     Stage("adversary", "strong", writes=NONE, commands=READ_ONLY, title="Adversary"),
     Stage("mutation", "fast", writes=REPORT, commands=ANY, title="Mutation gate"),
     # The rung that ends a slice. It is nobody's delegate: rule 10 of the plan holds the merge to a person
@@ -147,7 +151,8 @@ def stage_models() -> str:
         ),
         "stages": {"default": DEFAULT_ROLE, **{stage.key: stage.role for stage in STAGES}},
         "roles": {
-            entry["key"]: {"strong": HOST, "fast": FAST_SEEDED.get(entry["key"]), SKIPPER: HOST}
+            entry["key"]: {"strong": HOST, "fast": FAST_SEEDED.get(entry["key"]), SKIPPER: HOST,
+                           REVIEW: HOST}
             for entry in switchable_harnesses()
         },
     }

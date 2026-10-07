@@ -1307,7 +1307,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 47 of 95 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 11/22, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 48 of 95 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 12/22, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1571,7 +1571,7 @@ Depends on: phase 3.
 | 5.5 | Clearance and the one-setter-per-mark rule in `check-model` and `check-chart`; typed attributes and `examples.md` at the split | new (#32) | M | A fresh fairway fans out on its first iteration | done |
 | 5.6 | `check-slice-scope` reads the chart for owned paths on both profiles | upstream + new | M | The standard profile holds a context boundary | done |
 | 5.7 | Two gates: `make unit` in generated projects, the ladder's fast checks per increment, the full gate before `main` | new | M | A slice's increments never run the full suite | done |
-| 5.8 | Review and refactor as a ladder stage, with a review role in the model table | new | M | A slice merges with review findings closed |  |
+| 5.8 | Review and refactor as a ladder stage, with a review role in the model table | new | M | A slice merges with review findings closed | done |
 | 5.9 | Adversary once with a bar, mutation as a gate, stage budgets, stow, the careen | new (#29) | L | A stage over budget stows; CRITICAL never does |  |
 | 5.10 | Ids with the fairway in them; per-fairway `decisions.md`, adversary log, register; rendered aggregates on `main` | new | L | Two fairways decide in parallel and nothing renumbers |  |
 | 5.11 | Composition root rendered from the chart; one file per event with a rendered index | new | M | Two slices add an event each and merge without touching one line |  |

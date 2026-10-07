@@ -171,6 +171,14 @@ def drive_ladder(
    different claims, and only one of them is machine-checked. **No person is stopped at this rung.** A
    person's demo is per capability and runs when the capability's last slice has merged; *After the hand's
    verdict, and after Phase 4 clears* is what happens here instead.""",
+        """**Review and reshape** — `specs/<feature>/slices/<id>/` records a review of this slice's whole
+   diff with every finding closed. Otherwise run `/review`, which gives a fresh context the diff and the
+   examples it was built from and returns findings in the shape the gaps stage uses, so one triage reads
+   both. The reviewer never edits: a reviewer that can write is one that edits, and then nobody has read
+   the diff with fresh eyes. This slice's own delegate closes the findings and then reshapes — the diff as
+   a whole, not one cycle's code, with the fast checks green after each step. This is the big refactor the
+   small one inside each cycle is there to make unnecessary; they are not the same pass, and collapsing
+   them loses the small one. A slice does not reach the adversary rung with a review finding open.""",
         """**Adversary** — `specs/<feature>/adversary-log.md` carries this slice's row: the attack that was
    run, or the recorded decision not to. Otherwise run `/adversary`. One round, and findings below the
    severity bar are stowed rather than argued: *After the hand's verdict, and after Phase 4 clears* says how.""",
