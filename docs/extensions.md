@@ -176,6 +176,31 @@ and are refused there: a `key` some other package already holds, and a package w
 does not satisfy. A refused extension is refused alone — it is optional dev tooling, and a project that
 cannot be generated because something optional is malformed has the dependency backwards.
 
+## Who you install from
+
+Installing a package is running somebody else's code: a language's Python is imported into the keel, and an
+extension's entry point edits the project. The digest the index publishes proves the file is the file the
+index listed; it says nothing about who listed it.
+
+So a package whose index names a publisher is asked about **once**. Accept them and every later release
+installs silently; `slipwai trust list` shows who is accepted, `slipwai trust add <publisher>` does it
+beforehand (a container image, a CI runner), and `slipwai trust remove` undoes it. `ROBCOATVG` is seeded as
+a row like any other, which can be removed — that is the difference between a default and a rule.
+
+A release is in one of four states, and `slipwai show` says which:
+
+| State | What it means |
+|---|---|
+| `verified` | a signature was checked and matched |
+| `unverified` | a signature is carried, and this copy has no verifier for it |
+| `unsigned` | the index carries no signature, or names no publisher to attribute one to |
+| `untrusted` | the publisher is not one this machine has accepted |
+
+`unverified` is kept apart from `verified` deliberately. The one thing a signature must never be used to say
+is "signed" about a signature nobody looked at. Which verifier fills `verified` is an open decision recorded
+in the plan: Python's standard library has no X.509 and no ECDSA, so a Sigstore bundle cannot be checked by
+a keel that ships with no dependencies.
+
 ## The keel ships none
 
 Version 1 carried three extensions in its own `catalog.json`. They are packages now —

@@ -52,6 +52,7 @@ from .cli_prompts import (
     validate_project_name,
 )
 from .cli_search import search_main, show_main
+from .cli_trust import trust_main
 from .errors import GenerationError, failure, refuse
 from .language_directory import Package, refusal
 from .language_upkeep import after_core
@@ -68,7 +69,7 @@ from .upgrade import main as upgrade_main
 # back, so an unknown argument is argparse's refusal rather than a stub that half-answers.
 VERBS = ("generate", "add-service", "add-frontend", "describe-service", "migrate", "replay",
          "adopt", "converge", "upgrade", "list", "search", "show", "install", "language", "extension",
-         "hooks", "package")
+         "hooks", "package", "trust")
 
 
 def main() -> None:
@@ -133,7 +134,8 @@ def dispatch(argv: list[str]) -> None:
     for verb, run in (("add-service", add_service_main), ("add-frontend", add_frontend_main),
                       ("describe-service", describe_service_main), ("migrate", migrate_main),
                       ("replay", replay_main), ("adopt", adopt_main), ("converge", converge_main),
-                      ("extension", extension_main), ("hooks", hooks_main), ("package", package_main)):
+                      ("extension", extension_main), ("hooks", hooks_main), ("package", package_main),
+                      ("trust", trust_main)):
         if argv[:1] == [verb]:
             run(argv[1:])
             return

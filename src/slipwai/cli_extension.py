@@ -113,12 +113,14 @@ def extension_main(argv: list[str]) -> None:
                                      description="The optional dev tooling a project may elect at `./init`")
     parser.add_argument("verb", choices=VERBS)
     parser.add_argument("arguments", nargs="*", metavar="<name-or-path>")
+    parser.add_argument("--accept-publisher", action="store_true",
+                        help="accept this package's publisher without being asked, and remember it")
     parsed = parser.parse_args(argv)
     try:
         if parsed.verb == "list":
             list_extensions()
         elif parsed.verb == "install":
-            for line in install(parsed.arguments, directory()):
+            for line in install(parsed.arguments, directory(), parsed.accept_publisher):
                 print(line)
             print(f"`./init --extension <key>` elects one in a project; a project generated before this "
                   f"install does not offer it until `{this_command()} migrate` is run in it")

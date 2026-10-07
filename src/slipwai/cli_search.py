@@ -141,9 +141,13 @@ def provenance(release: Release) -> list[str]:
     this package is unsigned or whether this command does not mention signing — and those are the two
     things it most matters to tell apart.
     """
+    from .trust import SAID, state_of, trusted
+    state = state_of(release.publisher, release.signature)
     lines = [f"  channel       {release.channel or 'the only one'}"]
-    lines.append(f"  publisher     {release.publisher or 'unstated'}")
-    lines.append(f"  signature     {'carried by the index' if release.signed else 'unsigned'}")
+    accepted = "accepted here" if trusted(release.publisher) else "not accepted here yet"
+    lines.append(f"  publisher     {release.publisher or 'unstated'}"
+                 + (f"  ({accepted})" if release.publisher else ""))
+    lines.append(f"  signature     {state} — {SAID[state]}")
     if release.tags:
         lines.append(f"  tags          {', '.join(release.tags)}")
     return lines

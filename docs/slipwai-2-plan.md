@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 70 of 105 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 29/29, phase 6 5/8, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 71 of 105 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 29/29, phase 6 6/8, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1623,7 +1623,7 @@ most worth running in two fairways themselves, once 5.3 exists.
 | 6.2 | The index schema with publishers, checksums, the signature field, descriptions and tags; the public channel as a Pages site | cruise-2 + new | M | `slipwai search` and `slipwai install` read it for both kinds | done |
 | 6.3 | A private channel per organisation, `SLIPWAI_LANGUAGE_INDEX` generalised to `SLIPWAI_CHANDLERY` | cruise-2 | S | An organisation's index serves its own packages | done |
 | 6.4 | `slipwai package check / release / register`, branching on the kind answer, and `make release` in the template behind them. `package new` landed early, in 6.1b, because a publisher needed something to publish | new | M | One language package and one extension package, each made by `new` on an empty machine, pass `check`, release, and register into a local channel without a hand edit | done |
-| 6.5 | Signed releases and the trust store: Sigstore or minisign verification, `trust.json`, the `ROBCOATVG` root, the confirm-once prompt, `unsigned` in `slipwai list` | new | M | A new publisher is confirmed once and then installs silently; a mismatched signature is refused; a hand-placed package loads and says `unsigned` |  |
+| 6.5 | Signed releases and the trust store: Sigstore or minisign verification, `trust.json`, the `ROBCOATVG` root, the confirm-once prompt, `unsigned` in `slipwai list` | new | M | A new publisher is confirmed once and then installs silently; a mismatched signature is refused; a hand-placed package loads and says `unsigned` | done |
 | 6.6 | The public channel's contribution path, which `slipwai package register` targets: the index repository, its CI (signature matches publisher, conformance passes, no name collision), and the contributor page | new | M | A package from outside `ROBCOATVG` is listed by a merged pull request and installs with one confirmation |  |
 
 Depends on: phase 4. Runs beside phase 7.
@@ -2344,11 +2344,28 @@ with `--provenance` from CI and verifies in the client, PyPI publishes PEP 740 a
 and ships `pypi-attestations` so a consumer never touches `cosign`. Decided 2026-10-07. `install` verifies: the signature matches
 the `publisher` the index names, and the publisher is in `~/.slipwai/trust.json`, or the person confirms
 it once and it is added. `ROBCOATVG` is pre-seeded. A hand-placed package loads and `list` says
-`unsigned`. Verification is at install and never at build — the Maven analogy. The decision still open
-here is which Sigstore verifier to depend on: `sigstore-python` is a dependency the keel does not have,
-and the keel ships with none. The options are to vendor a minimal bundle verifier, to shell out to
-`cosign` when present and refuse otherwise, or to make minisign the only laptop path and Sigstore the
-only CI path. **Owner's decision; the slice cannot start without it.**
+`unsigned`. Verification is at install and never at build — the Maven analogy.
+
+**What building it found, and the fork it left.** The trust store, the publisher check, the confirm-once
+prompt and the four states a package can be in are built and are the part that needed no crypto. The
+cryptography is not, and "vendor a minimal bundle verifier" turned out not to be a thing that can be done:
+Python's standard library has no X.509 parsing and no ECDSA, so a Sigstore bundle cannot be verified by a
+keel that ships with no dependencies. There are three real ways out, and they are a person's to choose.
+
+1. **An optional extra.** `pip install slipwai[verify]` pulls `sigstore`, and verification is end-to-end
+   where it is installed. Without it the client has the digest, TLS to the channel, and the identity the
+   channel's own CI verified and recorded — and says `unverified` rather than `verified`. Least friction to
+   build, honest about what it does, and the common case (a laptop that never installed the extra) is the
+   case that gets the weaker guarantee.
+2. **Ed25519 in pure Python, minisign-style.** RFC 8032 verification is about ninety lines, testable
+   against the RFC's own vectors, and needs nothing. Real end-to-end verification on every machine. The cost
+   is that a publisher holds a key — which is exactly what keyless was chosen to avoid — and that the keel
+   carries hand-written cryptography, which is a thing to be unhappy about even when it is right.
+3. **Both, by role.** Ed25519 for a private channel, where an organisation holding its own key is normal
+   and the keyless argument does not apply; Sigstore through the extra for the public one.
+
+The states are built either way and the verifier plugs into one seam, so whichever is chosen is a slice
+that adds a function and a test, not a redesign. **Owner's decision.**
 
 **6.6 — The public channel's contribution path.** The index repository under `ROBCOATVG`, with CI that
 checks a pull request's entry: the signature matches the named publisher, the release file's sha256

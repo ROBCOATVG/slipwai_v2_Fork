@@ -37,6 +37,7 @@ from .errors import GenerationError
 from .extension_directory import MANIFEST, fault_in, files
 from .index_schema import EXTENSION
 from .language_release import ReleaseError, unpack
+from .trust import SAID, admitted, state_of
 
 STAGING = ".install-extension-"
 #: What a request has to look like to be a git URL rather than a path. `git@` is included because that is
@@ -66,7 +67,7 @@ def cloned(url: str, into: Path) -> Path:
 CAME_FROM: dict[str, str] = {}
 
 
-def from_index(name: str, area: Path) -> Path:
+def from_index(name: str, area: Path, accept_publisher: bool = False) -> Path:
     """One named extension, fetched from the chandlery and unpacked. Raises with the reason it could not be.
 
     Imported here rather than at the top: the index client reaches the network, and a verb installing from a
@@ -83,15 +84,20 @@ def from_index(name: str, area: Path) -> Path:
     if release is None:
         raise GenerationError(f"{found.name} lists no extension `{name}` this keel can install. "
                               f"`{this_command()} search --kind extension` lists what it does")
-    CAME_FROM[name] = f"{release.channel or found.name} ({release.version})"
+    # The publisher before the bytes: somebody who has not accepted this publisher is asked before anything
+    # is fetched, not after. `download` then refuses a file that is not the one the index listed.
+    admitted(name, release.publisher, release.signature, confirm=accept_publisher)
+    data = download(found, release)
+    CAME_FROM[name] = (f"{release.channel or found.name} {release.version}, "
+                       f"{SAID[state_of(release.publisher, release.signature, data)]}")
     archive = area / "release.tar.gz"
-    archive.write_bytes(download(found, release))
+    archive.write_bytes(data)
     unpacked = area / "unpacked"
     unpack(archive, unpacked)
     return unpacked
 
 
-def sourced(request: str, area: Path) -> Path:
+def sourced(request: str, area: Path, accept_publisher: bool = False) -> Path:
     """One request as a directory holding an `extension.json`, whatever form it arrived in."""
     if is_remote(request):
         return cloned(request, area)
@@ -105,7 +111,7 @@ def sourced(request: str, area: Path) -> Path:
     if is_path(request):
         raise GenerationError(f"{request} is neither a package directory nor a release file. A name with no "
                               f"separator in it is looked up in the chandlery instead")
-    return from_index(request, area)
+    return from_index(request, area, accept_publisher)
 
 
 def is_path(request: str) -> bool:
@@ -159,7 +165,7 @@ def admit(key: str, root: Path, directory: Path, replacing: bool) -> None:
                               f"rename one, or `{this_command()} language remove {key}` first")
 
 
-def install(requests: list[str], directory: Path) -> list[str]:
+def install(requests: list[str], directory: Path, accept_publisher: bool = False) -> list[str]:
     """Install each request, and return a line each saying what landed. Every refusal names a fix."""
     if not requests:
         raise GenerationError(f"`{this_command()} extension install` takes a path, a release file or a git URL")
@@ -167,7 +173,7 @@ def install(requests: list[str], directory: Path) -> list[str]:
     said: list[str] = []
     for request in requests:
         with tempfile.TemporaryDirectory(dir=directory, prefix=STAGING) as area:
-            root = sourced(request, Path(area))
+            root = sourced(request, Path(area), accept_publisher)
             key = key_of(root, request)
             place = directory / key
             holding = staged(root, key, Path(area))
