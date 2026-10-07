@@ -1,0 +1,130 @@
+"""The log line: the only thing that says what happened, and the rules that keep it trustworthy.
+
+The first attempt's runner was the single source of status and died at iteration two; seventeen of nineteen
+iterations afterwards wrote nothing at all, so the checkpoint said "iteration 2" while twenty slices merged.
+In MANDA the same shape failed the other way round: `model.yaml` said `planned` for eight slices that were
+built and merged, because the field was written at plan time and never reconciled.
+
+Both are state kept somewhere other than where the work happened. A line is written by the thing that did
+the work, at the moment it did it, which is what makes the rule the rest of version 2 rests on true: a slice
+that wrote no line made no progress.
+"""
+from __future__ import annotations
+
+import json
+import unittest
+
+import checkout_packages  # noqa: F401
+
+from slipwai import logs
+
+
+class ShapeTest(unittest.TestCase):
+    def test_a_line_is_one_json_object_on_one_line(self) -> None:
+        """Appended with O_APPEND and one write() per line, so two processes never tear one."""
+        written = logs.entry("heartbeat", fairway="ORD").line()
+        self.assertTrue(written.endswith("\n"))
+        self.assertEqual(written.count("\n"), 1)
+        self.assertIsInstance(json.loads(written), dict)
+
+    def test_every_line_carries_the_format_it_was_written_in(self) -> None:
+        self.assertEqual(json.loads(logs.entry("heartbeat", fairway="ORD").line())["v"], logs.V)
+
+    def test_a_timestamp_is_utc_to_the_second_so_two_logs_sort_into_one_order(self) -> None:
+        written = json.loads(logs.entry("heartbeat", fairway="ORD").line())["t"]
+        self.assertRegex(written, r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+
+
+class DeclarationTest(unittest.TestCase):
+    def test_the_deck_log_has_the_kinds_the_glossary_names(self) -> None:
+        for kind in ("claimed", "mark-set", "demo", "accepted", "merged", "decision",
+                     "told", "read", "heartbeat", "stowed", "parked"):
+            with self.subTest(kind=kind):
+                self.assertIn(kind, logs.DECK_KINDS)
+
+    def test_a_mark_set_line_names_the_slice_that_set_it(self) -> None:
+        """It is written at that slice's first stage, and it is what clears a sibling."""
+        self.assertEqual(logs.DECK_KINDS["mark-set"], ("fairway", "slice", "mark"))
+
+    def test_acceptance_is_against_a_capability_and_not_a_slice(self) -> None:
+        """A person's demo is of a whole chunk of work, which is theme B item 10."""
+        self.assertIn("capability", logs.DECK_KINDS["accepted"])
+        self.assertNotIn("slice", logs.DECK_KINDS["accepted"])
+
+    def test_a_read_carries_the_timestamp_of_what_it_answers(self) -> None:
+        """Which is what makes it a receipt rather than an assertion that somebody looked."""
+        self.assertEqual(logs.DECK_KINDS["read"], ("fairway", "told"))
+
+    def test_the_harbour_log_holds_only_what_other_fairways_need(self) -> None:
+        self.assertEqual(set(logs.HARBOUR_KINDS),
+                         {"mark-set", "flag-hoisted", "flag-struck", "berth-allocated",
+                          "fires-banked", "park", "telegraph"})
+
+    def test_a_kind_one_log_has_and_the_other_has_not_is_refused_by_name(self) -> None:
+        with self.assertRaises(logs.Unreadable) as refused:
+            logs.declared("heartbeat", harbour=True)
+        self.assertIn("not a kind the harbour log has", str(refused.exception))
+        self.assertIn("flag-hoisted", str(refused.exception))
+
+
+class WritingTest(unittest.TestCase):
+    def test_a_line_written_short_is_refused_on_the_way_in(self) -> None:
+        """A line written short is one some reader weeks later cannot use, and by then nobody knows
+        what the missing value was."""
+        with self.assertRaises(logs.Unreadable) as refused:
+            logs.entry("mark-set", fairway="ORD", slice="ORD-01")
+        self.assertIn("has no mark", str(refused.exception))
+
+    def test_extra_fields_are_allowed_because_a_line_may_say_more(self) -> None:
+        written = json.loads(logs.entry("heartbeat", fairway="ORD", berth="orca", tokens=412).line())
+        self.assertEqual(written["berth"], "orca")
+        self.assertEqual(written["tokens"], 412)
+
+
+class ReadingTest(unittest.TestCase):
+    def test_a_line_round_trips(self) -> None:
+        written = logs.entry("mark-set", fairway="ORD", slice="ORD-01", mark="OrderPlaced").line()
+        back = logs.read(written)
+        self.assertEqual(back.kind, "mark-set")
+        self.assertEqual(back.fields["mark"], "OrderPlaced")
+
+    def test_a_newer_format_is_refused_and_names_what_reads_it(self) -> None:
+        """Guessing which fields moved is how a reader reports a run that did not happen."""
+        line = json.dumps({"v": logs.V + 1, "t": logs.now(), "kind": "heartbeat", "fairway": "ORD"})
+        with self.assertRaises(logs.Unreadable) as refused:
+            logs.read(line)
+        self.assertIn(f"v{logs.V + 1}", str(refused.exception))
+        self.assertIn("slipwai upgrade", str(refused.exception))
+
+    def test_a_line_that_is_not_json_is_refused_rather_than_skipped(self) -> None:
+        with self.assertRaises(logs.Unreadable):
+            logs.read("claimed ORD-01\n")
+
+    def test_a_fold_stops_at_a_line_it_cannot_read(self) -> None:
+        """A board folded from a log with holes is a board that is confidently wrong, which is the whole
+        problem the first attempt had."""
+        good = logs.entry("heartbeat", fairway="ORD").line()
+        with self.assertRaises(logs.Unreadable):
+            logs.fold([good, "{not json}", good])
+
+    def test_a_fold_keeps_the_order_the_lines_were_written_in(self) -> None:
+        written = [logs.entry("claimed", fairway="ORD", slice=f"ORD-0{n}").line() for n in (1, 2, 3)]
+        self.assertEqual([entry.fields["slice"] for entry in logs.fold(written)],
+                         ["ORD-01", "ORD-02", "ORD-03"])
+
+
+class PathTest(unittest.TestCase):
+    def test_a_fairway_writes_its_own_file_and_nothing_else(self) -> None:
+        """One writer per file is why two fairways never conflict on a log."""
+        self.assertEqual(logs.deck_path("ordering", "ORD"), ".slipwai/logs/ordering/ORD.jsonl")
+
+    def test_there_is_one_harbour_log_and_it_is_not_in_a_feature(self) -> None:
+        self.assertEqual(logs.HARBOUR, ".slipwai/logs/harbour.jsonl")
+
+    def test_the_logs_are_under_a_path_git_ignores(self) -> None:
+        """Heartbeat and token lines arrive every few seconds and have no place in trunk's history."""
+        self.assertTrue(logs.LOGS.startswith(".slipwai/"))
+
+
+if __name__ == "__main__":  # pragma: no cover
+    unittest.main()

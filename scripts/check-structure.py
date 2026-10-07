@@ -47,7 +47,7 @@ KEEL = ROOT / "src/slipwai"
 TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
     # Where the keel's own material is, how a refusal is raised, how a version string reads, what the entry
     # for the release in flight is made of, and what a project's name becomes in each ecosystem's namespace.
-    ("foundation", ("assets", "errors", "versions", "changelog", "naming")),
+    ("foundation", ("assets", "errors", "versions", "changelog", "naming", "logs")),
     # What a caller may ask for, what an option declares about the feature it owns, what an optional
     # dev-tooling hook is, where a project goes to production, what differs per package and where each
     # backend answers its probes. The registry and the loader land here in phase 2.
