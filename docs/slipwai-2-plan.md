@@ -799,7 +799,7 @@ The three figures below draw the new loop. The first two use the same grid, one 
 identical. The highlighted boxes are the only places where the two profiles differ, and every difference is one
 question: where does a fairway's chart come from, and who holds it? The SVG files are in `docs/images/`.
 
-**Two things are the same in both profiles, and neither is optional.**
+**Three things are the same in both profiles, and none is optional.**
 
 1. **Example mapping opens every slice.** A slice begins by turning its story into rules, an example per
    rule, and the questions it cannot answer. Nothing is implemented before that, in either profile. The
@@ -834,6 +834,34 @@ Version 1 had both — the `tdd` and `testing` skills are in the toolkit, and th
 is a stage — but the standard profile had no example-mapping stage at all, so it reached a demo of examples
 nothing had written, and neither profile's loop named the inner cycle, so `Implement` read as a black box.
 Both are stages in the figures now. Noticed 2026-10-06.
+
+3. **A mock-up review sits between the specification and the model or the chart.** Before any screen,
+   command line or developer-facing surface is modelled or charted, the feature's surfaces are drawn and
+   reviewed, in the host session, with the person present. The stage has two halves and a gate.
+
+   **The researcher comes first.** A fresh-context delegate reads `spec.md`, the domain knowledge in
+   `.specify/domain/` (5.16) and the product's existing surfaces, then looks outward: how do comparable
+   products do this job, what does the standard flow for it look like, which states does every good version
+   of it carry (loading, empty, populated, error, recovery), and which conventions will a user arrive
+   expecting. It writes `specs/<feature>/mockups/research.md`: per surface, what good looks like, with the
+   references it drew on, and the questions the spec leaves open as inbox lines. When the person has handed
+   over mock-ups, the researcher reviews them against that note. When nothing was handed over, it drafts
+   the mock-ups itself from the note — one static HTML file per surface, the way this plan's own bridge was
+   drafted in `docs/mockups/ledger-bridge.html` — so there is always something to review.
+
+   **The storyboard is the review.** The `storyboard` skill stitches the surfaces into one page with the flow
+   between them, a gap card for each surface the spec names and no mock-up shows, and an audit checklist per
+   mock-up; `find-gaps` runs over the result in its design-mock mode, writing each answer back as a state the
+   mock-up must show. The person approves surface by surface. The stage writes `mock-states.md`: one block
+   per surface, its states, and for each state `approved`, `parked` or `n/a`. A feature with no surface at
+   all — a migration, an integration, a job — writes `surfaces: none` and the stage closes in a line.
+
+   **What reads it.** The event model's UI lane and read models, or the chart's routes, are drawn from
+   approved surfaces, not from the spec alone. The split names, for every slice, the surfaces and states it
+   delivers, and refuses a surface not in `mock-states.md` or a state still `parked`. The example map takes
+   one example per approved state. The hand walks those states at the demo, and `web-interface-guidelines`
+   runs before the demo of any slice with a screen. Version 1 reached the demo of screens nobody had drawn;
+   the storyboard skill was in the toolkit and no stage called it. Noticed 2026-10-07.
 
 **Two refactors, and they are not the same one.** The one inside `Implement` is the third beat of each
 cycle: the code just made green, tidied before the next example. The one at `Review + reshape` is the
@@ -873,6 +901,7 @@ schema. On the standard profile, the same hop carries a route, a schema or a por
 | Mechanism | Event-modelling profile, version 1 | Standard profile, version 1 | Version 2, both profiles |
 |---|---|---|---|
 | Which context owns a slice | `context` and `service` on the slice's block in `model.yaml`. When there is more than one context, `check-model` refuses a placed slice that names none | The plan's Structure Decision, written per slice after the split. `project.json` lists each service's `contexts`, but nothing ties a slice to a context until planning | The chart names it for every slice. The event profile derives it from the model. The standard profile writes it at the `/chart` stage, and the plan repeats it |
+| Where the screens come from | The UI lane of the model, drawn by whoever modelled; no stage drew or reviewed it | Nothing. A slice's plan invents its screens, and the demo is the first time anyone sees them | The mock-up review stage, once per feature: researched, drafted when none were given, storyboarded, approved by a person into `mock-states.md`, which the model or chart, the split, the example map and the demo all read |
 | What the contract is | The event frames: typed `attributes`, a `stream` or a `guard`, and `gwt` pointing at `examples.md` | "Entries in `contracts/` exist", plus a gaps review of the acceptance criteria. Spec Kit's Phase 1 writes the directory. There is no schema and no checker | A mark: one typed entry per published thing (event, route, schema or port). The event profile already has it. The standard profile gets the chart and `check-chart` |
 | Who sets it, and when | The slice itself, at its example map, which moves it from `modelled` to `planned`. In version 1 this happens in the host before fan-out | The slice's own plan, inside its worktree. A sibling cannot build against it until the setting slice has planned | The slice that owns the mark sets it as its first stage, in its worktree. A `mark-set` line in the harbour log is what other fairways read |
 | Clearance to run alongside siblings | Its own status is `planned`. This serialises a fresh fairway: every slice needs a host example map first | Its own `contracts/` entries exist. The same serialisation, and no record of what a slice steers by | Every mark it steers by is set by a slice that is planned or implemented. Its own marks it sets itself. On the event profile, `reads` already holds the data. On the standard profile, the chart holds it |
@@ -1016,7 +1045,7 @@ Bring back `upgrade` without its version 1 paths. Do not bring back `migrate`.
 **Phase 5. The toolkit and the loop.** Bring back the skills, commands, agents, the ladder, and the delivery
 docs. Source: upstream and the `slipwai-workstreams` checkout. Rename each to the vocabulary as it lands, and
 record each rename in `docs/rename.json`. Build the changes of themes B, C and E in here, not as migrations
-afterwards: the `/chart` stage, clearance, the one-setter-per-mark rule, typed attributes at the split,
+afterwards: the mock-up review stage, the `/chart` stage, clearance, the one-setter-per-mark rule, typed attributes at the split,
 `check-chart`, `check-slice-scope` reading the chart, berths, stage budgets, stow and the careen, the review and
 refactor stage, the two gates, the ceiling on decisions, bounded waits, the inbox at every boundary, the four
 release modes, and the flag hygiene gate.
@@ -1128,6 +1157,13 @@ The first attempt paid for these rules. They apply from phase 1, inside the fork
 - **An open public channel: anyone publishes by pull request, every release is signed by its publisher, and a person confirms a new publisher once at first install.** Theme A, "Trust".
 - **The six package repositories move under `ROBCOATVG`, public, before phase 2.** Theme A, "Where the first-party packages live".
 
+### Settled on 2026-10-07
+
+- **A mock-up review stage, once per feature, between the specification and the model or the chart.** A
+  researcher writes what good looks like from the spec and from comparable workflows, drafts the mock-ups when
+  none were handed over, and a person approves the storyboard surface by surface before anything is modelled,
+  charted or split. Section 5, item 3; slice 5.18.
+
 ### Still open
 
 None. Every decision this plan needed on 2026-10-06 is taken, including the one slice 3.6 raised and
@@ -1208,9 +1244,18 @@ All six nice-to-haves were accepted as written on 2026-10-06 and moved into the 
 Open: none. Every blocker, should-address and nice-to-have found on 2026-10-06 is closed. Section 9 has no
 open decision left either.
 
+Added 2026-10-07:
+
+- [Blocker → section 5, item 3; slice 5.18] Nothing in the once-per-feature row draws or reviews the surfaces
+  before the model, the chart or the split. The `storyboard`, `find-gaps` and `frontend-design` skills were in
+  the toolkit and no stage called them, so the demo was the first sight of a screen. Answer: a mock-up review
+  stage after the specification, with a researcher that writes what good looks like and drafts the mock-ups
+  when none are given, and a person's approval per surface and state in `mock-states.md`, which every later
+  stage reads.
+
 ## 11. The implementation plan
 
-**Progress: 36 of 90 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 0/17, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 36 of 91 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 0/18, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1481,6 +1526,7 @@ Depends on: phase 3.
 | 5.14 | Berths: `slipwai berth add / status / remove`, allocation policy, the sandbox | new | L | Two berths on one machine do not collide on ports or databases |  |
 | 5.15 | The decision ceiling, bounded waits, the inbox read at every boundary with receipts | new | M | A message is read within one boundary or forces one |  |
 | 5.16 | Domain knowledge for the skipper | new (#27) | M | A fact in `.specify/domain/` is cited, not guessed |  |
+| 5.18 | The mock-up review as a once-per-feature stage of both profiles: `/mockups` runs a researcher that writes `research.md` from the spec, the domain knowledge and comparable workflows, reviews or drafts one HTML mock-up per surface, storyboards them, and writes `mock-states.md` from the person's approvals; the split, the example map and the demo read it | upstream skills + new | L | A feature handed no mock-ups reaches its split with every surface's states approved by a person, and the split refuses a slice that names a surface or state not approved |  |
 | 5.17 | Example mapping as a stage of **both** profiles: `example-map` moves out of `assets/profiles/event-modelling/commands/` into the toolkit, deriving its examples from the model on the event profile and writing them from the chart and the story on the standard one; the demo stage reads what it wrote | upstream + new | M | A standard-profile slice reaches its demo with examples a stage produced, and `/drive` refuses to implement a slice whose map is empty |  |
 
 Depends on: 1.2 for 5.1 and 5.2; phase 4 for a generated project to run against. 5.3 to 5.16 are the slices
@@ -1576,6 +1622,7 @@ each other. Nothing in phase 8 starts before phases 6 and 7 are done. Phase 9 is
 | Sandbox per berth on native Windows is harder than it reads | 5.14 proves it on all four platforms before 7.2 depends on it |
 | The chart on the standard profile is a design nobody has used | 5.4 is sized L and lands before 5.5 and 5.6 build on it; MANDA (event profile) does not depend on it |
 | The migration of in-flight work meets a case section 6 did not foresee | `make test-migration`'s fixtures carry a claimed slice and both flag states; the first real migration is after 2.0.0, on a branch, with `--check` first |
+| The researcher's "what good looks like" is generic, and the person approves it because it is there | 5.18's research note must cite what it drew on per surface, and the storyboard's gap cards and `find-gaps` pass run before approval; the demo walks the approved states, so a generic state costs a visible demo, not a silent one |
 | The token target is missed | The baseline above, measured at 7.x on the greenfield, with time to tune the telegraph positions |
 
 ## 12. How phases 5 to 10 are built
@@ -1637,13 +1684,14 @@ the groups that do not change, and a generated project's `make verify` for the o
 
 **Order, and why.** The skills are renamed first because every later slice cites them by their new names.
 The ladder follows because it is what the stages hang off. Example mapping is the first stage of the
-ladder, so it comes before the chart it reads. The chart comes before clearance, scope and fairways, which
+ladder, so it comes before the chart it reads. The mock-up review comes next, because the split and the
+example map both read what it approves, and the chart's routes are drawn from its surfaces. The chart comes before clearance, scope and fairways, which
 all read it. The two gates and the review stage reshape the ladder's middle. The adversary, mutation and
 careen reshape its end. The logs come before the ids, because the ids are read off the logs. Then the
 composition root, release modes, berths, inbox and domain knowledge, each of which stands alone.
 
 ```
-5.1 skills ─► 5.2 ladder ─► 5.17 example map ─► 5.4 chart ─► 5.5 clearance ─► 5.6 scope ─► 5.3 fairways
+5.1 skills ─► 5.2 ladder ─► 5.17 example map ─► 5.18 mock-up review ─► 5.4 chart ─► 5.5 clearance ─► 5.6 scope ─► 5.3 fairways
    ─► 5.7 two gates ─► 5.8 review ─► 5.9 adversary, careen ─► 5.13 logs ─► 5.10 ids
    ─► 5.11 composition ─► 5.12 release modes ─► 5.14 berths ─► 5.15 inbox ─► 5.16 domain
 ```
@@ -1679,6 +1727,39 @@ as inbox lines. Both write `specs/<feature>/slices/<id>/examples.md` in one shap
 examples beneath, each example one line a test can be named after. `/drive` refuses to implement a slice
 whose `examples.md` has no example. The done-when is the standard profile reaching its demo with examples a
 stage produced, which means the test generates a standard-profile project and runs the stage.
+
+**5.18 — The mock-up review.** New command `assets/toolkit/commands/mockups.md`, run once per feature in
+the host session after `/specify` and its gaps review, before `/event-model` or `/chart`. It is the only
+once-per-feature stage besides the chart that is new on both profiles. Three parts.
+
+The *researcher* is a fresh-context delegate with `writes` limited to `specs/<feature>/mockups/`. Its
+prompt gives it `spec.md`, `.specify/domain/` and the paths of any mock-ups the person has placed in the
+directory, and asks four questions per surface the spec implies: what job the user is doing on it, how
+comparable products do that job (the harness's web search where it has one; the researcher's own
+knowledge, cited as such, where it has not), which states every good version carries, and which
+conventions a user will arrive expecting. It writes `research.md` in that shape, with a `## Questions`
+section the stage copies to the inbox. Then it either reviews each handed-over mock-up against the note,
+one finding list per mock-up in the shape the gaps stage uses, or, when the directory held none, drafts
+one static HTML file per surface from the note. The drafts are the kind a person can open in a browser
+and point at; they carry no framework and no build. `frontend-design` is loaded for the drafting;
+`web-interface-guidelines` is not, because it reviews code, and these are not code yet.
+
+The *storyboard* is the `storyboard` skill run over the directory: one page, the flow between surfaces, a
+gap card per surface the spec names and no file shows, an audit checklist per mock-up. `find-gaps` runs on
+it in design-mock mode and writes each answer back as a state. The person approves in the storyboard —
+this is a host stage, a person is present — and the stage reads the checklists into
+`specs/<feature>/mockups/mock-states.md`: per surface, its states, each `approved`, `parked` (with the
+inbox line) or `n/a`. `surfaces: none` is a valid whole file, written when the spec has no surface, and
+the stage says so and closes.
+
+The *readers*: `story-split.md` gains a `surfaces` column per slice and a check that every surface and
+state it names is `approved` in `mock-states.md` — the check lives in `check-slice-scope`'s module, since
+it already reads the split; `example-map.md` (5.17) takes one example per approved state of the slice's
+surfaces on both profiles; the demo stage's prompt names the states the hand walks; and `/event-model`
+and `/chart` are each told to draw their UI lane or their routes from the approved surfaces. Done when a
+standard-profile project given a spec and no mock-ups reaches its split with every surface approved, and
+a split that names a `parked` state is refused. Size L because the researcher's prompt is the design and
+will take iterations against a real spec; the files it writes are plain.
 
 **5.4 — The chart.** The largest design in the phase, and new. `specs/<feature>/chart.yaml`:
 
@@ -2123,7 +2204,7 @@ Collected from above, so they can be taken before the slice that needs them.
 
 ### A realistic shape for the calendar
 
-Phase 5 is seventeen slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
+Phase 5 is eighteen slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
 beside each other and are each about three weeks. Phase 8 is a week of machinery and a release. Phase 9
 is a fortnight of writing against real runs. Phase 10 is after the release and is its own month. The
 prerequisite — the six packages rebuilt — took the evening of 6 October, and found four keel faults on the way.

@@ -12,40 +12,46 @@ text{fill:#172129}.lbl{fill:#44525c}.arr{stroke:#172129;stroke-width:1.2;fill:no
 #ah path{fill:#172129}.ahhl{fill:#0f6b6b}
 </style>
 <rect class="band" x="16" y="16" width="1728" height="156" rx="4"/><text class="bandt" x="28" y="33" font-size="11">ONCE PER FEATURE · host session, a person present · the chart is written before any slice is claimed</text>
-<rect class="box " x="30" y="58" width="160" height="76" rx="3"/>
-<text x="110.0" y="84.2" text-anchor="middle" font-size="12" font-weight="600">Principles</text>
-<text x="110.0" y="100.2" text-anchor="middle" font-size="12">constitution</text>
-<text x="110.0" y="116.2" text-anchor="middle" font-size="12">ratified, gated</text>
-<path class="arr " d="M 190,96.0 L 214,96.0" marker-end="url(#ah)"/>
-<rect class="box " x="214" y="58" width="160" height="76" rx="3"/>
-<text x="294.0" y="84.2" text-anchor="middle" font-size="12" font-weight="600">Specification</text>
-<text x="294.0" y="100.2" text-anchor="middle" font-size="12">spec.md</text>
-<text x="294.0" y="116.2" text-anchor="middle" font-size="12">+ gaps review</text>
-<path class="arr " d="M 374,96.0 L 398,96.0" marker-end="url(#ah)"/>
-<rect class="box hl" x="398" y="58" width="240" height="76" rx="3"/>
-<text x="518.0" y="76.2" text-anchor="middle" font-size="12" font-weight="600">Event model</text>
-<text x="518.0" y="92.2" text-anchor="middle" font-size="12">model.yaml · lanes → contexts</text>
-<text x="518.0" y="108.2" text-anchor="middle" font-size="12">events typed · stream / guard</text>
-<text x="518.0" y="124.2" text-anchor="middle" font-size="12">produces + reads per slice</text>
-<path class="arr " d="M 638,96.0 L 662,96.0" marker-end="url(#ah)"/>
-<rect class="box " x="662" y="58" width="190" height="76" rx="3"/>
-<text x="757.0" y="76.2" text-anchor="middle" font-size="12" font-weight="600">Split</text>
-<text x="757.0" y="92.2" text-anchor="middle" font-size="12">story-split.md</text>
-<text x="757.0" y="108.2" text-anchor="middle" font-size="12">slice graph: depends_on</text>
-<text x="757.0" y="124.2" text-anchor="middle" font-size="12">typed attributes, examples.md</text>
-<path class="arr " d="M 852,96.0 L 880,96.0" marker-end="url(#ah)"/>
-<rect class="box " x="880" y="58" width="260" height="76" rx="3"/>
-<text x="1010.0" y="76.2" text-anchor="middle" font-size="12" font-weight="600">Fairways (the chart)</text>
-<text x="1010.0" y="92.2" text-anchor="middle" font-size="12">fairway → context → service</text>
-<text x="1010.0" y="108.2" text-anchor="middle" font-size="12">owned paths · marks set · steered by</text>
-<text x="1010.0" y="124.2" text-anchor="middle" font-size="12">derived from model.yaml</text>
-<path class="arr " d="M 1140,96.0 L 1180,96.0" marker-end="url(#ah)"/>
-<rect class="box " x="1180" y="58" width="200" height="76" rx="3"/>
-<text x="1280.0" y="76.2" text-anchor="middle" font-size="12" font-weight="600">Release mode</text>
-<text x="1280.0" y="92.2" text-anchor="middle" font-size="12">open · keystone</text>
-<text x="1280.0" y="108.2" text-anchor="middle" font-size="12">flagged · promoted</text>
-<text x="1280.0" y="124.2" text-anchor="middle" font-size="12">from the product&#x27;s state</text>
-<path class="arr " d="M 1380,96.0 L 1524,96.0" marker-end="url(#ah)"/>
+<rect class="box " x="30" y="58" width="124" height="76" rx="3"/>
+<text x="92.0" y="84.2" text-anchor="middle" font-size="12" font-weight="600">Principles</text>
+<text x="92.0" y="100.2" text-anchor="middle" font-size="12">constitution</text>
+<text x="92.0" y="116.2" text-anchor="middle" font-size="12">ratified, gated</text>
+<path class="arr " d="M 154,96.0 L 178,96.0" marker-end="url(#ah)"/>
+<rect class="box " x="178" y="58" width="136" height="76" rx="3"/>
+<text x="246.0" y="84.2" text-anchor="middle" font-size="12" font-weight="600">Specification</text>
+<text x="246.0" y="100.2" text-anchor="middle" font-size="12">spec.md</text>
+<text x="246.0" y="116.2" text-anchor="middle" font-size="12">+ gaps review</text>
+<path class="arr " d="M 314,96.0 L 338,96.0" marker-end="url(#ah)"/>
+<rect class="box " x="338" y="58" width="206" height="76" rx="3"/>
+<text x="441.0" y="76.2" text-anchor="middle" font-size="12" font-weight="600">Mock-up review  (new stage)</text>
+<text x="441.0" y="92.2" text-anchor="middle" font-size="12">researcher: what good looks like</text>
+<text x="441.0" y="108.2" text-anchor="middle" font-size="12">drafted if none · storyboarded</text>
+<text x="441.0" y="124.2" text-anchor="middle" font-size="12">mock-states.md, person approves</text>
+<path class="arr " d="M 544,96.0 L 568,96.0" marker-end="url(#ah)"/>
+<rect class="box hl" x="568" y="58" width="224" height="76" rx="3"/>
+<text x="680.0" y="76.2" text-anchor="middle" font-size="12" font-weight="600">Event model</text>
+<text x="680.0" y="92.2" text-anchor="middle" font-size="12">model.yaml · lanes → contexts</text>
+<text x="680.0" y="108.2" text-anchor="middle" font-size="12">events typed · stream / guard</text>
+<text x="680.0" y="124.2" text-anchor="middle" font-size="12">produces + reads per slice</text>
+<path class="arr " d="M 792,96.0 L 816,96.0" marker-end="url(#ah)"/>
+<rect class="box " x="816" y="58" width="184" height="76" rx="3"/>
+<text x="908.0" y="76.2" text-anchor="middle" font-size="12" font-weight="600">Split</text>
+<text x="908.0" y="92.2" text-anchor="middle" font-size="12">story-split.md</text>
+<text x="908.0" y="108.2" text-anchor="middle" font-size="12">slice graph: depends_on</text>
+<text x="908.0" y="124.2" text-anchor="middle" font-size="12">typed attributes, examples.md</text>
+<path class="arr " d="M 1000,96.0 L 1024,96.0" marker-end="url(#ah)"/>
+<rect class="box " x="1024" y="58" width="236" height="76" rx="3"/>
+<text x="1142.0" y="76.2" text-anchor="middle" font-size="12" font-weight="600">Fairways (the chart)</text>
+<text x="1142.0" y="92.2" text-anchor="middle" font-size="12">fairway → context → service</text>
+<text x="1142.0" y="108.2" text-anchor="middle" font-size="12">owned paths · marks set · steered by</text>
+<text x="1142.0" y="124.2" text-anchor="middle" font-size="12">derived from model.yaml</text>
+<path class="arr " d="M 1260,96.0 L 1284,96.0" marker-end="url(#ah)"/>
+<rect class="box " x="1284" y="58" width="180" height="76" rx="3"/>
+<text x="1374.0" y="76.2" text-anchor="middle" font-size="12" font-weight="600">Release mode</text>
+<text x="1374.0" y="92.2" text-anchor="middle" font-size="12">open · keystone</text>
+<text x="1374.0" y="108.2" text-anchor="middle" font-size="12">flagged · promoted</text>
+<text x="1374.0" y="124.2" text-anchor="middle" font-size="12">from the product&#x27;s state</text>
+<path class="arr " d="M 1464,96.0 L 1524,96.0" marker-end="url(#ah)"/>
 <rect class="box " x="1524" y="44" width="206" height="112" rx="3"/>
 <text x="1627.0" y="64.2" text-anchor="middle" font-size="12" font-weight="600">Harbour log</text>
 <text x="1627.0" y="80.2" text-anchor="middle" font-size="12">append-only · git-ignored · one writer</text>
