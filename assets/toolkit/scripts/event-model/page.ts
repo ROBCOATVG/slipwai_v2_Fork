@@ -126,18 +126,55 @@ function statusBadge(status: Status): string {
   return `<span class="badge" style="background:${STATUS_COLOURS[status]}">${status}</span>`;
 }
 
+/**
+ * What the logs say happened to a slice, as against what `model.yaml` says is intended.
+ *
+ * Two bands, never one. The `status` badge beside this is written by a person at plan time, and it is the
+ * field that failed: MANDA's model said `planned` for eight slices that were built and merged, because
+ * nobody went back. Showing both makes that drift visible rather than impossible — a slice badged
+ * `implemented` with nothing beside it is the same bug, on the page where somebody would see it.
+ *
+ * Absent where there is no run, which is most of the time and is not a gap: the overlay is written by
+ * `scripts/agents/run-state.py` from the deck logs, and a page that needed it would be a page that cannot
+ * be rendered on a fresh checkout.
+ */
+const RUN_COLOURS: Readonly<Record<string, string>> = {
+  'not started': '#e9eef1',
+  claimed: '#d6e6f8',
+  'marks set': '#dcecea',
+  demoed: '#f1e9d2',
+  merged: '#d2f0e4',
+  parked: '#fbe1d7',
+};
+
+export interface RunState {
+  slices?: Record<string, { state?: string; marks?: string[]; at?: string; why?: string }>;
+  marks?: string[];
+}
+
+function runBadge(slice: Slice, run: RunState | undefined): string {
+  const held = run?.slices?.[slice.id];
+  if (run === undefined) return '';
+  if (held?.state === undefined) {
+    return `<span class="badge run" style="background:${RUN_COLOURS['not started']}" title="the logs do not mention this slice">not started</span>`;
+  }
+  const colour = RUN_COLOURS[held.state] ?? RUN_COLOURS['not started'];
+  const why = held.why === undefined ? '' : ` title="${escapeHtml(held.why)}"`;
+  return `<span class="badge run" style="background:${colour}"${why}>${escapeHtml(held.state)}</span>`;
+}
+
 /** The `data-` pair every filterable element carries — register row, slice section, and jump link alike. */
 function filterable(slice: Slice): string {
   return `data-status="${slice.status}" data-pattern="${slice.pattern}"`;
 }
 
-function sliceRow(slice: Slice): string {
+function sliceRow(slice: Slice, run: RunState | undefined): string {
   const code = (slice.code ?? []).map((path) => `<code>${escapeHtml(path)}</code>`).join('<br>');
   return `      <tr ${filterable(slice)}>
         <td><a href="#${escapeHtml(slice.id)}">${escapeHtml(slice.id)}</a></td>
         <td>${escapeHtml(slice.name)}</td>
         <td>${escapeHtml(slice.pattern)}</td>
-        <td>${statusBadge(slice.status)}</td>
+        <td>${statusBadge(slice.status)}${runBadge(slice, run)}</td>
         <td>${cell(slice.actor)}</td>
         <td>${slice.service === undefined ? '<span class="none">—</span>' : `<code>${escapeHtml(slice.service)}</code>`}</td>
         <td>${slice.context === undefined ? '<span class="none">—</span>' : `<code>${escapeHtml(slice.context)}</code>`}</td>
@@ -283,11 +320,12 @@ ${rows.join('\n')}
         </dl>`;
 }
 
-function sliceSection(slice: Slice, svg: string | undefined): string {
+function sliceSection(slice: Slice, svg: string | undefined, run: RunState | undefined): string {
   const reads = slice.reads ?? [];
   const facts = [
     ['Pattern', escapeHtml(slice.pattern)],
     ['Status', statusBadge(slice.status)],
+    ...(run === undefined ? [] : [['What happened', runBadge(slice, run)] as [string, string]]),
     ['Actor', cell(slice.actor)],
     ['Service', slice.service === undefined ? '<span class="none">—</span>' : `<code>${escapeHtml(slice.service)}</code>`],
     ['Context', slice.context === undefined ? '<span class="none">—</span>' : `<code>${escapeHtml(slice.context)}</code>`],
@@ -300,7 +338,7 @@ function sliceSection(slice: Slice, svg: string | undefined): string {
 
   return `    <section class="slice" id="${escapeHtml(slice.id)}" ${filterable(slice)}>
       <details open>
-        <summary><h3>${escapeHtml(slice.id)} · ${escapeHtml(slice.name)} ${statusBadge(slice.status)}</h3></summary>
+        <summary><h3>${escapeHtml(slice.id)} · ${escapeHtml(slice.name)} ${statusBadge(slice.status)}${runBadge(slice, run)}</h3></summary>
         <dl>
           ${facts}
         </dl>
@@ -588,6 +626,12 @@ export interface PageInput {
   sourcePath: string;
   /** The services `project.json` lists; the bounded-context canvases are projected over them. None: no canvases. */
   services?: readonly ServiceRecord[] | undefined;
+  /**
+   * What the logs say happened, from `scripts/agents/run-state.py`. Absent on a checkout with no run,
+   * which is most of them: the page renders exactly as it does without it, because an overlay that was
+   * required would be a model nobody could draw before driving it.
+   */
+  run?: RunState | undefined;
 }
 
 export function renderPage({
@@ -597,6 +641,7 @@ export function renderPage({
   sliceSvgs,
   sourcePath,
   services = [],
+  run,
 }: PageInput): string {
   const counts = model.slices.reduce<Record<string, number>>((acc, slice) => {
     acc[slice.status] = (acc[slice.status] ?? 0) + 1;
@@ -680,6 +725,9 @@ export function renderPage({
   table { width: 100%; border-collapse: collapse; font-size: .88rem; }
   th, td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
   th { font-size: .74rem; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+  /* The second band: what the logs say happened, beside what the model says is intended. Dashed and
+     dark-on-pale so the two never read as one — they are different claims and one of them can be wrong. */
+  .badge.run { margin-left: .3rem; color: #172129; border: 1px dashed rgba(0,0,0,.3); font-style: italic; }
   .badge { display: inline-block; padding: .1rem .45rem; border-radius: 999px; color: #fff;
            font-size: .72rem; letter-spacing: .02em; vertical-align: middle; }
   .none { color: var(--muted); }
@@ -777,13 +825,13 @@ ${timeline(model, globalSvg, segmentSvgs)}
           <th>Stream identity</th><th>Scenarios</th><th>Code</th></tr>
     </thead>
     <tbody>
-${model.slices.map(sliceRow).join('\n')}
+${model.slices.map((slice) => sliceRow(slice, run)).join('\n')}
     </tbody>
   </table>
 ${contextsSection(model, services)}
 
   <h2>Slice by slice</h2>
-${model.slices.map((slice) => sliceSection(slice, sliceSvgs.get(slice.id))).join('\n')}
+${model.slices.map((slice) => sliceSection(slice, sliceSvgs.get(slice.id), run)).join('\n')}
 </main>
 </body>
 </html>

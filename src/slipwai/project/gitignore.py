@@ -24,6 +24,9 @@ from .cruise_record import (
 from .openapi import API_CLIENT
 from .shared_packages import PACKAGES, node_workspace
 
+#: Under `.slipwai/`, what is the run's and not the record's. Ignored, in the order a reader meets them.
+RUN_STATE = ("logs/", "run-state.json", "running/", "harbourmaster.json", "berths/")
+
 # What each store writes beside the code, keyed by feature, for a store that keeps its data in the working
 # tree. A SQLite event store writes its log next to the code, and WAL mode writes two more files beside it.
 # An event log is the one thing in a project that must never be committed: it is data, it is often
@@ -127,10 +130,18 @@ def build_artifacts(event: bool, apps: list[App], target: str = "none") -> str:
         + store_artifacts
         + production_artifacts
         + extension_artifacts
-        # What a factory command leaves for this project to act on and then throw away. Only the catch-up
-        # page is ignored: `.slipwai/extensions.json` beside it is the committed election record migration
-        # needs in order to re-project extensions without asking the interactive menu again.
+        # What a factory command leaves for this project to act on and then throw away.
         + f"{NOTES}\n"
+        # The run's own state, which is not a record of it. Heartbeat and token lines arrive every few
+        # seconds; the pid files and the harbourmaster's cursor are about one machine; `run-state.json` is
+        # a fold of the logs and `berths/` is worktree paths and port numbers. None of it belongs in
+        # trunk's history, and `logs.py` has said so since 5.13 while nothing ignored them.
+        #
+        # Three things under `.slipwai/` stay committed, and each for a reason: `extensions.json` is the
+        # election record `migrate` re-projects from without asking the menu again; `hooks.json` is a
+        # controlled file, so an iteration that edits it is refused like one that edits a gate — which
+        # needs it diffable; and `packages/` is a project's own pinned packages where it has any.
+        + "".join(f".slipwai/{name}\n" for name in RUN_STATE)
         + ".specify-tools/\n.delivery-tools/\n"
         # The canonical slot the installed Spec Kit plan and tasks commands resolve to, one per feature. Since
         # 1.15.0 it is a link into `specs/<feature>/slices/<id>/`, where a slice's record lives from the day it

@@ -25,10 +25,13 @@ check-model: ## Validate the global event model and its links to implemented cod
 chart: ## Render specs/<feature>/chart.yaml from model.yaml — the contracts every fairway steers by (no Node)
 \tpython3 scripts/event-model/chart.py
 
-.PHONY: model
+.PHONY: model run-state
 model: ## Regenerate the event-model diagrams and browsable page from model.yaml (needs Node; PNG=1 for a raster copy; MERMAID_PUPPETEER_CONFIG=<json> where Chromium cannot sandbox)
 \t{INSTALL}
+\t@python3 scripts/agents/run-state.py || true
 \t{TSX} scripts/event-model/render.ts
+run-state: ## Fold what the logs say happened, for the model page to colour. Written by nobody, read by the page
+\tpython3 scripts/agents/run-state.py
 
 .PHONY: model-drawio
 model-drawio: ## Write the committed draw.io canvas, docs/event-model/model.drawio, from model.yaml (needs Node, no browser)

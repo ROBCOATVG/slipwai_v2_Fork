@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 
 import { extractHash, renderGlobalMermaid, renderSegmentMermaid, renderSliceMermaid } from './mermaid.ts';
 import { patchInstalledMermaid } from './patch-mermaid-swimlanes.ts';
-import { renderPage } from './page.ts';
+import { renderPage, type RunState } from './page.ts';
 import { renderReadmeSection, withReadmeSection } from './readme.ts';
 import { segmentModel, type Model } from './model.ts';
 import {
@@ -150,6 +150,33 @@ function updateReadme(model: Model): void {
   console.log(`  wrote ${README} (event-model block)`);
 }
 
+/**
+ * What the logs say happened, where a run has written it. Absent is the ordinary case and not a fault:
+ * the page renders exactly the same without it, because an overlay that was required would be a model
+ * nobody could draw before driving it.
+ *
+ * Never read from `model.yaml` and never written back to it. The field there is a person's intent, and
+ * folding over the field you are folding against leaves one band again — the one that said `planned` for
+ * eight slices that were built and merged.
+ */
+function loadRunState(): RunState | undefined {
+  const path = join(ROOT, '.slipwai/run-state.json');
+  if (!existsSync(path)) return undefined;
+  try {
+    const held: unknown = JSON.parse(readFileSync(path, 'utf8'));
+    if (typeof held !== 'object' || held === null) return undefined;
+    const version = (held as { v?: unknown }).v;
+    if (version !== 1) {
+      console.warn(`model: ${path} is format ${String(version)} and this renderer reads 1; no run shown.`);
+      return undefined;
+    }
+    return held as RunState;
+  } catch (error) {
+    console.warn(`model: ${path} could not be read (${String(error)}); no run shown.`);
+    return undefined;
+  }
+}
+
 function main(): void {
   const model = loadModel();
   const wantPng = process.env['PNG'] === '1' || process.argv.includes('--png');
@@ -224,6 +251,7 @@ function main(): void {
       sliceSvgs,
       sourcePath: MODEL_SOURCE,
       services: loadServices(),
+      run: loadRunState(),
     }),
   );
 
