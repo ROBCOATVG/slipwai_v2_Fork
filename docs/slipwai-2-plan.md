@@ -1590,7 +1590,7 @@ Depends on: phase 3.
 | 5.5b | Clearance where the loop can reach it: `scripts/agents/clearance.py` in the toolkit, and `/drive`'s precondition replaced by it | new (#32) | S | A session asks what may start rather than reading a status field, and version 1's "its own contract is settled" is gone from the page | done |
 | 5.6 | `check-slice-scope` reads the chart for owned paths on both profiles | upstream + new | M | The standard profile holds a context boundary | done |
 | 5.7 | Two gates: `make unit` in generated projects, the ladder's fast checks per increment, the full gate before `main` | new | M | A slice's increments never run the full suite | done |
-| 5.7b | Keeping a generated project's `make unit` fast as its suite grows: the marker each backend's ecosystem uses for a slow test, the exclusion its `unit` recipe applies, and the rule in the project's own `AGENTS.md` that a slice marks one in the commit that adds it | new | M | A project a year old still runs `make unit` per increment, and a test that shells out is marked in the slice that wrote it |  |
+| 5.7b | The rule in a generated project's own `AGENTS.md` that keeps `make unit` fast: a test needing a real backing service, a real process or the network is an integration test and lives in the integration suite, which `make unit` already excludes | new | S | A project a year old still runs `make unit` per increment, and the rule names the architecture's own line rather than a second one |  |
 | 5.8 | Review and refactor as a ladder stage, with a review role in the model table | new | M | A slice merges with review findings closed | done |
 | 5.9a | Adversary once with a bar, mutation as a gate, and the careen: the stowing rules, `fairways/<name>/careen.md`, and `/careen` as the hardening slice each fairway runs | new (#29) | M | A finding below the bar is stowed and the slice merges; one at or above it closes first; a CRITICAL is never stowed | done |
 | 5.9b | Stage budgets in `harbour.json`, and a stage over budget stowing what is left into the careen | new (#29) | M | A stage over budget stows and says so; what is left above the bar parks for a person |  |
@@ -1987,29 +1987,35 @@ protocol, `FAST_TARGETS`, defaulting to the test target alone, so a package can 
 is quick if it is. Test: the toy's generated `Makefile` has `unit`, and `drive.md` never names `verify`
 before the merge stage.
 
-**5.7b — Keeping a generated project's `make unit` fast.** 5.7 gave a project the target. Nothing keeps it
-fast, and a target that stops being fast stops being run — which is the whole failure theme B item 9 is
-about, arriving a year later by a different route. The keel has the rule in its own `AGENTS.md` ("a test
-that generates a project, shells out, or reaches the network goes in the `SLOW` list in the `Makefile` in
-the same commit that adds it") and a generated project has no equivalent. It was found on 2026-10-07, in
-this repository, that the rule had been broken here too: two suites that matched it had never been listed
-and were nine of the twelve seconds. If the keel's own gate drifts under a written rule, a product's will.
+**5.7b — Keeping a generated project's `make unit` fast.** 5.7 gave a project the target. Nothing says
+what keeps it fast, and a target that stops being fast stops being run, which is theme B item 9's failure
+arriving a year later by another route.
 
-**The mechanism cannot be the keel's, because the keel's is a list of its own test modules.** A project's
-`unit` runs its language's test target, and the slow tests are *inside* it. Every ecosystem already has a
-way to say so — a pytest marker, a Go build tag or `-short`, a Vitest project, a JUnit tag — and which one
-is the backend's to answer, exactly as `fast_targets` is. So this is a second optional protocol member in
-the same shape: how this ecosystem marks a test slow, and what the `unit` recipe passes to leave those out.
-Absent, `unit` runs the test target whole, which is today's behaviour and no worse than it.
+**The line is already drawn, and it is unit against integration.** A generated project is hexagonal: the
+domain is pure, the application layer owns its ports, and adapters implement them and are injected
+(`check-imports` holds all three). A test that needs a real database, a real process or the network is
+exercising an adapter, which makes it an integration test by construction rather than by anybody's
+judgement — and `TARGETS` has carried `test` and `integration` as separate targets since version 1, with
+`test-integration` having its own Make variables for a real backing service. `fast_targets` defaults to
+`("test",)`, so `make unit` already excludes the integration suite.
 
-**And the rule goes where a slice will read it**, in the generated `AGENTS.md` beside the two-gate table:
-a test that generates, shells out or reaches the network is marked in the same commit that adds it. A rule
-in the keel's own repository protects nothing in a product.
+**So there is no marker, no new protocol member and no gate.** The first draft of this slice proposed all
+three — a per-ecosystem way to mark a slow test, and a check to refuse an unmarked one — which was a second
+line drawn beside the one the architecture already draws. Corrected 2026-10-07 by a person who pointed out
+that it is unit against integration and the hexagon is enough. What is left is the sentence saying so,
+which is a small slice rather than a medium one.
 
-**Open for a person.** Whether the exclusion is also a gate — a check that refuses a test that shells out
-and is not marked — or stays a rule the review rung reads. A gate needs a way to tell, which is static
-analysis per ecosystem and probably more than it is worth; a rule is what the keel itself had, and the keel
-broke it. Worth a view before 5.7b starts.
+**The sentence goes in the generated `AGENTS.md`, beside the two-gate table**: a test that needs a real
+backing service, a real process or the network is an integration test; it lives in the integration suite
+with the others, and `make unit` does not run it. A rule in the keel's own repository protects nothing in a
+product.
+
+**Why the keel needs a list and a product does not**, which is worth writing down because it is what sent
+the first draft wrong. The keel is not a hexagonal product; it is a Python package with a tier architecture
+and no adapters, so its slow tests — one that stands up an HTTP server, one that shells out per check — sit
+beside its fast ones with nothing structural separating them, and only an explicit `SLOW` list can tell
+them apart. A product has somewhere for them to live. Reaching for the keel's mechanism in a product was
+reaching past the answer.
 
 **5.8 — Review and reshape as a stage.** New rung between demo and adversary, named `review` in
 `stage_models.STAGES` with role `strong` and `writes=NONE` — a reviewer that can write is one that edits.
