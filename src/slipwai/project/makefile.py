@@ -169,7 +169,7 @@ def makefile(project_name: str, profile: str, apps: list[App], target: str = "no
     if formatting:
         formatting = f"format: ## Rewrite this project's own code the way `make lint` expects to find it\n\t{formatting}\n"
     verify_dependencies = (
-        "check-python lint typecheck check-imports check-migrations check-chart check-slice-scope check-extensions check-agents check-speckit "
+        "check-python lint typecheck check-imports check-migrations check-chart check-rendered check-slice-scope check-extensions check-agents check-speckit "
         "check-codegraph check-ux-gates check-constitution check-benchmark check-decisions test"
     )
     style_target = ""
@@ -298,7 +298,7 @@ install: ## Install native dependencies; refresh agent projections after init
 \t@if [ -f .specify/integration.json ]; then $(MAKE){layout.make_flag} --no-print-directory agents; else echo 'Spec Kit not initialized; run ./init when ready.'; fi
 {npm_workspace_targets(apps, target)}
 {agent_targets()}
-.PHONY: typecheck lint {'format ' if formatting else ''}check-imports check-migrations check-chart check-slice-scope {'check-styles ' if web else ''}{'check-flags ' if target != 'none' else ''}check-speckit check-codegraph check-ux-gates check-constitution constitution-requirements{role_dependency}
+.PHONY: decisions typecheck lint {'format ' if formatting else ''}check-imports check-migrations check-chart check-rendered check-slice-scope {'check-styles ' if web else ''}{'check-flags ' if target != 'none' else ''}check-speckit check-codegraph check-ux-gates check-constitution constitution-requirements{role_dependency}
 typecheck: ## Run the native compiler or static type check
 \t{native['typecheck']}
 lint: ## Run the native formatting and static-analysis gate
@@ -310,6 +310,10 @@ check-migrations: ## Fail when a migration contracts the schema without naming t
 \tpython3 scripts/check-migrations.py
 check-chart: ## Fail when the chart's marks are untyped, double-set, withdrawn, or a slice names no capability
 \tpython3 scripts/check-chart.py
+check-rendered: ## Fail when a feature-level decisions or adversary log is not what the fairways' own copies render to
+\tpython3 scripts/render-fairways.py --check
+decisions: ## Fold every fairway's decisions and adversary log into the feature-level files
+\tpython3 scripts/render-fairways.py
 check-slice-scope: ## Fail when a slice/<id> branch touches what a sibling slice may also be writing
 \tpython3 scripts/check-slice-scope.py
 {style_target}{flag_gate(target)}{role_gate}check-speckit: ## Fail when an initialized Spec Kit-managed file differs from its manifest
