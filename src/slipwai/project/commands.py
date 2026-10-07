@@ -16,6 +16,7 @@ from .cruise_seat import cruise_status_command, cruise_stop_command, cruise_tell
 from .demo_stop import demo_stop
 from .drive_settings import drive_settings_command, implementation_section
 from .flags import PUSH_CHECK
+from .harbour import budget_section
 from .ladder import drive_ladder, hook_points
 from .mutation import mutation_command
 from .parallel_slices import concurrent_slices, done_marker, ready_set_selection
@@ -72,6 +73,7 @@ decision is a stop.
 {who_runs_each_stage(layout)}
 {what_each_stage_costs(layout)}
 {implementation_section(layout)}
+{budget_section()}
 {hook_points()}
 ## Once inside the slice
 

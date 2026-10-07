@@ -36,6 +36,7 @@ from .project.frontend import frontend_files
 from .project.gitignore import build_artifacts
 from .project.ground_command import ground_command_files
 from .project.guidance import agent_guidance, architecture
+from .project.harbour import harbour_config
 from .project.infra import target_files
 from .project.init_script import init_script
 from .project.languages import language_files
@@ -107,6 +108,7 @@ def project_files(
         ".claude/settings.json": claude_settings(apps, target, layout),
         ".specify/models.json": stage_models(),
         ".specify/drive.json": drive_config(),
+        "harbour.json": harbour_config(),
         ".specify/cruise.json": cruise_config(),
         ".github/workflows/verify.yml": workflow(apps, layout, event),
         "docs/architecture.md": architecture(profile, apps),
