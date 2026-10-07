@@ -32,7 +32,7 @@ text{fill:#172129}.lbl{fill:#44525c}.arr{stroke:#172129;stroke-width:1.2;fill:no
 <text x="680.0" y="76.2" text-anchor="middle" font-size="12" font-weight="600">/chart  (new stage)</text>
 <text x="680.0" y="92.2" text-anchor="middle" font-size="12">contexts named per service</text>
 <text x="680.0" y="108.2" text-anchor="middle" font-size="12">routes, schemas, ports typed</text>
-<text x="680.0" y="124.2" text-anchor="middle" font-size="12">marks set + steered by, per slice</text>
+<text x="680.0" y="124.2" text-anchor="middle" font-size="12">the split fills in the slices</text>
 <path class="arr " d="M 792,96.0 L 816,96.0" marker-end="url(#ah)"/>
 <rect class="box " x="816" y="58" width="184" height="76" rx="3"/>
 <text x="908.0" y="76.2" text-anchor="middle" font-size="12" font-weight="600">Split</text>

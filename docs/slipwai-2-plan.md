@@ -1868,9 +1868,9 @@ fairways:
   ORD: {context: ordering, service: apps/orders, owns: [apps/orders/**, packages/orders-contracts/**]}
   BIL: {context: billing,  service: apps/billing, owns: [apps/billing/**]}
 marks:
-  OrderPlaced:   {kind: event,  schema: contracts/events/OrderPlaced.json}
-  POST /orders:  {kind: route,  operation: contracts/openapi.yaml#/paths/~1orders/post}
-  PricingPort:   {kind: port,   inputs: contracts/ports/PricingPort.in.json, outputs: contracts/ports/PricingPort.out.json}
+  OrderPlaced:   {kind: event,  schema: specs/ordering/contracts/events/OrderPlaced.json}
+  POST /orders:  {kind: route,  operation: specs/ordering/contracts/openapi.yaml#/paths/~1orders/post}
+  PricingPort:   {kind: port,   inputs: specs/ordering/contracts/ports/PricingPort.in.json, outputs: specs/ordering/contracts/ports/PricingPort.out.json}
 slices:
   ORD-01: {fairway: ORD, sets: [OrderPlaced, POST /orders], steers_by: []}
   BIL-01: {fairway: BIL, sets: [InvoiceRaised],              steers_by: [OrderPlaced]}
@@ -1880,8 +1880,12 @@ Four mark kinds — event, schema, route, port — each with a typed body in a f
 a mark is a contract and a contract is a file a reader can diff. On the event profile `make chart`
 renders this from `model.yaml` (`project/model_to_code.py` already knows the mapping) and `check-chart`
 fails when they disagree, exactly as `check-drawio` holds the canvas today. On the standard profile a
-`/chart` stage, run once before the split, interviews for the fairways and writes the slices' marks from
-the plan's Structure Decisions. `check-chart` holds five things on both profiles: every mark is typed and
+`/chart` stage, run once before the split, proposes the fairways and the marks from the specification, the
+manifest and the approved surfaces, and a person confirms or amends them; the split then writes the `slices`
+block (5.4c). A mark's contract file lives under `specs/<feature>/contracts/`, which is where Spec Kit puts
+contracts and one of the few feature-shared paths a slice may amend — anywhere else and the slice that owns
+a mark could not touch its own contract, because the scope gate refuses everything outside a deployable.
+Found 2026-10-07 by an audit of the flow against the code. `check-chart` holds five things on both profiles: every mark is typed and
 its file exists; every mark a slice steers by is set by some slice; no mark is set by two slices; no
 mark is deleted from a frozen chart (an amendment goes in `fairways/<name>/chart.d/`, folded by the
 harbourmaster); and **every slice names the capability it is part of**.

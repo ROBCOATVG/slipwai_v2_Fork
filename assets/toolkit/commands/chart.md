@@ -79,8 +79,13 @@ each typed in a file the mark names, because a contract a reader cannot open is 
 |---|---|---|
 | `event` | Something that happened, which other slices fold | a JSON Schema |
 | `schema` | A shape published for others to read or write | a JSON Schema |
-| `route` | An HTTP operation this feature publishes | an OpenAPI operation, as `contracts/openapi.yaml#/paths/...` |
+| `route` | An HTTP operation this feature publishes | an OpenAPI operation, as `specs/<feature>/contracts/openapi.yaml#/paths/...` |
 | `port` | A named capability another context calls through | two JSON Schemas, its inputs and its outputs |
+
+**A mark's file lives under `specs/<feature>/contracts/`**, which is Spec Kit's contracts directory and one
+of the few feature-shared paths `check-slice-scope` lets a slice amend. Anywhere else and the slice that
+owns the mark cannot touch its own contract: the scope gate refuses everything outside a deployable, so a
+mark at the repository root would be a contract only the host could ever change.
 
 Write the file as well as the entry. A mark naming a file nobody wrote is a promise that gets discovered at
 the far end, by the fairway that believed it, and `check-chart` refuses it here instead.
@@ -109,9 +114,9 @@ fairways:
   ordering: {context: ordering, service: apps/orders, owns: [apps/orders/**]}
   billing:  {context: billing,  service: apps/billing, owns: [apps/billing/**]}
 marks:
-  OrderPlaced:  {kind: event, schema: contracts/events/OrderPlaced.json}
-  POST /orders: {kind: route, operation: contracts/openapi.yaml#/paths/~1orders/post}
-  PricingPort:  {kind: port,  inputs: contracts/ports/PricingPort.in.json, outputs: contracts/ports/PricingPort.out.json}
+  OrderPlaced:  {kind: event, schema: specs/ordering/contracts/events/OrderPlaced.json}
+  POST /orders: {kind: route, operation: specs/ordering/contracts/openapi.yaml#/paths/~1orders/post}
+  PricingPort:  {kind: port,  inputs: specs/ordering/contracts/ports/PricingPort.in.json, outputs: specs/ordering/contracts/ports/PricingPort.out.json}
 slices:
   ORD-01: {fairway: ordering, capability: place-an-order, sets: [OrderPlaced, POST /orders], steers_by: []}
   BIL-01: {fairway: billing,  capability: bill-an-order,  sets: [InvoiceRaised], steers_by: [OrderPlaced]}
