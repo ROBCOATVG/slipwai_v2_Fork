@@ -18,10 +18,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from .catalog import CATALOG
 from .convergence import AXES
+from .extensions import suggestion
 from .layout import Layout
 from .origin import Adoption
 from .services import App, wrapped_of
+
+#: What `./init` can offer beyond Spec Kit, from the catalogue. Empty where no extension is installed, which
+#: is every copy of the keel until somebody installs one — so the line simply does not mention them.
+EXTENSIONS_OFFERED = suggestion(CATALOG)
 
 # Spec Kit's own file, written by `specify init` and by nothing this keel generates: the one mark that
 # says `./init` reached the step that needs the network. `init` itself checks for exactly this before
@@ -68,7 +74,8 @@ def steps(root: Path, layout: Layout, adoption: Adoption, apps: list[App]) -> li
         Step(
             f"./{layout.under('init')}" if layout.moved else "./init",
             "installs Spec Kit and projects the skills and commands into the agent that gets them "
-            "(`--integration claude` names it; `--extension codegraph` indexes the code for it)",
+            "(`--integration claude` names it"
+            + (f"; {EXTENSIONS_OFFERED}" if EXTENSIONS_OFFERED else "") + ")",
             initialised,
         ),
         Step(

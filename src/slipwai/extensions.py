@@ -59,3 +59,23 @@ def merge_packages(catalog: dict, extensions: list[Extension]) -> list[str]:
             continue
         block[extension.name] = extension.entry
     return refusals
+
+
+def offered(catalog: dict) -> list[str]:
+    """Every extension key `./init` can offer, in menu order. Empty where none is installed."""
+    block = catalog.get("extensions")
+    return sorted(block) if isinstance(block, dict) else []
+
+
+def suggestion(catalog: dict, verb: str = "--extension") -> str:
+    """How a next-steps line offers the extensions, or `''` where there are none to offer.
+
+    Read off the catalogue rather than written out. The keel shipped three extensions once and every line
+    like this named one of them, so a copy with none installed told its reader to pass a flag that had no
+    answer — and a copy with a fourth never mentioned it.
+    """
+    keys = offered(catalog)
+    if not keys:
+        return ""
+    named = ", ".join(f"`{verb} {key}`" for key in keys[:3])
+    return f"{named} adds optional dev tooling"

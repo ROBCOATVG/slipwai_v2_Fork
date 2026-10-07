@@ -1619,7 +1619,7 @@ most worth running in two fairways themselves, once 5.3 exists.
 |---|---|---|---|---|---|
 | 6.1a | The hook points: the closed set in `src/slipwai/hooks.py`, the `hooks` block an `extension.json` declares, and `.slipwai/hooks.json` resolved from the elected extensions in firing order | new | M | A manifest declaring a point the keel does not fire is refused by name; two extensions on one point run in a written order, each with a budget | done |
 | 6.1b | The rest of the extension package shape: `extension.json`, `init.py`, the loader reading either manifest, the conformance profile for the six obligations, `slipwai hooks`, and `codegraph`, `uipro` and `ux-gates` moved out into their own repositories | new | L | `./init --extension codegraph` installs from a directory package, and a hook that fails is a `hook` line and never a failed stage | done |
-| 6.1c | The keel stops knowing the three by name: `scripts/agents/code_index.py` and `scripts/codegraph` move into the codegraph package behind its hooks, the UX-gate prose moves into the ux-gates package's own `AGENTS.md` block, and what is left in the toolkit names no extension | new | M | `grep -ri codegraph assets/ src/` finds nothing but the hook points' own examples, and a project that elected none of the three generates and verifies unchanged |  |
+| 6.1c | The keel stops shipping an extension's parts to every project: `scripts/codegraph` and `scripts/agents/code_index.py` move into the codegraph package, the harness hook rows that name them come from the extension rather than from `agent_settings.py`, and the keel's own prose says *the code index* where it said *CodeGraph*. What stays is what degrades on its own: `slipwai survey` reads `.codegraph/codegraph.db` if it is there, the way it reads `.git` | new | M | A project that elected no extension ships no file belonging to one, and its `AGENTS.md` names none; one that elected codegraph is unchanged |  |
 | 6.2 | The index schema with publishers, checksums, the signature field, descriptions and tags; the public channel as a Pages site | cruise-2 + new | M | `slipwai search` and `slipwai install` read it for both kinds |  |
 | 6.3 | A private channel per organisation, `SLIPWAI_LANGUAGE_INDEX` generalised to `SLIPWAI_CHANDLERY` | cruise-2 | S | An organisation's index serves its own packages |  |
 | 6.4 | `slipwai package check / release / register`, branching on the kind answer, and `make release` in the template behind them. `package new` landed early, in 6.1b, because a publisher needed something to publish | new | M | One language package and one extension package, each made by `new` on an empty machine, pass `check`, release, and register into a local channel without a hand edit |  |
@@ -2285,6 +2285,28 @@ Which moments are on the list is a decision taken here and revisable at a slice:
 ones an existing extension asked for or the loop makes obvious. `generate` is deliberately not one —
 extensions are elected at `./init`, after a project exists, and a hook at generation would have nothing
 elected to fire.
+
+**6.1c — and the question in it.** Three of the keel's files still belong to an extension and ship to every
+project whether or not one was elected: `scripts/codegraph`, the pinned CLI wrapper;
+`scripts/agents/code_index.py`, which keeps the index current and refuses a grep that should have been an
+index call; and the rows in `.claude/settings.json` that call them at four harness moments — a session
+opening, before a search, after a delegate, and the index's own session rebuild. The first two move into the
+package the way the two gates did. The rows cannot, and that is the question.
+
+**The question: may a hook refuse?** The four moments are not on the closed set, and two of them are guards —
+a `PreToolUse` hook that exits 2 stops the tool call, which is the whole point of refusing a grep that should
+have asked the index. So either the keel grows three points (`session`, `before-search`, `after-delegate`),
+and `before-search` is a second exception to "a hook is never fatal", alongside `check`; or the harness rows
+stay the keel's and the keel keeps naming one extension's script. The first is the better shape and the
+larger decision: a point that can refuse a tool call is a point an extension can use to stop work, which is
+exactly what "a hook is a second belt" was written to prevent — and the answer may be that a *guard* is a
+different kind of thing from a hook and deserves its own closed set, declared separately and confirmed when
+the extension is elected. **For a person to answer before 6.1c is built.** Until then the rows stay where
+they are and the keel names the one script, which is a known debt rather than a surprise.
+
+What stays in the keel either way: `slipwai survey` reads `.codegraph/codegraph.db` where it exists, the way
+it reads `.git`. That is not coupling — it is a keel capability that degrades on its own when the file is not
+there, and moving it would mean `survey` could not describe a repository that *is* indexed.
 
 **6.2 — The index schema.** `index.json` v2: per entry `name`, `kind`, `version`, `file`, `sha256`,
 `signature` (the Sigstore bundle or minisign signature, base64), `publisher` (an identity string: a

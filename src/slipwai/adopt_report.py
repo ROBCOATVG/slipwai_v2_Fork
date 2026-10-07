@@ -13,6 +13,7 @@ from .assets import VERSION
 from .convergence import summary
 from .harness import name_of
 from .layout import Layout
+from .next_steps import EXTENSIONS_OFFERED
 from .origin import Adoption
 from .programme import expired, phrase, unplaced
 from .services import App, wrapped_of
@@ -250,7 +251,7 @@ def report(done: Adopted, running_init: bool = False) -> str:
             f"names, so it asks nothing ({init} --integration <agent> changes it)"
             if named
             else f"asks which coding agent gets the skills and commands (or name it: {init} --integration claude)"
-        ) + ". Add --extension codegraph to index the code for that agent."
+        ) + (f". {EXTENSIONS_OFFERED} to that agent's project." if EXTENSIONS_OFFERED else "")
     )
     lines += [
         "",
