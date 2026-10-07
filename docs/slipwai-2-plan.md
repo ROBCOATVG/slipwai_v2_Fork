@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 61 of 101 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 25/27, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 62 of 102 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 26/28, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1600,7 +1600,8 @@ Depends on: phase 3.
 | 5.12a | The product state in `project.json` and the four release modes derived from it, read once at the merge rung | new | M | A slipway product merges in the open and generates no flag reader; moving the product is the only thing that changes the mode | done |
 | 5.12b | Flags at the entry wiring only, and the hygiene gate: `check-flags` refuses a flag hoisted everywhere and never struck. The shape beside the target is 3.4b's | new | M | A flag lives at one `if` at the route or menu, and one overdue to be struck fails the gate | done |
 | 5.13 | The deck log and harbour log formats, written by `/drive`; `.slipwai/logs/` ignored; `refs/slipwai/logs` sync | new | M | A run's status is answerable from the logs after the fact | done |
-| 5.14 | Berths: `slipwai berth add / status / remove`, allocation policy, the sandbox | new | L | Two berths on one machine do not collide on ports or databases |  |
+| 5.14a | The berth record and its allocation policy in `src/slipwai/berths.py`: a port block per berth, a database per berth, and nothing chosen by hand | new | M | Two berths on one machine collide on neither ports nor databases, and nothing in a berth's record could hold a credential | done |
+| 5.14b | Provisioning a berth: `slipwai berth add / status / remove`, the worktree, and the sandbox per platform | new (#blocked) | L | A berth is created, used and removed on each of the four platforms, leaving nothing behind |  |
 | 5.15 | The decision ceiling, bounded waits, the inbox read at every boundary with receipts | new | M | A message is read within one boundary or forces one | done |
 | 5.16 | Domain knowledge for the skipper | new (#27) | M | A fact in `.specify/domain/` is cited, not guessed | done |
 | 5.18 | The mock-up review as a once-per-feature stage of both profiles: `/mockups` runs a researcher that writes `research.md` from the spec, the domain knowledge and comparable workflows, reviews or drafts one HTML mock-up per surface, storyboards them, and writes `mock-states.md` from the person's approvals; the rung, and the split and the example map reading it | upstream skills + new | M | A feature handed no mock-ups reaches its split with every surface's states carrying a decision, and the rung runs before the model, the chart and the split | done |
@@ -1774,7 +1775,7 @@ composition root, release modes, berths, inbox and domain knowledge, each of whi
 5.1 skills ─► 5.2 ladder ─► 5.17 example map ─► 5.18 mock-up review ─► 5.4a chart gate ─► 5.4b make chart
    ─► 5.4c /chart ─► 5.5 clearance ─► 5.5b clearance reachable ─► 5.6 scope ─► 5.3 fairways
    ─► 5.7 two gates ─► 5.7b slow tests marked ─► 5.8 review ─► 5.9a adversary, careen ─► 5.13 logs ─► 5.10a ids ─► 5.10b rendered aggregates
-   ─► 5.19 capability demo ─► 5.20 surfaces held ─► 5.9b budgets ─► 5.11 composition ─► 5.12a release modes ─► 5.12b flag hygiene ─► 5.14 berths ─► 5.15 inbox ─► 5.16 domain
+   ─► 5.19 capability demo ─► 5.20 surfaces held ─► 5.9b budgets ─► 5.11 composition ─► 5.12a release modes ─► 5.12b flag hygiene ─► 5.14a berth allocation ─► 5.14b berth provisioning ─► 5.15 inbox ─► 5.16 domain
 ```
 
 **5.1 — The skills, renamed.** The 53 skills are already in `assets/toolkit/skills/` from slice 3.2 and in
@@ -2139,7 +2140,21 @@ exist at the entry wiring only (`project/flag_route.py`, back), so a slipway pro
 with no flag reader generated. The flag hygiene gate, `check-flags` in the toolkit, refuses a flag older
 than N releases with no `struck` line. Test: generate at each state, assert what is and is not written.
 
-**5.14 — Berths.** `slipwai berth add <name> [--sandbox container|sandbox|none]`, `status`, `remove`.
+**It lands in two, and the second is blocked on a decision this plan already records.** 5.14a is what a
+berth *is* and which numbers it gets, which needs no answer to anything. 5.14b is the provisioning — the
+worktree, the verbs, and the sandbox — and the sandbox is the open question in *What is still a person's to
+decide*: `sandbox-exec` is deprecated by Apple and undocumented, and the alternative is a container per
+berth, which costs a Docker dependency on every laptop. Building 5.14b before that is answered would mean
+choosing it by writing it. Split 2026-10-07 while doing it.
+
+**5.14a's one idea is that nobody chooses a number.** A berth's ports are a block derived from its index
+and its database is suffixed with its own name, so both fall out of the berth existing. In MANDA an
+operator held the table in their head across five berths; what goes wrong there is not dramatic, which is
+the problem — two berths take one port, one fails to start, and the failure reads as a broken service
+rather than as a collision. `collisions()` checks the arithmetic anyway, because "by construction" is a
+claim like any other.
+
+**5.14a/b — Berths.** `slipwai berth add <name> [--sandbox container|sandbox|none]`, `status`, `remove`.
 A berth is a record in `.slipwai/berths/<name>.json` — worktree path, allocated port block (a base plus
 the per-app offsets `services.py` already computes), database name `app_<name>`, scratch directory, and
 the sandbox kind — and the provisioning that makes the record true. The allocation policy lives in the
@@ -2484,7 +2499,7 @@ Collected from above, so they can be taken before the slice that needs them.
 
 ### A realistic shape for the calendar
 
-Phase 5 is twenty-seven slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
+Phase 5 is twenty-eight slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
 beside each other and are each about three weeks. Phase 8 is a week of machinery and a release. Phase 9
 is a fortnight of writing against real runs. Phase 10 is after the release and is its own month. The
 prerequisite — the six packages rebuilt — took the evening of 6 October, and found four keel faults on the way.
