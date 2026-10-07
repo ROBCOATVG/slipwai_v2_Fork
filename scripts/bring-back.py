@@ -61,7 +61,8 @@ def trees_here() -> set[str]:
 ASSETS_HERE = trees_here()
 # Written for version 2 rather than brought back, so the ledger will never hold them.
 OWN = {"catalog_checks", "catalog_options", "cli_offered", "cli_search",
-       "project.ladder", "project.careen", "project.harbour", "logs"}
+       "project.ladder", "project.careen", "project.harbour",
+       "project.release", "logs"}
 # Present, but in a version 2 shape that is not the experiment's yet: `cli` answers `--version` and will
 # grow a verb per slice, `assets` holds the paths and not the asset trees, `__init__` and `__main__` are
 # the package's own. The ledger's row for each describes what it becomes, not what is here, so they are

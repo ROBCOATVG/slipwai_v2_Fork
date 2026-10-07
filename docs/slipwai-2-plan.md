@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 57 of 100 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 21/26, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 58 of 101 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 22/27, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1597,7 +1597,8 @@ Depends on: phase 3.
 | 5.10a | Ids with the fairway in them: `scripts/agents/ids.py` counting out of the fairway's own deck log, and `check-decisions` taking both version 1's `D7` and version 2's `D-ORD-07` | new | M | Two fairways decide at once and mint different ids; a project that already has `D1`…`Dn` keeps them | done |
 | 5.10b | Per-fairway `decisions.md`, adversary log, benchmark and register; the feature-level files rendered from them by `make decisions`, held by `check-rendered` | new | M | Two fairways each decide once and the rendered file has both, in timestamp order, with neither id changed | done |
 | 5.11 | Composition root rendered from the chart; one file per event with a rendered index | new | M | Two slices add an event each and merge without touching one line |  |
-| 5.12 | The four release modes, the product state in `project.json`, the shape beside the target, flags at the entry wiring only, the hygiene gate | new | L | A slipway product runs the loop with no flag reader; an in-service one keeps every guarantee |  |
+| 5.12a | The product state in `project.json` and the four release modes derived from it, read once at the merge rung | new | M | A slipway product merges in the open and generates no flag reader; moving the product is the only thing that changes the mode | done |
+| 5.12b | Flags at the entry wiring only, and the hygiene gate: `check-flags` refuses a flag hoisted everywhere and never struck. The shape beside the target is 3.4b's | new | M | A flag lives at one `if` at the route or menu, and one overdue to be struck fails the gate |  |
 | 5.13 | The deck log and harbour log formats, written by `/drive`; `.slipwai/logs/` ignored; `refs/slipwai/logs` sync | new | M | A run's status is answerable from the logs after the fact | done |
 | 5.14 | Berths: `slipwai berth add / status / remove`, allocation policy, the sandbox | new | L | Two berths on one machine do not collide on ports or databases |  |
 | 5.15 | The decision ceiling, bounded waits, the inbox read at every boundary with receipts | new | M | A message is read within one boundary or forces one |  |
@@ -1773,7 +1774,7 @@ composition root, release modes, berths, inbox and domain knowledge, each of whi
 5.1 skills ─► 5.2 ladder ─► 5.17 example map ─► 5.18 mock-up review ─► 5.4a chart gate ─► 5.4b make chart
    ─► 5.4c /chart ─► 5.5 clearance ─► 5.5b clearance reachable ─► 5.6 scope ─► 5.3 fairways
    ─► 5.7 two gates ─► 5.7b slow tests marked ─► 5.8 review ─► 5.9a adversary, careen ─► 5.13 logs ─► 5.10a ids ─► 5.10b rendered aggregates
-   ─► 5.19 capability demo ─► 5.20 surfaces held ─► 5.9b budgets ─► 5.11 composition ─► 5.12 release modes ─► 5.14 berths ─► 5.15 inbox ─► 5.16 domain
+   ─► 5.19 capability demo ─► 5.20 surfaces held ─► 5.9b budgets ─► 5.11 composition ─► 5.12a release modes ─► 5.12b flag hygiene ─► 5.14 berths ─► 5.15 inbox ─► 5.16 domain
 ```
 
 **5.1 — The skills, renamed.** The 53 skills are already in `assets/toolkit/skills/` from slice 3.2 and in
@@ -2104,6 +2105,14 @@ back reads as held rather than late; the bridge renders those two columns at 7.5
 is built. Test: a chart with two capabilities stops a person once per capability, when its last slice
 merges, and never on a merge that completes nothing.
 
+**5.11 needs a real language package, and this machine has none.** Its done-when is two slices each adding
+an event, both diffs applying to one base with no line touched by both — which is a claim about *generated
+code*, in a language, with that language's composition root and its events module. The toy package answers
+the protocol and generates almost nothing, so it can prove the mechanism and not the claim. The per-backend
+emission is also a new protocol member and six packages to answer it, and those live under `ROBCOATVG`
+rather than here. Noted 2026-10-07: 5.11 waits on a generated project with a real language installed, which
+is the same thing 5.2's and 5.17's done-whens are waiting on.
+
 **5.11 — Composition root rendered, one file per event.** `project/composition.py` (back) gains a
 render-from-chart path: one `wire_*` line per use case the chart's slices name, generated into the
 composition root behind a marked region, so a merge is a regeneration. The events module becomes a
@@ -2111,7 +2120,18 @@ directory, one file per event named after the mark, with a generated `__init__`/
 `model_to_code.py` already maps a slice to its code; this is that mapping made to emit a file per mark.
 Test: two slices each add an event, both diffs apply to one base, no line is touched by both.
 
-**5.12 — The four release modes.** `project.json` gains `state: slipway | sea-trials | in-service` and
+**It lands in two, and the shape is not in either.** 5.12a is the state and the modes it implies; 5.12b is
+the flag machinery and its hygiene gate. The `shape: skiff | liner` the original row carried belongs to
+slice 3.4b, which builds the skiff — it was in this row because both are read off the product state, which
+is not a reason to build them together. Split 2026-10-07 while doing it.
+
+**5.12a's one design point.** The mode is *derived*, never set. A setting a person turns is wrong whenever
+somebody forgets to turn it; a fact about where the product is gets corrected because it is visibly untrue.
+The one exception is `promoted`, which no state implies because it is a fact about how a team deploys
+rather than about the product — a project declares it and keeps it, and any other declared mode loses to
+the state, which is version 1's setting prevented from coming back.
+
+**5.12a/b — The four release modes.** `project.json` gains `state: slipway | sea-trials | in-service` and
 `shape: skiff | liner`, asked at `generate` and changed by `slipwai converge --state`/`--shape`. The
 release mode follows from the state — `open` for slipway, `keystone` for sea trials, `flagged` or
 `promoted` for in service — and `drive.md`'s merge stage reads it to decide how dark a merge is. Flags
@@ -2458,7 +2478,7 @@ Collected from above, so they can be taken before the slice that needs them.
 
 ### A realistic shape for the calendar
 
-Phase 5 is twenty-six slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
+Phase 5 is twenty-seven slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
 beside each other and are each about three weeks. Phase 8 is a week of machinery and a release. Phase 9
 is a fortnight of writing against real runs. Phase 10 is after the release and is its own month. The
 prerequisite — the six packages rebuilt — took the evening of 6 October, and found four keel faults on the way.
