@@ -183,3 +183,43 @@ class ReadOnlyServerTest(Fixture):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StreamDrawerTest(Fixture):
+    """Clicking a stream opens its captain's log. A `<details>`, not a route: the published copy is one
+    file with nothing to press, and a link that worked served and 404'd published would be the two
+    copies disagreeing."""
+
+    def test_each_stream_row_carries_its_own_log(self) -> None:
+        self.deck("ORD", logs.entry("mark-set", fairway="ORD", slice="ORD-01", mark="Placed"))
+        said = self.rendered()
+        self.assertIn("lines from ORD's captain", said)
+        self.assertIn("set Placed", said)
+
+    def test_the_lines_are_said_and_never_the_raw_json(self) -> None:
+        self.deck("ORD", logs.entry("demo", fairway="ORD", slice="ORD-01", verdict="accepted"))
+        said = self.rendered()
+        self.assertIn("demo of ORD-01: accepted", said)
+        self.assertNotIn('"kind"', said)
+
+    def test_a_stream_with_a_log_and_no_lines_says_so(self) -> None:
+        path = self.root / logs.deck_path("ordering", "EMPTY")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("", encoding="utf-8")
+        self.assertIn("Nothing in this stream", self.rendered())
+
+    def test_it_is_a_details_and_never_a_link_to_a_route(self) -> None:
+        said = self.rendered()
+        self.assertIn("<details class=\"log\">", said)
+        self.assertNotIn('href="/stream', said)
+
+    def test_the_published_copy_opens_it_too(self) -> None:
+        """Nothing to press is not nothing to read: a drawer is a CSS rule, not a control."""
+        from slipwai.bridge_page import read_only
+        said = read_only(board(self.root, config(self.root)), config(self.root))
+        self.assertIn("captain", said)
+        self.assertIn("<details class=\"log\">", said)
+
+    def test_a_person_s_message_is_still_escaped_inside_the_drawer(self) -> None:
+        self.deck("ORD", logs.entry("told", fairway="ORD", message="<script>alert(1)</script>"))
+        self.assertNotIn("<script>alert(1)</script>", self.rendered())

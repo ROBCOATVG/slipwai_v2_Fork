@@ -59,7 +59,7 @@ TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
                   "images")),
     # One validated answer per axis, which applications a project has, and what they add up to being able
     # to do.
-    ("answers", ("selection", "origin", "layout", "services", "tooling", "capabilities", "berths", "fleet",
+    ("answers", ("selection", "origin", "layout", "services", "tooling", "capabilities", "berths", "fleet", "deck",
                  "toolkit", "platform", "convergence", "delivery_facts", "programme", "quick_wins",
                  "uncommitted", "wrappers", "strategy", "survey", "structure", "manifest")),
     # One module per part of the repository being generated.

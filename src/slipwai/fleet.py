@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
+from .deck import recent
 from .logs import HARBOUR, LOGS, Entry, Unreadable, fold
 
 #: Minutes since the last line after which a berth that has not finished is drawn as stalled. The default
@@ -208,6 +209,9 @@ def board(root: Path, config: dict | None = None, now: datetime | None = None) -
     bound = float(held.get("wait_bound", STALL_MINUTES) or STALL_MINUTES)
     return {
         "berths": berths(found, bound, now),
+        # Each stream's own lines, said rather than printed. The board answers "is anything stuck"; the
+        # next question is always "what has this one been doing", and that is forty lines of one file.
+        "streams": {one.name: recent(root, one.name)[0] for one in found},
         "pressure": pressure(held, harbour),
         "bunker": {"spent": spent(found), "allowed": held.get("bunker_per_day", NOTHING)},
         "inbox": inbox(found),

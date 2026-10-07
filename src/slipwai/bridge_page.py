@@ -91,6 +91,15 @@ background:var(--paper);color:var(--ink);text-align:right}
 .empty{color:var(--ink-3);font-size:.9rem}
 .feed{font-family:var(--mono);font-size:.78rem;color:var(--ink-2);margin:0;padding:0;list-style:none}
 .feed li{padding:2px 0}
+tr.drawer td{padding:0 0 8px;border-bottom:1px solid var(--rule-2)}
+details.log summary{cursor:pointer;font-size:.82rem;color:var(--teal);padding:4px 0;list-style:none}
+details.log summary::-webkit-details-marker{display:none}
+details.log summary::before{content:"\\25B8  ";color:var(--ink-3)}
+details.log[open] summary::before{content:"\\25BE  "}
+ol.lines{margin:4px 0 8px;padding:8px 12px;list-style:none;background:var(--ground);border-radius:7px;
+font-family:var(--mono);font-size:.78rem;max-height:280px;overflow-y:auto}
+ol.lines li{padding:1px 0;color:var(--ink-2)}
+ol.lines .when{color:var(--ink-3);margin-right:8px}
 @media (max-width:600px){dl{grid-template-columns:1fr}dd{text-align:left}}
 """
 
@@ -122,19 +131,37 @@ def esc(value: object) -> str:
     return html.escape(str(value), quote=True)
 
 
-def berth_rows(rows: list[dict]) -> str:
+def stream_log(fairway: str, lines: list) -> str:
+    """One stream's own log, folded open by clicking its row.
+
+    A `<details>`, not a route: the published copy is one file with nothing to press, and a link that
+    worked on the served page and 404'd on the published one would be the two copies disagreeing. A
+    checkbox and a CSS rule is also what `page.ts` settled on, for the same reason.
+    """
+    if not lines:
+        return '<p class="empty">Nothing in this stream\'s log yet.</p>'
+    rows = "".join(f'<li><span class="when">{esc(when)}</span> {esc(what)}</li>' for when, what in lines)
+    return (f'<details class="log"><summary>{esc(len(lines))} lines from {esc(fairway)}\'s captain'
+            f'</summary><ol class="lines">{rows}</ol></details>')
+
+
+def berth_rows(rows: list[dict], streams: dict) -> str:
     if not rows:
         return '<p class="empty">No stream has written a line yet.</p>'
     head = ("<tr><th>Stream</th><th>Feature</th><th>Piece of work</th><th>State</th>"
             "<th>Last line</th><th>Tokens</th><th>Merged</th></tr>")
-    body = "".join(
-        f"<tr><td><b>{esc(row['fairway'])}</b></td><td>{esc(row['feature'])}</td>"
-        f"<td class=\"mono\">{esc(row['slice'])}</td>"
-        f"<td><span class=\"chip {esc(STATES.get(str(row['state']), ''))}\" "
-        f"data-state=\"{esc(STATES.get(str(row['state']), row['state']))}\">"
-        f"{esc(STATES.get(str(row['state']), row['state']))}</span></td>"
-        f"<td>{esc(row['last'])}</td><td>{esc(row['tokens'])}</td><td>{esc(row['merged'])}</td></tr>"
-        for row in rows)
+    body = ""
+    for row in rows:
+        name = str(row["fairway"])
+        state = STATES.get(str(row["state"]), str(row["state"]))
+        body += (
+            f"<tr><td><b>{esc(name)}</b></td><td>{esc(row['feature'])}</td>"
+            f"<td class=\"mono\">{esc(row['slice'])}</td>"
+            f"<td><span class=\"chip {esc(STATES.get(str(row['state']), ''))}\" "
+            f"data-state=\"{esc(state)}\">{esc(state)}</span></td>"
+            f"<td>{esc(row['last'])}</td><td>{esc(row['tokens'])}</td><td>{esc(row['merged'])}</td></tr>"
+            f"<tr class=\"drawer\"><td colspan=\"7\">"
+            f"{stream_log(name, streams.get(name) or [])}</td></tr>")
     return f"<table>{head}{body}</table>"
 
 
@@ -204,7 +231,7 @@ def page(found: dict, config: dict, controls: bool = True, title: str = "Bridge"
 <div class="top"><h1>{esc(title)}</h1><div class="sub">{esc(sub)}</div></div>
 <div class="card"><h2>Waiting on you</h2>{inbox_rows(waiting, controls)}</div>
 {answer_boxes(berths) if controls else ""}
-<div class="card"><h2>Streams</h2>{berth_rows(berths)}</div>
+<div class="card"><h2>Streams</h2>{berth_rows(berths, found.get("streams") or {})}</div>
 <div class="card"><h2>Speed</h2>{dial(str(pressure["position"]), controls)}{banked}</div>
 {tune(config, controls)}
 <div class="card"><h2>Last lines</h2><ul class="feed">{feed or "<li>nothing yet</li>"}</ul></div>

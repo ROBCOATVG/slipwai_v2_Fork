@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 87 of 108 slices done** — phase 1 6/6, phase 2 9/9, phase 3 17/20, phase 4 7/7, phase 5 29/29, phase 6 7/9, phase 7 7/8, phase 8 4/8, phase 9 1/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 87 of 110 slices done** — phase 1 6/6, phase 2 9/9, phase 3 17/20, phase 4 7/7, phase 5 29/29, phase 6 7/9, phase 7 7/10, phase 8 4/8, phase 9 1/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1655,6 +1655,8 @@ Depends on: phase 4. Runs beside phase 7.
 | 7.4 | The fleet board: `slipwai fleet`, `fleet watch`, the rendered page | new | M | Every column folds from the logs; a stalled berth is told from a finished one | done |
 | 7.5 | The bridge: `slipwai bridge` local server with controls, the read-only Pages copy | new | L | A question answered from the page becomes a `told` line | done |
 | 7.6 | The harness registry rows for Claude Code, Codex, Cursor, Gemini CLI, OpenCode and Kiro; `unproven` until run | upstream + new | M | Each row says how it is invoked and which hooks it has | done |
+| 7.4b | A stream's own log, read from the board: `slipwai fleet <stream>` in the terminal and a drawer under each row on the bridge, each line said rather than printed | new | S | The question the board provokes — what has this one been doing — is answered without opening a `.jsonl` |  |
+| 7.4c | The run drawn on the event model: the browsable page and the bridge colour each slice by **two** bands — what `model.yaml` intends, and what the logs say happened — folded at render time and written back nowhere. Never into `model.drawio`, which is committed | new | M | A slice badged `implemented` whose log holds nothing is visible on the page as the drift it is, and a mark being set lights the slices it clears |  |
 | 7.7a | `/cruise` casts off: `scripts/agents/fleet.py` starts the harbourmaster and one captain per fairway under the telegraph's `boilers`, and exits. `make cruise`, `cruise-status` and `cruise-stop` point at it | new | S | Typing `/cruise` leaves nothing holding the state of the run | done |
 | 7.7b | Delete the runner: `cruise.py`'s loop, its seat commands re-pointed at the logs, and its harness-hook verbs (`guard`, `compacting`, `resume`, `stopping`) moved to where the captain owns them — the same knot as 6.1c, and it unties with the same decision | new | L | No runner left in the toolkit, and the greenfield of phase 7 has run two captains on two machines start to finish |  |
 
@@ -2463,6 +2465,35 @@ fanout) and the bunker (today's spend against the budget); and the inbox (open `
 A stalled berth is one whose heartbeat is older than the bound and is drawn differently from a finished
 one. The harbourmaster renders the same thing as a static page, which is what the bridge's read-only
 copy serves. Test every column from a written pair of logs.
+
+**7.4c — the run drawn on the model, and why it is two bands.** `page.ts` already renders a slice
+register, a per-slice section and a jump bar, each carrying `statusBadge(slice.status)` and filterable by
+`data-status`. The shape is there; where the status comes from is the problem. `model.yaml`'s `status` is
+written by a person at plan time, and that is exactly the failure this plan cites throughout: *MANDA's
+`model.yaml` said `planned` for eight slices that were built and merged, because the field was written at
+plan time and never reconciled.*
+
+So the page shows **both**, side by side, and never one: what the model **intends** (`proposed` →
+`modelled` → `planned` → `implemented`, a person's commitment) and what has **happened** (not started,
+claimed, marks set, demoed, merged, parked — folded from the logs, written by nobody). Showing the two
+makes the drift *visible* rather than impossible: a slice badged `implemented` whose log holds nothing is
+the MANDA bug, drawn on the page where somebody would see it.
+
+Three constraints fall out of that and are the whole design:
+
+- **It never writes back to `model.yaml`.** The moment it does, it is the status field again.
+- **It never touches `model.drawio`.** That file is committed and `make check-drawio` holds it current, so
+  a heartbeat would dirty the tree on every pass. Ephemeral renders only — the browsable page, and the
+  bridge.
+- **The fold is Python and the page is Node**, so `fleet` writes the fold as JSON beside the model and
+  `render.ts` colours from it where it exists. No run, no file, and the page renders exactly as it does
+  today.
+
+What it buys that the board cannot: the event model is the only picture with the **arrows** in it.
+Watching `OrderPlaced` light up and the slice that steers by it go from blocked to available *shows* the
+parallelism; the board can only tell you about it. The standard profile has no model, and its equivalent
+is a graph drawn from the chart's `sets` and `steers_by` — the same data without the notation, and a
+separate, smaller thing.
 
 **7.5 — The bridge.** The dashboard mockup (`docs/mockups/ledger-bridge.html`) made real. `slipwai
 bridge` serves a local page from the harbourmaster's render: the Project and Agents tabs, the inbox with

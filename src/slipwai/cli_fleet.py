@@ -17,6 +17,7 @@ import time
 from pathlib import Path
 
 from .assets import this_command
+from .deck import RECENT, recent, streams
 from .errors import GenerationError, refuse
 from .fleet import NOTHING, board
 from .project.harbour import CONFIG
@@ -87,22 +88,44 @@ def lines(root: Path) -> list[str]:
     return said
 
 
+def stream_lines(root: Path, fairway: str, limit: int) -> list[str]:
+    """One stream's own log, said. The answer to the question the board always provokes."""
+    known = [name for _feature, name in streams(root)]
+    if fairway not in known:
+        offered = ", ".join(known) or "none"
+        return [f"no stream called {fairway} has written a log here; streams: {offered}",
+                "a stream is named after its context — `ordering`, not `ORD`"]
+    found, fault = recent(root, fairway, limit)
+    said = [f"{fairway}: the last {len(found)} line(s) its captain wrote"]
+    said += [f"  {when}  {what}" for when, what in found] or ["  nothing yet"]
+    if fault:
+        said.append(f"  {fault}")
+    return said
+
+
 def fleet_main(argv: list[str]) -> None:
     prog = f"{this_command()} fleet"
     parser = argparse.ArgumentParser(
         prog=prog, description="What every fairway is doing, folded from the logs",
-        epilog="The board keeps no state: every column is computed from the deck logs and the harbour log "
-               "each time it is drawn, because a board that can be wrong about what happened is worse than "
-               "no board — it is believed.")
-    parser.add_argument("verb", nargs="?", choices=("show", "watch"), default="show")
+        epilog="`slipwai fleet <stream>` reads that stream's own log, said a line at a time — the question "
+               "the board always provokes and cannot answer, because the answer is forty lines of one file. "
+               "The board keeps no state: every column is computed from the logs each time it is drawn, "
+               "because a board that can be wrong about what happened is worse than no board — it is "
+               "believed.")
+    parser.add_argument("verb", nargs="?", default="show",
+                        help="show, watch, or a stream's name to read its captain's log")
     parser.add_argument("--root", default=".", metavar="<directory>", help="the harbour (default: here)")
     parser.add_argument("--interval", type=float, default=5.0, help="seconds between redraws, for watch")
+    parser.add_argument("--limit", type=int, default=RECENT, help="lines to show for one stream")
     parsed = parser.parse_args(argv)
     root = Path(parsed.root).expanduser()
     try:
         if not (root / ".slipwai").is_dir() and not (root / CONFIG).is_file():
             raise GenerationError(f"{root} is not a harbour: it has no .slipwai/ and no {CONFIG}. Run this "
                                   f"in a project `slipwai generate` or `slipwai adopt` made")
+        if parsed.verb not in ("show", "watch"):
+            print("\n".join(stream_lines(root, parsed.verb, parsed.limit)))
+            return
         while True:
             print("\n".join(lines(root)))
             if parsed.verb == "show":
