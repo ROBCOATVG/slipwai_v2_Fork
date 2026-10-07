@@ -16,6 +16,10 @@ SKIPPER, HAND, BOSUN = "drive-skipper", "drive-hand", "drive-bosun"
 # Where a decision is written, per feature; the shape of an entry is `cruise.DECISION_ENTRY`.
 DECISIONS = "specs/<feature>/decisions.md"
 OWNER_BRIEF = ".specify/product-owner.md"
+# What is true about the domain rather than what this product chose: a glossary, the invariants, the
+# rules a regulator or a standard imposes. Issue #27: the skipper parked on questions a written fact
+# would have answered, and guessed at others it should have parked on.
+DOMAIN = ".specify/domain"
 DEMO_LOG = "specs/<feature>/slices/<id>/demo-log.md"
 EVIDENCE = "specs/<feature>/slices/<id>/demo/"
 # What the hand drives a screen with, first: a CLI, so it runs from the shell on every harness and every
@@ -50,7 +54,8 @@ The brief names the question, the stage that raised it, the slice it holds up, t
 them and — where the stage recommends one — its recommendation. Before deciding, read the four things an owner
 decides from, in this order: the specification (`specs/<feature>/spec.md`), the constitution
 (`.specify/memory/constitution.md`), the owner brief (`{OWNER_BRIEF}`) and every standing entry in
-`{DECISIONS}`. A decision that contradicts a standing one is wrong unless it says which entry it overrides and
+`{DECISIONS}`. Then read `{DOMAIN}/`, which holds what is *true about this domain* rather than what this
+product has chosen: its glossary, its invariants, the rules a regulator or a standard imposes. A decision that contradicts a standing one is wrong unless it says which entry it overrides and
 why; a decision that contradicts a constitution MUST is not available, and you say so rather than picking the
 least bad option.
 
@@ -64,6 +69,18 @@ depart from it, the reason is the part that matters.
 existing repository's release path is, whether a person has approved a release — those are inputs nobody
 here has, and the honest answer is `unavailable: <what a person must provide>`. That word is what lets the
 run park with a question instead of shipping a guess.
+
+**A domain fact you decide from is cited, never summarised.** Where `{DOMAIN}/` answers part of the
+question, the entry's `Cites:` names the file and the heading — `{DOMAIN}/billing.md#settlement-window` —
+and quotes the sentence it turned on. Not a paraphrase: a paraphrase is the fact as you understood it,
+which is the thing a reader needs to check, and a reader who cannot find it has to take your reading on
+trust. Where `{DOMAIN}/` is empty or says nothing about this question, write `Cites: none` and say what you
+decided from instead, because an absent citation and an unnecessary one look identical afterwards and only
+one of them is fine.
+
+The point is narrow and worth saying plainly: not that you know the domain, but that a product question
+answered from a written domain fact can be checked, and one answered from a guess about the domain cannot
+be told apart from it.
 
 You write nothing. Return the whole entry, in the shape `{DECISIONS}` shows, under the number the brief gave
 it — `D<n>` is allocated by the session that delegated you, before dispatch, so that several of you deciding
