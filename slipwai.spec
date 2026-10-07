@@ -14,10 +14,11 @@ analysis = Analysis(
         (str(root / "assets"), "assets"),
         (str(root / "catalog.json"), "."),
         (str(root / "VERSION"), "."),
-        # CHANGELOG.md and changelog.d/ are carried here in version 1, because `migrate` takes its
-        # catch-up notes out of them and a frozen command has no checkout beside it. Neither exists in
-        # this repository until slice 8.1 brings the release machinery, and PyInstaller fails on a
-        # `datas` entry that is not there — so they are added back with them.
+        # Carried because `migrate` takes its catch-up notes out of them and `slipwai upgrade` prints the
+        # entries between the version you had and the one you got. A frozen command has no checkout beside
+        # it, so what it does not carry it cannot read.
+        (str(root / "CHANGELOG.md"), "."),
+        (str(root / "changelog.d"), "changelog.d"),
     ],
     # A language package is loaded from the package directory at run time and imports the keel by name,
     # so every keel module stays in the executable whether or not a static import from `__main__`

@@ -333,4 +333,18 @@ def core(kind: str, prerelease: bool, check: bool) -> tuple[bool, int]:
         return False, 0
     print(f"running: {' '.join(command)}", flush=True)
     completed = subprocess.run(command)
+    if completed.returncode == 0:
+        said_what_changed(VERSION, newest)
     return completed.returncode == 0, completed.returncode
+
+
+def said_what_changed(had: str, got: str) -> None:
+    """Print the entries crossed, read off the copy that has just been installed.
+
+    Read after the install rather than before: this process is still running the old code, and the old
+    code's changelog has nothing to say about the release it did not know about. The file on disk has
+    been replaced by then, which is the whole reason the changelog ships in the wheel.
+    """
+    from .whats_new import lines, read
+    print()
+    print("\n".join(lines(had, got, read())), flush=True)

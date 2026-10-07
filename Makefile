@@ -47,6 +47,14 @@ unit: ## The fast tests only — the per-increment gate, with the slow modules l
 glossary: ## Rewrite GLOSSARY.md from the plan's vocabulary (tests/test_glossary.py holds them in step)
 	python3 scripts/glossary.py
 
+.PHONY: release check-release changelog
+release: verify ## Assemble the entry, write VERSION, commit and tag. The gate first, always
+	python3 scripts/tag-release.py
+check-release: ## Fail when the fragments and VERSION disagree about what the next release is
+	@python3 scripts/tag-release.py --check
+changelog: ## Show the entry the fragments in flight would make, without writing anything
+	@python3 scripts/tag-release.py --dry-run
+
 .PHONY: shared check-shared
 shared: ## Carry the modules both runtimes need from the keel into the toolkit
 	python3 scripts/shared-modules.py
@@ -84,6 +92,6 @@ check-structure: ## Fail when a module imports against the declared direction, c
 	python3 scripts/bring-back.py --check
 
 .PHONY: verify
-verify: lint typecheck check-structure check-shared test ## Full local gate — the same one CI runs
+verify: lint typecheck check-structure check-shared check-release test ## Full local gate — the same one CI runs
 	@echo
 	@echo 'verify: all gates passed'

@@ -1,0 +1,5 @@
+# What `make release` needs beyond the standard library, pinned. Separate from the development tooling
+# because a release runs on a clean machine and a contributor should not install a publisher's tools to
+# run the gate.
+build==1.2.2.post1
+twine==6.1.0
