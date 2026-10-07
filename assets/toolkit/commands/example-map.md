@@ -33,6 +33,13 @@ are the contract the examples are written against, so an example that asserts a 
 an example about something this slice does not own. Where the chart names a mark another slice sets, write
 the example against that mark's schema rather than against a guess at the other slice's behaviour.
 
+**On both**, where the feature has surfaces, read `specs/<feature>/mockups/mock-states.md` and take **one
+example per approved state** this slice delivers, named in the split's *Surfaces and states* column. A
+person approved those states one at a time; an example per state is what makes the thing they approved the
+thing a test is named after, and what the hand walks at the demo. A state marked `parked` is not mapped: it
+is a question still open, and a rule that needs it goes under `## Questions` rather than being written
+against a guess.
+
 Everything from here is the same on both.
 
 ## One shape, whichever profile wrote it

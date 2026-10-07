@@ -265,9 +265,16 @@ When asked to split a story, return a compact artifact that can feed directly in
 Why this first: [value, risk, learning, or bargain]
 
 ## Split Candidates
-| Slice | Value | Includes | Defers | Acceptance Examples | Release Constraint |
-|---|---|---|---|---|---|
-| ... | ... | ... | ... | ... | ... |
+| Slice | Value | Includes | Defers | Surfaces and states | Acceptance Examples | Release Constraint |
+|---|---|---|---|---|---|---|
+| ... | ... | ... | ... | ... | ... | ... |
+
+*Surfaces and states* names what of the feature's surfaces this slice delivers, as
+`<surface> · <state>` pairs read from `specs/<feature>/mockups/mock-states.md`. A slice may only name a
+state that file marks `approved`: a `parked` one is a question still open, and a surface or state that is
+in neither is one nobody has seen. A feature whose `mock-states.md` says `surfaces: none` leaves the column
+empty on every row. Every approved state belongs to exactly one slice by the end of the split, or the split
+has left part of what a person approved unbuilt.
 
 ## Slice graph
 | Slice | depends_on | parallel_ok_with | Notes |

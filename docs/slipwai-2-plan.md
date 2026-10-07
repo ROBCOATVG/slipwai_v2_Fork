@@ -1307,7 +1307,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 39 of 92 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 3/19, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 40 of 93 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 4/20, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1578,7 +1578,8 @@ Depends on: phase 3.
 | 5.14 | Berths: `slipwai berth add / status / remove`, allocation policy, the sandbox | new | L | Two berths on one machine do not collide on ports or databases |  |
 | 5.15 | The decision ceiling, bounded waits, the inbox read at every boundary with receipts | new | M | A message is read within one boundary or forces one |  |
 | 5.16 | Domain knowledge for the skipper | new (#27) | M | A fact in `.specify/domain/` is cited, not guessed |  |
-| 5.18 | The mock-up review as a once-per-feature stage of both profiles: `/mockups` runs a researcher that writes `research.md` from the spec, the domain knowledge and comparable workflows, reviews or drafts one HTML mock-up per surface, storyboards them, and writes `mock-states.md` from the person's approvals; the split, the example map and the demo read it | upstream skills + new | L | A feature handed no mock-ups reaches its split with every surface's states approved by a person, and the split refuses a slice that names a surface or state not approved |  |
+| 5.18 | The mock-up review as a once-per-feature stage of both profiles: `/mockups` runs a researcher that writes `research.md` from the spec, the domain knowledge and comparable workflows, reviews or drafts one HTML mock-up per surface, storyboards them, and writes `mock-states.md` from the person's approvals; the rung, and the split and the example map reading it | upstream skills + new | M | A feature handed no mock-ups reaches its split with every surface's states carrying a decision, and the rung runs before the model, the chart and the split | done |
+| 5.20 | `check-slice-scope` holds the split's *Surfaces and states* column against `mock-states.md`: every state a slice names is `approved` there, and every approved state is named by exactly one slice | new | M | A split naming a parked state is refused; a split leaving an approved state unbuilt is refused; a feature whose file says `surfaces: none` passes with the column empty |  |
 | 5.19 | The demo as a capability stop: the hand's verdict per slice written to the deck log, `demo_stop` rewritten to walk a whole capability, the trigger when a capability's last slice merges, and the bridge's two columns for accepted and hoisted | new | M | A capability's slices merge with nobody stopped; a person is stopped once, when the last of them lands, and accepting it hoists nothing |  |
 | 5.17 | Example mapping as a stage of **both** profiles: `example-map` moves out of `assets/profiles/event-modelling/commands/` into the toolkit, deriving its examples from the model on the event profile and writing them from the chart and the story on the standard one; the demo stage reads what it wrote | upstream + new | M | A standard-profile slice reaches its demo with examples a stage produced, and `/drive` refuses to implement a slice whose map is empty | done |
 
@@ -1746,7 +1747,7 @@ composition root, release modes, berths, inbox and domain knowledge, each of whi
 ```
 5.1 skills ─► 5.2 ladder ─► 5.17 example map ─► 5.18 mock-up review ─► 5.4 chart ─► 5.5 clearance ─► 5.6 scope ─► 5.3 fairways
    ─► 5.7 two gates ─► 5.8 review ─► 5.9 adversary, careen ─► 5.13 logs ─► 5.10 ids
-   ─► 5.19 capability demo ─► 5.11 composition ─► 5.12 release modes ─► 5.14 berths ─► 5.15 inbox ─► 5.16 domain
+   ─► 5.19 capability demo ─► 5.20 surfaces held ─► 5.11 composition ─► 5.12 release modes ─► 5.14 berths ─► 5.15 inbox ─► 5.16 domain
 ```
 
 **5.1 — The skills, renamed.** The 53 skills are already in `assets/toolkit/skills/` from slice 3.2 and in
@@ -1824,9 +1825,18 @@ state it names is `approved` in `mock-states.md` — the check lives in `check-s
 it already reads the split; `example-map.md` (5.17) takes one example per approved state of the slice's
 surfaces on both profiles; the demo stage's prompt names the states the hand walks; and `/event-model`
 and `/chart` are each told to draw their UI lane or their routes from the approved surfaces. Done when a
-standard-profile project given a spec and no mock-ups reaches its split with every surface approved, and
-a split that names a `parked` state is refused. Size L because the researcher's prompt is the design and
-will take iterations against a real spec; the files it writes are plain.
+standard-profile project given a spec and no mock-ups reaches its split with every surface's states
+carrying a decision, and the rung runs before the model, the chart and the split. The researcher's prompt
+is the design here and will take iterations against a real spec; the files it writes are plain.
+
+**The enforcement is slice 5.20, not this one.** As written this slice was L, which the plan's own sizing
+calls a candidate for splitting, and the half that holds the split's column against `mock-states.md` is a
+different kind of work from the half that writes the stage: a parser for two markdown shapes, fixtures for
+each way it can fail, and a refusal that names the state and the file. It also carries a rule this slice
+does not. Every *approved* state must be named by exactly one slice, so a split that quietly drops
+something a person approved is refused as well — which is the failure nobody would otherwise notice,
+because an unbuilt surface looks identical to a surface nobody asked for. Split 2026-10-07 while doing
+5.18.
 
 **5.4 — The chart.** The largest design in the phase, and new. `specs/<feature>/chart.yaml`:
 
@@ -2295,7 +2305,7 @@ Collected from above, so they can be taken before the slice that needs them.
 
 ### A realistic shape for the calendar
 
-Phase 5 is nineteen slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
+Phase 5 is twenty slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
 beside each other and are each about three weeks. Phase 8 is a week of machinery and a release. Phase 9
 is a fortnight of writing against real runs. Phase 10 is after the release and is its own month. The
 prerequisite — the six packages rebuilt — took the evening of 6 October, and found four keel faults on the way.

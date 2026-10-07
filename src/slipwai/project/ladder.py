@@ -47,6 +47,13 @@ def drive_ladder(
    whatever the gate still reports missing.""",
         """**Product specification** — `specs/<feature>/spec.md` describes the product this slice belongs to.
    Otherwise run `/speckit-specify`, then `/gaps` over what it promises.""",
+        """**Mock-up review** — `specs/<feature>/mockups/mock-states.md` exists and every state in it is
+   `approved`, `parked` with the question it waits on, or `n/a` with its reason. A feature with no surface
+   at all writes `surfaces: none` and that is the whole file. Otherwise run `/mockups`, which researches
+   what good looks like for each surface, drafts the mock-ups where nobody handed any over, storyboards
+   them, and stops for a person to approve them one at a time. This runs before the work is typed, because
+   a surface nobody has seen becomes a read model, a route and a set of tests, and all three are more
+   expensive to move than a drawing.""",
     ]
     if event:
         stages.append(

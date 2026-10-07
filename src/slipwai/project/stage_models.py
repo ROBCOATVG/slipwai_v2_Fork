@@ -78,6 +78,9 @@ class Stage:
 STAGES: tuple[Stage, ...] = (
     Stage("principles", "strong", title="Principles"),
     Stage("specify", "strong", title="Product specification"),
+    # Once per feature, between the specification and whatever types the work. It is a host stage: its
+    # second half is a person approving surfaces one at a time, which is not a thing to delegate.
+    Stage("mockups", "strong", title="Mock-up review"),
     Stage("event-model", "strong", title="Event model"),
     Stage("split", "strong", title="Split"),
     Stage("example-map", "strong", title="Example map"),
