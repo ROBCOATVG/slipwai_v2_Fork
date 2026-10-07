@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 48 of 95 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 12/22, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 48 of 96 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 12/22, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1643,6 +1643,7 @@ Depends on: 5.13 and 5.14. 7.1 first, then 7.2, then the rest in any order.
 | 8.4 | The release backstop: one job that runs the matrix across the published packages against the keel about to ship, and the root matrix retired | cruise-2 + new | M | A keel release is refused when a published package fails against it; no per-commit job reads a package |  |
 | 8.5 | `make release` to 2.0.0; the merge back to upstream; the Gitea decision | new | M | `v2.0.0` tagged, published, and upstream `main` is version 2 |  |
 | 8.6 | A final 1.5.x release whose `slipwai upgrade --check` names 2.0.0 and its migration page | upstream | S | A version 1 user is told where version 2 is and what moving costs |  |
+| 8.7 | `slipwai upgrade` says what changed, read from the changelog the release carries: a line or two for a patch, and for the jump from 1.x to 2.x the whole of what version 2 is and the one command that moves a project to it | new | S | Somebody who upgrades is told what they got without being sent to a web page, and the person who crosses from 1 to 2 is told it is a crossing |  |
 
 Depends on: everything before it.
 
@@ -2306,6 +2307,27 @@ release is refused when a published package fails. This is the once-at-release h
 and as the executable; the fork merged to upstream `main` as one merge with the whole history; the Gitea
 decision taken — whether `git.treyco.dev` stays canonical with GitHub mirroring, or GitHub becomes
 canonical. **Owner's decision.**
+
+**8.7 — `slipwai upgrade` says what it changed.** Today the command prints what it is about to run and
+then hands the terminal to `pip` or `uv`, so the last thing anybody sees is a package manager's output and
+the question *what did I just get?* goes to a web page, or unanswered. The changelog is already in the
+wheel — `CHANGELOG.md` and `changelog.d/` are in `slipwai.spec`'s datas from 8.1 — so the answer is on the
+machine. After the install succeeds, read the entries between the version that was there and the version
+that is there now, and print them.
+
+**Scaled to the size of the jump, because an upgrade is not one kind of event.** A patch is a line or two
+and should not pretend otherwise. A MINOR says what is new and what it does not change. **A MAJOR, and
+particularly the crossing from 1.x to 2.x, is the one worth stopping for**: it says what version 2 is in a
+few sentences — fairways, the chart, captains, the loop that fans out — what it does *not* do to an
+existing project until asked, and the one command that moves one (`slipwai migrate`, with `--check`
+first). Somebody who has run version 1 for a year deserves to be told that this is a crossing rather than
+a bump, and told it on the terminal they are already looking at.
+
+Two rules so it stays useful rather than becoming noise. It prints **what changed, not every commit**: the
+changelog's entries, which are written for a reader, and never a git log. And it is **what the release
+carries, never a fetch** — the text is in the artefact, so an upgrade on a machine with no network says the
+same thing as one anywhere else. Small, and it depends on 8.1 for the machinery and 8.2 for the entry it
+reads.
 
 **8.6 — The last 1.5.x.** A final version 1 release whose `slipwai upgrade --check` names 2.0.0 and
 links the migration page, so a version 1 user is told where version 2 is and what moving costs.
