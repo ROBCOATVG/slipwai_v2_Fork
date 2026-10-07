@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 64 of 104 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 27/29, phase 6 1/7, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 65 of 104 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 28/29, phase 6 1/7, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1597,7 +1597,7 @@ Depends on: phase 3.
 | 5.10a | Ids with the fairway in them: `scripts/agents/ids.py` counting out of the fairway's own deck log, and `check-decisions` taking both version 1's `D7` and version 2's `D-ORD-07` | new | M | Two fairways decide at once and mint different ids; a project that already has `D1`…`Dn` keeps them | done |
 | 5.10b | Per-fairway `decisions.md`, adversary log, benchmark and register; the feature-level files rendered from them by `make decisions`, held by `check-rendered` | new | M | Two fairways each decide once and the rendered file has both, in timestamp order, with neither id changed | done |
 | 5.11a | One file per event, named after its mark, and the index that imports them generated rather than written | new | M | Two slices each add an event and the only file both touch is one that is regenerated, not merged | done |
-| 5.11b | The composition root rendered from the chart, one `wire_*` line per use case, behind a marked region | new | M | Two slices each add a use case and merge without resolving the composition root |  |
+| 5.11b | The composition root rendered from the chart, one `wire_*` line per use case, behind a marked region | new | M | Two slices each add a use case and merge without resolving the composition root | done |
 | 5.12a | The product state in `project.json` and the four release modes derived from it, read once at the merge rung | new | M | A slipway product merges in the open and generates no flag reader; moving the product is the only thing that changes the mode | done |
 | 5.12b | Flags at the entry wiring only, and the hygiene gate: `check-flags` refuses a flag hoisted everywhere and never struck. The shape beside the target is 3.4b's | new | M | A flag lives at one `if` at the route or menu, and one overdue to be struck fails the gate | done |
 | 5.13 | The deck log and harbour log formats, written by `/drive`; `.slipwai/logs/` ignored; `refs/slipwai/logs` sync | new | M | A run's status is answerable from the logs after the fact | done |
