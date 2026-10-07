@@ -2633,3 +2633,68 @@ Phase 5 is twenty-nine slices and the heart of it; at a slice a sitting it is a 
 beside each other and are each about three weeks. Phase 8 is a week of machinery and a release. Phase 9
 is a fortnight of writing against real runs. Phase 10 is after the release and is its own month. The
 prerequisite — the six packages rebuilt — took the evening of 6 October, and found four keel faults on the way.
+
+## 13. Multiplayer: a stream taken by another person, on another machine
+
+**Asked 2026-10-07. Nothing here is decided.** This section is the investigation, not the answer.
+
+### What already works, and why that is misleading
+
+Two people can run version 2 on two machines today and it will look as though it works. The logs sync
+through `refs/slipwai/logs/*`, the harbourmaster carries marks between fairways, clearance reads every
+fairway's log, and `slipwai fleet` folds the lot. A second person can run `make cruise` and see the first
+person's marks.
+
+What makes it misleading is that **nothing stops two machines running a captain for the same fairway**, and
+the whole log design rests on one rule: *one writer per file*. Two captains for `ordering` means two
+processes appending to `.slipwai/logs/model/ordering.jsonl` through two worktrees — which is a merge
+conflict in the one file the design promised would never have one, and, where one side force-pushes the
+ref, silently lost lines. A `claimed` line is advisory. `fleet.py`'s pid file is per machine and knows
+nothing of the other one.
+
+So the question is not "can two people run it" — it is **what owns a stream, and how does a machine find
+out it does not own this one.**
+
+### The four things that need deciding
+
+**1. What a claim is, and where it lives.** A deck log line is the wrong place: it is the thing being
+protected. The candidates are a git ref per fairway (`refs/slipwai/claims/<fairway>`, taken by a
+non-fast-forward-refusing push, which is an atomic compare-and-swap on every forge and needs no server of
+ours), a row the harbourmaster writes, or a lease file with a timeout. A ref is the only one that is
+atomic without something of ours being up.
+
+**2. What a claim expires on.** A person closing their laptop must not park a stream for ever, and a
+stream must not be taken from somebody who is mid-slice. A lease with a heartbeat is the usual answer, and
+the heartbeat line already exists. What is left is the number, and what happens to the half-finished slice
+when a lease lapses — the careen is the obvious home for it.
+
+**3. Whether the harbourmaster is one process or one per machine.** Today it is "one per harbour", which
+on one machine is unambiguous and on three is not. One elected writer needs an election; one per machine
+means three writers on the harbour log, which breaks the same rule again. A third option: the harbour log
+becomes one file per machine too, folded on read like the deck logs — which costs nothing at read time and
+removes the single writer entirely. **This is probably the answer and it is not free: `berth-allocated`
+and the credential answers are the lines that genuinely need one decider.**
+
+**4. What a berth means when the machine is somebody else's.** Berth allocation is arithmetic over an
+index; two machines allocating independently is fine, because the ports are local to each. What is not
+fine is the database name, if two people point at one shared database. Either the berth name carries the
+machine, or a shared database is simply refused.
+
+### What it is not
+
+Not a hosted service. The plan says no hosted service before 2.0.0, and everything above is achievable
+with a forge, a ref and a log — which is also what keeps it working for one person on one machine with no
+network at all.
+
+Not a merge-conflict-resolution strategy. The answer to two people editing one file is that they do not:
+one writer per file is the rule, and multiplayer is about making the rule *true* across machines rather
+than about surviving its being broken.
+
+### The smallest useful thing
+
+A claim ref and a refusal. `captain.py` takes `refs/slipwai/claims/<fairway>` before it writes `claimed`,
+and refuses with *who holds it and since when* if it cannot. That alone turns the silent corruption into a
+message, and it is a day's work. Everything else above can wait for somebody to want it.
+
+**Done when somebody asks for it.** Two people have not yet tried to run one harbour, and the first real
+multiplayer requirement will say more about what is needed than this section can.
