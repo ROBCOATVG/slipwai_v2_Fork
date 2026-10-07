@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 60 of 101 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 24/27, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 61 of 101 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 25/27, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1598,7 +1598,7 @@ Depends on: phase 3.
 | 5.10b | Per-fairway `decisions.md`, adversary log, benchmark and register; the feature-level files rendered from them by `make decisions`, held by `check-rendered` | new | M | Two fairways each decide once and the rendered file has both, in timestamp order, with neither id changed | done |
 | 5.11 | Composition root rendered from the chart; one file per event with a rendered index | new | M | Two slices add an event each and merge without touching one line |  |
 | 5.12a | The product state in `project.json` and the four release modes derived from it, read once at the merge rung | new | M | A slipway product merges in the open and generates no flag reader; moving the product is the only thing that changes the mode | done |
-| 5.12b | Flags at the entry wiring only, and the hygiene gate: `check-flags` refuses a flag hoisted everywhere and never struck. The shape beside the target is 3.4b's | new | M | A flag lives at one `if` at the route or menu, and one overdue to be struck fails the gate |  |
+| 5.12b | Flags at the entry wiring only, and the hygiene gate: `check-flags` refuses a flag hoisted everywhere and never struck. The shape beside the target is 3.4b's | new | M | A flag lives at one `if` at the route or menu, and one overdue to be struck fails the gate | done |
 | 5.13 | The deck log and harbour log formats, written by `/drive`; `.slipwai/logs/` ignored; `refs/slipwai/logs` sync | new | M | A run's status is answerable from the logs after the fact | done |
 | 5.14 | Berths: `slipwai berth add / status / remove`, allocation policy, the sandbox | new | L | Two berths on one machine do not collide on ports or databases |  |
 | 5.15 | The decision ceiling, bounded waits, the inbox read at every boundary with receipts | new | M | A message is read within one boundary or forces one | done |
