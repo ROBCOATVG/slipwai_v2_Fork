@@ -1,0 +1,115 @@
+"""`slipwai fleet` and `slipwai fleet watch`: the board, drawn from the logs each time it is asked for.
+
+What a person wants from a board is one answer: *is anything waiting on me, and is anything stuck?* So those
+two are at the top and everything else is under them. The berth table is what is running; the inbox is what
+is waiting on a person; the feed is the last lines of both logs, which is where a reader goes when a row
+does not say enough.
+
+`watch` redraws on an interval. Not a daemon and not a subscription: it folds the logs again, because the
+whole board is a fold and one that cached anything could be wrong about what happened.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import shutil
+import time
+from pathlib import Path
+
+from .assets import this_command
+from .errors import GenerationError, refuse
+from .fleet import NOTHING, board
+from .project.harbour import CONFIG
+
+CLEAR = "\x1b[H\x1b[2J"
+
+
+def config(root: Path) -> dict:
+    try:
+        held = json.loads((root / CONFIG).read_text(encoding="utf-8"))
+    except (OSError, ValueError, UnicodeDecodeError):
+        return {}
+    return held if isinstance(held, dict) else {}
+
+
+def table(rows: list[dict], columns: list[tuple[str, str]]) -> list[str]:
+    """One table, each column as wide as its widest cell. No box drawing: a board is read, not admired."""
+    if not rows:
+        return []
+    widths = {key: max(len(title), *(len(str(row.get(key, ""))) for row in rows)) for key, title in columns}
+    head = "  ".join(title.ljust(widths[key]) for key, title in columns)
+    lines = [f"  {head}", "  " + "  ".join("-" * widths[key] for key, _ in columns)]
+    return lines + ["  " + "  ".join(str(row.get(key, "")).ljust(widths[key]) for key, _ in columns)
+                    for row in rows]
+
+
+def lines(root: Path) -> list[str]:
+    """The whole board, as it is printed."""
+    held = config(root)
+    found = board(root, held)
+    width = max(shutil.get_terminal_size().columns, 60)
+    said: list[str] = []
+
+    waiting = found["inbox"]
+    assert isinstance(waiting, list)
+    said.append(f"waiting on you: {len(waiting)}" if waiting else "waiting on you: nothing")
+    for row in waiting:
+        said.append(f"  {row['fairway']:<10} {row['kind']:<7} {str(row['what'])[:width - 24]}")
+
+    berths = found["berths"]
+    assert isinstance(berths, list)
+    stalled = [row for row in berths if row["state"] == "stalled"]
+    said += ["", f"berths: {len(berths)}" + (f", {len(stalled)} stalled" if stalled else "")]
+    said += table(berths, [("fairway", "fairway"), ("feature", "feature"), ("slice", "slice"),
+                           ("state", "state"), ("last", "last line"), ("tokens", "tokens"),
+                           ("merged", "merged"), ("marks", "marks")]) or ["  no fairway has written a line"]
+
+    pressure = found["pressure"]
+    assert isinstance(pressure, dict)
+    bunker = found["bunker"]
+    assert isinstance(bunker, dict)
+    spent = bunker["spent"]
+    said += ["", f"telegraph: {pressure['position']}  boilers {pressure['boilers']}  "
+                 f"fanout {pressure['fanout']}  bunker {spent if spent is not None else NOTHING}"
+                 f"/{bunker['allowed']}k today"]
+    if pressure["banked"]:
+        said.append(f"  {pressure['banked']}")
+
+    unreadable = found["unreadable"]
+    assert isinstance(unreadable, dict)
+    for name, fault in sorted(unreadable.items()):
+        said.append(f"  {name}'s log cannot be read ({fault}); its row is what is left of it")
+
+    feed = found["feed"]
+    assert isinstance(feed, list)
+    said += ["", "last lines"]
+    said += [f"  {when}  {who:<10} {kind}" for when, who, kind in feed[-12:]] or ["  nothing yet"]
+    return said
+
+
+def fleet_main(argv: list[str]) -> None:
+    prog = f"{this_command()} fleet"
+    parser = argparse.ArgumentParser(
+        prog=prog, description="What every fairway is doing, folded from the logs",
+        epilog="The board keeps no state: every column is computed from the deck logs and the harbour log "
+               "each time it is drawn, because a board that can be wrong about what happened is worse than "
+               "no board — it is believed.")
+    parser.add_argument("verb", nargs="?", choices=("show", "watch"), default="show")
+    parser.add_argument("--root", default=".", metavar="<directory>", help="the harbour (default: here)")
+    parser.add_argument("--interval", type=float, default=5.0, help="seconds between redraws, for watch")
+    parsed = parser.parse_args(argv)
+    root = Path(parsed.root).expanduser()
+    try:
+        if not (root / ".slipwai").is_dir() and not (root / CONFIG).is_file():
+            raise GenerationError(f"{root} is not a harbour: it has no .slipwai/ and no {CONFIG}. Run this "
+                                  f"in a project `slipwai generate` or `slipwai adopt` made")
+        while True:
+            print("\n".join(lines(root)))
+            if parsed.verb == "show":
+                return
+            time.sleep(parsed.interval)
+            print(CLEAR, end="")
+    except GenerationError as error:
+        refuse(prog, error)
+    except KeyboardInterrupt:
+        print()

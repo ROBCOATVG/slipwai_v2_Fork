@@ -59,7 +59,7 @@ TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
                   "images")),
     # One validated answer per axis, which applications a project has, and what they add up to being able
     # to do.
-    ("answers", ("selection", "origin", "layout", "services", "tooling", "capabilities", "berths",
+    ("answers", ("selection", "origin", "layout", "services", "tooling", "capabilities", "berths", "fleet",
                  "toolkit", "platform", "convergence", "delivery_facts", "programme", "quick_wins",
                  "uncommitted", "wrappers", "strategy", "survey", "structure", "manifest")),
     # One module per part of the repository being generated.
@@ -76,7 +76,7 @@ TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
               "language_upkeep", "browser_app",
               # The other kind of package: its install, its scaffold, and the two verbs over them.
               "extension_install", "package_new", "package_release", "cli_extension", "cli_package",
-              "trust", "cli_trust", "channel", "channel_new", "cli_channel", "cli_telegraph",
+              "trust", "cli_trust", "channel", "channel_new", "cli_channel", "cli_telegraph", "cli_fleet",
               # The conformance suite a package runs against itself, and its generated-variant
               # matrix: entry points the keel exports rather than modules it reads.
               "conformance", "matrix")),

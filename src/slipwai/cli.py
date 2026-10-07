@@ -28,6 +28,7 @@ from .cli_add import (
 from .cli_adopt import adopt_main
 from .cli_channel import channel_main
 from .cli_extension import extension_main, hooks_main
+from .cli_fleet import fleet_main
 from .cli_language import (
     braced,
     language_main,
@@ -71,7 +72,7 @@ from .upgrade import main as upgrade_main
 # back, so an unknown argument is argparse's refusal rather than a stub that half-answers.
 VERBS = ("generate", "add-service", "add-frontend", "describe-service", "migrate", "replay",
          "adopt", "converge", "upgrade", "list", "search", "show", "install", "language", "extension",
-         "hooks", "package", "trust", "channel", "telegraph")
+         "hooks", "package", "trust", "channel", "telegraph", "fleet")
 
 
 def main() -> None:
@@ -137,8 +138,8 @@ def dispatch(argv: list[str]) -> None:
                       ("describe-service", describe_service_main), ("migrate", migrate_main),
                       ("replay", replay_main), ("adopt", adopt_main), ("converge", converge_main),
                       ("extension", extension_main), ("hooks", hooks_main), ("package", package_main),
-                      ("trust", trust_main), ("channel", channel_main),
-                      ("telegraph", telegraph_main)):
+                      ("trust", trust_main), ("channel", channel_main), ("telegraph", telegraph_main),
+                      ("fleet", fleet_main)):
         if argv[:1] == [verb]:
             run(argv[1:])
             return
@@ -152,20 +153,15 @@ def dispatch(argv: list[str]) -> None:
     if argv[:1] in (["status"], ["next"], ["--status"], ["--next"]):
         adopt_main(["--next", *argv[1:]])
         return
-    if argv[:1] == ["search"]:
-        search_main(argv[1:])
-        return
-    if argv[:1] == ["show"]:
-        show_main(argv[1:])
-        return
+    for verb, run in (("search", search_main), ("show", show_main), ("language", language_main)):
+        if argv[:1] == [verb]:
+            run(argv[1:])
+            return
     # `slipwai install <name>` is `slipwai language install <name>`. The short form is what a reader
     # types after a search result tells them a package exists; the long one stays, because `language
     # upgrade` and `language remove` have no short form worth having.
     if argv[:1] == ["install"]:
         language_main(["install", *argv[1:]])
-        return
-    if argv[:1] == ["language"]:
-        language_main(argv[1:])
         return
     parser = argparse.ArgumentParser(
         prog="slipwai",
