@@ -22,8 +22,9 @@ agents: ## Refresh elected extensions, then skills, commands and agent types in 
 \tpython3 scripts/agents/project.py
 agents-list: ## Show every supported harness and which integrations are installed
 \tpython3 scripts/agents/project.py --list
-check-extensions: ## Fail when elected extension guidance differs from the keel-owned source
+check-extensions: ## Fail when elected extension guidance has drifted, or an extension's own gate says no
 \tpython3 scripts/extensions/project.py --check
+\tpython3 scripts/extensions/hooks.py check --fatal
 check-agents: ## Fail when an initialized agent projection has drifted, or .specify/models.json, drive.json or cruise.json is malformed
 \tpython3 scripts/agents/project.py --check
 \tpython3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check

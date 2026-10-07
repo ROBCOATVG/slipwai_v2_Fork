@@ -12,6 +12,8 @@ import sys
 from pathlib import Path
 
 from ..assets import VERSION
+from ..extension_shape import OBLIGATIONS
+from .extension import check as check_extension
 from .run import CHECKS, Report, check, require_package_name
 
 
@@ -29,16 +31,46 @@ def lines(report: Report) -> list[str]:
     return [*said, f"conformance: {report.package} {verdict}"]
 
 
+def extension_report(parser: argparse.ArgumentParser, package: Path) -> int:
+    """`--extension <dir>`: the six, in the order `docs/extensions.md` sets them."""
+    if not (package / "extension.json").is_file():
+        parser.error(f"{package} holds no extension.json, so it is not an extension package")
+    try:
+        report = check_extension(package)
+    except (OSError, ValueError, RuntimeError) as error:
+        print(f"conformance: the suite could not run: {error}", file=sys.stderr)
+        return 3
+    print(f"conformance: extension {report.key} in {package}, against slipwai {VERSION}")
+    for name, said in OBLIGATIONS:
+        if name in report.not_run:
+            print(f"  {name:<11} not run: {report.not_run[name]}")
+            continue
+        found = report.findings.get(name, [])
+        print(f"  {name:<11} {'FAILED' if found else 'ok'}  — {said}")
+        for finding in found:
+            print(f"    {finding}")
+    count = report.count()
+    print(f"conformance: {report.key} "
+          f"{'passed' if report.passed else f'failed, {count} finding' + ('' if count == 1 else 's')}")
+    return 0 if report.passed else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m slipwai.conformance",
         description="Check a language package against this slipwai: every protocol member, every example marker, "
         "both profiles, every declared target, its prune rows and its version rule.",
     )
-    parser.add_argument("language_dir", metavar="language-dir", type=Path,
+    parser.add_argument("--extension", metavar="<dir>", type=Path,
+                        help="an extension package instead: the six obligations, run against a scratch project")
+    parser.add_argument("language_dir", metavar="language-dir", type=Path, nargs="?",
                         help="the directory holding the package (and, for a framework, its family)")
-    parser.add_argument("package", help="the package's directory name in it, e.g. go or java-quarkus")
+    parser.add_argument("package", nargs="?", help="the package's directory name in it, e.g. go or java-quarkus")
     args = parser.parse_args(argv)
+    if args.extension is not None:
+        return extension_report(parser, args.extension)
+    if args.language_dir is None or args.package is None:
+        parser.error("name a language package (<language-dir> <package>) or an extension (--extension <dir>)")
     if not args.language_dir.is_dir():
         parser.error(f"{args.language_dir} is not a directory")
     try:

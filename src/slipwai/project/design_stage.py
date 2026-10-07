@@ -2,7 +2,7 @@
 before the demo.
 
 Its own module for the reason `converge_stage.py` is: the text exists because of evidence. Three new screens —
-an editor, a list and a printable sheet — reached their demo with every `check-ux-gates` gate green, and still
+an editor, a list and a printable sheet — reached their demo with every UX gate green, and still
 showed default-blue links, labels crammed against their fields, a raw UUID and a diagram drawn as a bare
 rectangle. The design skills were installed and `AGENTS.md` named them; no rung asked for them to run, so a
 delegate briefed from the plan styled from the tokens, ran the gates, and read the silence conservatively. So

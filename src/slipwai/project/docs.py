@@ -101,7 +101,7 @@ keeps missing measurements visibly unbracketed. `make help` lists integration,
 adversarial, mutation, model, benchmark and dependency-audit targets. Mutation and dependency audit remain
 explicit end-of-phase/CI operations, not hidden costs in every local increment.
 
-`make check-codegraph` is in the gate for a project that has adopted a code index and a no-op for one that
+`make check-extensions` fires each elected extension's own gate, the code index's among them, and a project that elected none finds nothing to run — the keel names no extension and a project that
 has not: it fails when `.codegraph/` no longer describes the tracked source — files it has never seen, or
 files that changed after it read them. CodeGraph indexes only while a client is attached to its daemon, so a
 checkout opened where that tooling is missing keeps a database nothing updates, and a stale index answers

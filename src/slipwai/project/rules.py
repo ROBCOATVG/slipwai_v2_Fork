@@ -247,7 +247,7 @@ connection, but where it has the CLI on `PATH` it can query the same project ind
 A block is not a promise that the index is reachable or current. The database travels with the checkout
 and the tooling that serves it does not, and it is only maintained while a client is attached to it — so
 follow the block's own detection step first, and where no tool answers, say that and use a text search:
-an index you cannot query is an index you do not have. `make check-codegraph` is what notices a database
+an index you cannot query is an index you do not have. `make check-extensions` is what notices a database
 its tooling has stopped writing to, which otherwise answers *nothing calls that* indistinguishably from
 *nothing calls that yet*.
 

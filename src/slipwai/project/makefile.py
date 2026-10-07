@@ -170,7 +170,7 @@ def makefile(project_name: str, profile: str, apps: list[App], target: str = "no
         formatting = f"format: ## Rewrite this project's own code the way `make lint` expects to find it\n\t{formatting}\n"
     verify_dependencies = (
         "check-python lint typecheck check-imports check-migrations check-chart check-rendered check-surfaces check-slice-scope check-extensions check-agents check-speckit "
-        "check-codegraph check-ux-gates check-constitution check-benchmark check-decisions test"
+        "check-constitution check-benchmark check-decisions test"
     )
     style_target = ""
     if web:
@@ -298,7 +298,7 @@ install: ## Install native dependencies; refresh agent projections after init
 \t@if [ -f .specify/integration.json ]; then $(MAKE){layout.make_flag} --no-print-directory agents; else echo 'Spec Kit not initialized; run ./init when ready.'; fi
 {npm_workspace_targets(apps, target)}
 {agent_targets()}
-.PHONY: decisions typecheck lint {'format ' if formatting else ''}check-imports check-migrations check-chart check-rendered check-surfaces check-slice-scope {'check-styles ' if web else ''}{'check-flags ' if target != 'none' else ''}check-speckit check-codegraph check-ux-gates check-constitution constitution-requirements{role_dependency}
+.PHONY: decisions typecheck lint {'format ' if formatting else ''}check-imports check-migrations check-chart check-rendered check-surfaces check-slice-scope {'check-styles ' if web else ''}{'check-flags ' if target != 'none' else ''}check-speckit check-constitution constitution-requirements{role_dependency}
 typecheck: ## Run the native compiler or static type check
 \t{native['typecheck']}
 lint: ## Run the native formatting and static-analysis gate
@@ -320,10 +320,6 @@ check-slice-scope: ## Fail when a slice/<id> branch touches what a sibling slice
 \tpython3 scripts/check-slice-scope.py
 {style_target}{flag_gate(target)}{role_gate}check-speckit: ## Fail when an initialized Spec Kit-managed file differs from its manifest
 \tpython3 scripts/check-speckit.py
-check-codegraph: ## Fail when the adopted code index no longer describes the tracked source
-\tpython3 scripts/check-codegraph.py
-check-ux-gates: ## Fail when a browser app breaks the adopted UX gates: literal values outside the tokens, and the render gates over screens/
-\tpython3 scripts/check-ux-gates.py
 check-constitution: ## Fail when a ratified constitution drops a principle this project depends on
 \tpython3 scripts/check-constitution.py
 constitution-requirements: ## Print the normative text the constitution must cover in this profile

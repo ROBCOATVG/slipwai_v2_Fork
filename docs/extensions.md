@@ -48,7 +48,13 @@ manifest differs from a language's, where the name is both. The catalogue entry 
 
 ## The six obligations
 
-Each is a failure somebody had. `slipwai extension check <dir>` prints them; the conformance suite runs them.
+Each is a failure somebody had. `slipwai extension check <dir>` prints them;
+`python -m slipwai.conformance --extension <dir>` runs them, against a scratch project it builds and throws
+away. Four are run — `idempotent`, `non-fatal`, `projects` and `merges` are facts about what the entry point
+did, so it is run twice and then once more with nothing on `PATH`. `gated` is a fact about what the package
+ships. `recovers` is checked against what the entry point actually printed: a line reporting a problem that
+names no command is the failure the obligation exists to stop. A check the suite could not reach says `not
+run` with the reason rather than passing quietly.
 
 1. **Idempotent** — running `./init --extension <key>` twice does what running it once did. Anything else
    turns "did it work?" into "how many times has it run?".
@@ -73,7 +79,7 @@ promise nobody made. `slipwai hooks` prints the set with what is attached to eac
 |---|---|---|
 | `init` | `./init --extension <key>`, once per election | `root` |
 | `project` | every re-projection: `make agents`, `migrate`, `./init --integration` | `root`, `harnesses` |
-| `check` | `make verify`, as one more gate | `root` |
+| `check` | `make check-extensions`, as one more gate | `root` |
 | `before-stage` | before each rung of the ladder | `stage`, `slice`, `fairway`, `berth` |
 | `after-stage` | after each rung of the ladder | `stage`, `slice`, `fairway`, `berth` |
 | `boundary` | every captain boundary, after the inbox is read | `slice`, `fairway`, `lines` |
@@ -97,7 +103,8 @@ Three rules keep a hook from becoming a second control plane:
   waits, the inbox receipt — all work with every hook removed. A hook is a second belt.
 - **A hook is never fatal to the rung.** It is reported as a `hook` line naming the extension, the point and
   the last thing it printed, and the rung completes. An extension that could fail a stage is an extension
-  that can stop a delivery loop it was added to help.
+  that can stop a delivery loop it was added to help. The `check` point is the one exception, and
+  `make check-extensions` is its only caller: that point *is* a gate, and a gate that cannot fail is not one.
 - **The resolved registry is a controlled file.** `.slipwai/hooks.json` is written from the elected
   extensions, and an iteration that edits it is refused like one that edits a gate — so a run cannot
   register a hook on itself.
@@ -122,6 +129,7 @@ slipwai extension check <key>              # the manifest, and the six it is hel
 slipwai extension install <key>            # into the package directory
 slipwai extension list                     # what is installed, and what each attaches to
 slipwai hooks                              # every point, and what is on it
+python -m slipwai.conformance --extension <dir>   # the six, run
 ```
 
 `package new` writes a manifest declaring the schema *this* keel speaks, and an entry point that already

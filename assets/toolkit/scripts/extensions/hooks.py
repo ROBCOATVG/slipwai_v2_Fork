@@ -10,10 +10,16 @@ installed themselves. The registry is a controlled file: an iteration that edits
 edits a gate, so a run cannot register a hook on itself.
 
 `<point> [--key value ...]` runs whatever is attached to that point, in extension-name order, each with its
-own budget, and **always exits 0**. A hook is a second belt: the captain's controls — the last line, the
-controlled-files diff, the bounded waits, the inbox receipt — all work with every hook removed. An extension
-that could fail a stage is an extension that can stop a delivery loop it was added to help, so what a failing
-hook produces is a `hook` line naming the extension, the point and the last thing it printed.
+own budget, and **exits 0 whatever any of them did**. A hook is a second belt: the captain's controls — the
+last line, the controlled-files diff, the bounded waits, the inbox receipt — all work with every hook
+removed. An extension that could fail a stage is an extension that can stop a delivery loop it was added to
+help, so what a failing hook produces is a `hook` line naming the extension, the point and the last thing it
+printed.
+
+`--fatal` is the one exception, and `make check-extensions` is the only caller that passes it. The `check`
+point *is* a gate: an extension that says this project's index is stale is saying the gate should be red, and
+a gate that cannot fail is not a gate. The rule it is an exception to is about the rungs of the ladder, which
+is where a second control plane would do the damage.
 
 Standalone and dependency-free, like everything else under `scripts/`: this ships inside a generated project,
 which has no slipwai to import.
@@ -91,8 +97,9 @@ def applies(body: dict, given: dict[str, str]) -> bool:
     return not isinstance(stages, list) or given.get("stage") in stages
 
 
-def fire(point: str, given: dict[str, str]) -> int:
-    """Run everything attached to `point`. Always 0: a hook is never fatal to the rung it runs around."""
+def fire(point: str, given: dict[str, str], fatal: bool = False) -> int:
+    """Run everything attached to `point`. 0 unless `fatal` and something failed — see the module docstring."""
+    failed = 0
     for body in read(REGISTRY).get("points", {}).get(point, []):
         key, script = body.get("extension", "?"), body.get("run", "")
         if not applies(body, given):
@@ -100,6 +107,7 @@ def fire(point: str, given: dict[str, str]) -> int:
         path = ROOT / "scripts/extensions" / key / script
         if not path.is_file():
             print(f"hook {key} {point}: {path} is not in this project", file=sys.stderr)
+            failed += 1
             continue
         environment = {**os.environ, **{f"SLIPWAI_{name.upper()}": value for name, value in given.items()}}
         try:
@@ -108,13 +116,19 @@ def fire(point: str, given: dict[str, str]) -> int:
         except subprocess.TimeoutExpired:
             print(f"hook {key} {point}: over its {body.get('budget', DEFAULT_BUDGET)} budget, ended",
                   file=sys.stderr)
+            failed += 1
             continue
         except OSError as error:
             print(f"hook {key} {point}: could not run ({type(error).__name__})", file=sys.stderr)
+            failed += 1
             continue
         if run.returncode != 0:
             print(f"hook {key} {point}: exited {run.returncode}; {said(run)}", file=sys.stderr)
-    return 0
+            failed += 1
+            continue
+        if run.stdout.strip():
+            print(run.stdout.strip())
+    return 1 if fatal and failed else 0
 
 
 def main(argv: list[str]) -> int:
@@ -124,11 +138,11 @@ def main(argv: list[str]) -> int:
     if argv[0] == "--elect":
         return elect(argv[1:])
     given: dict[str, str] = {}
-    rest = argv[1:]
+    rest = [word for word in argv[1:] if word != "--fatal"]
     for index in range(0, len(rest) - 1, 2):
         if rest[index].startswith("--"):
             given[rest[index][2:]] = rest[index + 1]
-    return fire(argv[0], given)
+    return fire(argv[0], given, fatal="--fatal" in argv[1:])
 
 
 if __name__ == "__main__":

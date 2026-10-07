@@ -15,7 +15,7 @@ So this script holds the index at the points the harness and the runner already 
     python3 scripts/agents/code_index.py sync     # Claude Code's PostToolUse hook: a delegate came back; sync
     python3 scripts/agents/code_index.py guard    # Claude Code's PreToolUse hook: a symbol search before the index
 
-`health` is what `scripts/agents/cruise.py` runs before every iteration, what `make check-codegraph` runs on a corrupt
+`health` is what `scripts/agents/cruise.py` runs before every iteration, what `make check-extensions` runs on a corrupt
 database before it judges one, and what a person runs to repair an index by hand. `session` is the same step at the
 start of a Claude Code session — a person's `/drive` has no runner in front of it — and prints only what it did or
 could not do, since a hook's output lands in the session's context. The database is ignored by Git and derived from the source, so a corrupt one loses nothing by being moved
@@ -67,8 +67,10 @@ ASIDE = DIRECTORY / "corrupt"
 # Which session and delegate has asked the index, for `guard`: inside the index's own ignored directory.
 ASKED = DIRECTORY / "asked.json"
 EXTENSIONS = ROOT / ".slipwai/extensions.json"
-# The gate beside this script's directory, whose reading of index against tree `health` shares.
-GATE = SCRIPT.parents[1] / "check-codegraph.py"
+# The gate, whose reading of index against tree `health` shares. It ships with the extension now rather than
+# with the toolkit — the keel carries no extension of its own — so it is only there in a project that elected
+# codegraph, and `health` says what it can without it rather than failing.
+GATE = SCRIPT.parents[1] / "extensions/codegraph/hooks/check.py"
 # A command that asks the index something, as against one that maintains it (`sync`, `init`, `index`, `serve`).
 INDEX_QUERY = re.compile(
     r"\bcodegraph(?:@[\w.-]+)?\s+(query|explore|context|node|files|callers|callees|impact|affected)\b")
@@ -179,8 +181,14 @@ def damage() -> str | None:
 
 
 def gate() -> Any:
-    """`check-codegraph.py`, loaded, for its reading of which tracked files the index is behind on."""
+    """The extension's own `hooks/check.py`, loaded, for its reading of which files the index is behind on.
+
+    None where the extension is not elected here: the index can still be asked and still be healthy, and a
+    traceback about a missing gate would be this script failing over something it does not own.
+    """
     import importlib.util
+    if not GATE.is_file():
+        return None
     sys.dont_write_bytecode = True  # no `__pycache__/` beside the gate in the project
     specification = importlib.util.spec_from_file_location("check_codegraph", GATE)
     assert specification is not None and specification.loader is not None
@@ -191,7 +199,8 @@ def gate() -> Any:
 
 def behind() -> int | None:
     """How many tracked files the index has never seen or read before they changed; None where it cannot say."""
-    found = gate().drift()
+    reader = gate()
+    found = reader.drift() if reader is not None else None
     return None if found is None else len(found[1]) + len(found[2])
 
 

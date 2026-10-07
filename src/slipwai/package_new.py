@@ -134,8 +134,8 @@ def project_root() -> Path:
 
 
 ROOT = project_root()
-BEGIN = "<!-- slipwai:extension:{name}:begin -->"
-END = "<!-- slipwai:extension:{name}:end -->"
+BEGIN = "<!-- extension:{name}:begin -->"
+END = "<!-- extension:{name}:end -->"
 BLOCK = """TODO: what the agent needs to know about {name} — the command it runs, what it answers, when to
 reach for it. One short section; this is read on every turn."""
 

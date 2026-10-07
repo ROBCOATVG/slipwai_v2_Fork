@@ -171,7 +171,7 @@ class ScaffoldTest(unittest.TestCase):
             self.assertEqual(run.returncode, 0, run.stderr)
         text = (project / "AGENTS.md").read_text(encoding="utf-8")
         self.assertIn("hand written", text)
-        self.assertEqual(text.count("slipwai:extension:thing:begin"), 1)
+        self.assertEqual(text.count("extension:thing:begin"), 1)
 
     def test_a_scaffolded_language_declares_the_schema_this_keel_speaks(self) -> None:
         package_new.write("language", "rust", self.area, CORE)
