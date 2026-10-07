@@ -62,9 +62,9 @@ check-shared: ## Fail when a carried module is not what its keel source renders 
 	@python3 scripts/shared-modules.py --check
 
 .PHONY: skills
-skills: ## Copy the toolkit's skills into .claude/skills for this checkout's own sessions (ignored by git)
-	python3 -c "import pathlib, shutil; d = pathlib.Path('.claude/skills'); shutil.rmtree(d, ignore_errors=True); shutil.copytree('assets/toolkit/skills', d)"
-	@echo "skills: .claude/skills written from assets/toolkit/skills — edit the toolkit, never this copy"
+skills: ## Copy the toolkit's and the maintainer's skills into .claude/skills for this checkout (ignored by git)
+	python3 -c "import pathlib, shutil; d = pathlib.Path('.claude/skills'); shutil.rmtree(d, ignore_errors=True); shutil.copytree('assets/toolkit/skills', d); [shutil.copytree(s, d / s.name) for s in sorted(pathlib.Path('maintainer/skills').iterdir()) if s.is_dir()]"
+	@echo "skills: .claude/skills written from assets/toolkit/skills and maintainer/skills — edit those, never this copy"
 
 .PHONY: progress
 progress: ## Tick off in the plan the slices the history says are done
