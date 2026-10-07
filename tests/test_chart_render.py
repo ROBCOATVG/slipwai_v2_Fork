@@ -14,6 +14,7 @@ import tempfile
 import textwrap
 import unittest
 from pathlib import Path
+from typing import Any
 
 import checkout_packages  # noqa: F401
 
@@ -21,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 GATE = ROOT / "assets/toolkit/scripts/check-chart.py"
 
 
-def chart_module() -> object:
+def chart_module() -> Any:
     """The renderer, loaded from the toolkit. It runs in a project, so it is not importable by name."""
     import importlib.util
     specification = importlib.util.spec_from_file_location(
