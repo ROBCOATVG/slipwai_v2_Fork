@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 62 of 102 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 26/28, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 63 of 103 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 26/28, phase 6 1/7, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1616,7 +1616,8 @@ most worth running in two fairways themselves, once 5.3 exists.
 
 | Slice | What | From | Size | Done when | Status |
 |---|---|---|---|---|---|
-| 6.1 | The extension package shape: `extension.json` with a `hooks` block over the keel's closed set of hook points, `init.py` as the first of them, the conformance profile for the six obligations of `docs/extensions.md` plus one per declared point, `slipwai hooks`, and `.slipwai/hooks.json` as a controlled file; `codegraph`, `uipro`, `ux-gates` out of the keel | new | L | `./init --extension codegraph` installs from a directory package; a hook that fails is a `hook` line and never a failed stage; the captain runs with every hook removed |  |
+| 6.1a | The hook points: the closed set in `src/slipwai/hooks.py`, the `hooks` block an `extension.json` declares, and `.slipwai/hooks.json` resolved from the elected extensions in firing order | new | M | A manifest declaring a point the keel does not fire is refused by name; two extensions on one point run in a written order, each with a budget | done |
+| 6.1b | The rest of the extension package shape: `extension.json`, `init.py`, the loader reading either manifest, the conformance profile for the six obligations, `slipwai hooks`, and `codegraph`, `uipro` and `ux-gates` moved out into their own repositories | new | L | `./init --extension codegraph` installs from a directory package, and a hook that fails is a `hook` line and never a failed stage |  |
 | 6.2 | The index schema with publishers, checksums, the signature field, descriptions and tags; the public channel as a Pages site | cruise-2 + new | M | `slipwai search` and `slipwai install` read it for both kinds |  |
 | 6.3 | A private channel per organisation, `SLIPWAI_LANGUAGE_INDEX` generalised to `SLIPWAI_CHANDLERY` | cruise-2 | S | An organisation's index serves its own packages |  |
 | 6.4 | `slipwai package new / check / release / register`, branching on the kind answer, and `make release` in the template behind them | new | L | One language package and one extension package, each made by `new` on an empty machine, pass `check`, release, and register into a local channel without a hand edit |  |
@@ -2196,7 +2197,16 @@ trust root the owner holds.
 the private channel, 6.4 the four verbs, 6.5 signing, 6.6 the public channel. 6.4 before 6.5 because the
 verbs are how a signed release is cut.
 
-**6.1 — Extensions as packages.** `extension.json` carries `name`, `description`, `ignore`, `core` (the
+**It lands in two.** 6.1a is the hook points, which are a contract the keel owns and which 5.2 already
+names in `drive.md` while nothing defined them. 6.1b is the package shape around them and the three
+extensions moved out, which needs repositories under `ROBCOATVG` and is the owner's push. Split 2026-10-07.
+
+**6.1a's one rule worth repeating.** A point an extension could *add* would be a promise nobody made, so
+the set is closed like the axes, and a manifest declaring one the keel does not fire is refused by name
+rather than ignored. Ignoring it is the worst available failure: the extension installs, the manifest
+validates, and the hook never runs, for ever, with nothing anywhere saying so.
+
+**6.1a/b — Extensions as packages.** `extension.json` carries `name`, `description`, `ignore`, `core` (the
 keel range), `publisher`, `tags`, `kind: extension`. The entry point is `init.py` at the package root,
 with the six obligations `docs/extensions.md` sets. `language_directory.read` learns to read either
 manifest and tag the `Package` with its kind; the loader merges `extension.json` into `CATALOG["extensions"]`,
