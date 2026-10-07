@@ -52,6 +52,52 @@ def shipped() -> dict[str, str]:
     return {**{k: v for k, v in BEFORE_THE_TRAILER.items() if has(v)}, **found}
 
 
+def headings(ids: list[str]) -> dict[str, list[str]]:
+    """Each row that is a heading over others, and the rows under it.
+
+    A row like `3.3` whose work is done by `3.3a` to `3.3h` is a heading, not a slice: nothing carries a
+    `Slice-done: 3.3` trailer and nothing ever will, so without this it counts as outstanding for ever and
+    the total is wrong by one from the day the group lands.
+    """
+    found: dict[str, list[str]] = {}
+    for one in ids:
+        under = [other for other in ids if other != one and other.startswith(one)
+                 and other[len(one):].isalnum()]
+        if under:
+            found[one] = under
+    return found
+
+
+#: A row whose description is only a pointer at the slice its work moved to. Nothing will ever carry its
+#: trailer, so without this it counts as outstanding for as long as the plan exists.
+MOVED = re.compile(r"^\*Moved to .*? as (?P<to>\d+\.\d+[a-z]?)\b")
+
+
+def moved(page: str) -> dict[str, str]:
+    """Each redirecting row, and the slice its work moved to."""
+    found: dict[str, str] = {}
+    for line in page.splitlines():
+        match = ROW.match(line)
+        if match:
+            cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+            pointer = MOVED.match(cells[1]) if len(cells) > 1 else None
+            if pointer:
+                found[match.group(1)] = pointer.group("to")
+    return found
+
+
+def with_headings(done: dict[str, str], ids: list[str], page: str = "") -> dict[str, str]:
+    """`done`, plus every heading all of whose rows are done, and every row whose work moved elsewhere."""
+    whole = dict(done)
+    for heading, under in headings(ids).items():
+        if heading not in whole and all(one in done for one in under):
+            whole[heading] = done[under[-1]]
+    for row, to in moved(page).items():
+        if row not in whole and to in done:
+            whole[row] = done[to]
+    return whole
+
+
 def has(short: str) -> bool:
     """Whether a commit of `BEFORE_THE_TRAILER` is an ancestor of what is checked out, so a branch that
     predates one does not claim its slice."""
@@ -129,7 +175,8 @@ def summary(page: str, done: dict[str, str]) -> str:
 # The history holds the hashes; the plan holds the fact.
 def rendered() -> str:
     page = PLAN.read_text(encoding="utf-8")
-    done = shipped()
+    ids = [m.group(1) for line in page.splitlines() if (m := ROW.match(line))]
+    done = with_headings(shipped(), ids, page)
     page = ticked(page, done)
     line = summary(page, done)
     lines = page.splitlines()
@@ -145,7 +192,8 @@ def main(arguments: list[str]) -> int:
     wanted = rendered()
     if "--check" not in arguments:
         PLAN.write_text(wanted, encoding="utf-8")
-        print(summary(wanted, shipped()).split(" — ")[0].replace("**", ""))
+        ids = [m.group(1) for line in wanted.splitlines() if (m := ROW.match(line))]
+        print(summary(wanted, with_headings(shipped(), ids, wanted)).split(" — ")[0].replace("**", ""))
         return 0
     if PLAN.read_text(encoding="utf-8") == wanted:
         print("progress: the plan's ticks match the history")

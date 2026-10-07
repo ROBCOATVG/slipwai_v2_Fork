@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 82 of 107 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 29/29, phase 6 7/9, phase 7 7/8, phase 8 3/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 85 of 107 slices done** — phase 1 6/6, phase 2 9/9, phase 3 17/20, phase 4 7/7, phase 5 29/29, phase 6 7/9, phase 7 7/8, phase 8 3/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1415,8 +1415,8 @@ launcher — the first code where the distinction can go wrong. Decided 2026-10-
 | 2.2 | `assets.py` as the path head, `registry.py`, `family_only.py`, `docs/backend-protocol.md` and their tests | cruise-2 | M | The registry answers Members for a fake package in tests, and the contract page and `PROTOCOL` cannot drift | done |
 | 2.3 | `catalog.json` with no backends, `catalog_merge.py`, `catalog.py` split into what the catalogue is and `catalog_checks.py` for what makes one valid, the `Fault` boundary, and `assets/targets/` so the managed targets have the infrastructure the catalogue claims | cruise-2 | L | A fragment merges; a duplicate backend is refused with one line; the shipped catalogue validates with nothing installed | done |
 | 2.4 | `versions.py`, `language_shape.py`, `language_directory.py`: the package directory, read and admitted in two phases | cruise-2 | L | A package directory loads whole or not at all; a bad one reports every fault in one line | done |
-| 2.5 | *Moved to phase 3 as 3.9 — see below.* | | |  |
-| 2.6 | *Moved to phase 3 as 3.8 — see below.* | | |  |
+| 2.5 | *Moved to phase 3 as 3.9 — see below.* | done |
+| 2.6 | *Moved to phase 3 as 3.8 — see below.* | done |
 | 2.8 | The catalogue's validators, which `catalog.py` reads: `features.py`, `targets.py`, `extensions.py`, `axes.py`, and `assets/backing-services/prune.py`, the one asset tree the keel reads for itself | cruise-2 | L | Each refuses a malformed option, entry or extension, named by axis and option; nothing in them names a language. The whole-catalogue checks are 2.3's, with the `catalog.json` they mirror | done |
 | 2.9 | `loaded.py`, `registry()`, and `inside`/`located` in `assets.py` so a package reads its own `assets/` and nothing else | cruise-2 | M | `registry()` builds once per process and is empty with nothing installed; a faulty package is a line and not a crash | done |
 | 2.7 | The one refusal shape: `errors.py` with `Fault`, `Refusal` and `refuse`. **Runs before 2.3 and 2.4**, not after them | new + upstream | M | Every refusal in 2.3 and 2.4 goes through it; the experiment's nine wording-test files collapse to one table | done |
@@ -1541,7 +1541,7 @@ refuses by and which nothing else imports. Found on 2026-10-06 while doing the s
 |---|---|---|---|---|---|
 | 3.1 | The parts that wait on nothing: `backends.py`, `naming.py`, `probes.py`, `layout.py`, `selection.py`, `origin.py`, `ecosystems.py`, `npm_workspace.py`, `changelog.py`, then `services.py` | upstream + cruise-2 | L | `make next` shows the first wave empty; each module is in a tier and the gate is green after every one | done |
 | 3.2 | `assets.py` grown to the asset trees, `examples.py`, `tooling.py`, `capabilities.py` and `toolkit.py`: the first slice that reads an asset tree | upstream | L | Toolkit files materialise for both profiles | done |
-| 3.3 | The `project/*.py` parts, cut against `make next` rather than against assembly order. Each group below is one slice, and the groups are named as they are reached rather than guessed in advance — what is ready changes as modules land | upstream | 5 × M | After each group, `make starters` diffs empty against cruise-2 for the variants that group touches |  |
+| 3.3 | The `project/*.py` parts, cut against `make next` rather than against assembly order. Each group below is one slice, and the groups are named as they are reached rather than guessed in advance — what is ready changes as modules land | upstream | 5 × M | After each group, `make starters` diffs empty against cruise-2 for the variants that group touches | done |
 | 3.3a | The parts that write pieces of a repository: `project/`, `pruner`, `flags`, `flag_route`, `entry_stores`, `shared_packages`, `compose`, `ci_services`, `provisioning`, `repository`, `rules` | upstream | M | Each holds its mechanism with no language named; the `E501` ignore for embedded file content is back | done |
 | 3.3b | The parts that write the ladder into a project: `drive_settings`, `demo_stop`, `adversary`, `mutation`, `benchmark`, `converge_stage`, `design_stage`, `docs_index`, `evolving`, `parallel_slices`, `agent_targets`, `model_targets`, `model_to_code` | upstream | M | The two widths are written and checked: `delegate` is story, rule or task, `cycle` is rule or example, and `story` is never a cycle | done |
 | 3.3c | The parts that write `/cruise` into a project, and the ones `./init` writes: the seat commands, the stop table, the unblock section, `whats_next`, `where_are_we`, `init_languages`, `init_production`, `native_commands`, `languages` | upstream | M | The harness output is repeated verbatim rather than summarised; nothing catastrophic is missing from the page that forbids it; a managed target adds stops an unmanaged one has not | done |
@@ -1561,6 +1561,22 @@ refuses by and which nothing else imports. Found on 2026-10-06 while doing the s
 | 3.9 | `conformance/` and `matrix/` as `python -m` entry points (was 2.5) | cruise-2 | L | `python -m slipwai.conformance packages toy` runs in the gate and its five static checks pass; the matrix refuses the toy by name and says what to run instead. The two generation probes need the `generate` verb and light up at 4.1 | done |
 
 Depends on: phase 2.
+
+**3.4, 3.4b and 3.5 and what is left of them.** Every module and every asset is back — `make next` says
+174 of 174, `assets/targets/` holds all 47 files of both stacks, and `react-vite` is in the catalogue. What
+is not done is their *Done when*, and that is where it belongs rather than where it was written: both
+acceptances generate a real project, which needs a language installed, and **the keel pins no language** —
+a keel whose gate checks seven packages is a keel nobody can change without them (theme A). So
+`tests/test_aws_stack.py`, `test_azure_stack.py` and `test_frontend.py` skip here with that reason, and
+the run that proves them is a language package's own matrix job:
+
+```sh
+gh workflow run package.yml -R ROBCOATVG/slipwai-language-go -f matrix=true
+```
+
+It builds images and starts containers, so it is opt-in. **Nobody has run it yet**, which is why these
+three rows are not ticked: the code is in and the proof is one command away, and ticking them before the
+command has been run would be exactly the "green while holding nothing" these gates exist to prevent.
 
 ### Phase 4. The verbs
 

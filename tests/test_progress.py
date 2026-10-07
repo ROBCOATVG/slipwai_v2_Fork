@@ -56,14 +56,41 @@ class TickTest(unittest.TestCase):
         self.assertIsNone(progress.TRAILER.search("Slice 9.5: the three contributor skills\n\nbody\n"))
         self.assertEqual(progress.TRAILER.findall("did a thing\n\nSlice-done: 9.5\n"), ["9.5"])
 
+    def counted(self, page: str) -> dict[str, str]:
+        """Every row the script would tick: a trailer in the history, or one of the two derived cases."""
+        ids = [m.group(1) for line in page.splitlines() if (m := progress.ROW.match(line))]
+        return progress.with_headings(progress.shipped(), ids, page)
+
     def test_nothing_is_ticked_that_the_history_has_not_got(self) -> None:
         page = progress.rendered()
-        done = progress.shipped()
+        done = self.counted(page)
         for line in page.splitlines():
             if (match := progress.ROW.match(line)) and line.rstrip().endswith("|"):
                 ticked = line.rsplit("|", 2)[1].strip() == "done"
                 with self.subTest(slice=match.group(1)):
                     self.assertEqual(ticked, match.group(1) in done)
+
+    def test_every_derived_tick_is_derived_from_a_trailer_and_not_from_nothing(self) -> None:
+        """The two rules add rows the history did not name. Each must still rest on a trailer that is
+        in it — a derived tick that rested on another derived tick would be a tick resting on nothing."""
+        page = progress.rendered()
+        shipped = progress.shipped()
+        for row, short in self.counted(page).items():
+            with self.subTest(slice=row):
+                self.assertIn(short, shipped.values())
+
+    def test_a_heading_is_done_when_every_row_under_it_is_and_not_before(self) -> None:
+        """`3.3`'s work is done by `3.3a` to `3.3h`; nothing will ever carry its trailer."""
+        self.assertEqual(progress.headings(["3.3", "3.3a", "3.3b", "4.1"]), {"3.3": ["3.3a", "3.3b"]})
+        whole = progress.with_headings({"3.3a": "aaa", "3.3b": "bbb"}, ["3.3", "3.3a", "3.3b"])
+        self.assertIn("3.3", whole)
+        self.assertNotIn("3.3", progress.with_headings({"3.3a": "aaa"}, ["3.3", "3.3a", "3.3b"]))
+
+    def test_a_row_whose_work_moved_is_done_when_the_row_it_moved_to_is(self) -> None:
+        page = "| 2.5 | *Moved to phase 3 as 3.9 — see below.* | | |  |\n"
+        self.assertEqual(progress.moved(page), {"2.5": "3.9"})
+        self.assertIn("2.5", progress.with_headings({"3.9": "ccc"}, ["2.5", "3.9"], page))
+        self.assertNotIn("2.5", progress.with_headings({}, ["2.5", "3.9"], page))
 
     def test_a_tick_survives_the_commit_that_writes_it_being_amended(self) -> None:
         """The cell said `done <hash>` once, and folding the tick into the slice's own commit changed the
@@ -72,7 +99,7 @@ class TickTest(unittest.TestCase):
         self.assertNotRegex(page, r"\| done [0-9a-f]{7,} \|")
         # Not "a tick exists": whether one does depends on the history this checkout has, and a shallow
         # clone has none. What must hold is that a tick, where written, is the stable form.
-        self.assertEqual(page.count("| done |"), len(progress.shipped()))
+        self.assertEqual(page.count("| done |"), len(self.counted(page)))
 
     def test_the_slices_that_predate_the_trailer_are_a_closed_list(self) -> None:
         """It was written once and is never added to; everything after carries its own trailer."""
