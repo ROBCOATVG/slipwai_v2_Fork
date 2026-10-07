@@ -53,6 +53,9 @@ class Unreachable(GenerationError):
     def __init__(self, url: str, reason: str) -> None:
         super().__init__(f"the language index at {url} could not be reached ({reason})")
         self.url = url
+        #: Why, without the sentence around it. What a caller joining several of these wants: wrapping a
+        #: whole message in another one says "could not be reached (could not be reached (…))".
+        self.reason = reason
 
 
 def location(receipt: Path | None = None) -> tuple[str, str]:
@@ -242,13 +245,15 @@ def read_index() -> Index:
     """
     found: list[Index] = []
     refusals: list[str] = []
+    reasons: list[str] = []
     for index_name, url in channels():
         try:
             found.append(read_one(index_name, url))
         except Unreachable as error:
             refusals.append(str(error))
+            reasons.append(f"{bare(url)}: {error.reason}")
     if not found:
-        raise Unreachable(bare(channels()[0][1]), "; ".join(refusals) or "no channel is configured")
+        raise Unreachable(bare(channels()[0][1]), "; ".join(reasons) or "no channel is configured")
     whole = merged(found)
     return replace(whole, unreachable=tuple(refusals)) if refusals else whole
 

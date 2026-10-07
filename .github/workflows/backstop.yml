@@ -1,0 +1,126 @@
+name: backstop
+
+# The release backstop: every published package, run against the keel that is about to ship.
+#
+# The division is theme A's and this is its last piece. The keel's own gate proves the conformance suite
+# works, against one toy package in-tree. Each package proves itself against a pinned keel, on its own
+# schedule, in its own repository. Neither of those asks the question a release has to answer: **does this
+# keel still work with what is already out there?**
+#
+# A keel that ran every package's gate on every commit would be a keel nobody could change without them,
+# which is the coupling the packages were split out to remove. So this is not a per-commit job. It runs on
+# a tag, on a schedule, and when somebody asks — and the tag is the one that matters: a release refused
+# here is a release that did not break anybody's project.
+#
+# Nothing here reads this repository's `packages/`. The keel pins none, deliberately; what is tested is
+# what the chandlery actually serves, which is the only set a person could have installed.
+
+on:
+  push:
+    tags: ['v*']
+  schedule:
+    # Weekly, so a package that goes red against `main` is found before the release rather than by it.
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: Space-separated package names, or empty for every one the channel lists
+        required: false
+        default: ''
+        type: string
+      matrix:
+        description: Run the generated-variant matrix as well as the conformance suite
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backstop-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Which packages to run, read from the channel rather than written out here. A list in this file is a
+  # list that is wrong the day somebody publishes a seventh and nobody remembers this exists.
+  listed:
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.ask.outputs.packages }}
+      directory: ${{ steps.ask.outputs.directory }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - id: ask
+        env:
+          ASKED: ${{ inputs.packages }}
+        run: python scripts/backstop-packages.py >> "$GITHUB_OUTPUT"
+
+  against:
+    needs: listed
+    if: needs.listed.outputs.packages != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.listed.outputs.packages) }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: keel
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      # The keel about to ship, from this checkout — not from PyPI. The whole point is the version that has
+      # not been published yet, which is the one a package has never been run against.
+      - name: Install the keel about to ship
+        run: |
+          set -eu
+          python -m pip install --disable-pip-version-check ./keel
+          slipwai --version
+
+      - name: Install ${{ matrix.package }} from the channel
+        run: |
+          set -eu
+          slipwai install "${{ matrix.package }}" --accept-publisher \
+            || slipwai extension install "${{ matrix.package }}" --accept-publisher
+
+      - name: Conformance
+        run: |
+          set -eu
+          directory="${{ needs.listed.outputs.directory }}"
+          if [ -f "$directory/${{ matrix.package }}/extension.json" ]; then
+            python -m slipwai.conformance --extension "$directory/${{ matrix.package }}"
+          else
+            python -m slipwai.conformance "$directory" "${{ matrix.package }}"
+          fi
+
+      - name: The generated-variant matrix
+        if: ${{ inputs.matrix }}
+        run: python -m slipwai.matrix "${{ needs.listed.outputs.directory }}" "${{ matrix.package }}"
+
+  # One job whose verdict is the release's. A matrix job that was skipped because nothing was listed is a
+  # green that means "nothing was checked", and a tag protected by that is not protected.
+  verdict:
+    needs: [listed, against]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Say what was run, and refuse a release that checked nothing
+        env:
+          LISTED: ${{ needs.listed.outputs.packages }}
+          RESULT: ${{ needs.against.result }}
+        run: |
+          set -eu
+          printf 'packages: %s\n' "$LISTED"
+          if [ "$LISTED" = "[]" ]; then
+            printf '%s\n' 'the channel listed no package this keel could install.' >&2
+            printf '%s\n' 'A release is refused rather than passed on nothing checked.' >&2
+            exit 1
+          fi
+          [ "$RESULT" = "success" ] || { printf '%s\n' "the packages job was $RESULT" >&2; exit 1; }
+          printf '%s\n' 'every published package passes against this keel.'
