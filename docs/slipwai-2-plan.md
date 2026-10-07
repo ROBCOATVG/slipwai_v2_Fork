@@ -1307,7 +1307,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 40 of 93 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 4/20, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 41 of 95 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 5/22, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1565,7 +1565,9 @@ Depends on: phase 3.
 | 5.1 | The skills, renamed to the vocabulary where a name changed, `docs/rename.json` begun | upstream | M | Every skill present; the rename table has a row per rename | done |
 | 5.2 | The commands and agents, the ladder in `drive.md`, the stop table, and `.specify/drive.json`: the `delegate` and `cycle` widths, the refusal of `story` as a cycle unit, and the fallbacks that run a slice narrower than the setting asks | upstream | L | `/drive` runs one slice to a demo on a generated project, red-green-refactor per the configured width, and a slice with no story tag falls to `rule` rather than failing | done |
 | 5.3 | Fairways: the `## Fairways` table in the split, `/drive fairway=<name>`, the boards grouped by fairway | `slipwai-workstreams` | M | Two fairways on one machine, merges independent |  |
-| 5.4 | The chart: `chart.yaml` schema, the capability each slice belongs to and the `story-splitting` change that groups slices under capabilities, `make chart` on the event profile, `/chart` on the standard profile, `check-chart` including the rule that every slice names a capability | new | L | Both profiles produce a chart a reader can diff; every slice names the capability whose demo it is part of, with no flag and no target, and `check-chart` refuses one that does not |  |
+| 5.4a | The chart's shape and its gate: the five rules in `scripts/check-chart.py`, the `check-chart` target in a generated project's `Makefile` and its `verify` chain | new | M | A hand-written chart passes; one with an untyped mark, a mark nobody sets, a mark two slices set, a withdrawn mark or a slice in no capability is refused by name | done |
+| 5.4b | `make chart` on the event profile: `chart.yaml` rendered from `model.yaml`, and `check-chart` failing when the two disagree | new | M | The rendered chart and the model cannot drift, the way `check-drawio` holds the canvas |  |
+| 5.4c | `/chart` on the standard profile, and the `story-splitting` change that groups slices under the capabilities they complete | new | M | A standard-profile feature reaches its split with a chart a reader can diff, and every slice in a capability, with no flag and no target |  |
 | 5.5 | Clearance and the one-setter-per-mark rule in `check-model` and `check-chart`; typed attributes and `examples.md` at the split | new (#32) | M | A fresh fairway fans out on its first iteration |  |
 | 5.6 | `check-slice-scope` reads the chart for owned paths on both profiles | upstream + new | M | The standard profile holds a context boundary |  |
 | 5.7 | Two gates: `make unit` in generated projects, the ladder's fast checks per increment, the full gate before `main` | new | M | A slice's increments never run the full suite |  |
@@ -1745,7 +1747,8 @@ careen reshape its end. The logs come before the ids, because the ids are read o
 composition root, release modes, berths, inbox and domain knowledge, each of which stands alone.
 
 ```
-5.1 skills ─► 5.2 ladder ─► 5.17 example map ─► 5.18 mock-up review ─► 5.4 chart ─► 5.5 clearance ─► 5.6 scope ─► 5.3 fairways
+5.1 skills ─► 5.2 ladder ─► 5.17 example map ─► 5.18 mock-up review ─► 5.4a chart gate ─► 5.4b make chart
+   ─► 5.4c /chart ─► 5.5 clearance ─► 5.6 scope ─► 5.3 fairways
    ─► 5.7 two gates ─► 5.8 review ─► 5.9 adversary, careen ─► 5.13 logs ─► 5.10 ids
    ─► 5.19 capability demo ─► 5.20 surfaces held ─► 5.11 composition ─► 5.12 release modes ─► 5.14 berths ─► 5.15 inbox ─► 5.16 domain
 ```
@@ -1873,10 +1876,24 @@ the chart is written before the split is claimed, so naming the capability is a 
 with a person present, which is the only time it can be taken at all. The rule holds with no flag and no
 target, which is the point of moving the unit off the release-constraint stage.
 
-The keel module is `src/slipwai/project/chart.py`, parts tier, writing the schema check
-into `scripts/check-chart.py`. Test against a hand-written chart for each rule, and against the toy's
-generated project for the end-to-end. The capability rule gets two: a chart whose slices all name one
-passes, and a chart with one slice missing it is refused by name, with the command that fixes it.
+**It lands in three, not one.** The slice was sized L, and the three halves of it are different work:
+the gate is a self-contained script and a table of refusals; `make chart` is a renderer over `model.yaml`
+that has to agree with a gate; and `/chart` is a stage a person is interviewed by. Split 2026-10-07 while
+doing it.
+
+**5.4a** is `assets/toolkit/scripts/check-chart.py` plus the `check-chart` target in a generated project's
+`Makefile` and its `verify` chain. It is a toolkit script rather than a keel module because a generated
+project runs it and has no slipwai to import, and the keel's suite runs it the way a project does: a
+subprocess over a tree laid out like one, one fixture per way a chart can be wrong. The shape is checked
+first and the five rules are not run over a malformed chart, because each of them would otherwise report
+the same damage in its own words. No chart at all exits 0 and says so: `make verify` runs this in every
+project, including one with no feature in flight.
+
+**5.4b** renders `chart.yaml` from `model.yaml` on the event profile — `project/model_to_code.py` already
+knows the mapping — and `check-chart` fails when the two disagree, as `check-drawio` holds the canvas.
+**5.4c** is the standard profile's `/chart` stage, and the `story-splitting` change that groups slices under
+the capabilities they complete, which is where the capability the gate demands actually comes from.
+`src/slipwai/project/chart.py` arrives with them; 5.5 adds `cleared()` to it.
 
 **5.5 — Clearance.** The rule issue #32 asked for. A slice may start when every mark it steers by is set
 by a slice that is `planned` or `implemented`; its own marks it sets itself, at its first stage. The
@@ -2305,7 +2322,7 @@ Collected from above, so they can be taken before the slice that needs them.
 
 ### A realistic shape for the calendar
 
-Phase 5 is twenty slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
+Phase 5 is twenty-two slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
 beside each other and are each about three weeks. Phase 8 is a week of machinery and a release. Phase 9
 is a fortnight of writing against real runs. Phase 10 is after the release and is its own month. The
 prerequisite — the six packages rebuilt — took the evening of 6 October, and found four keel faults on the way.
