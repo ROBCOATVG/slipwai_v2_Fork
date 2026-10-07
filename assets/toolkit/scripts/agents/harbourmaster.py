@@ -105,12 +105,27 @@ def deck_logs() -> list[Path]:
 
 
 def new_lines(path: Path, cursors: dict[str, int]) -> tuple[list[str], int]:
-    """The lines of this log the harbourmaster has not read, and where it has now read to."""
+    """The lines of this log the harbourmaster has not read, and where it has now read to.
+
+    A cursor past the end of its log is a cursor that is about a file that no longer exists — a fresh
+    clone, a reset, a log somebody rotated — and keeping it would have this carry nothing from that stream
+    for ever while reporting that it ran. So it is dropped and the log is read whole: the harbour log is
+    append-only and `carried` writes what the lines mean, so re-reading costs a duplicate line and
+    believing a stale cursor costs every line after it.
+
+    A log replaced by one of exactly the same length is not caught, and would need a fingerprint per log
+    to catch. The case this is for is a reset or a fresh clone, where the log is much shorter — and a
+    guard that cost a hash of every log on every pass to close a case nobody has had is the wrong trade.
+    """
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
     except (OSError, UnicodeDecodeError):
-        return [], cursors.get(str(path), 0)
+        return [], cursors.get(key_of(path), 0)
     seen = cursors.get(key_of(path), 0)
+    if seen > len(lines):
+        print(f"harbourmaster: {key_of(path)} is shorter than it was; reading it from the start",
+              file=sys.stderr)
+        seen = 0
     return lines[seen:], len(lines)
 
 

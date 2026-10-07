@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 90 of 111 slices done** — phase 1 6/6, phase 2 9/9, phase 3 17/20, phase 4 7/7, phase 5 29/29, phase 6 7/9, phase 7 10/11, phase 8 4/8, phase 9 1/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 90 of 112 slices done** — phase 1 6/6, phase 2 9/9, phase 3 17/20, phase 4 7/7, phase 5 29/29, phase 6 7/9, phase 7 10/12, phase 8 4/8, phase 9 1/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1654,6 +1654,7 @@ Depends on: phase 4. Runs beside phase 7.
 | 7.3 | The telegraph: positions, `harbour.json`, `--set` for the numbers, `/model-delegation-settings` for the model role per stage, the `delegate` and `cycle` widths from `.specify/drive.json` shown and set alongside them, banking the fires in order | new | M | Over budget, the run slows in the fixed order before it stops; every number and role the telegraph groups can also be set alone | done |
 | 7.4 | The fleet board: `slipwai fleet`, `fleet watch`, the rendered page | new | M | Every column folds from the logs; a stalled berth is told from a finished one | done |
 | 7.5 | The bridge: `slipwai bridge` local server with controls, the read-only Pages copy | new | L | A question answered from the page becomes a `told` line | done |
+| 7.4d | The loop end to end in a generated project: chart, gate, clearance, a captain with a stand-in for `/drive`, the harbourmaster, the board and the overlay | new | M | A sibling is cleared by a mark being set with nothing merged, and the suite says so |  |
 | 7.5b | slipwai's own mark — a little tug whose funnel puffs a spark — top right of the bridge and as its icon, and an Auto/Light/Dark toggle beside it | new | S | The mark holds in one colour at 16px and the published copy keeps both without a script | done |
 | 7.6 | The harness registry rows for Claude Code, Codex, Cursor, Gemini CLI, OpenCode and Kiro; `unproven` until run | upstream + new | M | Each row says how it is invoked and which hooks it has | done |
 | 7.4b | A stream's own log, read from the board: `slipwai fleet <stream>` in the terminal and a drawer under each row on the bridge, each line said rather than printed | new | S | The question the board provokes — what has this one been doing — is answered without opening a `.jsonl` | done |
@@ -2791,8 +2792,13 @@ worth a row.**
 
 ### Still open, not yet discussed
 
-- **The loop has no end-to-end test.** The three chart faults were found by hand. Nothing in the suite
-  generates a project and drives a captain in it, so that whole path regresses invisibly.
+- ~~**The loop has no end-to-end test.**~~ **Closed 2026-10-07 (7.4d).** `tests/test_loop.py` generates a
+  project, writes a two-stream model into it, renders the chart, runs its gate, drives a captain with a
+  stand-in for `/drive`, carries the lines with the harbourmaster and reads the board back. It holds the
+  claim the method rests on — a sibling is cleared by a mark being *set*, with nothing merged — which
+  nothing else in the suite would notice the loss of. Writing it found a fifth fault: the harbourmaster's
+  cursor outlived its log, so a reset or a fresh clone had it carry nothing from that stream for ever
+  while reporting that it ran.
 - **No way back from `slipwai migrate`.** Section 8.6 gives a 1.5.x that names 2.0.0; nothing says what a
   person does when a migration goes wrong, and the first user will migrate something real.
 - **A fairway is the context name, not the slice prefix.** `captain ORD` answers "the chart gives ORD no

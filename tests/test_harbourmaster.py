@@ -167,3 +167,28 @@ class RequestTest(Fixture):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CursorTest(Fixture):
+    """A cursor that outlives its log. Found by the end-to-end suite, where one test's logs were wiped
+    and the next pass carried nothing while reporting that it ran."""
+
+    def test_a_log_shorter_than_the_cursor_is_read_from_the_start(self) -> None:
+        """A fresh clone, a reset, a rotated log — and keeping the cursor means that stream is never
+        carried again, for ever, with nothing saying so."""
+        self.deck("ordering", "ORD",
+                  logs.entry("mark-set", fairway="ORD", slice="ORD-01", mark="Placed"),
+                  logs.entry("heartbeat", fairway="ORD"),
+                  logs.entry("heartbeat", fairway="ORD"))
+        self.run_once()
+        (self.root / logs.deck_path("ordering", "ORD")).write_text("", encoding="utf-8")
+        self.deck("ordering", "ORD", logs.entry("mark-set", fairway="ORD", slice="ORD-02", mark="Paid"))
+        done = self.run_once()
+        self.assertIn("shorter than it was", done.stderr)
+        self.assertIn("Paid", [str(e.fields.get("mark")) for e in self.harbour()])
+
+    def test_an_unchanged_log_is_still_not_carried_twice(self) -> None:
+        self.deck("ordering", "ORD", logs.entry("mark-set", fairway="ORD", slice="ORD-01", mark="Placed"))
+        self.run_once()
+        self.run_once()
+        self.assertEqual(len([e for e in self.harbour() if e.kind == "mark-set"]), 1)
