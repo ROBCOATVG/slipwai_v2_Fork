@@ -309,6 +309,33 @@ class ChartStageTest(unittest.TestCase):
     def test_facing_a_person_the_words_are_paired_with_the_ordinary_ones(self) -> None:
         self.assertIn("the slipwai word and the ordinary one", self.text())
 
+    def test_the_stage_works_the_answers_out_before_it_stops_anyone(self) -> None:
+        """A blank question spends a person's attention on work a careful reading would have done."""
+        text = self.text()
+        self.assertIn("Bring a proposal, not a questionnaire", text)
+        self.assertIn("Do the whole of pass one yourself before anyone is stopped", text)
+        self.assertIn("confirm it or amend it", text)
+
+    def test_every_proposal_carries_what_it_was_read_off(self) -> None:
+        """Otherwise it is a conclusion handed down, which a person cannot disagree with."""
+        text = self.text()
+        self.assertIn("carries what it was read off", text)
+        self.assertIn("a guess wearing a conclusion's clothes", text)
+
+    def test_confidence_is_said_per_item_and_before_the_list_is_read(self) -> None:
+        """A proposal offered as confidently as every other is confirmed as quickly as every other."""
+        self.assertIn("Say which ones you are unsure about, and why, before the person reads the list",
+                      self.text())
+
+    def test_where_the_evidence_runs_out_the_question_stays_a_question(self) -> None:
+        """A product decision taken by inference is the failure this stage exists to prevent."""
+        text = self.text()
+        self.assertIn("Genuinely undecidable things stay questions", text)
+        self.assertIn("worse than a blank, because a blank gets thought about", text)
+
+    def test_the_service_question_is_asked_rather_than_proposed_where_two_could_hold_it(self) -> None:
+        self.assertIn("Where none does, or two could, that is a question and not a proposal", self.text())
+
 
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()

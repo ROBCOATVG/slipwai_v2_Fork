@@ -26,24 +26,54 @@ The chart names fairways, marks and slices, and the slices do not exist yet when
 "Before the split" means no slice is claimed until the whole chart is there. Both passes are before that,
 and `check-chart` is what says the chart is whole.
 
+## Work it out first. Bring a proposal, not a questionnaire
+
+**Do the whole of pass one yourself before anyone is stopped.** Every question below has evidence in the
+repository, and a stop that opens with blank questions spends a person's attention on work a careful
+reading would have done. So read first, propose an answer to each with the evidence behind it, and then ask
+the person to confirm it or amend it. This is the release-constraint stage's rule — *recommend the answer
+with its reason rather than asking an open question* — applied to the stage that commits a feature's
+contracts.
+
+Three rules keep that honest.
+
+- **Every proposal carries what it was read off**, by file and by line. "`billing customer` and `shipping
+  customer` both appear in spec.md §3, so customer means two things here" is a proposal a person can
+  disagree with. "Two contexts" is a guess wearing a conclusion's clothes.
+- **Say which ones you are unsure about, and why, before the person reads the list.** A proposal offered
+  with the same confidence as every other gets confirmed at the same speed as every other, and the one that
+  was wrong goes through with the rest.
+- **Genuinely undecidable things stay questions.** Where the evidence runs out — whether two vocabularies
+  are two contexts or one with sloppy naming, whether a contract is published or internal — ask it as an
+  open question rather than proposing the likelier answer. A product decision taken by inference is the
+  failure this stage exists to prevent, and a confident wrong proposal is worse than a blank, because a
+  blank gets thought about.
+
 ## Pass one, here: the fairways
 
-A **fairway** is one bounded context's slices, with one holder. Ask, and write down:
+A **fairway** is one bounded context's slices, with one holder. Work out an answer to each of these, then
+put it to the person.
 
-1. **Which bounded contexts does this feature touch?** A bounded context is a part of the product with its
-   own vocabulary, where the same word means something different from what it means next door. Read the
-   specification's vocabulary the way `skills/domain-driven-design/resources/bounded-contexts.md` describes
-   under *The Language Test*: the same word meaning two things, qualifiers creeping in like "billing
-   customer" and "shipping customer", rules that change for different reasons.
-2. **Which service holds each one?** From `project.json`'s `deployables`. Record it on the service too, with
+1. **Which bounded contexts does this feature touch?** Read the specification's vocabulary the way
+   `skills/domain-driven-design/resources/bounded-contexts.md` describes under *The Language Test*: the
+   same word meaning two things, qualifiers creeping in like "billing customer" and "shipping customer",
+   rules that change for different reasons. Propose the contexts, with the words that separate them and
+   where each word appears. A bounded context is a part of the product with its own vocabulary, where the
+   same word means something different from what it means next door.
+2. **Which service holds each one?** Read `project.json`'s `deployables`, each service's recorded `purpose`
+   and its existing `contexts`. Where one service plainly covers a context, propose it. Where none does, or
+   two could, that is a question and not a proposal. Record the confirmed answer on the service with
    `slipwai describe-service <name> --context <context>`, once per context.
-3. **What does each fairway own?** The paths no other fairway writes. A service holding one context owns all
-   of it; a service holding several gives each context its own directory.
+3. **What does each fairway own?** The paths no other fairway writes. Propose them from the layout that is
+   already there: a service holding one context owns all of it; a service holding several gives each
+   context its own directory. Say which directories exist today and which the proposal would create.
 
 ## Pass one, here: the marks
 
-A **mark** is one published contract another slice steers by. Four kinds, each typed in a file the mark
-names, because a contract a reader cannot open is not a contract:
+A **mark** is one published contract another slice steers by. Propose these too, from the specification's
+own nouns and verbs and from the surfaces `mock-states.md` approved: a screen showing an order needs
+something that publishes one, and a state a person approved is a state something has to serve. Four kinds,
+each typed in a file the mark names, because a contract a reader cannot open is not a contract:
 
 | Kind | What it is | What it names |
 |---|---|---|

@@ -69,6 +69,21 @@ alone afterwards. A person answering a question should never have to learn a voc
 stakeholder reading the bridge never agreed to learn one at all. Slice 7.5 already holds the bridge to plain
 labels; this is the same rule everywhere a person is asked or told. Decided 2026-10-07.
 
+**A stop brings a proposal, not a questionnaire.** Every stage that stops for a person does the work first
+and puts an answer to them to confirm or amend. The release-constraint stage already says it — *recommend
+the answer with its reason rather than asking an open question* — and it is the rule everywhere a person is
+stopped: the chart's contexts and services, the mock-up review's surfaces and states, the fairways, the
+release mode. A person's attention is the scarcest thing in this loop and a blank question spends it on
+work a careful reading of the repository would have done.
+
+Three things keep that from becoming a rubber stamp, and they are what make it safe rather than merely
+fast. **Every proposal carries what it was read off**, by file and by line, so it is something a person can
+disagree with rather than a conclusion handed down. **Confidence is said out loud and per item, before the
+list is read**, because a proposal offered as confidently as every other gets confirmed as quickly as every
+other, and the wrong one goes through with the rest. And **where the evidence runs out the question stays a
+question** — a product decision taken by inference is exactly what these stops exist to prevent, and a
+confident wrong proposal is worse than a blank, because a blank gets thought about. Decided 2026-10-07.
+
 Two version 1 terms appear in this document when it describes version 1:
 
 - **The runner** is version 1's `scripts/agents/cruise.py`. It starts one iteration after another in a fresh
@@ -1211,6 +1226,9 @@ The first attempt paid for these rules. They apply from phase 1, inside the fork
   stays a person's act on their own timing. The bridge shows the two apart. Theme B, item 10; theme E.
 - **Facing a person, every slipwai word is paired with the ordinary one.** Section 1, after the vocabulary
   table. A person should not have to learn a vocabulary to answer a question.
+- **A stop brings a proposal, not a questionnaire.** Every stage that stops for a person works the answer
+  out first, with the evidence it was read off and its confidence said per item, and the person confirms or
+  amends. Where the evidence runs out the question stays a question. Section 1.
 - **A mock-up review stage, once per feature, between the specification and the model or the chart.** A
   researcher writes what good looks like from the spec and from comparable workflows, drafts the mock-ups when
   none were handed over, and a person approves the storyboard surface by surface before anything is modelled,
