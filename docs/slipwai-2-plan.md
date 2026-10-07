@@ -1601,7 +1601,7 @@ Depends on: phase 3.
 | 5.12b | Flags at the entry wiring only, and the hygiene gate: `check-flags` refuses a flag hoisted everywhere and never struck. The shape beside the target is 3.4b's | new | M | A flag lives at one `if` at the route or menu, and one overdue to be struck fails the gate | done |
 | 5.13 | The deck log and harbour log formats, written by `/drive`; `.slipwai/logs/` ignored; `refs/slipwai/logs` sync | new | M | A run's status is answerable from the logs after the fact | done |
 | 5.14a | The berth record and its allocation policy in `src/slipwai/berths.py`: a port block per berth, a database per berth, and nothing chosen by hand | new | M | Two berths on one machine collide on neither ports nor databases, and nothing in a berth's record could hold a credential | done |
-| 5.14b | Provisioning a berth: `slipwai berth add / status / remove`, the worktree, and the sandbox per platform | new (#blocked) | L | A berth is created, used and removed on each of the four platforms, leaving nothing behind |  |
+| 5.14b | Provisioning a berth: `slipwai berth add / status / remove`, the worktree, and the sandbox as `none` or `sbx` | new | M | A berth is created, used and removed leaving nothing behind, under both sandbox kinds |  |
 | 5.15 | The decision ceiling, bounded waits, the inbox read at every boundary with receipts | new | M | A message is read within one boundary or forces one | done |
 | 5.16 | Domain knowledge for the skipper | new (#27) | M | A fact in `.specify/domain/` is cited, not guessed | done |
 | 5.18 | The mock-up review as a once-per-feature stage of both profiles: `/mockups` runs a researcher that writes `research.md` from the spec, the domain knowledge and comparable workflows, reviews or drafts one HTML mock-up per surface, storyboards them, and writes `mock-states.md` from the person's approvals; the rung, and the split and the example map reading it | upstream skills + new | M | A feature handed no mock-ups reaches its split with every surface's states carrying a decision, and the rung runs before the model, the chart and the split | done |
@@ -2161,10 +2161,15 @@ the per-app offsets `services.py` already computes), database name `app_<name>`,
 the sandbox kind — and the provisioning that makes the record true. The allocation policy lives in the
 keel (`src/slipwai/berths.py`, answers tier): ports from 8100 upward in blocks of 20, databases suffixed
 by berth, so two berths on one machine cannot collide and no operator holds the table in their head. The
-sandbox is a container under Docker where it is present, a `sandbox-exec` profile on macOS, `bwrap` on
-Linux, and Windows Sandbox on native Windows; the berth holds no credential for the forge, the cloud or
-the chandlery. Tests: two berths allocate disjoint ports and databases; `remove` leaves nothing; the
-sandbox kind is proven on each platform in CI, which is the WSL and Windows work section 7 promised.
+sandbox is one of two kinds, `none` or `sbx`, decided 2026-10-07. `sbx` is Docker Sandboxes, which already
+creates isolated environments for agents and is the same thing on every platform Docker runs on; `none` is
+the honest answer for a single captain on a trusted machine, which is most laptops most of the time. The
+per-platform matrix that was here — `sandbox-exec` on macOS, `bwrap` on Linux, Windows Sandbox on native
+Windows — is gone, and with it the open question about Apple deprecating `sandbox-exec`. Four
+implementations of one idea is four things to keep working, and it was the reason this slice was blocked.
+The berth holds no credential for the forge, the cloud or the chandlery either way. Tests: two berths
+allocate disjoint ports and databases; `remove` leaves nothing; both kinds are exercised, with `sbx`
+skipped where Docker is absent and said rather than silently passed.
 
 **5.15's three rules live in the toolkit, not in `logs.py`.** This plan said "pure functions over log
 lines, in `src/slipwai/logs.py`", and that is the mistake 5.5 made and 5.5b undid: the things that ask —
@@ -2299,8 +2304,13 @@ directly to a private channel. The keel module is `src/slipwai/cli_package.py`, 
 template content read from `assets/package-template/`. Test: `new` on an empty machine, then `check`,
 `release --dry-run`, and `register` into a `file:` channel, for one of each kind.
 
-**6.5 — Signed releases and the trust store.** `release` signs with Sigstore keyless from CI (the OIDC
-identity of the workflow run) or a minisign key from a laptop. `install` verifies: the signature matches
+**6.5 — Signed releases and the trust store.** `release` signs with Sigstore keyless from GitHub Actions,
+using the OIDC identity of the workflow run, and that is the only way a package is signed — a laptop key is
+not offered, because the whole point of keyless is that no publisher holds one. Verification is a vendored
+minimal bundle verifier rather than a shell-out to `cosign`, so an install needs nothing on the machine
+that is not already there. Both halves follow what npm and PyPI landed on independently: npm publishes
+with `--provenance` from CI and verifies in the client, PyPI publishes PEP 740 attestations from Actions
+and ships `pypi-attestations` so a consumer never touches `cosign`. Decided 2026-10-07. `install` verifies: the signature matches
 the `publisher` the index names, and the publisher is in `~/.slipwai/trust.json`, or the person confirms
 it once and it is added. `ROBCOATVG` is pre-seeded. A hand-placed package loads and `list` says
 `unsigned`. Verification is at install and never at build — the Maven analogy. The decision still open
@@ -2492,12 +2502,30 @@ passing mentions, until `grep -ri aws src/slipwai` finds only a comment saying t
 
 Collected from above, so they can be taken before the slice that needs them.
 
-1. **Which Sigstore verifier** (6.5): vendor a minimal bundle verifier, shell out to `cosign`, or
-   minisign-only on laptops with Sigstore only in CI. The keel ships with no dependency and this is the
-   first that would be hard to avoid.
+1. ~~**Which Sigstore verifier**~~ **Decided 2026-10-07, after reading what npm and PyPI actually do.**
+   Keyless Sigstore signing from GitHub Actions for publishing, and a vendored minimal bundle verifier for
+   installing. Both ecosystems reached the same place and for the same reason: *npm* publishes with
+   `--provenance` from CI and verifies with `npm audit signatures` built into the client; *PyPI* publishes
+   PEP 740 attestations by default from Actions and verifies with its own `pypi-attestations`, which exists
+   precisely so a consumer never touches `cosign`. Neither asks a publisher to hold a key and neither asks
+   an installer to install a tool.
+
+   That is the friction that matters, because there are far more installers than publishers: shelling out
+   to `cosign` makes an install fail on a machine that has not got it, and minisign puts key management
+   back on every publisher, which is the thing keyless signing exists to remove. A vendored verifier costs
+   us maintenance when Sigstore's bundle format moves, and that is a cost we can carry and they cannot.
+
+   **One thing the research is worth reading for, beyond the choice.** In May 2026 a worm published 84
+   malicious versions across 42 TanStack packages and reached 172 packages within 48 hours, with valid
+   provenance throughout. Provenance says where a package came from. It says nothing about what the code
+   does. So signing is what makes *confirm a publisher once* mean something — it is the confirmation that
+   limits blast radius, and the signature is only what stops somebody else answering to that name.
 2. **Gitea or GitHub as canonical** after the merge back (8.5).
-3. **The sandbox on macOS** (5.14): `sandbox-exec` is deprecated by Apple and undocumented; the
-   alternative is a container for every berth, which costs a Docker dependency on laptops.
+3. ~~**The sandbox on macOS**~~ **Decided 2026-10-07: two kinds, `none` and `sbx`.** No per-platform
+   matrix, so `sandbox-exec`, `bwrap` and Windows Sandbox are all out and the question they raised is
+   closed. `sbx` is Docker Sandboxes, which already creates isolated environments for agents and is the
+   same on every platform Docker runs on; `none` is the honest option for a single captain on a trusted
+   machine, which is most laptops most of the time. Dropping the matrix is most of 5.14b.
 4. **Where the harbourmaster runs under `/cruise`** (7.1): one machine with captains reaching it through
    the forge, as written, or a small hosted process — the plan says no hosted service before 2.0.0, so
    the first; worth confirming.
