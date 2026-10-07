@@ -12,6 +12,7 @@ things both profiles share and neither optional; this is the file that writes th
 from __future__ import annotations
 
 import json
+import re
 import unittest
 
 import checkout_packages  # noqa: F401
@@ -23,7 +24,9 @@ from slipwai.project import (
     docs_index,
     drive_settings,
     evolving,
+    ladder,
     parallel_slices,
+    stage_models,
 )
 
 
@@ -96,6 +99,100 @@ class PagesTest(unittest.TestCase):
         for write in (evolving.evolving_page, agent_targets.agent_targets):
             with self.subTest(page=write.__name__):
                 self.assertGreater(len(write().splitlines()), 3)
+
+
+def every_rung() -> str:
+    """The ladder with every condition met, so a conditional rung is present rather than quietly absent.
+
+    No apps: the two rungs a browser app adds are a project's own answer, allowed but not required, and
+    resolving a backend here would need a language package this gate deliberately does not install.
+    """
+    return ladder.drive_ladder(event=True, apps=[], target="aws")
+
+
+def headings(text: str) -> list[str]:
+    """Each rung's heading, in ladder order: a rung opens `<n>. **Heading** — `."""
+    return re.findall(r"^\d+\. \*\*(.+?)\*\*", text, re.MULTILINE)
+
+
+def rung_bodies(text: str) -> dict[str, str]:
+    """Each rung's heading against its own text. Rungs are numbered, not separated by a blank line."""
+    parts = re.split(r"^(?=\d+\. \*\*)", text, flags=re.MULTILINE)
+    return {headings(part)[0]: part for part in parts if headings(part)}
+
+
+class LadderTest(unittest.TestCase):
+    """The page and the model table say the same thing about what the rungs are, or the gate says so.
+
+    In version 1 the ladder was a list of prose in one function and the models were a table in another, and
+    the only thing keeping them in step was whoever last edited both. A stage with no rung is a model
+    nothing runs on; a rung with no stage is a step nobody priced. Both are refused here, so slice 5.8's
+    review rung cannot be added to one without the other.
+    """
+
+    def test_every_rung_of_the_table_is_a_rung_of_the_page(self) -> None:
+        written = headings(every_rung())
+        for key, title in stage_models.rung_titles().items():
+            with self.subTest(stage=key):
+                self.assertIn(title, written, f"{key} is a rung of the table and the ladder does not name it")
+
+    def test_a_rung_the_table_does_not_know_is_refused(self) -> None:
+        """Except the four a project's own answers add, which run on the stage above them."""
+        known = set(stage_models.rung_titles().values()) | set(ladder.ANSWER_RUNGS)
+        for heading in headings(every_rung()):
+            with self.subTest(rung=heading):
+                self.assertIn(heading, known, f"{heading!r} is a rung no stage of the model table names")
+
+    def test_the_stages_that_are_not_rungs_are_the_three_cruise_delegates(self) -> None:
+        """The skipper, the hand and the bosun take a model and a brief, and no step of the ladder."""
+        self.assertEqual([stage.key for stage in stage_models.STAGES if not stage.rung],
+                         ["skipper", "hand", "bosun"])
+
+    def test_the_merge_rung_exists_and_is_nobody_s_delegate(self) -> None:
+        """Rule 10: a person holds the merge until a captain enforces the boundaries."""
+        merge = next(stage for stage in stage_models.STAGES if stage.key == "merge")
+        self.assertEqual(merge.title, "Merge to main")
+        self.assertFalse(merge.delegable)
+
+    def test_the_ladder_does_not_stop_at_the_demo(self) -> None:
+        """The three rungs that decide whether a slice may merge were prose in version 1, read once."""
+        written = headings(every_rung())
+        self.assertEqual(written[-3:], ["Adversary", "Mutation gate", "Merge to main"])
+
+    def test_the_implement_rung_names_the_cycle_and_where_the_widths_are_read(self) -> None:
+        rung = " ".join(rung_bodies(every_rung())["Implementation"].split())
+        self.assertIn("RED-GREEN-REFACTOR", rung)
+        self.assertIn(drive_settings.CONFIG, rung)
+        for veto in ("story tag", "number its rules"):
+            with self.subTest(veto=veto):
+                self.assertIn(veto, rung)
+
+    def test_a_slice_too_narrow_for_its_setting_runs_narrower_rather_than_failing(self) -> None:
+        """The done-when of slice 5.2: the fallbacks are written where the agent reads them."""
+        self.assertIn("runs narrower and says so; it does not fail", " ".join(every_rung().split()))
+
+    def test_only_the_merge_rung_runs_the_full_gate(self) -> None:
+        """Theme B, item 9. An increment that pays for the whole suite is the habit version 2 drops."""
+        rungs = rung_bodies(every_rung())
+        self.assertIn("make verify", rungs["Merge to main"])
+        for heading, body in rungs.items():
+            if heading in {"Merge to main", "Principles"}:  # Principles runs `make check-constitution`
+                continue
+            with self.subTest(rung=heading):
+                self.assertNotIn("make verify", body, f"{heading} runs the full gate; only the merge may")
+
+
+class HookPointTest(unittest.TestCase):
+    def test_the_points_are_named_in_the_order_they_fire(self) -> None:
+        """A hook that fires in a different order than the page says is a hook nobody can reason about."""
+        written = re.findall(r"`(before-stage|after-stage|boundary|before-merge)`", ladder.hook_points())
+        self.assertEqual(written[:4], ["before-stage", "after-stage", "boundary", "before-merge"])
+
+    def test_a_hook_is_never_fatal_to_the_rung(self) -> None:
+        """6.1's rule, written where `/drive` reads it: the captain depends on no hook, and neither does this."""
+        text = ladder.hook_points()
+        self.assertIn("never fatal to the rung", " ".join(text.split()))
+        self.assertIn("Nothing in this ladder depends on a hook", text)
 
 
 if __name__ == "__main__":  # pragma: no cover

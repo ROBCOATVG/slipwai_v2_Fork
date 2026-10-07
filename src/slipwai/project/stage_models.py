@@ -55,6 +55,14 @@ class Stage:
     role: str
     writes: str | None = None
     commands: str | None = None
+    # The heading the rung carries in `commands/drive.md`, so the page and this table cannot drift apart.
+    # Two stages may share one: a plan and the tasks cut from it are one rung and two models. A stage that
+    # is not a rung of the ladder carries none, and `rung` says which it is.
+    title: str = ""
+
+    @property
+    def rung(self) -> bool:
+        return bool(self.title)
 
     @property
     def delegable(self) -> bool:
@@ -68,21 +76,25 @@ class Stage:
 
 # The default split, in ladder order. Projections are a Python script here and have no row.
 STAGES: tuple[Stage, ...] = (
-    Stage("principles", "strong"),
-    Stage("specify", "strong"),
-    Stage("event-model", "strong"),
-    Stage("split", "strong"),
-    Stage("example-map", "strong"),
+    Stage("principles", "strong", title="Principles"),
+    Stage("specify", "strong", title="Product specification"),
+    Stage("event-model", "strong", title="Event model"),
+    Stage("split", "strong", title="Split"),
+    Stage("example-map", "strong", title="Example map"),
     # Both `/gaps` passes share this row; only the one after implementation is delegated, and it reads.
-    Stage("gaps", "strong", writes=NONE, commands=READ_ONLY),
-    Stage("release-constraint", "strong"),
-    Stage("plan", "strong"),
-    Stage("tasks", "fast", writes=TASKS, commands=TASK_COMMAND),
-    Stage("implement", "fast", writes=MANIFEST, commands=ANY),
-    Stage("converge", "strong", writes=MANIFEST, commands=ANY),
-    Stage("demo", "strong"),
-    Stage("adversary", "strong", writes=NONE, commands=READ_ONLY),
-    Stage("mutation", "fast", writes=REPORT, commands=ANY),
+    Stage("gaps", "strong", writes=NONE, commands=READ_ONLY, title="Slice gaps"),
+    Stage("release-constraint", "strong", title="Release constraint"),
+    Stage("plan", "strong", title="Plan and tasks"),
+    Stage("tasks", "fast", writes=TASKS, commands=TASK_COMMAND, title="Plan and tasks"),
+    Stage("implement", "fast", writes=MANIFEST, commands=ANY, title="Implementation"),
+    Stage("converge", "strong", writes=MANIFEST, commands=ANY, title="Convergence"),
+    Stage("demo", "strong", title="Demo"),
+    Stage("adversary", "strong", writes=NONE, commands=READ_ONLY, title="Adversary"),
+    Stage("mutation", "fast", writes=REPORT, commands=ANY, title="Mutation gate"),
+    # The rung that ends a slice. It is nobody's delegate: rule 10 of the plan holds the merge to a person
+    # until a captain enforces the boundaries, and a fresh context has no business deciding how dark a
+    # merge is. Slice 5.12 gives it the release mode to read, 5.7 the one full gate it runs.
+    Stage("merge", "strong", title="Merge to main"),
     # The two `/cruise` delegates: the skipper decides a product question the ladder would have asked a person,
     # the hand runs the demo as the actor. Neither is a rung; both are stages so the table names their model and
     # the benchmark records their cost. `skipper` has a role of its own so a project can put a bigger model on
@@ -93,6 +105,16 @@ STAGES: tuple[Stage, ...] = (
     # it writes the files its brief names, on the skipper's role: unblocking is judgement, not typing.
     Stage("bosun", "skipper", writes=MANIFEST, commands=ANY),
 )
+def rungs() -> tuple[Stage, ...]:
+    """The stages that are rungs of the ladder, in ladder order. `/cruise`'s three delegates are not."""
+    return tuple(stage for stage in STAGES if stage.rung)
+
+
+def rung_titles() -> dict[str, str]:
+    """Each rung stage's key against the heading it carries, for a page that must not invent one."""
+    return {stage.key: stage.title for stage in rungs()}
+
+
 DEFAULT_ROLE = "strong"
 HOST = "host"
 SKIPPER = "skipper"

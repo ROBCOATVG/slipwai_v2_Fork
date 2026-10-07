@@ -1255,7 +1255,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 37 of 91 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 1/18, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 38 of 91 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 2/18, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1511,7 +1511,7 @@ Depends on: phase 3.
 | Slice | What | From | Size | Done when | Status |
 |---|---|---|---|---|---|
 | 5.1 | The skills, renamed to the vocabulary where a name changed, `docs/rename.json` begun | upstream | M | Every skill present; the rename table has a row per rename | done |
-| 5.2 | The commands and agents, the ladder in `drive.md`, the stop table, and `.specify/drive.json`: the `delegate` and `cycle` widths, the refusal of `story` as a cycle unit, and the fallbacks that run a slice narrower than the setting asks | upstream | L | `/drive` runs one slice to a demo on a generated project, red-green-refactor per the configured width, and a slice with no story tag falls to `rule` rather than failing |  |
+| 5.2 | The commands and agents, the ladder in `drive.md`, the stop table, and `.specify/drive.json`: the `delegate` and `cycle` widths, the refusal of `story` as a cycle unit, and the fallbacks that run a slice narrower than the setting asks | upstream | L | `/drive` runs one slice to a demo on a generated project, red-green-refactor per the configured width, and a slice with no story tag falls to `rule` rather than failing | done |
 | 5.3 | Fairways: the `## Fairways` table in the split, `/drive fairway=<name>`, the boards grouped by fairway | `slipwai-workstreams` | M | Two fairways on one machine, merges independent |  |
 | 5.4 | The chart: `chart.yaml` schema, `make chart` on the event profile, `/chart` on the standard profile, `check-chart` | new | L | Both profiles produce a chart a reader can diff |  |
 | 5.5 | Clearance and the one-setter-per-mark rule in `check-model` and `check-chart`; typed attributes and `examples.md` at the split | new (#32) | M | A fresh fairway fans out on its first iteration |  |
@@ -1719,7 +1719,10 @@ made before the rename). **Slice 8.3 carries it**, and its done-when gains: an i
 **5.2 — The ladder in `drive.md`, the stop table, and `.specify/drive.json`.** `drive.md` is the command
 that runs one slice through every stage; it exists in version 1 and is rewritten here to the ladder
 section 5 draws — example map, gaps, plan and tasks, implement, converge and demo, review and reshape,
-adversary, mutation, merge — with each stage's model role read from `stage_models.STAGES`. The stop table
+adversary, mutation, merge — with each stage's model role read from `stage_models.STAGES`. The review rung is the one exception
+and stays with 5.8, which is the slice that gives it a role and a command: 5.2 instead makes the page and
+the table hold each other, so a stage added to `STAGES` with no rung on the page, or a rung the table does
+not name, fails the gate. 5.8 then cannot add one without the other. Corrected 2026-10-07 while doing 5.2. The stop table
 (`project/cruise_stops.py`, back since 3.3c) stays as it is. `.specify/drive.json` is written by
 `project/drive_settings.py` (back since 3.3b) with `delegate: story` and `cycle: rule`; what is new is
 that `drive.md` *reads* it and says, at the implement stage, which width it is running at and why it fell
