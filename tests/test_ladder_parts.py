@@ -107,12 +107,19 @@ class PagesTest(unittest.TestCase):
 
 
 def every_rung() -> str:
-    """The ladder with every condition met, so a conditional rung is present rather than quietly absent.
+    """The event profile's ladder with every other condition met, so a conditional rung is present.
 
     No apps: the two rungs a browser app adds are a project's own answer, allowed but not required, and
     resolving a backend here would need a language package this gate deliberately does not install.
     """
     return ladder.drive_ladder(event=True, apps=[], target="aws")
+
+
+def both_profiles() -> list[str]:
+    """Every rung either profile has. Two of them are each profile's own answer to one question: the event
+    model is a rung only where there is a model, and the chart stage only where there is not."""
+    return [heading for event in (True, False)
+            for heading in headings(ladder.drive_ladder(event=event, apps=[], target="aws"))]
 
 
 def headings(text: str) -> list[str]:
@@ -136,15 +143,23 @@ class LadderTest(unittest.TestCase):
     """
 
     def test_every_rung_of_the_table_is_a_rung_of_the_page(self) -> None:
-        written = headings(every_rung())
+        written = both_profiles()
         for key, title in stage_models.rung_titles().items():
             with self.subTest(stage=key):
-                self.assertIn(title, written, f"{key} is a rung of the table and the ladder does not name it")
+                self.assertIn(title, written, f"{key} is a rung of the table and no profile's ladder names it")
+
+    def test_each_profile_answers_the_typing_question_its_own_way_and_only_once(self) -> None:
+        """The event model and the chart are one question: what types the work. Never both, never neither."""
+        for event, expected in ((True, "Event model"), (False, "Chart")):
+            with self.subTest(event=event):
+                written = headings(ladder.drive_ladder(event=event, apps=[], target="aws"))
+                self.assertIn(expected, written)
+                self.assertNotIn("Chart" if event else "Event model", written)
 
     def test_a_rung_the_table_does_not_know_is_refused(self) -> None:
         """Except the four a project's own answers add, which run on the stage above them."""
         known = set(stage_models.rung_titles().values()) | set(ladder.ANSWER_RUNGS)
-        for heading in headings(every_rung()):
+        for heading in both_profiles():
             with self.subTest(rung=heading):
                 self.assertIn(heading, known, f"{heading!r} is a rung no stage of the model table names")
 

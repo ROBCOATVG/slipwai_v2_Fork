@@ -82,6 +82,9 @@ STAGES: tuple[Stage, ...] = (
     # second half is a person approving surfaces one at a time, which is not a thing to delegate.
     Stage("mockups", "strong", title="Mock-up review"),
     Stage("event-model", "strong", title="Event model"),
+    # The standard profile's answer to the same question, and a rung only there: the event profile
+    # renders its chart from the model with `make chart` rather than stopping for one.
+    Stage("chart", "strong", title="Chart"),
     Stage("split", "strong", title="Split"),
     Stage("example-map", "strong", title="Example map"),
     # Both `/gaps` passes share this row; only the one after implementation is delegated, and it reads.

@@ -24,6 +24,8 @@ from pathlib import Path
 
 import checkout_packages  # noqa: F401
 
+from slipwai import toolkit
+
 ROOT = Path(__file__).resolve().parents[1]
 GATE = ROOT / "assets/toolkit/scripts/check-chart.py"
 
@@ -255,6 +257,57 @@ class RenderedChartTest(unittest.TestCase):
         done = self.render()
         self.assertEqual(done.returncode, 0)
         self.assertIn("written by /chart on this profile", done.stdout)
+
+
+class ChartStageTest(unittest.TestCase):
+    """`/chart`, the standard profile's answer to what the event model is on the other one."""
+
+    COMMAND = ROOT / "assets/toolkit/commands/chart.md"
+    SPLIT = ROOT / "assets/toolkit/skills/story-splitting/SKILL.md"
+
+    def text(self) -> str:
+        return " ".join(self.COMMAND.read_text(encoding="utf-8").split())
+
+    def test_it_ships_and_is_documented_on_both_profiles(self) -> None:
+        """It ships everywhere and is a rung only where there is no model; a reader of either may open it."""
+        self.assertTrue(self.COMMAND.is_file())
+        for profile in ("event-modelling", "standard"):
+            with self.subTest(profile=profile):
+                self.assertEqual(toolkit.toolkit_treatment("commands/chart.md", profile, set()), "copied")
+
+    def test_it_types_all_four_mark_kinds_and_says_what_each_names(self) -> None:
+        text = self.text()
+        for kind in ("`event`", "`schema`", "`route`", "`port`"):
+            with self.subTest(kind=kind):
+                self.assertIn(kind, text)
+        self.assertIn("a contract a reader cannot open is not a contract", text)
+
+    def test_it_says_a_mark_is_set_once_and_never_moved(self) -> None:
+        """Which is why it is a stop with a person rather than a form."""
+        text = self.text()
+        self.assertIn("set once and never moved", text)
+        self.assertIn("fairways/<name>/chart.d/", text)
+
+    def test_the_two_passes_are_named_and_so_is_what_before_the_split_means(self) -> None:
+        """The slices do not exist when this stage runs, so the chart is written in two passes."""
+        text = self.text()
+        self.assertIn("This stage writes `fairways` and `marks`", text)
+        self.assertIn("The split writes `slices`", text)
+        self.assertIn("no slice is claimed until the whole chart is there", text)
+
+    def test_the_split_fills_in_the_slices_block_and_names_the_capability_as_a_judgement(self) -> None:
+        split = " ".join(self.SPLIT.read_text(encoding="utf-8").split())
+        self.assertIn("specs/<feature>/chart.yaml`'s `slices` block", split)
+        self.assertIn("It is a product judgement, taken here because a person is present", split)
+        self.assertIn("One mark has exactly one setter", split)
+
+    def test_the_split_says_the_event_profile_does_not_write_this_block(self) -> None:
+        """It is rendered there, and a split that wrote it too would be a second answer."""
+        split = " ".join(self.SPLIT.read_text(encoding="utf-8").split())
+        self.assertIn("rendered by `make chart` from `model.yaml` and is not written here", split)
+
+    def test_facing_a_person_the_words_are_paired_with_the_ordinary_ones(self) -> None:
+        self.assertIn("the slipwai word and the ordinary one", self.text())
 
 
 if __name__ == "__main__":  # pragma: no cover

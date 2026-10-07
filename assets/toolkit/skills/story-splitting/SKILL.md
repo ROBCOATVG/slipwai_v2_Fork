@@ -269,6 +269,22 @@ Why this first: [value, risk, learning, or bargain]
 |---|---|---|---|---|---|---|
 | ... | ... | ... | ... | ... | ... | ... |
 
+## Chart
+
+Fill in `specs/<feature>/chart.yaml`'s `slices` block, one entry per slice above. `/chart` wrote the
+fairways and the marks before this split; the slices are the half only a split can write.
+
+| Field | What it says |
+|---|---|
+| `fairway` | Which of the chart's fairways the slice belongs to |
+| `capability` | The chunk of work the slice is part of, and what a person's demo is of. Usually several slices share one. It is a product judgement, taken here because a person is present and will not reliably be later |
+| `sets` | The marks this slice publishes, from the chart's `marks`. One mark has exactly one setter |
+| `steers_by` | The marks it builds against, each set by some other slice |
+
+On the event-modelling profile this block is rendered by `make chart` from `model.yaml` and is not written
+here. `make check-chart` refuses a chart whose slices name no capability, set one mark twice, or steer by a
+mark nobody sets.
+
 *Surfaces and states* names what of the feature's surfaces this slice delivers, as
 `<surface> · <state>` pairs read from `specs/<feature>/mockups/mock-states.md`. A slice may only name a
 state that file marks `approved`: a `parked` one is a question still open, and a surface or state that is

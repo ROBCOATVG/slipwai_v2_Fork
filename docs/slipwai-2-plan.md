@@ -1307,7 +1307,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 42 of 95 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 6/22, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 43 of 95 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 7/22, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1567,7 +1567,7 @@ Depends on: phase 3.
 | 5.3 | Fairways: the `## Fairways` table in the split, `/drive fairway=<name>`, the boards grouped by fairway | `slipwai-workstreams` | M | Two fairways on one machine, merges independent |  |
 | 5.4a | The chart's shape and its gate: the five rules in `scripts/check-chart.py`, the `check-chart` target in a generated project's `Makefile` and its `verify` chain | new | M | A hand-written chart passes; one with an untyped mark, a mark nobody sets, a mark two slices set, a withdrawn mark or a slice in no capability is refused by name | done |
 | 5.4b | `make chart` on the event profile: `chart.yaml` rendered from `model.yaml`, and `check-chart` failing when the two disagree | new | M | The rendered chart and the model cannot drift, the way `check-drawio` holds the canvas | done |
-| 5.4c | `/chart` on the standard profile, and the `story-splitting` change that groups slices under the capabilities they complete | new | M | A standard-profile feature reaches its split with a chart a reader can diff, and every slice in a capability, with no flag and no target |  |
+| 5.4c | `/chart` on the standard profile, and the `story-splitting` change that groups slices under the capabilities they complete | new | M | A standard-profile feature reaches its split with a chart a reader can diff, and every slice in a capability, with no flag and no target | done |
 | 5.5 | Clearance and the one-setter-per-mark rule in `check-model` and `check-chart`; typed attributes and `examples.md` at the split | new (#32) | M | A fresh fairway fans out on its first iteration |  |
 | 5.6 | `check-slice-scope` reads the chart for owned paths on both profiles | upstream + new | M | The standard profile holds a context boundary |  |
 | 5.7 | Two gates: `make unit` in generated projects, the ladder's fast checks per increment, the full gate before `main` | new | M | A slice's increments never run the full suite |  |
@@ -1903,9 +1903,17 @@ mapping to JSON Schema's, so the renderer would have to invent one — and that 
 names `docs/event-model/model.yaml` with the event as its fragment, which is a contract a reader can open
 and a gate can check. The standard profile writes JSON Schema files because it has no model; this profile
 has one, which is the whole difference between them. Decided 2026-10-07 while doing the slice.
-**5.4c** is the standard profile's `/chart` stage, and the `story-splitting` change that groups slices under
-the capabilities they complete, which is where the capability the gate demands actually comes from.
-`src/slipwai/project/chart.py` arrives with them; 5.5 adds `cleared()` to it.
+**5.4c** is the standard profile's `/chart` stage, and the `story-splitting` change that fills in the
+chart's `slices` block, which is where the capability the gate demands actually comes from.
+
+**It resolved an inconsistency this plan carried.** Theme C says the chart is written before the split, and
+the standard-profile figure draws `/chart` before `Split` while also saying `/chart` writes "marks set +
+steered by, per slice". Both cannot be true: the slices do not exist until the split cuts them. So the
+chart is written in two passes, and "before the split" is read as what it was protecting — **no slice is
+claimed until the whole chart is there**. `/chart` writes `fairways` and `marks`, which are the decisions
+the cutting depends on. The split writes `slices`: the fairway, the capability, the marks set and the marks
+steered by. `check-chart` is what says the chart is whole, and on the event profile `make chart` renders
+both passes at once. Resolved 2026-10-07 while doing the slice.
 
 **5.5 — Clearance.** The rule issue #32 asked for. A slice may start when every mark it steers by is set
 by a slice that is `planned` or `implemented`; its own marks it sets itself, at its first stage. The

@@ -73,6 +73,15 @@ def drive_ladder(
    context; `--purpose` records what the service owns the same way), and place each slice with
    `context:`. One vocabulary is one context; say so and move on."""
         )
+    if not event:
+        stages.append(
+            """**Chart** — `specs/<feature>/chart.yaml` names this feature's fairways and types every mark
+   they publish, and its `marks` each name a file that is in the tree. Otherwise run `/chart`. This is the
+   standard profile's answer to what the event model is on the other one, and it is a stop with a person:
+   a mark is set once and never moved, so every entry is a commitment another fairway will build against.
+   The chart's `slices` block is filled in at the split, and nothing is claimed until `make check-chart`
+   passes over the whole of it."""
+        )
     stages.append(
         """**Split** — the work is ordered vertical slices rather than one undivided outcome. Otherwise run
    `/story-splitting`."""

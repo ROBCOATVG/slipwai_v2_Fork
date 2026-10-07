@@ -206,7 +206,7 @@ than an open question.
 
 # Every command a generated project carries, in the order `docs/skills-and-commands.md` lists them — the last
 # three reaching back out to the keel. One list, so the documentation and the files cannot disagree.
-BASE_COMMANDS = ("drive", "mockups", "example-map", "where-are-we", "whats-next", "gaps", "adversary", "mutation",
+BASE_COMMANDS = ("drive", "mockups", "chart", "example-map", "where-are-we", "whats-next", "gaps", "adversary", "mutation",
                  "constitution-coverage",
                  "model-delegation-settings", "drive-settings", "benchmark", "cruise", "cruise-settings",
                  "cruise-status", "cruise-stop", "cruise-tell", "cruise-watch", "add-service", "add-frontend",
