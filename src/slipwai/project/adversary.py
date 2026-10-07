@@ -125,8 +125,19 @@ implementation under a new `implement` entry. This boundary is what lets the ben
 itself cost.
 
 Each finding carries a severity — `CRITICAL` (data of one actor reaches another, or an actor gains a role),
-`HIGH`, `MEDIUM`, `LOW` — and a state: `open`, `fixed` with the commit, or `deferred` with the person's name
-and their reason, in their words. **An open `CRITICAL` is the next slice**, placed ahead of every product and
+`HIGH`, `MEDIUM`, `LOW` — and a state: `open`, `fixed` with the commit, `stowed` into the fairway's careen,
+or `deferred` with the person's name and their reason, in their words.
+
+**One round, and a bar.** The pass runs once per slice, not until it converges: in the experiment it ran 21
+rounds and produced 129 findings, 64 of them LOW and most of those about wording, and slice S20 still ended
+with five open. A finding at or above the fairway's severity bar closes before the merge. One below it is
+**stowed** — a row in `fairways/<name>/careen.md` naming this slice — and the slice merges. The careen is a
+hardening slice the fairway runs when its planned slices are done, and its demo is that the findings are
+closed. Work is never dropped; it is moved somewhere a person can see the size of it. The bar is the
+harbour's to set and defaults to `MEDIUM`, because the experiment's LOWs were genuinely wording and its
+MEDIUMs genuinely were not.
+
+**An open `CRITICAL` is the next slice**, placed ahead of every product and
 method slice in the split until it is fixed or a person defers it in that row; the loop's Convergence stage
 offers it first and `/story-splitting` places it there. A triage row that states what a dependency does by
 default — a driver's TLS mode, a framework's role prefix, a runner's reporter — cites the artefact it was

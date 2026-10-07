@@ -51,4 +51,21 @@ Read `skills/mutation-testing/SKILL.md`. Target changed production code and use 
 project has configured it. Mutation tooling is intentionally not part of the mandatory repository gate: if it
 is absent, report the exact setup decision needed instead of pretending mutations ran. Classify survivors,
 add tests only for meaningful behavioural gaps, then finish with `make verify`.
+
+## It is a gate, not a report
+
+A slice merges at its threshold or it does not merge. In the first attempt the score was a number in a
+report and the gaps moved on: 18 from S08 to S09, 31 from S09 to S13, 46 from S12 to S13, until two whole
+slices existed only to collect the debt. A slice that inherits a gap pays for it without having chosen to,
+and the slice that made it has already been accepted.
+
+So nothing is carried. A survivor is one of three things, said out loud and in this order: a behavioural
+gap, which is a test written now; an equivalent mutant, which is recorded as one with its reason; or a
+decision that this code does not warrant the test, which goes to the fairway's careen as a stowed row with
+the slice that stowed it. What is not available is a fourth answer where the number is noted and the slice
+merges anyway.
+
+A run that cannot happen at all — no tooling configured — is the setup decision above, reported as a stop
+rather than passed as a score. A gate that is green because it did not run is the one failure mode worse
+than a red one.
 {scoping}"""

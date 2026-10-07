@@ -9,6 +9,7 @@ from ..targets import managed
 from .add_commands import add_command_files
 from .adversary import adversary_command
 from .benchmark import benchmark_command, what_each_stage_costs
+from .careen import careen_command
 from .catch_up_command import catch_up_files
 from .cruise import cruise_command, cruise_settings_command
 from .cruise_seat import cruise_status_command, cruise_stop_command, cruise_tell_command, cruise_watch_command
@@ -206,7 +207,7 @@ than an open question.
 
 # Every command a generated project carries, in the order `docs/skills-and-commands.md` lists them — the last
 # three reaching back out to the keel. One list, so the documentation and the files cannot disagree.
-BASE_COMMANDS = ("drive", "mockups", "chart", "example-map", "where-are-we", "whats-next", "gaps", "adversary", "mutation",
+BASE_COMMANDS = ("drive", "mockups", "chart", "example-map", "careen", "where-are-we", "whats-next", "gaps", "adversary", "mutation",
                  "constitution-coverage",
                  "model-delegation-settings", "drive-settings", "benchmark", "cruise", "cruise-settings",
                  "cruise-status", "cruise-stop", "cruise-tell", "cruise-watch", "add-service", "add-frontend",
@@ -227,6 +228,7 @@ def command_files(
     """`commands/`: one file per command, adapted to this profile and the services' backends."""
     files = {
         "commands/drive.md": drive_command(event, apps, target, layout, adoption),
+        "commands/careen.md": careen_command(layout),
         "commands/cruise.md": cruise_command(event, apps, target, layout, adoption),
         "commands/cruise-settings.md": cruise_settings_command(layout),
         "commands/cruise-status.md": cruise_status_command(layout),

@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 48 of 96 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 12/22, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 49 of 97 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 13/23, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1590,7 +1590,8 @@ Depends on: phase 3.
 | 5.6 | `check-slice-scope` reads the chart for owned paths on both profiles | upstream + new | M | The standard profile holds a context boundary | done |
 | 5.7 | Two gates: `make unit` in generated projects, the ladder's fast checks per increment, the full gate before `main` | new | M | A slice's increments never run the full suite | done |
 | 5.8 | Review and refactor as a ladder stage, with a review role in the model table | new | M | A slice merges with review findings closed | done |
-| 5.9 | Adversary once with a bar, mutation as a gate, stage budgets, stow, the careen | new (#29) | L | A stage over budget stows; CRITICAL never does |  |
+| 5.9a | Adversary once with a bar, mutation as a gate, and the careen: the stowing rules, `fairways/<name>/careen.md`, and `/careen` as the hardening slice each fairway runs | new (#29) | M | A finding below the bar is stowed and the slice merges; one at or above it closes first; a CRITICAL is never stowed | done |
+| 5.9b | Stage budgets in `harbour.json`, and a stage over budget stowing what is left into the careen | new (#29) | M | A stage over budget stows and says so; what is left above the bar parks for a person |  |
 | 5.10 | Ids with the fairway in them; per-fairway `decisions.md`, adversary log, register; rendered aggregates on `main` | new | L | Two fairways decide in parallel and nothing renumbers |  |
 | 5.11 | Composition root rendered from the chart; one file per event with a rendered index | new | M | Two slices add an event each and merge without touching one line |  |
 | 5.12 | The four release modes, the product state in `project.json`, the shape beside the target, flags at the entry wiring only, the hygiene gate | new | L | A slipway product runs the loop with no flag reader; an in-service one keeps every guarantee |  |
@@ -1768,8 +1769,8 @@ composition root, release modes, berths, inbox and domain knowledge, each of whi
 ```
 5.1 skills ─► 5.2 ladder ─► 5.17 example map ─► 5.18 mock-up review ─► 5.4a chart gate ─► 5.4b make chart
    ─► 5.4c /chart ─► 5.5 clearance ─► 5.6 scope ─► 5.3 fairways
-   ─► 5.7 two gates ─► 5.8 review ─► 5.9 adversary, careen ─► 5.13 logs ─► 5.10 ids
-   ─► 5.19 capability demo ─► 5.20 surfaces held ─► 5.11 composition ─► 5.12 release modes ─► 5.14 berths ─► 5.15 inbox ─► 5.16 domain
+   ─► 5.7 two gates ─► 5.8 review ─► 5.9a adversary, careen ─► 5.13 logs ─► 5.10 ids
+   ─► 5.19 capability demo ─► 5.20 surfaces held ─► 5.9b budgets ─► 5.11 composition ─► 5.12 release modes ─► 5.14 berths ─► 5.15 inbox ─► 5.16 domain
 ```
 
 **5.1 — The skills, renamed.** The 53 skills are already in `assets/toolkit/skills/` from slice 3.2 and in
@@ -1978,7 +1979,11 @@ code — with `make unit` green after each step. The model table gains a `review
 a different model on reviewing than on writing. Done when a slice cannot reach adversary with an open
 review finding.
 
-**5.9 — Adversary once, mutation as a gate, budgets, stow, the careen.** Issue #29's work. Adversary runs
+**It lands in two.** 5.9a is the bar, the careen and the two gates it feeds; 5.9b is the stage budgets,
+which need `harbour.json` and therefore wait on the telegraph (7.3) for anywhere to read a number from.
+Split 2026-10-07 while doing it.
+
+**5.9a/b — Adversary once, mutation as a gate, budgets, stow, the careen.** Issue #29's work. Adversary runs
 one round, with a severity bar read from `harbour.json` (7.3; a default of `MEDIUM` until then): findings
 above the bar must close before merge, LOW ones are *stowed* — written to `fairways/<name>/careen.md` with
 the slice id — and the careen is a slice of its own that each fairway runs when its planned slices are
@@ -2386,7 +2391,7 @@ Collected from above, so they can be taken before the slice that needs them.
 
 ### A realistic shape for the calendar
 
-Phase 5 is twenty-two slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
+Phase 5 is twenty-three slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
 beside each other and are each about three weeks. Phase 8 is a week of machinery and a release. Phase 9
 is a fortnight of writing against real runs. Phase 10 is after the release and is its own month. The
 prerequisite — the six packages rebuilt — took the evening of 6 October, and found four keel faults on the way.
