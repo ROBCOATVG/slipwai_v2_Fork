@@ -59,7 +59,12 @@ DECISION_FIELDS = ("Stage", "Question", "Options", "Decision", "Why", "Decided b
                    "Status")
 DEMO_FIELDS = ("Started with", "Driven through", "Examples", "Evidence", "Feedback")
 VERDICTS = ("accepted", "behaviour", "implementation")
-DECISION_HEADING = re.compile(r"^## D(\d+) — (.+)$")
+# `D7` is version 1's, and a project that has them keeps them: renumbering a shipped id to a new scheme is
+# the cost this scheme exists to avoid, and every citation of one was correct when it was written. `D-ORD-07`
+# is version 2's, counted per fairway out of its own deck log so that two fairways cannot mint one id —
+# which in the first attempt cost 54 renumbering commits in a night, one of them rewriting 91 citations.
+DECISION_HEADING = re.compile(r"^## D-(?:(?P<fairway>[A-Za-z0-9][A-Za-z0-9_-]*)-)?(?P<n>\d+) — (.+)$"
+                              r"|^## D(?P<old>\d+) — (.+)$")
 DEMO_HEADING = re.compile(r"^## (\S+) — (\w+) · iteration (\d+) · drive-hand \((.+)\)$")
 # The bosun's entries name the type alone or with the model, because the command tells it `Decided by: drive-bosun`
 # and the skipper's habit of naming its model is one it may share.
@@ -113,10 +118,19 @@ def check_decisions(path: Path) -> list[str]:
         if heading is None:
             findings.append(f"{where}: a heading that is not `## D<n> — <question>`")
             continue
-        number = int(heading.group(1))
-        if number != expected:
-            findings.append(f"{where}: D{number} where D{expected} was expected — entries are numbered contiguously")
-        expected = number + 1
+        fairway = heading.group("fairway")
+        number = int(heading.group("n") or heading.group("old"))
+        if fairway is None:
+            # Version 1's contiguous numbering, held as it always was for a file that still uses it.
+            if number != expected:
+                findings.append(f"{where}: D{number} where D{expected} was expected — entries are numbered "
+                                f"contiguously")
+            expected = number + 1
+        else:
+            # Per fairway, and a feature-level file is rendered from several of them — so the numbers in it
+            # are contiguous within each fairway and interleaved across them. Holding the whole file to one
+            # run of numbers would refuse exactly the file version 2 renders.
+            expected = max(expected, 1)
         missing = [field for field in DECISION_FIELDS if field not in fields]
         if missing:
             findings.append(f"{where}: D{number} is missing {', '.join(f'**{field}:**' for field in missing)}")

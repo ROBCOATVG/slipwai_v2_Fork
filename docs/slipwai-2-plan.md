@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 51 of 98 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 15/24, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 52 of 99 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 16/25, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1593,7 +1593,8 @@ Depends on: phase 3.
 | 5.8 | Review and refactor as a ladder stage, with a review role in the model table | new | M | A slice merges with review findings closed | done |
 | 5.9a | Adversary once with a bar, mutation as a gate, and the careen: the stowing rules, `fairways/<name>/careen.md`, and `/careen` as the hardening slice each fairway runs | new (#29) | M | A finding below the bar is stowed and the slice merges; one at or above it closes first; a CRITICAL is never stowed | done |
 | 5.9b | Stage budgets in `harbour.json`, and a stage over budget stowing what is left into the careen | new (#29) | M | A stage over budget stows and says so; what is left above the bar parks for a person |  |
-| 5.10 | Ids with the fairway in them; per-fairway `decisions.md`, adversary log, register; rendered aggregates on `main` | new | L | Two fairways decide in parallel and nothing renumbers |  |
+| 5.10a | Ids with the fairway in them: `scripts/agents/ids.py` counting out of the fairway's own deck log, and `check-decisions` taking both version 1's `D7` and version 2's `D-ORD-07` | new | M | Two fairways decide at once and mint different ids; a project that already has `D1`…`Dn` keeps them | done |
+| 5.10b | Per-fairway `decisions.md`, adversary log, benchmark and register; the feature-level files rendered from them by `make decisions`, held by `check-rendered` | new | M | Two fairways each decide once and the rendered file has both, in timestamp order, with neither id changed |  |
 | 5.11 | Composition root rendered from the chart; one file per event with a rendered index | new | M | Two slices add an event each and merge without touching one line |  |
 | 5.12 | The four release modes, the product state in `project.json`, the shape beside the target, flags at the entry wiring only, the hygiene gate | new | L | A slipway product runs the loop with no flag reader; an in-service one keeps every guarantee |  |
 | 5.13 | The deck log and harbour log formats, written by `/drive`; `.slipwai/logs/` ignored; `refs/slipwai/logs` sync | new | M | A run's status is answerable from the logs after the fact | done |
@@ -1770,7 +1771,7 @@ composition root, release modes, berths, inbox and domain knowledge, each of whi
 ```
 5.1 skills ─► 5.2 ladder ─► 5.17 example map ─► 5.18 mock-up review ─► 5.4a chart gate ─► 5.4b make chart
    ─► 5.4c /chart ─► 5.5 clearance ─► 5.5b clearance reachable ─► 5.6 scope ─► 5.3 fairways
-   ─► 5.7 two gates ─► 5.8 review ─► 5.9a adversary, careen ─► 5.13 logs ─► 5.10 ids
+   ─► 5.7 two gates ─► 5.8 review ─► 5.9a adversary, careen ─► 5.13 logs ─► 5.10a ids ─► 5.10b rendered aggregates
    ─► 5.19 capability demo ─► 5.20 surfaces held ─► 5.9b budgets ─► 5.11 composition ─► 5.12 release modes ─► 5.14 berths ─► 5.15 inbox ─► 5.16 domain
 ```
 
@@ -2029,7 +2030,11 @@ fetch; a small `scripts/agents/logs.py` in the toolkit does both. Tests: every k
 with `v: 2` is refused with the upgrade named; two appends from two processes interleave without a torn
 line (write with `O_APPEND`, one `write()` per line).
 
-**5.10 — Ids with the fairway in them, and rendered aggregates.** `D-ORD-07`, `A-BIL-03`,
+**It lands in two.** 5.10a is the id and where it is counted from; 5.10b is the per-fairway files and the
+render that folds them. Split 2026-10-07 while doing it: the first is a scheme and a gate, the second is a
+renderer and a `check-rendered` of its own.
+
+**5.10a/b — Ids with the fairway in them, and rendered aggregates.** `D-ORD-07`, `A-BIL-03`,
 `ADR-ORD-2026-10-07-event-store`. The counter per fairway is the count of `decision` lines in its deck
 log plus one, so two fairways cannot mint the same id and nothing is ever renumbered. Every append-only
 artefact becomes per fairway: `fairways/<name>/decisions.md`, `adversary-log.md`, `benchmark.jsonl`, the
@@ -2406,7 +2411,7 @@ Collected from above, so they can be taken before the slice that needs them.
 
 ### A realistic shape for the calendar
 
-Phase 5 is twenty-four slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
+Phase 5 is twenty-five slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
 beside each other and are each about three weeks. Phase 8 is a week of machinery and a release. Phase 9
 is a fortnight of writing against real runs. Phase 10 is after the release and is its own month. The
 prerequisite — the six packages rebuilt — took the evening of 6 October, and found four keel faults on the way.
