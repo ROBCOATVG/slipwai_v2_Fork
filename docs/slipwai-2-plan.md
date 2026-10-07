@@ -1255,7 +1255,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 36 of 91 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 0/18, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 37 of 91 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 1/18, phase 6 0/6, phase 7 0/7, phase 8 0/6, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1510,7 +1510,7 @@ Depends on: phase 3.
 
 | Slice | What | From | Size | Done when | Status |
 |---|---|---|---|---|---|
-| 5.1 | The skills, renamed to the vocabulary where a name changed, `docs/rename.json` begun | upstream | M | Every skill present; the rename table has a row per rename |  |
+| 5.1 | The skills, renamed to the vocabulary where a name changed, `docs/rename.json` begun | upstream | M | Every skill present; the rename table has a row per rename | done |
 | 5.2 | The commands and agents, the ladder in `drive.md`, the stop table, and `.specify/drive.json`: the `delegate` and `cycle` widths, the refusal of `story` as a cycle unit, and the fallbacks that run a slice narrower than the setting asks | upstream | L | `/drive` runs one slice to a demo on a generated project, red-green-refactor per the configured width, and a slice with no story tag falls to `rule` rather than failing |  |
 | 5.3 | Fairways: the `## Fairways` table in the split, `/drive fairway=<name>`, the boards grouped by fairway | `slipwai-workstreams` | M | Two fairways on one machine, merges independent |  |
 | 5.4 | The chart: `chart.yaml` schema, `make chart` on the event profile, `/chart` on the standard profile, `check-chart` | new | L | Both profiles produce a chart a reader can diff |  |
@@ -1565,7 +1565,7 @@ Depends on: 5.13 and 5.14. 7.1 first, then 7.2, then the rest in any order.
 |---|---|---|---|---|---|
 | 8.1 | `AGENTS.md`'s versioning rules, `changelog.d/`, `make release`, `make changelog`, `requirements-publish.txt`, and `CHANGELOG.md` and `changelog.d/` back in `slipwai.spec`'s datas | upstream | M | The fork's own release machinery is green |  |
 | 8.2 | One 2.0.0 changelog entry written from the fork's history | new | M | Every user-visible change since 1.5.2 is in it, with its catch-up |  |
-| 8.3 | `migrate`: base from an installed 1.x, languages first, the rename table, in-flight work as data (section 6) | upstream + cruise-2 + new | L | `make test-migration` green for every profile and backend and the adopted fixtures |  |
+| 8.3 | `migrate`: base from an installed 1.x, languages first, the rename table, in-flight work as data (section 6); the installed directory moved from `languages/` to `packages/` | upstream + cruise-2 + new | L | `make test-migration` green for every profile and backend and the adopted fixtures, and an install made under `languages/` is found, moved and loaded from `packages/` |  |
 | 8.4 | The release backstop: one job that runs the matrix across the published packages against the keel about to ship, and the root matrix retired | cruise-2 + new | M | A keel release is refused when a published package fails against it; no per-commit job reads a package |  |
 | 8.5 | `make release` to 2.0.0; the merge back to upstream; the Gitea decision | new | M | `v2.0.0` tagged, published, and upstream `main` is version 2 |  |
 | 8.6 | A final 1.5.x release whose `slipwai upgrade --check` names 2.0.0 and its migration page | upstream | S | A version 1 user is told where version 2 is and what moving costs |  |
@@ -1704,6 +1704,17 @@ the kind of thing renamed (skill, command, file, field). Hold it with a test tha
 the retired words and finds none outside quoted version 1 references; `test_glossary` already has the
 word list. Then delete `.claude/skills/` and point the fork's own `AGENTS.md` at the toolkit copy, so there
 is one set of skills and not two. Size M because it is tedious, not because it is hard.
+
+**What 5.1 found, and did not fix.** The rename this plan settled on 2026-10-06 — the installed directory
+is `~/.slipwai/packages/`, not `languages/` — was written into the plan and never into the keel.
+`assets.py` carries `PACKAGES = ~/.slipwai/packages` with the decision in a comment above it and *nothing
+imports it*; every live caller resolves the directory through `language_directory.directory()`, which still
+returns `~/.slipwai/languages`, and `slipwai language list` prints that path to the person. So the first
+row of `docs/rename.json` could not be written: the table records renames that are true, and this one is
+decided. It is not 5.1's to fix — the directory cannot move without moving the packages already in it,
+which is `upgrade`'s `after_core` path and `migrate`'s (theme A already says `migrate` moves an install
+made before the rename). **Slice 8.3 carries it**, and its done-when gains: an install made under
+`languages/` is found, moved, and loaded from `packages/`. Found 2026-10-07 while doing 5.1.
 
 **5.2 — The ladder in `drive.md`, the stop table, and `.specify/drive.json`.** `drive.md` is the command
 that runs one slice through every stage; it exists in version 1 and is rewritten here to the ladder

@@ -1,0 +1,13 @@
+{
+  "v": 1,
+  "reads": "slipwai migrate, slice 8.3: the table is applied to the version 1 base before the three-way merge, so a person's edit to a renamed file lands in the file that replaced it instead of conflicting.",
+  "kinds": {
+    "file": "a path in a generated project, including a script and a document",
+    "make-target": "a target in a generated project's Makefile",
+    "command": "a slash command in the toolkit",
+    "setting": "a key in a settings file, with the file named in `in`",
+    "field": "a key in project.json",
+    "skill": "a directory under assets/toolkit/skills"
+  },
+  "renames": []
+}

@@ -274,11 +274,13 @@ Why this first: [value, risk, learning, or bargain]
 |---|---|---|---|
 | ... | — or id list | sibling ids that share only a schema / synthetic seed | genuine build deps only; synthetic-event seeding is not a dependency |
 
-`/drive` and `/where-are-we` read this table (or, on the event profile, each slice's `depends_on` in
+`/drive` and the bridge read this table (or, on the event profile, each slice's `depends_on` in
 `docs/event-model/model.yaml`) to compute the **ready** set: not yet done, every `depends_on` already done.
-Ready slices whose contract is settled run in parallel: one `/drive` session fans out over the unclaimed
-ones, one delegate per slice on a `slice/<id>` branch, and merges them back in split order; a session that
-cannot delegate takes the earliest ready slice in split order and names the rest.
+A ready slice starts when it has **clearance**: every mark it steers by is already set by a slice that is
+planned or implemented, and the marks it sets itself it sets as its own first stage. Cleared slices run in
+parallel — one captain per fairway claims the next cleared slice, one delegate per slice on a `slice/<id>`
+branch, and each fairway merges its own back in split order; a session that cannot delegate takes the
+earliest cleared slice in split order and names the rest.
 
 ## Parking Lot
 [Explicit follow-ups, questions, or intentionally unsplit tasks]

@@ -68,6 +68,27 @@ gate. In the other direction, a package may import only the keel modules
 module the keel has not got fails too. Adding a line to it is a promise that cannot be withdrawn without
 breaking a package built somewhere this repository cannot see. The ceiling is twenty.
 
+## The skills, and where they live
+
+There is one tracked copy of the skill catalogue, [assets/toolkit/skills](assets/toolkit/skills), which is
+what a generated project receives. Phase 0 put a second copy under `.claude/skills/` so that sessions in
+this fork had `tdd`, `testing`, `refactoring` and `find-gaps` from the first commit; slice 5.1 untracked
+it, because two tracked copies of one catalogue drift and nothing afterwards says which is right. Run
+`make skills` once in a fresh checkout to write the local copy, and edit the toolkit, never that copy.
+
+A skill is written in version 2's words. `tests/test_skills.py` refuses a retired name — workstation,
+workstream, lane, runner — in any skill that has not said which other sense it means; a test runner and an
+event model's lanes are named there with their reasons, and a skill not on that list may not use the word
+at all.
+
+## The rename table
+
+[docs/rename.json](docs/rename.json) is what `migrate` applies to a version 1 project before the three-way
+merge (slice 8.3), so a person's edit to a renamed file lands in the file that replaced it rather than
+conflicting. **Add the row in the slice that makes the rename, not before.** `tests/test_skills.py` holds
+every row in both directions: the old name is gone from the tree and the new one is there. A row written
+ahead of the code moves someone's file to a name version 2 has not got, and they find out at the merge.
+
 ## The small things that save a day
 
 - **A slice that lands says so in a trailer.** End the commit that merges a slice with

@@ -11,6 +11,9 @@ __pycache__/
 .ruff_cache/
 /.claude/worktrees/
 /.claude/settings.local.json
+# The skills this checkout's own sessions read: one copy of the catalogue is tracked, in
+# assets/toolkit/skills, and `make skills` writes this one from it (slice 5.1).
+/.claude/skills/
 
 # Deck logs and the harbour log: synced through refs/slipwai/logs, never committed on main
 .slipwai/logs/
