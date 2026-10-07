@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 52 of 99 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 16/25, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 52 of 100 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 16/26, phase 6 0/6, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1590,6 +1590,7 @@ Depends on: phase 3.
 | 5.5b | Clearance where the loop can reach it: `scripts/agents/clearance.py` in the toolkit, and `/drive`'s precondition replaced by it | new (#32) | S | A session asks what may start rather than reading a status field, and version 1's "its own contract is settled" is gone from the page | done |
 | 5.6 | `check-slice-scope` reads the chart for owned paths on both profiles | upstream + new | M | The standard profile holds a context boundary | done |
 | 5.7 | Two gates: `make unit` in generated projects, the ladder's fast checks per increment, the full gate before `main` | new | M | A slice's increments never run the full suite | done |
+| 5.7b | Keeping a generated project's `make unit` fast as its suite grows: the marker each backend's ecosystem uses for a slow test, the exclusion its `unit` recipe applies, and the rule in the project's own `AGENTS.md` that a slice marks one in the commit that adds it | new | M | A project a year old still runs `make unit` per increment, and a test that shells out is marked in the slice that wrote it |  |
 | 5.8 | Review and refactor as a ladder stage, with a review role in the model table | new | M | A slice merges with review findings closed | done |
 | 5.9a | Adversary once with a bar, mutation as a gate, and the careen: the stowing rules, `fairways/<name>/careen.md`, and `/careen` as the hardening slice each fairway runs | new (#29) | M | A finding below the bar is stowed and the slice merges; one at or above it closes first; a CRITICAL is never stowed | done |
 | 5.9b | Stage budgets in `harbour.json`, and a stage over budget stowing what is left into the careen | new (#29) | M | A stage over budget stows and says so; what is left above the bar parks for a person |  |
@@ -1771,7 +1772,7 @@ composition root, release modes, berths, inbox and domain knowledge, each of whi
 ```
 5.1 skills ─► 5.2 ladder ─► 5.17 example map ─► 5.18 mock-up review ─► 5.4a chart gate ─► 5.4b make chart
    ─► 5.4c /chart ─► 5.5 clearance ─► 5.5b clearance reachable ─► 5.6 scope ─► 5.3 fairways
-   ─► 5.7 two gates ─► 5.8 review ─► 5.9a adversary, careen ─► 5.13 logs ─► 5.10a ids ─► 5.10b rendered aggregates
+   ─► 5.7 two gates ─► 5.7b slow tests marked ─► 5.8 review ─► 5.9a adversary, careen ─► 5.13 logs ─► 5.10a ids ─► 5.10b rendered aggregates
    ─► 5.19 capability demo ─► 5.20 surfaces held ─► 5.9b budgets ─► 5.11 composition ─► 5.12 release modes ─► 5.14 berths ─► 5.15 inbox ─► 5.16 domain
 ```
 
@@ -1985,6 +1986,30 @@ branch. The language packages declare which of their targets are fast: a new opt
 protocol, `FAST_TARGETS`, defaulting to the test target alone, so a package can say its integration suite
 is quick if it is. Test: the toy's generated `Makefile` has `unit`, and `drive.md` never names `verify`
 before the merge stage.
+
+**5.7b — Keeping a generated project's `make unit` fast.** 5.7 gave a project the target. Nothing keeps it
+fast, and a target that stops being fast stops being run — which is the whole failure theme B item 9 is
+about, arriving a year later by a different route. The keel has the rule in its own `AGENTS.md` ("a test
+that generates a project, shells out, or reaches the network goes in the `SLOW` list in the `Makefile` in
+the same commit that adds it") and a generated project has no equivalent. It was found on 2026-10-07, in
+this repository, that the rule had been broken here too: two suites that matched it had never been listed
+and were nine of the twelve seconds. If the keel's own gate drifts under a written rule, a product's will.
+
+**The mechanism cannot be the keel's, because the keel's is a list of its own test modules.** A project's
+`unit` runs its language's test target, and the slow tests are *inside* it. Every ecosystem already has a
+way to say so — a pytest marker, a Go build tag or `-short`, a Vitest project, a JUnit tag — and which one
+is the backend's to answer, exactly as `fast_targets` is. So this is a second optional protocol member in
+the same shape: how this ecosystem marks a test slow, and what the `unit` recipe passes to leave those out.
+Absent, `unit` runs the test target whole, which is today's behaviour and no worse than it.
+
+**And the rule goes where a slice will read it**, in the generated `AGENTS.md` beside the two-gate table:
+a test that generates, shells out or reaches the network is marked in the same commit that adds it. A rule
+in the keel's own repository protects nothing in a product.
+
+**Open for a person.** Whether the exclusion is also a gate — a check that refuses a test that shells out
+and is not marked — or stays a rule the review rung reads. A gate needs a way to tell, which is static
+analysis per ecosystem and probably more than it is worth; a rule is what the keel itself had, and the keel
+broke it. Worth a view before 5.7b starts.
 
 **5.8 — Review and reshape as a stage.** New rung between demo and adversary, named `review` in
 `stage_models.STAGES` with role `strong` and `writes=NONE` — a reviewer that can write is one that edits.
@@ -2411,7 +2436,7 @@ Collected from above, so they can be taken before the slice that needs them.
 
 ### A realistic shape for the calendar
 
-Phase 5 is twenty-five slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
+Phase 5 is twenty-six slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
 beside each other and are each about three weeks. Phase 8 is a week of machinery and a release. Phase 9
 is a fortnight of writing against real runs. Phase 10 is after the release and is its own month. The
 prerequisite — the six packages rebuilt — took the evening of 6 October, and found four keel faults on the way.
