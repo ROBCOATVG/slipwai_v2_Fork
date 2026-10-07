@@ -81,16 +81,20 @@ def search_lines(found: Index | None, unreachable: list[str], term: str,
         return [*(line.strip() for line in unreachable),
                 f"{this_command()} list shows what is installed"]
     rows = matches(found, term, kind, family)
+    # A channel that could not be read is said above the results, not instead of them: a short listing that
+    # does not say it is short is how a person concludes a package does not exist when a mirror was down.
+    said = [f"  {line}" for line in found.unreachable]
     if not rows:
         asked = f" matching {term!r}" if term else ""
-        return [f"no package{asked} in {found.name}"]
+        return [*said, f"no package{asked} in {found.name}"]
     have = here()
     width = max(len(release.name) for release in rows)
     kinds = max(len(release.kind) for release in rows)
     return [
-        f"  {release.name:<{width}}  {release.kind:<{kinds}}  {release.version:<12}  "
-        f"{status(release.name, have):<9}  {summary(release)}"
-        for release in rows
+        *said,
+        *(f"  {release.name:<{width}}  {release.kind:<{kinds}}  {release.version:<12}  "
+          f"{status(release.name, have):<9}  {summary(release)}"
+          for release in rows),
     ]
 
 
@@ -137,7 +141,8 @@ def provenance(release: Release) -> list[str]:
     this package is unsigned or whether this command does not mention signing — and those are the two
     things it most matters to tell apart.
     """
-    lines = [f"  publisher     {release.publisher or 'unstated'}"]
+    lines = [f"  channel       {release.channel or 'the only one'}"]
+    lines.append(f"  publisher     {release.publisher or 'unstated'}")
     lines.append(f"  signature     {'carried by the index' if release.signed else 'unsigned'}")
     if release.tags:
         lines.append(f"  tags          {', '.join(release.tags)}")

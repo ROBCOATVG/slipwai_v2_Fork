@@ -26,12 +26,13 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
 from .assets import VERSION
 from .errors import GenerationError
-from .index_schema import FORMATS, Index, Release, format_of, releases_of
+from .index_schema import CHANDLERY, FORMATS, Index, Release, format_of, releases_of
 from .upgrade import FORGE, INDEX, RECEIPT, credentials, following_snapshots, index_of, refusal
 from .versions import is_prerelease, key, satisfies
 
@@ -61,6 +62,32 @@ def location(receipt: Path | None = None) -> tuple[str, str]:
     if base == INDEX and not os.environ.get("SLIPWAI_INDEX"):
         base = DEFAULT
     return name, f"{base.rstrip('/')}/{DOCUMENT}"
+
+
+def bases() -> list[str]:
+    """Every channel base this environment names, in the order they are asked.
+
+    `SLIPWAI_CHANDLERY` is the list, comma-separated: an organisation's own channel first and the public one
+    after it is the arrangement everybody ends up with, and the order is the whole of the policy — a name an
+    earlier channel lists is that channel's, so an organisation can publish its own `python` and have it win
+    without anything else being configured.
+
+    Comma rather than `PATH`'s separator, which is a colon on this platform and the third character of every
+    URL in the list. Whitespace around each is dropped, so a list broken over lines in a shell profile reads.
+    """
+    named = os.environ.get(CHANDLERY, "")
+    return [base.strip().rstrip("/") for base in named.split(",") if base.strip()]
+
+
+def channels(receipt: Path | None = None) -> list[tuple[str, str]]:
+    """(channel name, document URL) for each channel, in order. The old one-index setting is the last of them.
+
+    `SLIPWAI_INDEX` is kept and kept last: it is the keel's own upgrade index as well as a package channel,
+    so a person who set it to a mirror meant "fetch from here", not "and never ask anywhere else".
+    """
+    found = [(f"channel {number}", f"{base}/{DOCUMENT}") for number, base in enumerate(bases(), start=1)]
+    name, url = location(receipt)
+    return [*found, (name, url)] if url not in dict(found).values() else found
 
 
 def bare(url: str) -> str:
@@ -176,18 +203,54 @@ def parsed(url: str, index_name: str, body: bytes) -> Index:
     document_format = format_of(data)
     if document_format is None:
         raise Unreachable(shown, "it is not a chandlery index")
-    return Index(shown, index_name, releases_of(url, data, document_format), url)
+    return Index(shown, index_name, releases_of(url, data, document_format, index_name), url)
 
 
 READ: dict[str, Index] = {}
 
 
-def read_index() -> Index:
-    """The index for this environment, read once per process and URL."""
-    index_name, url = location()
+def read_one(index_name: str, url: str) -> Index:
+    """One channel, read once per process and URL."""
     if url not in READ:
         READ[url] = parsed(url, index_name, fetch(url, index_name))
     return READ[url]
+
+
+def merged(found: list[Index]) -> Index:
+    """Every channel's releases in one listing, the earlier channel keeping a name the later also lists.
+
+    A name, not a release: a channel that lists `python` owns `python`, versions and all. Merging the version
+    lists would make `install python` fetch 2.0 from one channel and 2.1 from another depending on what each
+    happened to publish that week, which is the supply-chain shape nobody wants and nobody chose.
+    """
+    if len(found) == 1:
+        return found[0]
+    releases: dict[str, list[Release]] = {}
+    for index in found:
+        for name, listed in index.releases.items():
+            releases.setdefault(name, listed)
+    named = ", ".join(index.name for index in found)
+    return Index(found[0].url, named, releases, found[0].source)
+
+
+def read_index() -> Index:
+    """Every channel this environment names, read once per process and merged into one listing.
+
+    Unreachable only where *every* channel is: one channel being down is not a reason a person cannot install
+    from the others, and a listing that vanished because a mirror was slow is worse than one that is short.
+    The channels that could not be read are on `Index.unreachable`, so a listing can say so and still list.
+    """
+    found: list[Index] = []
+    refusals: list[str] = []
+    for index_name, url in channels():
+        try:
+            found.append(read_one(index_name, url))
+        except Unreachable as error:
+            refusals.append(str(error))
+    if not found:
+        raise Unreachable(bare(channels()[0][1]), "; ".join(refusals) or "no channel is configured")
+    whole = merged(found)
+    return replace(whole, unreachable=tuple(refusals)) if refusals else whole
 
 
 def compatible(release: Release, schema: str) -> bool:
@@ -229,8 +292,13 @@ def offered(index: Index, schema: str, prerelease: bool, kind: str | None = None
 
 
 def download(index: Index, release: Release) -> bytes:
-    """The release file's bytes, refused unless they are the bytes the index publishes a digest of."""
-    data = fetch(release.url, index.name, index.source or index.url, RELEASE_LIMIT)
+    """The release file's bytes, refused unless they are the bytes the index publishes a digest of.
+
+    Fetched as the document that listed it was — the release carries its own channel's URL, credentials and
+    all, because several channels are read into one listing and the one holding this file is rarely the first.
+    """
+    data = fetch(release.url, release.channel or index.name, release.origin or index.source or index.url,
+                 RELEASE_LIMIT)
     if hashlib.sha256(data).hexdigest() != release.sha256:
         raise GenerationError(
             f"the release file for {release.name} {release.version} does not match the hash the index publishes "

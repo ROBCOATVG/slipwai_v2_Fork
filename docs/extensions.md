@@ -136,8 +136,25 @@ python -m slipwai.conformance --extension <dir>   # the six, run
 meets obligations 1, 3 and 6 with the rest marked `TODO`. A scaffold that does not load is a scaffold whose
 first lesson is that the tool is broken.
 
-An install takes a package directory, a release file or a git URL. A clone is shallow and its `.git` is
-dropped on the way in: what is installed is the package, not its history.
+An install takes a name, a package directory, a release file or a git URL. A name with no separator in it is
+looked up in the chandlery; anything with one is a path, so a mistyped path is a refusal and never a silent
+network call. A clone is shallow and its `.git` is dropped on the way in: what is installed is the package,
+not its history.
+
+## Channels
+
+`SLIPWAI_CHANDLERY` names the channels to ask, comma-separated, in order — an organisation's own first and
+the public one after it. The order is the whole of the policy: **a name an earlier channel lists is that
+channel's**, versions and all, so an organisation can publish its own `python` and have it win without
+anything else being configured. Merging the version lists instead would make one install fetch from whichever
+channel happened to publish most recently.
+
+`SLIPWAI_INDEX` is still read and is asked last. It is the keel's own upgrade index as well as a package
+channel, so a person who set it to a mirror meant "fetch from here", not "and never ask anywhere else".
+
+One channel being unreachable is said and the rest are still listed. Every channel being unreachable is a
+refusal, because "nothing available" and "could not ask" are different answers and a person acts on them
+differently.
 
 ## What is refused, and where
 

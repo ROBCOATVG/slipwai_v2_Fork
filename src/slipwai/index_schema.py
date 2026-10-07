@@ -32,6 +32,9 @@ from typing import Any
 from .language_shape import name_fault
 from .versions import parse
 
+#: Where the channels are named, in order: an organisation's own first, the public one after it. Comma
+#: separated, because `PATH`'s separator is a colon on this platform and the third character of every URL.
+CHANDLERY = "SLIPWAI_CHANDLERY"
 #: The document formats this keel reads. A document declaring anything else is not an index it knows.
 FORMATS = (1, 2)
 #: Where each format's entries live, and what version 1 called the one kind it had.
@@ -69,6 +72,12 @@ class Release:
     signature: str = ""
     description: str = ""
     tags: tuple[str, ...] = ()
+    #: Which channel listed it, as a line names one, and that channel's document URL as given — credentials
+    #: and all, because a private channel's release files are fetched the way its document was. Carried on
+    #: the release rather than looked up, because several channels are read into one listing and a release
+    #: that could not say where it came from could not be fetched from there either.
+    channel: str = ""
+    origin: str = ""
 
     @property
     def is_extension(self) -> bool:
@@ -88,6 +97,9 @@ class Index:
     name: str
     releases: dict[str, list[Release]] = field(default_factory=dict)
     source: str = field(default="", repr=False)  # the URL as given, credentials and all: only `fetch` reads it
+    #: A line for each channel that could not be read, where the others could. A listing says so and still
+    #: lists: one channel being down is not a reason a person cannot install from the rest.
+    unreachable: tuple[str, ...] = ()
 
 
 def names_of(name: str, fragment: dict[str, Any]) -> list[Any]:
@@ -165,7 +177,7 @@ def extension_entry(name: str, fragment: Any) -> bool:
     return isinstance(fragment.get("name"), str) and bool(fragment["name"])
 
 
-def entry_of(document: str, name: str, entry: Any) -> Release | None:
+def entry_of(document: str, name: str, entry: Any, channel: str = "", origin: str = "") -> Release | None:
     """One entry of the document as a `Release`, or None where it is not the contract's shape.
 
     None rather than a refusal, for every fault: an index is a file on someone else's server, and one bad
@@ -192,7 +204,8 @@ def entry_of(document: str, name: str, entry: Any) -> Release | None:
     answers = tuple(each for each in said if each in ANSWERS) if isinstance(said, list) else ()
     return Release(name, version, urllib.parse.urljoin(document, file), digest, dict(fragment), answers,
                    kind=kind, publisher=text(entry, "publisher"), signature=text(entry, "signature"),
-                   description=text(entry, "description"), tags=tags_of(entry))
+                   description=text(entry, "description"), tags=tags_of(entry),
+                   channel=channel, origin=origin or document)
 
 
 def format_of(data: Any) -> int | None:
@@ -205,7 +218,7 @@ def format_of(data: Any) -> int | None:
     return int(declared)
 
 
-def releases_of(url: str, data: dict, document_format: int) -> dict[str, list[Release]]:
+def releases_of(url: str, data: dict, document_format: int, channel: str = "") -> dict[str, list[Release]]:
     """Each name in the document, and the releases of it this keel can read.
 
     A version 1 entry carries no `kind` and its manifest is under `language`, which is exactly what
@@ -213,7 +226,8 @@ def releases_of(url: str, data: dict, document_format: int) -> dict[str, list[Re
     """
     releases: dict[str, list[Release]] = {}
     for name, entries in data[BLOCK[document_format]].items():
-        found = [entry_of(url, name, entry) for entry in entries] if isinstance(entries, list) else []
+        found = ([entry_of(url, name, entry, channel, url) for entry in entries]
+                 if isinstance(entries, list) else [])
         kept = [release for release in found if release is not None]
         if kept:
             releases[name] = kept
