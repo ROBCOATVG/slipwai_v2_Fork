@@ -1,10 +1,13 @@
-"""Where the language index is, what it lists, and the release a verb fetches from it.
+"""Where the chandlery is, how its document is fetched, and the release a verb installs from it.
 
 The index is a tree of files under a base URL, found the way `slipwai upgrade` finds its own (`upgrade.index_of`):
 `SLIPWAI_INDEX`, else the uv receipt's index, else a documented default. Its document,
-`<base>/slipwai-languages/index.json`, lists each release with its file, the file's `sha256` and the release's
-`language.json`, so a verb can say which releases speak this keel, which family a framework needs and which framework
+`<base>/slipwai-languages/index.json`, lists each release with its file, the file's `sha256` and the release's own
+manifest, so a verb can say which releases speak this keel, which family a framework needs and which framework
 a family brings without fetching one (`contracts/language-index.md`).
+
+What a document *says* is `index_schema.py`'s; this is how it is reached. The split is the one every network
+client wants: a shape that can be tested without a server, and a fetch that can be tested without a shape.
 
 An index that cannot be read is `Unreachable`, said with its URL and the reason, and never an empty list: a project
 maker is not told "nothing available" when the truth is "could not ask". Nothing is published at the default
@@ -17,35 +20,30 @@ import hashlib
 import http.client
 import json
 import os
-import re
 import sys
 import threading
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from .assets import VERSION
 from .errors import GenerationError
-from .language_shape import name_fault
+from .index_schema import FORMATS, Index, Release, format_of, releases_of
 from .upgrade import FORGE, INDEX, RECEIPT, credentials, following_snapshots, index_of, refusal
-from .versions import is_prerelease, key, parse, satisfies
+from .versions import is_prerelease, key, satisfies
 
 # The raw files of a forge repository a person creates and pushes the index to; `upgrade.index_of`'s own default is
 # PyPI's simple index, which cannot serve this tree.
 DEFAULT = f"{FORGE.rsplit('/', 1)[0]}/slipwai-index/raw/branch/main"
 DOCUMENT = "slipwai-languages/index.json"
-FORMAT = 1
+#: What `slipwai package release` writes, and the newest format this keel reads. `FORMATS` is both.
+FORMAT = max(FORMATS)
 TIMEOUT: float = 15
 DOCUMENT_LIMIT = 4 * 1024 * 1024  # bytes the index document may be
 RELEASE_LIMIT = 64 * 1024 * 1024  # bytes a release file may be
-DIGEST = re.compile(r"[0-9a-f]{64}")
-# The declared-never-required family members an entry's `answers` may name: what a verb needs to know a release
-# answers before it is installed (D122, ADR 0010). A value a reader does not know is ignored.
-ANSWERS = ("npm_workspace",)
 
 
 class Unreachable(GenerationError):
@@ -54,28 +52,6 @@ class Unreachable(GenerationError):
     def __init__(self, url: str, reason: str) -> None:
         super().__init__(f"the language index at {url} could not be reached ({reason})")
         self.url = url
-
-
-@dataclass(frozen=True)
-class Release:
-    """One release the index lists: its version, where its file is, the file's digest and its `language.json`."""
-
-    name: str
-    version: str
-    url: str
-    sha256: str
-    fragment: dict[str, Any]
-    answers: tuple[str, ...] = ()
-
-
-@dataclass(frozen=True)
-class Index:
-    """The index document as read: its URL, the index's name (for credentials), and each name's releases."""
-
-    url: str
-    name: str
-    releases: dict[str, list[Release]] = field(default_factory=dict)
-    source: str = field(default="", repr=False)  # the URL as given, credentials and all: only `fetch` reads it
 
 
 def location(receipt: Path | None = None) -> tuple[str, str]:
@@ -188,71 +164,19 @@ def read(url: str, home: str, index_name: str, shown: str, limit: int, deadline:
         raise Unreachable(shown, str(error) or type(error).__name__) from error
 
 
-def names_of(name: str, fragment: dict[str, Any]) -> list[Any]:
-    """Every name an entry supplies besides its key: its `name`, `family`, `default_framework`, and each backend's key
-    and `framework`, so that none is printed or joined into a path before it has been held to `name_fault`."""
-    found: list[Any] = [fragment.get("name"), name]
-    found += [fragment[k] for k in ("family", "default_framework") if k in fragment]
-    rows = fragment.get("backends")
-    for key_, row in (rows.items() if isinstance(rows, dict) else []):
-        found.append(key_)
-        if isinstance(row, dict) and "framework" in row:
-            found.append(row["framework"])
-    return found
-
-
-def shaped(fragment: dict[str, Any]) -> bool:
-    """Whether the keys a line is made from have their shape: `backends` an object of objects, each `options` an
-    object of lists of strings. A fragment the loader would refuse for other reasons is for the loader to say."""
-    rows = fragment.get("backends", {})
-    if not isinstance(rows, dict) or not all(isinstance(row, dict) for row in rows.values()):
-        return False
-    for row in rows.values():
-        options = row.get("options", {})
-        if not isinstance(options, dict) or not all(
-                isinstance(found, list) and all(isinstance(each, str) for each in found) for found in options.values()):
-            return False
-    return True
-
-
-def entry_of(document: str, name: str, entry: Any) -> Release | None:
-    """One entry of the document as a `Release`, or None where it is not the contract's shape."""
-    if not isinstance(entry, dict):
-        return None
-    version, file, digest, fragment = (entry.get(k) for k in ("version", "file", "sha256", "language"))
-    if not (isinstance(version, str) and len(version) <= 64 and parse(version) and isinstance(file, str) and file):
-        return None
-    if not (isinstance(digest, str) and DIGEST.fullmatch(digest)):
-        return None
-    if not (isinstance(fragment, dict) and fragment.get("name") == name and isinstance(fragment.get("core"), str)):
-        return None
-    if not shaped(fragment):
-        return None
-    if not all(isinstance(each, str) and name_fault("language", each) is None for each in names_of(name, fragment)):
-        return None
-    said = entry.get("answers")
-    answers = tuple(each for each in said if each in ANSWERS) if isinstance(said, list) else ()
-    return Release(name, version, urllib.parse.urljoin(document, file), digest, fragment, answers)
-
-
 def parsed(url: str, index_name: str, body: bytes) -> Index:
-    """The document's releases, or `Unreachable` where what answered is not a language index. Each release's URL is
+    """The document's releases, or `Unreachable` where what answered is not a chandlery index. Each release's URL is
     joined against `url` as given, credentials and all, so a private index's files are fetched as its document was;
     `Index.url`, which lines show, is `bare`."""
     shown = bare(url)
     try:
         data = json.loads(body.decode("utf-8"))
     except (UnicodeDecodeError, ValueError, RecursionError) as error:
-        raise Unreachable(shown, "it is not a language index") from error
-    if not isinstance(data, dict) or data.get("index") != FORMAT or not isinstance(data.get("languages"), dict):
-        raise Unreachable(shown, "it is not a language index")
-    releases: dict[str, list[Release]] = {}
-    for name, entries in data["languages"].items():
-        found = [entry_of(url, name, entry) for entry in entries] if isinstance(entries, list) else []
-        kept = [release for release in found if release is not None]
-        if kept:
-            releases[name] = kept
-    return Index(shown, index_name, releases, url)
+        raise Unreachable(shown, "it is not a chandlery index") from error
+    document_format = format_of(data)
+    if document_format is None:
+        raise Unreachable(shown, "it is not a chandlery index")
+    return Index(shown, index_name, releases_of(url, data, document_format), url)
 
 
 READ: dict[str, Index] = {}
@@ -292,9 +216,15 @@ def newest(index: Index, name: str, schema: str, prerelease: bool, where: Any = 
     return max(found, key=lambda release: key(release.version), default=None)
 
 
-def offered(index: Index, schema: str, prerelease: bool) -> dict[str, Release]:
-    """Each name with a counted release that speaks `schema`, and its newest such release."""
-    found = {name: newest(index, name, schema, prerelease) for name in index.releases}
+def offered(index: Index, schema: str, prerelease: bool, kind: str | None = None) -> dict[str, Release]:
+    """Each name with a counted release that speaks `schema`, and its newest such release.
+
+    `kind` narrows it to languages or to extensions, which is what the two listings ask for. None is both,
+    which is what `slipwai search` wants: a person looking for a package does not first decide what kind it
+    is going to turn out to be.
+    """
+    where = None if kind is None else (lambda release: release.kind == kind)
+    found = {name: newest(index, name, schema, prerelease, where) for name in index.releases}
     return {name: release for name, release in found.items() if release is not None}
 
 

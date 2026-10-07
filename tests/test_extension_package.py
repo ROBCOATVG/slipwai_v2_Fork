@@ -198,3 +198,64 @@ class EntryTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class IndexInstallTest(unittest.TestCase):
+    """`extension install <name>` against a `file:` index, which is how a private channel is tried."""
+
+    def setUp(self) -> None:
+        self.area = Path(tempfile.mkdtemp())
+        self.home = Path(tempfile.mkdtemp())
+
+    def channel(self, manifest: dict | None = None) -> Path:
+        """An index document and the release file it lists, written where `SLIPWAI_INDEX` can name them."""
+        import hashlib
+        import tarfile
+        whole = {**MANIFEST, **(manifest or {})}
+        package = written(self.area / "src", whole["key"], whole)
+        channel = self.area / "channel"
+        (channel / "slipwai-languages").mkdir(parents=True)
+        archive = channel / "slipwai-languages/thing-1.0.0.tar.gz"
+        with tarfile.open(archive, "w:gz") as tar:
+            tar.add(package, arcname=whole["key"])
+        (channel / "slipwai-languages/index.json").write_text(json.dumps({
+            "index": 2,
+            "packages": {whole["key"]: [{"version": "1.0.0", "file": "thing-1.0.0.tar.gz", "kind": "extension",
+                                         "sha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
+                                         "publisher": "ROBCOATVG", "description": "A fake",
+                                         "extension": whole}]},
+        }), encoding="utf-8")
+        return channel
+
+    def install(self, name: str) -> None:
+        import os
+        from unittest import mock
+
+        from slipwai.language_index import READ
+        READ.clear()
+        with mock.patch.dict(os.environ, {"SLIPWAI_INDEX": self.channel().as_uri()}):
+            extension_install.install([name], self.home)
+        READ.clear()
+
+    def test_a_bare_name_is_looked_up_fetched_and_installed(self) -> None:
+        self.install("thing")
+        self.assertTrue((self.home / "thing/init.py").is_file())
+        self.assertTrue((self.home / "thing/extension.json").is_file())
+
+    def test_a_name_the_channel_has_not_got_says_what_lists_what_it_has(self) -> None:
+        import os
+        from unittest import mock
+
+        from slipwai.language_index import READ
+        READ.clear()
+        with mock.patch.dict(os.environ, {"SLIPWAI_INDEX": self.channel().as_uri()}), \
+                self.assertRaises(GenerationError) as refused:
+            extension_install.install(["absent"], self.home)
+        READ.clear()
+        self.assertIn("search --kind extension", str(refused.exception))
+
+    def test_something_with_a_separator_is_a_path_and_is_never_looked_up(self) -> None:
+        """Otherwise a mistyped path becomes a silent network call for a package nobody meant to install."""
+        with self.assertRaises(GenerationError) as refused:
+            extension_install.install(["./not-here"], self.home)
+        self.assertIn("release file", str(refused.exception))

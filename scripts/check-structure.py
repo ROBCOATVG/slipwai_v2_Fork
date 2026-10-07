@@ -72,7 +72,7 @@ TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
               "cli_prompts", "cli_interview", "cli_offered", "cli_language", "cli_search", "cli_add", "cli_adopt",
               # The chandlery client: the index, a release file, an install as one
               # transaction, the plan a verb shows first, and upkeep after a keel moves.
-              "language_index", "language_release", "language_install", "language_plan",
+              "index_schema", "language_index", "language_release", "language_install", "language_plan",
               "language_upkeep", "browser_app",
               # The other kind of package: its install, its scaffold, and the two verbs over them.
               "extension_install", "package_new", "cli_extension", "cli_package",

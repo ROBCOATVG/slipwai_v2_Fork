@@ -21,8 +21,19 @@ from slipwai.language_index import Index, Release
 
 
 def release(name: str, version: str = "1.0.0", **fragment: object) -> Release:
+    """One listed release. `kind`, `publisher`, `signature` and `tags` are the entry's own fields; everything
+    else is the manifest, which is what a published entry carries whole."""
+    kind = str(fragment.pop("kind", "language"))
+    entry: dict[str, object] = {field: fragment.pop(field)
+                                for field in ("publisher", "signature", "tags") if field in fragment}
+    tags = entry.get("tags")
     whole = {"name": name, "core": ">=9.0,<10", "family": name, **fragment}
-    return Release(name, version, f"https://example.invalid/{name}-{version}.tar.gz", "0" * 64, whole)
+    if kind == "extension":
+        whole = {"key": name, "name": name.title(), "core": ">=9.0,<10", **fragment}
+    return Release(name, version, f"https://example.invalid/{name}-{version}.tar.gz", "0" * 64, whole,
+                   kind=kind, description=str(fragment.get("description", "")),
+                   publisher=str(entry.get("publisher", "")), signature=str(entry.get("signature", "")),
+                   tags=tuple(str(tag) for tag in tags) if isinstance(tags, list | tuple) else ())
 
 
 INDEX = Index(

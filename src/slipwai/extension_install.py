@@ -10,10 +10,15 @@ it declares no backend, answers no axis and imports nothing into this process. S
 manifest being readable and the name being free, and the transaction is a stage and a rename rather than a
 whole second load.
 
-**Three kinds of source, all of them a directory in the end.** A path to a package directory, a path to a
-release file, or a git URL, which is cloned into a temporary directory and read as the first kind. The clone
-is shallow and its `.git` is dropped on the way in: what is installed is the package, not its history, and a
-package directory that is also a working checkout is one `slipwai extension upgrade` would fight with.
+**Four kinds of source, all of them a directory in the end.** A name, which is looked up in the chandlery and
+fetched; a path to a package directory; a path to a release file; or a git URL, which is cloned into a
+temporary directory and read as the first kind. The clone is shallow and its `.git` is dropped on the way in:
+what is installed is the package, not its history, and a package directory that is also a working checkout is
+one `slipwai extension upgrade` would fight with.
+
+**A name is the form a search result hands you.** `slipwai search` prints a name and `slipwai extension
+install <name>` takes it, which is the one thing version 1's languages got right and that an extension had no
+way to do at all — the three it shipped were in the keel, so nobody ever had to find one.
 
 **Nothing is installed half-way.** Staged under a hidden name the loader skips, admitted, then renamed into
 place. An interrupted install leaves a hidden directory and nothing else, which the next install clears.
@@ -30,6 +35,7 @@ from .assets import this_command
 from .catalog import CORE
 from .errors import GenerationError
 from .extension_directory import MANIFEST, fault_in, files
+from .index_schema import EXTENSION
 from .language_release import ReleaseError, unpack
 
 STAGING = ".install-extension-"
@@ -54,6 +60,30 @@ def cloned(url: str, into: Path) -> Path:
     return root
 
 
+def from_index(name: str, area: Path) -> Path:
+    """One named extension, fetched from the chandlery and unpacked. Raises with the reason it could not be.
+
+    Imported here rather than at the top: the index client reaches the network, and a verb installing from a
+    directory should not pay for a module that exists to talk to a server.
+    """
+    from .catalog import CORE
+    from .language_index import Unreachable, download, newest, read_index, snapshots
+    try:
+        found = read_index()
+    except Unreachable as error:
+        raise GenerationError(f"{error}. `{this_command()} extension install <path-or-url>` installs one "
+                              f"from a directory, a release file or a git URL without the index") from None
+    release = newest(found, name, CORE["schemaVersion"], snapshots(), lambda one: one.kind == EXTENSION)
+    if release is None:
+        raise GenerationError(f"{found.name} lists no extension `{name}` this keel can install. "
+                              f"`{this_command()} search --kind extension` lists what it does")
+    archive = area / "release.tar.gz"
+    archive.write_bytes(download(found, release))
+    unpacked = area / "unpacked"
+    unpack(archive, unpacked)
+    return unpacked
+
+
 def sourced(request: str, area: Path) -> Path:
     """One request as a directory holding an `extension.json`, whatever form it arrived in."""
     if is_remote(request):
@@ -65,8 +95,15 @@ def sourced(request: str, area: Path) -> Path:
         unpacked = area / "unpacked"
         unpack(path, unpacked)
         return unpacked
-    raise GenerationError(f"{request} is neither a package directory, a release file nor a git URL. "
-                          f"`{this_command()} extension install <path-or-url>` takes one of the three")
+    if is_path(request):
+        raise GenerationError(f"{request} is neither a package directory nor a release file. A name with no "
+                              f"separator in it is looked up in the chandlery instead")
+    return from_index(request, area)
+
+
+def is_path(request: str) -> bool:
+    """Whether this reads as a path rather than a name. A name has no separator and no leading dot."""
+    return "/" in request or "\\" in request or request.startswith((".", "~"))
 
 
 def key_of(root: Path, request: str) -> str:

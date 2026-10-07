@@ -35,7 +35,11 @@ def haystack(release: Release) -> str:
     thing that knows is the option the package answers — not its name, which is the language's.
     """
     fragment = release.fragment
-    parts = [release.name, str(fragment.get("description", "")), str(fragment.get("family", ""))]
+    # The entry's own description and tags first, then the manifest's: an index entry is what the publisher
+    # wrote for people browsing, and a manifest is what the keel reads. Both are searched, because a package
+    # published before the entry carried either still has to be findable.
+    parts = [release.name, release.description, release.publisher, *release.tags,
+             str(fragment.get("description", "")), str(fragment.get("family", ""))]
     for key_, row in (fragment.get("backends") or {}).items():
         parts += [key_, str(row.get("label", "")), str(row.get("framework", ""))]
         for axis, options in (row.get("options") or {}).items():
@@ -64,7 +68,7 @@ def matches(found: Index, term: str, kind: str | None = None, family: str | None
             continue
         if family is not None and release.fragment.get("family") != family:
             continue
-        if kind is not None and str(release.fragment.get("kind", "language")) != kind:
+        if kind is not None and release.kind != kind:
             continue
         rows.append(release)
     return rows
@@ -82,15 +86,24 @@ def search_lines(found: Index | None, unreachable: list[str], term: str,
         return [f"no package{asked} in {found.name}"]
     have = here()
     width = max(len(release.name) for release in rows)
+    kinds = max(len(release.kind) for release in rows)
     return [
-        f"  {release.name:<{width}}  {release.version:<12}  {status(release.name, have):<9}  "
-        f"{release.fragment.get('description', '') or describe(release)}"
+        f"  {release.name:<{width}}  {release.kind:<{kinds}}  {release.version:<12}  "
+        f"{status(release.name, have):<9}  {summary(release)}"
         for release in rows
     ]
 
 
+def summary(release: Release) -> str:
+    """One line about a package: what its entry says, else what its manifest says, else what it offers."""
+    return release.description or str(release.fragment.get("description", "")) or describe(release)
+
+
 def describe(release: Release) -> str:
     """A line for a package that declares no description: what it offers, which is better than nothing."""
+    if release.is_extension:
+        points = ", ".join(sorted(release.fragment.get("hooks") or {}))
+        return f"hooks: {points}" if points else "no description"
     backends = list(release.fragment.get("backends") or {})
     return f"backends: {', '.join(backends)}" if backends else "no description"
 
@@ -105,19 +118,49 @@ def show_lines(found: Index | None, unreachable: list[str], name: str) -> list[s
     release = latest(releases)
     assert release is not None
     fragment = release.fragment
-    lines = [f"{release.name} {release.version}  ({status(release.name, here())})"]
-    if fragment.get("description"):
-        lines.append(f"  {fragment['description']}")
-    lines.append(f"  family        {fragment.get('family', release.name)}")
+    lines = [f"{release.name} {release.version}  {release.kind}  ({status(release.name, here())})"]
+    if summary(release) != describe(release):
+        lines.append(f"  {summary(release)}")
+    lines += provenance(release)
     lines.append(f"  speaks keel   {fragment.get('core', 'unstated')}")
+    lines += extension_lines(release) if release.is_extension else language_lines(fragment)
+    lines.append(f"  releases      {', '.join(r.version for r in sorted(releases, key=lambda r: key(r.version)))}")
+    verb = "extension" if release.is_extension else "language"
+    lines.append(f"  install       {this_command()} {verb} install {release.name}")
+    return lines
+
+
+def provenance(release: Release) -> list[str]:
+    """Who published it and whether the index carries a signature.
+
+    `unsigned` is said rather than left out. A reader who sees nothing about signing cannot tell whether
+    this package is unsigned or whether this command does not mention signing — and those are the two
+    things it most matters to tell apart.
+    """
+    lines = [f"  publisher     {release.publisher or 'unstated'}"]
+    lines.append(f"  signature     {'carried by the index' if release.signed else 'unsigned'}")
+    if release.tags:
+        lines.append(f"  tags          {', '.join(release.tags)}")
+    return lines
+
+
+def language_lines(fragment: dict) -> list[str]:
+    lines = [f"  family        {fragment.get('family', 'unstated')}"]
     for backend, row in (fragment.get("backends") or {}).items():
         lines.append(f"  backend       {backend}  {row.get('label', '')}")
         for axis, options in sorted((row.get("options") or {}).items()):
             lines.append(f"      {axis:<12} {', '.join(str(option) for option in options)}")
         if row.get("targets"):
             lines.append(f"      {'targets':<12} {', '.join(str(target) for target in row['targets'])}")
-    lines.append(f"  releases      {', '.join(r.version for r in sorted(releases, key=lambda r: key(r.version)))}")
-    lines.append(f"  install       {this_command()} language install {release.name}")
+    return lines
+
+
+def extension_lines(release: Release) -> list[str]:
+    """What an extension's entry says: the key a person types, and the moments it attaches to."""
+    fragment = release.fragment
+    lines = [f"  elect with    ./init --extension {fragment.get('key', release.name)}"]
+    points = sorted(fragment.get("hooks") or {})
+    lines.append(f"  hooks         {', '.join(points) if points else 'none'}")
     return lines
 
 
