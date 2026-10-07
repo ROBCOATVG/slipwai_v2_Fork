@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 63 of 103 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 26/28, phase 6 1/7, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 64 of 104 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 27/29, phase 6 1/7, phase 7 0/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1596,7 +1596,8 @@ Depends on: phase 3.
 | 5.9b | Stage budgets in `harbour.json`, and a stage over budget stowing what is left into the careen | new (#29) | M | A stage over budget stows and says so; what is left above the bar parks for a person | done |
 | 5.10a | Ids with the fairway in them: `scripts/agents/ids.py` counting out of the fairway's own deck log, and `check-decisions` taking both version 1's `D7` and version 2's `D-ORD-07` | new | M | Two fairways decide at once and mint different ids; a project that already has `D1`…`Dn` keeps them | done |
 | 5.10b | Per-fairway `decisions.md`, adversary log, benchmark and register; the feature-level files rendered from them by `make decisions`, held by `check-rendered` | new | M | Two fairways each decide once and the rendered file has both, in timestamp order, with neither id changed | done |
-| 5.11 | Composition root rendered from the chart; one file per event with a rendered index | new | M | Two slices add an event each and merge without touching one line |  |
+| 5.11a | One file per event, named after its mark, and the index that imports them generated rather than written | new | M | Two slices each add an event and the only file both touch is one that is regenerated, not merged | done |
+| 5.11b | The composition root rendered from the chart, one `wire_*` line per use case, behind a marked region | new | M | Two slices each add a use case and merge without resolving the composition root |  |
 | 5.12a | The product state in `project.json` and the four release modes derived from it, read once at the merge rung | new | M | A slipway product merges in the open and generates no flag reader; moving the product is the only thing that changes the mode | done |
 | 5.12b | Flags at the entry wiring only, and the hygiene gate: `check-flags` refuses a flag hoisted everywhere and never struck. The shape beside the target is 3.4b's | new | M | A flag lives at one `if` at the route or menu, and one overdue to be struck fails the gate | done |
 | 5.13 | The deck log and harbour log formats, written by `/drive`; `.slipwai/logs/` ignored; `refs/slipwai/logs` sync | new | M | A run's status is answerable from the logs after the fact | done |
@@ -1776,7 +1777,7 @@ composition root, release modes, berths, inbox and domain knowledge, each of whi
 5.1 skills ─► 5.2 ladder ─► 5.17 example map ─► 5.18 mock-up review ─► 5.4a chart gate ─► 5.4b make chart
    ─► 5.4c /chart ─► 5.5 clearance ─► 5.5b clearance reachable ─► 5.6 scope ─► 5.3 fairways
    ─► 5.7 two gates ─► 5.7b slow tests marked ─► 5.8 review ─► 5.9a adversary, careen ─► 5.13 logs ─► 5.10a ids ─► 5.10b rendered aggregates
-   ─► 5.19 capability demo ─► 5.20 surfaces held ─► 5.9b budgets ─► 5.11 composition ─► 5.12a release modes ─► 5.12b flag hygiene ─► 5.14a berth allocation ─► 5.14b berth provisioning ─► 5.15 inbox ─► 5.16 domain
+   ─► 5.19 capability demo ─► 5.20 surfaces held ─► 5.9b budgets ─► 5.11a events per file ─► 5.11b composition root ─► 5.12a release modes ─► 5.12b flag hygiene ─► 5.14a berth allocation ─► 5.14b berth provisioning ─► 5.15 inbox ─► 5.16 domain
 ```
 
 **5.1 — The skills, renamed.** The 53 skills are already in `assets/toolkit/skills/` from slice 3.2 and in
@@ -2107,7 +2108,14 @@ back reads as held rather than late; the bridge renders those two columns at 7.5
 is built. Test: a chart with two capabilities stops a person once per capability, when its last slice
 merges, and never on a merge that completes nothing.
 
-**5.11 needs a real language package, and this machine has none.** Its done-when is two slices each adding
+**5.11 lands in two, and only the second needed the language package.** 5.11a is the event layout, which
+turned out to be language-shaped rather than framework-shaped: a Python index re-exports with `from .
+import`, a TypeScript one with `export *`, and Go needs none at all because a directory is already a
+namespace. That is a property of the language, so it is keyed by file extension in the keel rather than
+being a protocol member six packages would each answer with the same string — and no package changed.
+5.11b is the composition root, which is per-backend and does need one. Split 2026-10-07.
+
+**What 5.11 originally said about needing a package, kept because the reasoning still applies to 5.11b.** Its done-when is two slices each adding
 an event, both diffs applying to one base with no line touched by both — which is a claim about *generated
 code*, in a language, with that language's composition root and its events module. The toy package answers
 the protocol and generates almost nothing, so it can prove the mechanism and not the claim. The per-backend
@@ -2537,7 +2545,7 @@ Collected from above, so they can be taken before the slice that needs them.
 
 ### A realistic shape for the calendar
 
-Phase 5 is twenty-eight slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
+Phase 5 is twenty-nine slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
 beside each other and are each about three weeks. Phase 8 is a week of machinery and a release. Phase 9
 is a fortnight of writing against real runs. Phase 10 is after the release and is its own month. The
 prerequisite — the six packages rebuilt — took the evening of 6 October, and found four keel faults on the way.
