@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 78 of 106 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 29/29, phase 6 7/9, phase 7 6/7, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 79 of 107 slices done** — phase 1 6/6, phase 2 7/9, phase 3 16/20, phase 4 7/7, phase 5 29/29, phase 6 7/9, phase 7 7/8, phase 8 0/7, phase 9 0/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1639,7 +1639,8 @@ Depends on: phase 4. Runs beside phase 7.
 | 7.4 | The fleet board: `slipwai fleet`, `fleet watch`, the rendered page | new | M | Every column folds from the logs; a stalled berth is told from a finished one | done |
 | 7.5 | The bridge: `slipwai bridge` local server with controls, the read-only Pages copy | new | L | A question answered from the page becomes a `told` line | done |
 | 7.6 | The harness registry rows for Claude Code, Codex, Cursor, Gemini CLI, OpenCode and Kiro; `unproven` until run | upstream + new | M | Each row says how it is invoked and which hooks it has | done |
-| 7.7 | Retire `cruise.py`; `/cruise` starts captains | new | S | No runner left in the toolkit |  |
+| 7.7a | `/cruise` casts off: `scripts/agents/fleet.py` starts the harbourmaster and one captain per fairway under the telegraph's `boilers`, and exits. `make cruise`, `cruise-status` and `cruise-stop` point at it | new | S | Typing `/cruise` leaves nothing holding the state of the run | done |
+| 7.7b | Delete the runner: `cruise.py`'s loop, its seat commands re-pointed at the logs, and its harness-hook verbs (`guard`, `compacting`, `resume`, `stopping`) moved to where the captain owns them — the same knot as 6.1c, and it unties with the same decision | new | L | No runner left in the toolkit, and the greenfield of phase 7 has run two captains on two machines start to finish |  |
 
 Depends on: 5.13 and 5.14. 7.1 first, then 7.2, then the rest in any order.
 
@@ -2464,11 +2465,25 @@ end to end on it, and `slipwai` says `unproven` when an unproven harness is chos
 depend on none of the hooks — it reads the last line itself, diffs the controlled files, owns the waits —
 so a hook is a second belt where it exists.
 
-**7.7 — Retire `cruise.py`.** `/cruise` starts the harbourmaster and one captain per fairway in the
-chart, under the telegraph's position, and exits. The runner is deleted. `test_cruise_parts` and the
-seat tests already name what the commands must say; they are re-pointed at the captain. Done when no
-runner is left in the toolkit and the greenfield of phase 7 — a small product with two bounded contexts,
-generated with the 2.0.0 keel — has run two captains on two machines from start to finish.
+**7.7a — Casting off.** `/cruise` starts the harbourmaster and one captain per fairway in the chart,
+under the telegraph's `boilers`, and exits. The shortness of `fleet.py` is the point: the replacement for
+the runner is not a better runner, it is **no runner** — the state is in the logs, the captains read them,
+and nothing a person types stays in the loop, so nothing a person types can be the thing that died at
+iteration two.
+
+**7.7b — and deleting the old one.** Three things are still in `cruise.py` and they are not the same kind
+of thing. Its **loop** is dead the moment 7.7a lands and is a deletion. Its **seat commands** —
+`watch`, `tell` — read the runner's own log and have to read the deck logs instead, which is a rewrite of
+about four hundred lines. Its **harness-hook verbs** — `guard`, `compacting`, `resume`, `stopping` — are
+called from the rows `agent_settings.py` writes into `.claude/settings.json`, and they are the control-file
+guard and the compaction protocol, which now belong to the captain. That last part is the same knot as
+6.1c: a keel writing harness hook rows that name one script, where the right shape is a point an extension
+or a captain attaches to and one of those points is a guard that may refuse. **It unties with the same
+decision**, which is why the two are one slice's worth of work and not two.
+
+Done when no runner is left in the toolkit and the greenfield of phase 7 — a small product with two bounded
+contexts, generated with the 2.0.0 keel — has run two captains on two machines from start to finish. That
+last half is a person's: it is the first real run.
 
 ### Phase 8. 2.0.0
 

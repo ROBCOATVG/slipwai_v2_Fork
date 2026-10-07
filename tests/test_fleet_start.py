@@ -1,0 +1,118 @@
+"""Casting off: what `/cruise` starts now, and what it deliberately does not hold.
+
+The replacement for the runner is not a better runner. It is no runner: the state is in the logs, the
+captains read them, and the thing a person types starts processes and exits — so nothing in it can be the
+thing that died at iteration two.
+"""
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+import checkout_packages  # noqa: F401
+
+from slipwai.assets import TOOLKIT_ROOT
+from slipwai.project.harbour import harbour_config
+
+AGENTS = TOOLKIT_ROOT / "scripts/agents"
+CARRIED = ("fleet.py", "clearance.py", "harbourmaster.py", "captain.py", "logs.py", "berths.py",
+           "telegraph.py", "inbox.py", "ids.py")
+CHART = """slices:
+  ORD-01: {fairway: ORD, sets: [Placed], steers_by: []}
+  BIL-01: {fairway: BIL, sets: [Charged], steers_by: []}
+  FUL-01: {fairway: FUL, sets: [Picked], steers_by: []}
+"""
+#: A fake for both long-running processes: alive, quiet, and easy to kill.
+SLEEPER = "import time\ntime.sleep(600)\n"
+
+
+class Fixture(unittest.TestCase):
+    def setUp(self) -> None:
+        self.root = Path(tempfile.mkdtemp())
+        (self.root / "project.json").write_text("{}", encoding="utf-8")
+        place = self.root / "scripts/agents"
+        place.mkdir(parents=True)
+        for name in CARRIED:
+            (place / name).write_text((AGENTS / name).read_text(encoding="utf-8"), encoding="utf-8")
+        # The two long-running processes replaced by a sleeper: what is proved here is what gets started
+        # and what is written down, not what either of them then does.
+        for name in ("harbourmaster.py", "captain.py"):
+            (place / name).write_text(SLEEPER, encoding="utf-8")
+        (self.root / "specs/ordering").mkdir(parents=True)
+        (self.root / "specs/ordering/chart.yaml").write_text(CHART, encoding="utf-8")
+        (self.root / "harbour.json").write_text(harbour_config(), encoding="utf-8")
+        self.script = place / "fleet.py"
+        self.addCleanup(self.run_it, "stop")
+
+    def run_it(self, *argv: str) -> subprocess.CompletedProcess:
+        return subprocess.run([sys.executable, str(self.script), *argv],
+                              capture_output=True, text=True, cwd=self.root, timeout=60)
+
+    def telegraph(self, **changes: object) -> None:
+        held = json.loads((self.root / "harbour.json").read_text(encoding="utf-8"))
+        (self.root / "harbour.json").write_text(json.dumps({**held, **changes}), encoding="utf-8")
+
+    def pids(self) -> list[str]:
+        place = self.root / ".slipwai/running"
+        return sorted(path.stem for path in place.glob("*.pid")) if place.is_dir() else []
+
+
+class CastOffTest(Fixture):
+    def test_it_starts_the_harbourmaster_and_a_captain_per_fairway(self) -> None:
+        done = self.run_it("start")
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(self.pids(), ["captain-BIL", "captain-FUL", "captain-ORD", "harbourmaster"])
+
+    def test_it_exits_rather_than_staying_in_the_loop(self) -> None:
+        """The whole of the replacement: nothing a person types holds the state of the run."""
+        done = self.run_it("start")
+        self.assertEqual(done.returncode, 0)
+        self.assertIn("slipwai fleet", done.stdout)
+
+    def test_the_telegraph_decides_how_many_are_lit_and_the_rest_wait(self) -> None:
+        self.telegraph(boilers=1)
+        done = self.run_it("start")
+        self.assertEqual(len([one for one in self.pids() if one.startswith("captain-")]), 1)
+        self.assertIn("waiting for a berth", done.stdout)
+
+    def test_a_telegraph_at_stop_lights_nothing_and_says_how_to_cast_off(self) -> None:
+        self.telegraph(boilers=0, position="stop")
+        done = self.run_it("start")
+        self.assertEqual(self.pids(), [])
+        self.assertIn("telegraph half-ahead", done.stdout)
+
+    def test_starting_twice_does_not_start_a_second_of_anything(self) -> None:
+        self.run_it("start")
+        before = self.pids()
+        done = self.run_it("start")
+        self.assertEqual(self.pids(), before)
+        self.assertIn("already running", done.stdout)
+
+
+class StopTest(Fixture):
+    def test_stop_asks_everything_it_started_and_says_a_captain_waits_for_its_boundary(self) -> None:
+        self.run_it("start")
+        done = self.run_it("stop")
+        self.assertIn("at its next boundary", done.stdout)
+
+    def test_a_process_that_is_already_gone_is_said_and_not_quietly_tidied(self) -> None:
+        """`stop` pretending it tidied something is how a person stops believing the output."""
+        place = self.root / ".slipwai/running"
+        place.mkdir(parents=True, exist_ok=True)
+        (place / "captain-GONE.pid").write_text("999999\n", encoding="utf-8")
+        done = self.run_it("stop")
+        self.assertIn("not running", done.stdout)
+
+    def test_list_says_what_is_running_and_what_was_started_and_is_not(self) -> None:
+        self.run_it("start")
+        done = self.run_it("list")
+        self.assertIn("harbourmaster", done.stdout)
+        self.assertIn("running", done.stdout)
+
+
+if __name__ == "__main__":
+    unittest.main()
