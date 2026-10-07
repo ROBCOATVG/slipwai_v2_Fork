@@ -27,6 +27,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SHARED = {
     "src/slipwai/logs.py": "assets/toolkit/scripts/agents/logs.py",
     "src/slipwai/berths.py": "assets/toolkit/scripts/agents/berths.py",
+    "src/slipwai/telegraph.py": "assets/toolkit/scripts/agents/telegraph.py",
 }
 BANNER = """# Written by scripts/shared-modules.py from {source}. Do not edit: edit the keel's module,
 # run `make shared`, and commit both. A generated project has no slipwai to import, and both runtimes need

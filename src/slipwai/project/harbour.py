@@ -24,9 +24,12 @@ from __future__ import annotations
 
 import json
 
-from .careen import DEFAULT_BAR
+from ..telegraph import settings
 
 CONFIG = "harbour.json"
+#: Where a fresh harbour's telegraph starts. Not `full-ahead`: a first run is the one nobody has watched yet,
+#: and the position that spends most is a strange place to begin.
+START = "half-ahead"
 #: Wall-clock minutes and thousands of input tokens one stage may take. Per stage, because a converge and
 #: an implement are not the same kind of work and one number for both would be wrong for each.
 STAGE_BUDGETS: dict[str, dict[str, int]] = {
@@ -54,19 +57,24 @@ COMMENT = (
     "merge; below it a finding is stowed into the fairway's careen and the slice merges, and nothing "
     "CRITICAL is ever stowed. `decision_ceiling` is how many decisions may stand unread before a fairway "
     "parks. `wait_bound` is how long any wait may last before it is a parked line with a reason. Change "
-    "them here; slice 7.3 adds the telegraph, which sets several at once by name."
+    "them here, or ring the telegraph — `slipwai telegraph slow-ahead` sets the group, `slipwai telegraph --set "
+    "boilers=2` sets one, and `slipwai telegraph` shows where it is."
 )
 
 
 def harbour_config() -> str:
     """`harbour.json` as generated: the defaults, and the comment that says what each one holds."""
+    # The telegraph's own numbers, from the position a fresh harbour starts at, so one file holds every
+    # number a run is held to and `slipwai telegraph` has something to ring from the first generation.
     document = {
         "_comment": COMMENT,
         "v": 1,
+        "position": START,
         "stages": STAGE_BUDGETS,
-        "bar": DEFAULT_BAR,
-        "decision_ceiling": DECISION_CEILING,
-        "wait_bound": WAIT_BOUND,
+        # Last, so the file matches the position it declares exactly. `bar`, `decision_ceiling` and
+        # `wait_bound` are the telegraph's rows now, and `START`'s are the three constants above — written
+        # once here rather than twice, because two sources for one number is how a board starts lying.
+        **settings(START),
     }
     return json.dumps(document, indent=2, ensure_ascii=False) + "\n"
 

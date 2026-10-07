@@ -44,6 +44,7 @@ sys.path.insert(0, str(HERE))
 
 import berths  # noqa: E402
 import logs  # noqa: E402
+import telegraph  # noqa: E402
 
 
 def project_root() -> Path:
@@ -57,6 +58,9 @@ ROOT = project_root()
 #: Where this process keeps how far it has read each deck log. A cursor, not a copy: the logs are the truth
 #: and this is only a bookmark, so losing it costs a re-read and never a line.
 CURSORS = ROOT / ".slipwai/harbourmaster.json"
+#: The numbers this harbour is held to, and the lever over them. Watched rather than read once: a person
+#: rings the telegraph while the run is going, which is the only time ringing it is any use.
+HARBOUR_CONFIG = ROOT / "harbour.json"
 #: Which deck-log kind becomes which harbour-log kind. Everything not here stays in the fairway's own log,
 #: because the harbour log is what every captain reads on every turn and a line nobody needs is a line
 #: everybody pays for.
@@ -115,6 +119,91 @@ def key_of(path: Path) -> str:
         return str(path.relative_to(ROOT))
     except ValueError:
         return str(path)
+
+
+def config() -> dict:
+    try:
+        held = json.loads(HARBOUR_CONFIG.read_text(encoding="utf-8"))
+    except (OSError, ValueError, UnicodeDecodeError):
+        return {}
+    return held if isinstance(held, dict) else {}
+
+
+def at() -> str:
+    """Where the telegraph is, as the file says."""
+    return str(config().get("position", telegraph.POSITIONS[0]))
+
+
+def last_telegraph() -> str:
+    """The position the harbour log last said, so a change is written once and not on every pass."""
+    for entry in reversed(harbour_entries()):
+        if entry.kind in ("telegraph", "fires-banked"):
+            return str(entry.fields.get("position") or entry.fields.get("step") or "")
+    return ""
+
+
+def rung() -> list[logs.Entry]:
+    """A `telegraph` line where the file has moved since the last one. Captains read it and adjust at their
+    next boundary — not immediately, because a stage ended half-way to save a few tokens has saved nothing."""
+    # No `harbour.json` is no telegraph, not `full-ahead`: writing a position into the log for a harbour
+    # that never declared one would have the captains adjust to a lever nobody rang.
+    if not HARBOUR_CONFIG.is_file():
+        return []
+    here = at()
+    if here == last_telegraph() or here not in telegraph.SETTINGS:
+        return []
+    return [logs.entry("telegraph", harbour=True, position=here)]
+
+
+def spent_today() -> int:
+    """Thousands of input tokens the harbour has spent since midnight, from the lines that record it.
+
+    From the logs rather than from a counter: a counter is state kept somewhere other than where the work
+    happened, which is the mistake this whole method is built around not making.
+    """
+    today = logs.now()[:10]
+    total = 0
+    for path in deck_logs():
+        try:
+            found = logs.fold(path.read_text(encoding="utf-8").splitlines())
+        except (OSError, UnicodeDecodeError, logs.Unreadable):
+            continue
+        for entry in found:
+            tokens = entry.fields.get("tokens")
+            if entry.t[:10] == today and isinstance(tokens, int | float):
+                total += int(tokens)
+    return total
+
+
+def bank() -> list[logs.Entry]:
+    """Step the position down one notch where the day's bunker is spent, or nothing.
+
+    One notch at a time, and never straight to `stop`: a run that stops dead at the end of the day loses
+    whatever was in flight, and a run that slows keeps finishing what it started.
+    """
+    here = at()
+    allowed = config().get("bunker_per_day")
+    if here not in telegraph.SETTINGS or not isinstance(allowed, int | float) or allowed <= 0:
+        return []
+    spent = spent_today()
+    if spent < allowed:
+        return []
+    down = telegraph.slower(here)
+    if down is None:
+        return []
+    write_position(down)
+    return [logs.entry("fires-banked", harbour=True, step=down,
+                       why=f"the day's bunker of {int(allowed)}k is spent ({spent}k), so the fires are "
+                           f"banked one notch from {here}")]
+
+
+def write_position(name: str) -> None:
+    """Ring the telegraph down, in the file, so the next pass and every reader sees the same thing."""
+    held = config()
+    whole = telegraph.applied(name, held)
+    if isinstance(held.get("stages"), dict):
+        whole["stages"] = telegraph.scaled(held["stages"], float(whole["stage_scale"]))
+    HARBOUR_CONFIG.write_text(json.dumps(whole, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 def never(detail: str) -> str | None:
@@ -222,6 +311,7 @@ def once() -> int:
             continue
         written += carried(entries, taken)
         cursors[key_of(path)] = reached
+    written += bank() or rung()
     if written:
         append(written)
     write_cursors(cursors)

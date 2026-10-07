@@ -1,0 +1,122 @@
+"""`slipwai telegraph`: ringing the harbour's one lever, and setting a single number under it.
+
+Three shapes, and the third is the one that matters. `slipwai telegraph` shows where it is. `slipwai
+telegraph <position>` rings it, which sets every number together. `slipwai telegraph --set boilers=2`
+changes one and leaves the rest, and the board then says `half-ahead, adjusted` — because a board reporting
+a position the numbers do not match is a board that is lying.
+
+`delegate` and `cycle` belong to `/drive` and are mirrored here, so a person sets every width in one place;
+`--set` writes them back to `.specify/drive.json`, where `/drive` reads them. The telegraph never rings them,
+because they are not the harbour's to decide.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+from .assets import this_command
+from .errors import GenerationError, refuse
+from .project.harbour import CONFIG
+from .telegraph import MEANS, MIRRORED, POSITIONS, Refused, applied, described, parse_setting, scaled
+
+DRIVE = ".specify/drive.json"
+
+
+def read(path: Path) -> dict:
+    """The file, or a refusal. Never a fresh default: these numbers are what a person decided, and quietly
+    starting again from the generated ones is how a run goes fast on a day somebody slowed it down."""
+    if not path.is_file():
+        raise GenerationError(f"{path} is not here. Run this inside a project `slipwai generate` made, or "
+                              f"`slipwai migrate` to bring a older one up to a keel that has a telegraph")
+    try:
+        held = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, UnicodeDecodeError) as error:
+        raise GenerationError(f"{path} cannot be read ({error}), and it is what this run is held to") from None
+    if not isinstance(held, dict):
+        raise GenerationError(f"{path} is not an object, so there is nothing in it to set")
+    return held
+
+
+def write(path: Path, held: dict) -> None:
+    path.write_text(json.dumps(held, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def shown(held: dict) -> list[str]:
+    """Where the telegraph is, and every number under it."""
+    at = str(held.get("position", "full-ahead"))
+    lines = [f"telegraph: {described(at, held)}"]
+    width = max(len(name) for name in MEANS)
+    for name, said in MEANS.items():
+        lines.append(f"  {name:<{width}}  {held.get(name, 'unset')!s:<8}  {said}")
+    return lines
+
+
+def drive_settings(root: Path) -> dict:
+    path = root / DRIVE
+    try:
+        held = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, UnicodeDecodeError):
+        return {}
+    return held if isinstance(held, dict) else {}
+
+
+def ring(root: Path, name: str) -> list[str]:
+    """Ring a position: every number together, and the stage budgets scaled with them."""
+    path = root / CONFIG
+    held = read(path)
+    whole = applied(name, held)
+    if isinstance(held.get("stages"), dict):
+        whole["stages"] = scaled(held["stages"], float(whole["stage_scale"]))
+    write(path, whole)
+    return [f"telegraph: rung to {name}", *shown(whole)[1:]]
+
+
+def set_one(root: Path, pairs: list[str]) -> list[str]:
+    """Set named numbers one at a time, each where it belongs: the harbour's here, `/drive`'s in its own file."""
+    harbour_path, drive_path = root / CONFIG, root / DRIVE
+    held = read(harbour_path)
+    drive = drive_settings(root)
+    said: list[str] = []
+    for pair in pairs:
+        name, value = parse_setting(pair)
+        if name in MIRRORED:
+            drive[name] = value
+            said.append(f"  {name} = {value}  (in {DRIVE}, which is where `/drive` reads it)")
+        else:
+            held[name] = value
+            said.append(f"  {name} = {value}")
+    write(harbour_path, held)
+    if drive:
+        drive_path.parent.mkdir(parents=True, exist_ok=True)
+        write(drive_path, drive)
+    at = str(held.get("position", "full-ahead"))
+    return [f"telegraph: {described(at, held)}", *said,
+            f"`{this_command()} telegraph {at}` puts every number back to what that position means"]
+
+
+def telegraph_main(argv: list[str]) -> None:
+    prog = f"{this_command()} telegraph"
+    parser = argparse.ArgumentParser(
+        prog=prog, description="Where this harbour's lever is set, and what every number under it is",
+        epilog="Ringing a position sets every number together and resets any that were adjusted. "
+               "`--set` changes one and leaves the rest, and the board then says the position with "
+               "`adjusted` after it. Fastest first: " + ", ".join(POSITIONS) + ".")
+    parser.add_argument("position", nargs="?", choices=POSITIONS, help="the position to ring")
+    parser.add_argument("--set", dest="pairs", nargs="+", metavar="<name>=<value>", default=None,
+                        help="set one number and leave the others")
+    parser.add_argument("--root", default=".", metavar="<directory>", help="the harbour (default: here)")
+    parsed = parser.parse_args(argv)
+    root = Path(parsed.root).expanduser()
+    try:
+        if parsed.position and parsed.pairs:
+            raise GenerationError("ring a position or set a number, not both in one command: ringing resets "
+                                  "every number, so the two together would not mean what either does alone")
+        if parsed.pairs:
+            print("\n".join(set_one(root, parsed.pairs)))
+        elif parsed.position:
+            print("\n".join(ring(root, parsed.position)))
+        else:
+            print("\n".join(shown(read(root / CONFIG))))
+    except (GenerationError, Refused) as error:
+        refuse(prog, error)

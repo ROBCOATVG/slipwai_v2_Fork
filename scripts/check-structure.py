@@ -52,7 +52,7 @@ TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
     # dev-tooling hook is, where a project goes to production, what differs per package and where each
     # backend answers its probes. The registry and the loader land here in phase 2.
     ("contract", ("registry", "family_only", "language_shape", "language_directory", "extension_directory",
-                  "features", "extensions", "extension_shape", "hooks", "targets", "axes", "catalog",
+                  "features", "extensions", "extension_shape", "hooks", "telegraph", "targets", "axes", "catalog",
                   "catalog_checks", "catalog_merge",
                   "catalog_options", "loaded", "backends", "probes", "ecosystems", "npm_workspace",
                   "examples", "harness",
@@ -76,7 +76,7 @@ TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
               "language_upkeep", "browser_app",
               # The other kind of package: its install, its scaffold, and the two verbs over them.
               "extension_install", "package_new", "package_release", "cli_extension", "cli_package",
-              "trust", "cli_trust", "channel", "channel_new", "cli_channel",
+              "trust", "cli_trust", "channel", "channel_new", "cli_channel", "cli_telegraph",
               # The conformance suite a package runs against itself, and its generated-variant
               # matrix: entry points the keel exports rather than modules it reads.
               "conformance", "matrix")),
