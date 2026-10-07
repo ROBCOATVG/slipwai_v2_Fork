@@ -57,8 +57,40 @@ def named(fragment: Any, where: Path) -> str:
     return str(fragment["name"])
 
 
+def version_in(root: Path) -> str:
+    """The package's `VERSION`, or `unknown` where it has none. Both kinds of package carry one the same way."""
+    version_file = root / "VERSION"
+    version = "unknown"
+    if version_file.is_file():
+        try:
+            version = version_file.read_text(encoding="utf-8").strip()
+        except (UnicodeDecodeError, OSError) as error:
+            raise ReleaseError(f"{version_file} is not UTF-8 text, so the version it holds cannot be read") from error
+    return version
+
+
+def read_package(root: Path) -> Source:
+    """Either kind of package directory as a source, read by whichever manifest it holds.
+
+    `pack` and `copy_directory` do not care which kind they are moving — a package is a directory of files
+    with a name and a version — so this is where the two kinds stop being different, rather than there being
+    a second packer that differs in one `json.loads`.
+    """
+    manifest = root / "extension.json"
+    if not manifest.is_file():
+        return read_directory(root)
+    try:
+        declared = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, ValueError, UnicodeDecodeError) as error:
+        raise ReleaseError(f"{manifest} cannot be read as an extension.json: {error}") from None
+    key = declared.get("key") if isinstance(declared, dict) else None
+    if not isinstance(key, str) or name_fault("extension", key) is not None:
+        raise ReleaseError(f"{manifest} gives no `key`, which is the name its release file is called after")
+    return Source(key, version_in(root), declared, root, "directory")
+
+
 def read_directory(root: Path) -> Source:
-    """A package directory as a source: its fragment, its name and its version (`unknown` with no `VERSION`)."""
+    """A language package directory as a source: its fragment, its name and its version."""
     fragment, fault = parse_fragment(root / "language.json")
     if fault is not None:
         raise ReleaseError(f"{root} {fault}")
@@ -193,10 +225,10 @@ RELEASE_VERSION = re.compile(r"[0-9A-Za-z][0-9A-Za-z.+_-]*")
 
 
 def pack(root: Path, out: Path) -> Path:
-    """`<out>/<name>-<version>.tar.gz` from a package directory, the same bytes every time. A publisher's `.env` or
-    `.env.*` anywhere in it refuses the release, naming the file, and a `VERSION` that is not a file name's worth
-    of letters, digits and `.+_-` refuses it too: it becomes part of the file's name."""
-    source = read_directory(root)
+    """`<out>/<name>-<version>.tar.gz` from a package directory of either kind, the same bytes every time. A
+    publisher's `.env` or `.env.*` anywhere in it refuses the release, naming the file, and a `VERSION` that is not a
+    file name's worth of letters, digits and `.+_-` refuses it too: it becomes part of the file's name."""
+    source = read_package(root)
     if not RELEASE_VERSION.fullmatch(source.version):
         raise ReleaseError(f"{root}: VERSION {source.version!r} cannot be part of a release file's name")
     for path in files_of(root):

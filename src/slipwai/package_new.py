@@ -25,6 +25,8 @@ from .extension_shape import OBLIGATIONS
 from .language_shape import name_fault
 
 KINDS = ("extension", "language")
+#: The publisher's verbs, in the order they are used.
+VERBS = ("new", "check", "release", "register")
 #: What a scaffolded manifest declares it needs: this keel's schema, and everything up to the next major.
 def core_range(schema: str) -> str:
     major = schema.split(".")[0]
@@ -66,9 +68,12 @@ def extension_files(name: str, schema: str) -> dict[str, str]:
                             for index, (key, said) in enumerate(OBLIGATIONS, start=1))
     return {
         "extension.json": json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
+        "VERSION": "0.1.0\n",
         "init.py": ENTRY_POINT.format(name=name, title=title_of(name)),
         "README.md": README.format(name=name, title=title_of(name), obligations=obligations,
                                    command=this_command()),
+        "Makefile": MAKEFILE.format(name=name, kind="extension"),
+        ".github/workflows/verify.yml": WORKFLOW.format(name=name, kind="extension"),
     }
 
 
@@ -88,6 +93,8 @@ def language_files(name: str, schema: str) -> dict[str, str]:
         "VERSION": "0.1.0\n",
         f"{module}/__init__.py": LANGUAGE_MODULE.format(name=name, module=module, title=title_of(name)),
         "README.md": LANGUAGE_README.format(name=name, title=title_of(name), command=this_command()),
+        "Makefile": MAKEFILE.format(name=name, kind="language"),
+        ".github/workflows/verify.yml": WORKFLOW.format(name=name, kind="language"),
     }
 
 
@@ -103,7 +110,8 @@ def write(kind: str, name: str, into: Path, schema: str) -> list[str]:
         target = root / path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(text, encoding="utf-8")
-    (root / "init.py").chmod(0o755) if kind == "extension" else None
+    if kind == "extension":
+        (root / "init.py").chmod(0o755)
     return [f"{root / path}" for path in files]
 
 
@@ -249,3 +257,41 @@ TODO: what this language and framework are, in two sentences.
 
 Every required member answered, and the generated project built and tested.
 '''
+
+
+#: The package's own `make`. Three targets, because a publisher has three questions: is it right, what do I
+#: ship, and where does it go. Each is the keel's verb with the package's own directory already filled in, so
+#: a publisher who forgets the flags still runs the right thing.
+MAKEFILE = """# {name}: what a publisher runs. The keel is `slipwai`; install it with `pip install slipwai`.
+.DEFAULT_GOAL := check
+CHANNEL ?= ../slipwai-index
+
+.PHONY: check release register
+check: ## Run the conformance suite this package's kind is held to
+	slipwai package check .
+
+release: check ## Build the release file and its index entry under dist/
+	slipwai package release . --out dist
+
+register: check ## Build it and write it into a channel checkout (CHANNEL=<directory>)
+	slipwai package register . --channel $(CHANNEL)
+"""
+
+#: The package's CI: the keel's reusable workflow, called rather than copied, so a fix to it reaches every
+#: package. Pinned to no keel version here — the package declares the range in its manifest, and the workflow
+#: takes a version when a publisher wants one.
+WORKFLOW = """name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  conformance:
+    uses: ROBCOATVG/slipwai/.github/workflows/package.yml@main
+    with:
+      package: {name}
+      kind: {kind}
+"""

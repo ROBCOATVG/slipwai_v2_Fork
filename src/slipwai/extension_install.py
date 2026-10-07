@@ -60,6 +60,12 @@ def cloned(url: str, into: Path) -> Path:
     return root
 
 
+#: Where the last index lookup came from, so the line that says what was installed can say it. A verb runs
+#: one install at a time and prints as it goes, which is why this is a module variable and not a return value
+#: threaded through four functions that have no other use for it.
+CAME_FROM: dict[str, str] = {}
+
+
 def from_index(name: str, area: Path) -> Path:
     """One named extension, fetched from the chandlery and unpacked. Raises with the reason it could not be.
 
@@ -77,6 +83,7 @@ def from_index(name: str, area: Path) -> Path:
     if release is None:
         raise GenerationError(f"{found.name} lists no extension `{name}` this keel can install. "
                               f"`{this_command()} search --kind extension` lists what it does")
+    CAME_FROM[name] = f"{release.channel or found.name} ({release.version})"
     archive = area / "release.tar.gz"
     archive.write_bytes(download(found, release))
     unpacked = area / "unpacked"
@@ -168,7 +175,7 @@ def install(requests: list[str], directory: Path) -> list[str]:
             if place.is_dir():
                 shutil.rmtree(place)
             shutil.move(str(holding), str(place))
-            said.append(f"{key} installed from {request}")
+            said.append(f"{key} installed from {CAME_FROM.pop(request, request)}")
     return said
 
 

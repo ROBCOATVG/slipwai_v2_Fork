@@ -1,6 +1,6 @@
 name: package conformance
 
-# What a language package's own CI runs, as a workflow a package repository calls rather than copies.
+# What a package's own CI runs — either kind — as a workflow a package repository calls rather than copies.
 # The division is theme A's: the keel's gate proves the conformance suite works, against one toy package
 # in-tree; each package proves itself against a pinned keel, on its own schedule; and the keel's release
 # proves the published packages still pass against what is about to ship (slice 8.4).
@@ -14,6 +14,11 @@ on:
       package:
         description: The package's directory name, which is also its name in the chandlery
         required: true
+        type: string
+      kind:
+        description: language or extension — which conformance suite proves it
+        required: false
+        default: language
         type: string
       keel:
         description: The keel to prove against — a version on PyPI, or a git ref of this repository
@@ -53,11 +58,20 @@ jobs:
           fi
           slipwai --version
 
+      # One suite per kind. A language's asks the package questions and checks the answers; an extension's
+      # builds a scratch project, runs the entry point in it, and looks at what happened to the project.
       - name: Conformance
-        run: python -m slipwai.conformance "$PWD" "${{ inputs.package }}"
+        run: |
+          set -eu
+          if [ "${{ inputs.kind }}" = "extension" ]; then
+            python -m slipwai.conformance --extension "$PWD/${{ inputs.package }}"
+          else
+            python -m slipwai.conformance "$PWD" "${{ inputs.package }}"
+          fi
 
       # Every generated variant of every backend, each held to its own native gate. Opt-in, because it
-      # builds images and starts containers and a package that has not got that far says so.
+      # builds images and starts containers and a package that has not got that far says so. A language's
+      # only: an extension writes no skeleton, so it has no variants.
       - name: The generated-variant matrix
-        if: ${{ inputs.matrix }}
+        if: ${{ inputs.matrix && inputs.kind != 'extension' }}
         run: python -m slipwai.matrix "$PWD" "${{ inputs.package }}"

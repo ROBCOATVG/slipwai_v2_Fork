@@ -125,12 +125,24 @@ reaches it at the next `slipwai migrate`.
 
 ```sh
 slipwai package new <key>                  # a whole package that already loads
-slipwai extension check <key>              # the manifest, and the six it is held to
+slipwai package check <dir>                # the conformance suite for whichever kind it is
+slipwai package release <dir>              # the release file, its digest and its index entry
+slipwai package register <dir> --channel <checkout>   # both of those, into a channel
+slipwai extension check <dir>              # just the manifest, and the six it is held to
 slipwai extension install <key>            # into the package directory
 slipwai extension list                     # what is installed, and what each attaches to
 slipwai hooks                              # every point, and what is on it
-python -m slipwai.conformance --extension <dir>   # the six, run
 ```
+
+The scaffold ships a `Makefile` with `check`, `release` and `register` and a CI workflow that calls the
+keel's reusable one, so the four verbs are `make check` and `make register CHANNEL=...` from inside the
+package.
+
+A channel is a directory: `entries/<name>-<version>.json`, one file per release, and
+`slipwai-languages/index.json` built from them. Two publishers releasing on one afternoon touch two files
+and never meet, and the index is a regeneration rather than a resolution — `changelog.d`'s shape again. A
+version already listed with different bytes is refused: a release is immutable once anybody has installed
+it, and replacing one silently is how a digest somebody checked stops meaning anything.
 
 `package new` writes a manifest declaring the schema *this* keel speaks, and an entry point that already
 meets obligations 1, 3 and 6 with the rest marked `TODO`. A scaffold that does not load is a scaffold whose

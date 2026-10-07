@@ -75,7 +75,7 @@ TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
               "index_schema", "language_index", "language_release", "language_install", "language_plan",
               "language_upkeep", "browser_app",
               # The other kind of package: its install, its scaffold, and the two verbs over them.
-              "extension_install", "package_new", "cli_extension", "cli_package",
+              "extension_install", "package_new", "package_release", "cli_extension", "cli_package",
               # The conformance suite a package runs against itself, and its generated-variant
               # matrix: entry points the keel exports rather than modules it reads.
               "conformance", "matrix")),
