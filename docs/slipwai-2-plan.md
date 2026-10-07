@@ -1565,7 +1565,7 @@ Depends on: phase 3.
 | 5.1 | The skills, renamed to the vocabulary where a name changed, `docs/rename.json` begun | upstream | M | Every skill present; the rename table has a row per rename | done |
 | 5.2 | The commands and agents, the ladder in `drive.md`, the stop table, and `.specify/drive.json`: the `delegate` and `cycle` widths, the refusal of `story` as a cycle unit, and the fallbacks that run a slice narrower than the setting asks | upstream | L | `/drive` runs one slice to a demo on a generated project, red-green-refactor per the configured width, and a slice with no story tag falls to `rule` rather than failing | done |
 | 5.3 | Fairways: the `## Fairways` table in the split, `/drive fairway=<name>`, the boards grouped by fairway | `slipwai-workstreams` | M | Two fairways on one machine, merges independent |  |
-| 5.4 | The chart: `chart.yaml` schema, the capability each slice belongs to and the `story-splitting` change that groups slices under capabilities, `make chart` on the event profile, `/chart` on the standard profile, `check-chart` | new | L | Both profiles produce a chart a reader can diff; every slice names the capability whose demo it is part of, and it does so with no flag and no target |  |
+| 5.4 | The chart: `chart.yaml` schema, the capability each slice belongs to and the `story-splitting` change that groups slices under capabilities, `make chart` on the event profile, `/chart` on the standard profile, `check-chart` including the rule that every slice names a capability | new | L | Both profiles produce a chart a reader can diff; every slice names the capability whose demo it is part of, with no flag and no target, and `check-chart` refuses one that does not |  |
 | 5.5 | Clearance and the one-setter-per-mark rule in `check-model` and `check-chart`; typed attributes and `examples.md` at the split | new (#32) | M | A fresh fairway fans out on its first iteration |  |
 | 5.6 | `check-slice-scope` reads the chart for owned paths on both profiles | upstream + new | M | The standard profile holds a context boundary |  |
 | 5.7 | Two gates: `make unit` in generated projects, the ladder's fast checks per increment, the full gate before `main` | new | M | A slice's increments never run the full suite |  |
@@ -1850,12 +1850,23 @@ a mark is a contract and a contract is a file a reader can diff. On the event pr
 renders this from `model.yaml` (`project/model_to_code.py` already knows the mapping) and `check-chart`
 fails when they disagree, exactly as `check-drawio` holds the canvas today. On the standard profile a
 `/chart` stage, run once before the split, interviews for the fairways and writes the slices' marks from
-the plan's Structure Decisions. `check-chart` holds four things on both profiles: every mark is typed and
-its file exists; every mark a slice steers by is set by some slice; no mark is set by two slices; and no
+the plan's Structure Decisions. `check-chart` holds five things on both profiles: every mark is typed and
+its file exists; every mark a slice steers by is set by some slice; no mark is set by two slices; no
 mark is deleted from a frozen chart (an amendment goes in `fairways/<name>/chart.d/`, folded by the
-harbourmaster). The keel module is `src/slipwai/project/chart.py`, parts tier, writing the schema check
+harbourmaster); and **every slice names the capability it is part of**.
+
+That fifth rule is there because its absence fails silently. A slice naming no capability would simply
+never complete one, so no demo would ever come due for it, and nothing anywhere would say why — the loop
+would run to the end of the feature having stopped nobody, which reads exactly like a loop with nothing to
+show. A gate is the only thing that turns that into a sentence. It also fixes when the question is asked:
+the chart is written before the split is claimed, so naming the capability is a product judgement taken
+with a person present, which is the only time it can be taken at all. The rule holds with no flag and no
+target, which is the point of moving the unit off the release-constraint stage.
+
+The keel module is `src/slipwai/project/chart.py`, parts tier, writing the schema check
 into `scripts/check-chart.py`. Test against a hand-written chart for each rule, and against the toy's
-generated project for the end-to-end.
+generated project for the end-to-end. The capability rule gets two: a chart whose slices all name one
+passes, and a chart with one slice missing it is refused by name, with the command that fixes it.
 
 **5.5 — Clearance.** The rule issue #32 asked for. A slice may start when every mark it steers by is set
 by a slice that is `planned` or `implemented`; its own marks it sets itself, at its first stage. The
