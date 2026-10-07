@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="slipwai">
+  <title>slipwai</title>
+  <!-- A tug: the little boat that moves the big one. Its funnel puffs a spark rather than coal,
+       which is the whole joke and the only place the mark says anything about what runs it. -->
+  <path d="M24 1.4 l1.15 2.6 2.6 1.15 -2.6 1.15 -1.15 2.6 -1.15 -2.6 -2.6 -1.15 2.6 -1.15z" fill="#8a6d24"/>
+  <circle cx="21.5" cy="7.9" r="1.05" fill="#8a6d24" opacity=".55"/>
+  <circle cx="20.1" cy="9.9" r=".65" fill="#8a6d24" opacity=".32"/>
+  <!-- funnel -->
+  <rect x="17.6" y="10.6" width="4.6" height="7" rx="1.3" fill="#0f6b6b"/>
+  <rect x="17.6" y="12.4" width="4.6" height="1.7" fill="#8a6d24"/>
+  <!-- wheelhouse, one porthole, which is what makes it look back at you -->
+  <rect x="6.6" y="12.1" width="9.8" height="5.5" rx="1.9" fill="#0f6b6b"/>
+  <circle cx="11.5" cy="14.85" r="1.6" fill="#fcfcfb"/>
+  <!-- hull: square stern, bow flicked up, which is the whole silhouette of a tug -->
+  <path d="M2.2 17.6h24.3l3.1-1.5a1.05 1.05 0 0 1 1.47 1.18l-.97 4.2A4.1 4.1 0 0 1 26.07 24.6H8a4.1 4.1 0 0 1-4-3.12z"
+        fill="#0f6b6b"/>
+  <!-- water -->
+  <path d="M2.6 27.6q2.7-1.7 5.4 0t5.4 0 5.4 0 5.4 0" fill="none" stroke="#0f6b6b" stroke-width="1.9"
+        stroke-linecap="round" opacity=".4"/>
+</svg>

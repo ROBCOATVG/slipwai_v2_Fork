@@ -67,7 +67,7 @@ OWN = {"catalog_checks", "catalog_options", "cli_offered", "cli_search",
        "extension_install", "package_new", "package_release", "cli_extension", "cli_package",
        "conformance.extension", "index_schema", "trust", "cli_trust",
        "channel", "channel_new", "cli_channel", "telegraph", "cli_telegraph", "fleet", "cli_fleet",
-       "bridge", "bridge_page", "cli_bridge", "whats_new", "deck"}
+       "bridge", "bridge_page", "cli_bridge", "whats_new", "deck", "brand"}
 # Present, but in a version 2 shape that is not the experiment's yet: `cli` answers `--version` and will
 # grow a verb per slice, `assets` holds the paths and not the asset trees, `__init__` and `__main__` are
 # the package's own. The ledger's row for each describes what it becomes, not what is here, so they are

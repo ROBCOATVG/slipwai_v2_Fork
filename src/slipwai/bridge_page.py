@@ -21,6 +21,7 @@ from __future__ import annotations
 import html
 import json
 
+from .brand import favicon, inline
 from .fleet import NOTHING
 from .telegraph import MEANS, POSITIONS
 
@@ -52,9 +53,26 @@ STYLE = """
 --warn:#fab219;--serious:#ec835a;--critical:#d03b3b;
 --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ground:#10171c;--paper:#1a1a19;
+/* Three states, not two: Auto follows the system, and Light and Dark say so. A two-state toggle can only
+   mean "the system's, or the other one", which is the setting people cannot put back. Radios and `:has()`
+   rather than a script, so the published copy — which has nothing to press — still has this. */
+@media (prefers-color-scheme:dark){:root:has(#t-auto:checked){--ground:#10171c;--paper:#1a1a19;
 --ink:#e6ecef;--ink-2:#b6c1c8;--ink-3:#808e97;--rule:#2c3840;--rule-2:#222c33;--teal:#5fc1bb;
 --teal-soft:#15302f;--brass:#d2b465;--brass-soft:#2e2814}}
+:root:has(#t-dark:checked){--ground:#10171c;--paper:#1a1a19;
+--ink:#e6ecef;--ink-2:#b6c1c8;--ink-3:#808e97;--rule:#2c3840;--rule-2:#222c33;--teal:#5fc1bb;
+--teal-soft:#15302f;--brass:#d2b465;--brass-soft:#2e2814}
+:root:has(#t-light:checked){--ground:#f1f3f4;--paper:#fcfcfb;--ink:#172129;--ink-2:#4a5862;
+--ink-3:#7a8891;--rule:#d9e0e4;--rule-2:#e9eef1;--teal:#0f6b6b;--teal-soft:#dcecea;--brass:#8a6d24;
+--brass-soft:#f1e9d2}
+.theme{display:flex;gap:0;border:1px solid var(--rule);border-radius:7px;padding:2px;margin:0;
+background:var(--rule-2)}
+.theme input{position:absolute;opacity:0;pointer-events:none}
+.theme label{font-size:.78rem;color:var(--ink-2);padding:4px 10px;border-radius:5px;cursor:pointer;
+user-select:none}
+.theme input:checked+label{background:var(--paper);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.theme input:focus-visible+label{outline:2px solid var(--teal);outline-offset:1px}
+.corner{display:flex;align-items:center;gap:12px}
 *{box-sizing:border-box}
 body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:14px;
 line-height:1.45;padding-inline:20px;padding-block:0 60px}
@@ -62,7 +80,14 @@ line-height:1.45;padding-inline:20px;padding-block:0 60px}
 code,.mono{font-family:var(--mono);font-size:.92em}
 h1{font-size:1.35rem;font-weight:600;margin:0}
 .sub{color:var(--ink-3);font-size:.85rem;margin-top:3px}
-.top{padding-block:22px 14px;border-bottom:1px solid var(--rule)}
+.top{padding-block:22px 14px;border-bottom:1px solid var(--rule);display:flex;align-items:flex-start;
+justify-content:space-between;gap:16px}
+/* The mark sits in the corner and stays out of the way. `currentColor` on the hull, the spark given the
+   brass of its own, so the whole thing follows the theme rather than carrying two fixed colours into a
+   dark page. */
+.mark{width:44px;height:44px;flex:none;color:var(--teal)}
+.mark .spark{color:var(--brass)}
+@media (max-width:480px){.mark{width:34px;height:34px}}
 .card{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:16px;margin-top:18px}
 .card h2{font-size:.95rem;font-weight:600;margin:0 0 10px}
 table{width:100%;border-collapse:collapse;font-size:.9rem}
@@ -103,7 +128,24 @@ ol.lines .when{color:var(--ink-3);margin-right:8px}
 @media (max-width:600px){dl{grid-template-columns:1fr}dd{text-align:left}}
 """
 
+#: The toggle. Radios because three states need three, and because `:has()` makes them work with no
+#: script at all — which is what the published copy has.
+THEME = """<fieldset class="theme" aria-label="Theme">
+  <input type="radio" name="theme" id="t-auto" checked><label for="t-auto">Auto</label>
+  <input type="radio" name="theme" id="t-light"><label for="t-light">Light</label>
+  <input type="radio" name="theme" id="t-dark"><label for="t-dark">Dark</label>
+</fieldset>"""
+
 SCRIPT = """
+// The toggle works without this. What this adds is remembering it: the page reloads after every control,
+// and a theme that reset on every send would be a theme nobody bothers to set.
+const THEME_KEY = 'slipwai-bridge-theme';
+const held = localStorage.getItem(THEME_KEY);
+if (held) { const box = document.getElementById(held); if (box) box.checked = true; }
+for (const box of document.querySelectorAll('.theme input')) {
+  box.addEventListener('change', () => localStorage.setItem(THEME_KEY, box.id));
+}
+
 async function send(path, body){
   const answer = await fetch(path, {method:'POST', headers:{'Content-Type':'application/json'},
                                     body: JSON.stringify(body)});
@@ -226,9 +268,12 @@ def page(found: dict, config: dict, controls: bool = True, title: str = "Bridge"
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{esc(title)}</title><style>{STYLE}</style></head>
+<title>{esc(title)}</title>
+<link rel="icon" href="{favicon()}">
+<style>{STYLE}</style></head>
 <body><div class="wrap">
-<div class="top"><h1>{esc(title)}</h1><div class="sub">{esc(sub)}</div></div>
+<div class="top"><div><h1>{esc(title)}</h1><div class="sub">{esc(sub)}</div></div>
+<div class="corner">{THEME}{inline(title="slipwai — the little tug that moves the big one")}</div></div>
 <div class="card"><h2>Waiting on you</h2>{inbox_rows(waiting, controls)}</div>
 {answer_boxes(berths) if controls else ""}
 <div class="card"><h2>Streams</h2>{berth_rows(berths, found.get("streams") or {})}</div>
