@@ -26,6 +26,7 @@ from .cli_add import (
     replay_main,
 )
 from .cli_adopt import adopt_main
+from .cli_bridge import bridge_main
 from .cli_channel import channel_main
 from .cli_extension import extension_main, hooks_main
 from .cli_fleet import fleet_main
@@ -72,7 +73,7 @@ from .upgrade import main as upgrade_main
 # back, so an unknown argument is argparse's refusal rather than a stub that half-answers.
 VERBS = ("generate", "add-service", "add-frontend", "describe-service", "migrate", "replay",
          "adopt", "converge", "upgrade", "list", "search", "show", "install", "language", "extension",
-         "hooks", "package", "trust", "channel", "telegraph", "fleet")
+         "hooks", "package", "trust", "channel", "telegraph", "fleet", "bridge")
 
 
 def main() -> None:
@@ -139,7 +140,7 @@ def dispatch(argv: list[str]) -> None:
                       ("replay", replay_main), ("adopt", adopt_main), ("converge", converge_main),
                       ("extension", extension_main), ("hooks", hooks_main), ("package", package_main),
                       ("trust", trust_main), ("channel", channel_main), ("telegraph", telegraph_main),
-                      ("fleet", fleet_main)):
+                      ("fleet", fleet_main), ("bridge", bridge_main)):
         if argv[:1] == [verb]:
             run(argv[1:])
             return
