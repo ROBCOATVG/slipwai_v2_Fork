@@ -6,11 +6,11 @@ this page is one feature, from a sentence you type to a working thing you watch 
 The commands with a slash — `/speckit-specify`, `/chart`, `/drive` — are run inside your coding agent, not
 in the shell. `./init` installed them.
 
-**The short route is one command.** `/drive` walks the whole ladder below, enters at the first stage whose
-artefact is missing, and runs that one and every stage after it. So you can type `/drive booking` now and
-read the rest of this page as a description of what it is doing. The steps are shown separately here
-because the first time through you want to see each artefact appear, and because three of the stages stop
-for you.
+**The short route is one command, and it is bare.** `/drive` walks the whole ladder below, enters at the
+first stage whose artefact is missing, runs that one and every stage after it, and then **takes the next
+ready slice without being asked again**. So you can type `/drive` now and read the rest of this page as a
+description of what it is doing. The steps are shown separately here because the first time through you
+want to see each artefact appear, and because three of the stages stop for you.
 
 ---
 
@@ -102,13 +102,24 @@ clearance: 1 of 3 slices cleared in booking
 that waits for nothing may start. A slice that is not cleared names what it is waiting for and who is
 setting it, so "blocked" is never a mood — it is a mark with an owner.
 
-## 5. Drive one
+## 5. Drive it
 
 ```
-/drive BOK-01
+/drive
 ```
 
-This is the ladder: principles, specification, mock-ups approved one at a time, model, chart, split,
+**Bare is the normal way to run it.** `/drive` takes every ready slice of every fairway nobody else holds,
+works them, and goes on to the next without waiting to be invoked again — it stops when the split is
+exhausted or everything left is blocked. Two narrower forms exist for when you want one:
+
+```
+/drive fairway=booking     one lane, and the other lanes' ready slices are named and left
+/drive BOK-01              this slice, and nothing else
+```
+
+`/drive booking` — a feature rather than a slice — is the same as bare within that feature.
+
+Whichever form, this is the ladder: principles, specification, mock-ups approved one at a time, model, chart, split,
 example map, implementation under TDD, the review and refactor stage, both gates, and a **demo** — an
 actor-visible run of the thing, stopped in front of a person.
 

@@ -42,6 +42,23 @@ argument-hint: [slice-id-or-feature] [fairway=<name>]
 Deliver one small vertical slice under `AGENTS.md`. Once the ladder below has produced it, resolve
 {resolution}.
 
+## What the argument narrows
+
+**Bare is the normal form.** With no argument this takes the ready slices of every fairway nobody holds,
+works them, and goes on to the next without being invoked again — *Ready-set selection* below is the whole
+rule, and it stops only when the split is exhausted or everything left is blocked. Each of the three
+arguments narrows that and nothing else:
+
+| Written | What ready means for this session |
+| --- | --- |
+| `/drive` | every fairway nobody holds, every ready slice of each |
+| `/drive fairway=<name>` | that fairway's ready slices; the rest are named as another fairway's and left |
+| `/drive <feature>` | that feature's ready slices, across whichever fairways they are in |
+| `/drive <slice-id>` | that slice, and nothing else |
+
+A `fairway=` may be written with any of the others. Nothing here chooses a slice for you where several are
+ready: rule 6 says run them concurrently, and that holds in every form but the last.
+
 ## Enter at the first incomplete stage
 
 Read artifacts from disk rather than conversation memory and walk this ladder from the top. The entry stage

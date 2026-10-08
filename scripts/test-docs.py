@@ -63,6 +63,10 @@ BLOCK = re.compile(r"^```(\S*)[^\n]*\n(.*?)^```", re.S | re.M)
 #: pages talk *about* the chandlery and a reader should not have to avoid the word.
 CODE = re.compile(r"`([^`\n]+)`")
 SLASH = re.compile(r"^/([a-z][a-z0-9-]*)")
+#: A `key=value` argument written after a `/command`. The pages assert these — `/drive fairway=booking` is
+#: a claim about what the command takes — and a page naming an argument the command does not have is the
+#: same class of wrong as naming a command that does not exist.
+ARGUMENT = re.compile(r"^/([a-z][a-z0-9-]*)((?:\s+[a-z][a-z0-9-]*=\S+)+)")
 SKILL = re.compile(r"skills/([a-z0-9-]+)/SKILL\.md")
 MAKE = re.compile(r"^make ([a-z][a-z0-9-]*)")
 VERB = re.compile(r"^slipwai ([a-z][a-z0-9-]*)")
@@ -461,6 +465,23 @@ def slash_exists(name: str, project: Path, keel: str) -> bool:
             or f"/{name}" in keel)
 
 
+def check_arguments(page: str, command: str, written: str, project: Path) -> list[str]:
+    """Every `key=` a page writes after a `/command`, against that command's own `argument-hint`.
+
+    The hint is the one place a command says what it takes, so it is the one place to check a page against.
+    A command with no file here is somebody else's — Spec Kit's — and `slash_exists` has already said so;
+    there is nothing to read its arguments from and nothing is claimed about them.
+    """
+    file = project / "commands" / f"{command}.md"
+    if not file.is_file():
+        return []
+    hint = next((line for line in file.read_text(encoding="utf-8").splitlines()
+                 if line.startswith("argument-hint:")), "")
+    return [f"{page}: `/{command} {key}=…` names an argument, and commands/{command}.md's argument-hint "
+            f"does not have `{key}=`: {hint.removeprefix('argument-hint:').strip() or 'there is none'}"
+            for key in re.findall(r"\s([a-z][a-z0-9-]*)=", written) if f"{key}=" not in hint]
+
+
 def check_names(page: str, text: str, project: Path, targets: set[str], verbs: set[str]) -> list[str]:
     """Every name the page gives as a command, against what a generated project has."""
     keel = "\n".join(path.read_text(encoding="utf-8", errors="replace")
@@ -474,6 +495,8 @@ def check_names(page: str, text: str, project: Path, targets: set[str], verbs: s
         if (found := SLASH.match(name)) and not slash_exists(found.group(1), project, keel):
             findings.append(f"{page}: `/{found.group(1)}` is not a command, a skill, or anything the keel "
                             "names — nothing a reader could type")
+        if found := ARGUMENT.match(name):
+            findings += check_arguments(page, found.group(1), found.group(2), project)
         for path in SCRIPT.findall(name):
             if not (project / path).is_file():
                 findings.append(f"{page}: {path} is not in a generated project")

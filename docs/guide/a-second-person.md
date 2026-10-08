@@ -80,6 +80,24 @@ berths: 2
 Each berth is a separate working directory on the same repository, so two gates can run at once without
 one `node_modules` or one database file being fought over.
 
+## Taking a lane
+
+Neither of you picks a slice. `/drive` bare already takes every ready slice of every fairway nobody holds,
+so two people running it take different work without agreeing anything — the claim is the `slice/<id>`
+branch, and a slice somebody has claimed is one the other leaves.
+
+Where you do want to divide the lanes, name one:
+
+```
+/drive fairway=booking
+```
+
+That confines the ready set to `booking`; the other fairways' ready slices are named as another fairway's
+and left. The split's own table has a `held_by` column for saying the same thing durably, and it is
+**routing rather than a lock**: whoever is named there gets that fairway's slices left alone and the board
+shows them as held, but the claim is still the branch, so two sessions on one fairway are two claims and
+the second finds the first.
+
 ## The board
 
 ```sh
