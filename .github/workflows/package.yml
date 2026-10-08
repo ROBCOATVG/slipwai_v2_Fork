@@ -43,6 +43,15 @@ on:
         required: false
         default: ''
         type: string
+      toolchains:
+        description: >
+          What the runner needs installed before the matrix runs, space-separated, from `go`, `node`,
+          `java`, `uv` and `pack`. The matrix generates a project per row and runs *that project's* own
+          `make verify`, so the runner needs the language's own toolchain — which the package knows and
+          this workflow cannot: the keel ships no language. Ignored unless `matrix` is true.
+        required: false
+        default: ''
+        type: string
       channel:
         description: >
           The channel to publish into, as `<owner>/<repo>`. On a tag, and only on a tag, a package whose
@@ -152,6 +161,32 @@ jobs:
           else
             python -m slipwai.conformance "$PWD" "${{ inputs.package }}"
           fi
+
+      # **What the matrix builds a generated project with.** Each is a step because a step is the only
+      # thing that can install a toolchain, and each is conditional because a package names only its own.
+      # This list is the one place the keel knows a toolchain by name, which is uncomfortable next to
+      # "the keel ships no language" — the honest home is the package's own workflow, where its
+      # `ci_toolchain_setup` answer already writes exactly these steps for a generated project's CI.
+      # Recorded against slice 3.7b rather than left as a surprise.
+      - if: inputs.matrix && contains(inputs.toolchains, 'go')
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - if: inputs.matrix && contains(inputs.toolchains, 'node')
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # 25, because a generated Java project targets it and an older JDK answers `release version 25 is
+      # not supported` — which is what java-quarkus's first matrix run said.
+      - if: inputs.matrix && contains(inputs.toolchains, 'java')
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - if: inputs.matrix && contains(inputs.toolchains, 'uv')
+        uses: astral-sh/setup-uv@v5
+      - if: inputs.matrix && contains(inputs.toolchains, 'pack')
+        uses: buildpacks/github-actions/setup-pack@v5.8.11
 
       # Every generated variant of every backend, each held to its own native gate. Opt-in, because it
       # builds images and starts containers and a package that has not got that far says so. A language's

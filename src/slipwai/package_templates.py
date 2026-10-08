@@ -215,6 +215,10 @@ jobs:
       # One line, not a folded block: this feeds a `type: boolean` input, and a folded scalar is one more
       # thing between the expression and the value that could hand it a string with a newline on the end.
       matrix: ${{{{ inputs.matrix || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}}}
+      # What the runner needs installed before the matrix runs: `go`, `node`, `java`, `uv`, `pack`. The
+      # matrix generates a project per row and runs *that project's* own `make verify`, so the runner needs
+      # this language's toolchain — and this package is the only thing that knows which.
+      toolchains: ''
       # Packages to install beside this one before conformance, space-separated. A framework's family is
       # worked out from its own `requires` and does not go here. This is for a *family*, which declares no
       # backend of its own and is proved through one of its frameworks — `java` names `java-spring`.

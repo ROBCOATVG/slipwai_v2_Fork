@@ -110,6 +110,26 @@ class PackageWorkflowTest(unittest.TestCase):
                                self.workflow.index("- name: Conformance")]
         self.assertIn("if: inputs.kind != 'extension'", beside)
 
+    def test_the_matrix_runs_on_a_runner_that_can_build_a_generated_project(self) -> None:
+        """The matrix generates a project per row and runs *that project's* own `make verify`, so the runner
+        needs the language's own toolchain. It had none, and all four of the first matrix runs said so in
+        four different ways: no `uv`, no `covdata`, a JDK too old for release 25, and a Maven wrapper that
+        could not fetch Maven."""
+        for toolchain in ("go", "node", "java", "uv", "pack"):
+            with self.subTest(toolchain=toolchain):
+                self.assertIn(f"contains(inputs.toolchains, '{toolchain}')", self.workflow)
+        # Only for the matrix: conformance asks the package questions and needs none of this.
+        for line in self.workflow.splitlines():
+            if "inputs.toolchains" in line:
+                self.assertIn("inputs.matrix", line)
+
+    def test_a_toolchain_step_runs_before_the_matrix_and_after_conformance(self) -> None:
+        """Conformance is the fast half and should not wait on four installs it does not use."""
+        self.assertLess(self.workflow.index("python -m slipwai.conformance"),
+                        self.workflow.index("inputs.toolchains"))
+        self.assertLess(self.workflow.index("inputs.toolchains"),
+                        self.workflow.index("python -m slipwai.matrix"))
+
     def test_the_matrix_is_opt_in(self) -> None:
         """It builds images and starts containers; a package that has not got that far says so."""
         self.assertRegex(self.workflow, r"matrix:\s*\n(\s+.*\n)*?\s+default: false")
