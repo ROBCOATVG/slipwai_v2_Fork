@@ -14,6 +14,7 @@ from pathlib import Path
 import checkout_packages  # noqa: F401
 
 from slipwai import package_new
+from slipwai.conformance import extension
 from slipwai.conformance.extension import check
 
 CORE = "9.0"
@@ -44,6 +45,64 @@ else:
     text = text.rstrip() + "\\n\\n" + block + "\\n"
 agents.write_text(text, encoding="utf-8")
 '''
+
+
+class SaidTest(unittest.TestCase):
+    """How the suite reads what an entry point printed, and why both readings were wrong.
+
+    `recovers` asks that every failure path names the command that fixes it. It read line by line, and
+    every real message is written the other way — the trouble, then `Install it:`, then the command,
+    indented — so the first line of every one of them failed and the command two lines below was never
+    seen. All three published extensions were written that way.
+
+    `projects` asks that the AGENTS.md block is marker-fenced. It excused an entry point that stopped
+    because its own tool was missing, recognised by words like `not found`; but the scratch project is
+    deliberately bare, so an extension that acts on a browser app correctly does nothing there and says
+    `this project has no browser app for it to design` — no such words, and it was failed for doing the
+    right thing.
+    """
+
+    TROUBLED = ("CodeGraph CLI not found: nothing was indexed and AGENTS.md is unchanged.\n"
+                "Install it:\n"
+                "  curl -fsSL https://example.invalid/install.sh | sh\n"
+                "Then adopt it here:\n"
+                "  ./init --extension codegraph\n")
+    NOTHING_TO_DO = ("UI/UX Pro Max designs screens, and this project has no browser app for it to design: "
+                     "nothing was installed and AGENTS.md is unchanged.\n"
+                     "Add one first, then adopt it here:\n"
+                     "  slipwai add-frontend web\n"
+                     "  ./init --extension uipro\n")
+
+    def test_a_remedy_on_the_next_line_counts(self) -> None:
+        self.assertEqual(extension.unsaid(self.TROUBLED), [])
+
+    def test_a_problem_with_nothing_after_it_still_fails(self) -> None:
+        said = extension.unsaid("codegraph was not found and nothing was indexed.\n")
+        self.assertEqual(len(said), 1)
+        self.assertIn("named no command to fix it", said[0])
+
+    def test_a_second_problem_does_not_borrow_the_first_one_s_remedy(self) -> None:
+        """Grouped per message: the remedy under one has nothing to do with the next."""
+        said = extension.unsaid(self.TROUBLED + "the index could not be read.\n")
+        self.assertEqual(len(said), 1)
+        self.assertIn("could not be read", said[0])
+
+    def test_a_stop_that_names_the_way_on_is_a_stop_whatever_words_it_used(self) -> None:
+        """What makes a stop legitimate is that it names the way on — not that it used one of a list of
+        words for trouble."""
+        self.assertTrue(extension.REMEDY.search(self.NOTHING_TO_DO))
+        self.assertEqual(extension.unsaid(self.NOTHING_TO_DO), [])
+
+    def test_saying_nothing_at_all_is_not_a_stop(self) -> None:
+        self.assertIsNone(extension.REMEDY.search(""))
+
+    def test_an_indented_init_is_a_remedy(self) -> None:
+        """A word boundary needs a word character on one side, and the character before `.` in
+        `  ./init --extension uipro` is a space — so `\\b\\./init` could never match, and the one remedy
+        every extension names was the one this could not see."""
+        self.assertTrue(extension.REMEDY.search("  ./init --extension uipro"))
+        self.assertTrue(extension.REMEDY.search("  slipwai add-frontend web"))
+        self.assertIsNone(extension.REMEDY.search("  ./init"))
 
 
 class SuiteTest(unittest.TestCase):

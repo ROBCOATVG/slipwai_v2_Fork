@@ -36,7 +36,11 @@ PERSONS_WORDS = "This paragraph was written by a person and no install may take 
 TROUBLE = re.compile(r"\b(cannot|could not|couldn't|failed|failing|missing|not found|unavailable|no such"
                      r"|did not finish|exited [1-9])\b", re.IGNORECASE)
 #: What counts as naming the way out: a backticked span, or something that reads like a command line.
-REMEDY = re.compile(r"`[^`]+`|\b(?:brew|npm|pip|pipx|uv|cargo|go|apt|dnf|make|slipwai|\./init)\b[ \t]+\S")
+#: `./init` is outside the `\b` on purpose. A word boundary needs a word character on one side, and the
+#: character before `.` in `  ./init --extension uipro` is a space — so `\b\./init` could never match, and
+#: the one remedy every extension names was the one this could not see.
+REMEDY = re.compile(r"`[^`]+`"
+                    r"|(?:\b(?:brew|npm|pip|pipx|uv|cargo|go|apt|dnf|make|slipwai)\b|\./init)[ \t]+\S")
 BUDGET = 120.0
 
 
@@ -129,11 +133,27 @@ def fenced(text: str, key: str) -> list[str]:
     return [f"AGENTS.md has {opens} begin marker(s) and {closes} end marker(s); one block is fenced by one pair"]
 
 
+def messages(output: str) -> list[list[str]]:
+    """What was printed, grouped into messages: a line reporting a problem and the lines under it.
+
+    Per message and not per line, because that is how every one of these is actually written — the trouble,
+    then `Install it:`, then the command, indented. Read line by line, the first line of every real message
+    fails and the command two lines below it is never seen; read this way, a trouble line with nothing after
+    it still fails, which is what the obligation is about.
+    """
+    found: list[list[str]] = []
+    for line in output.splitlines():
+        if TROUBLE.search(line):
+            found.append([line])
+        elif found:
+            found[-1].append(line)
+    return found
+
+
 def unsaid(output: str) -> list[str]:
-    """Every line reporting a problem without naming the command that fixes it."""
-    return [f"said {line.strip()!r} and named no command to fix it"
-            for line in output.splitlines()
-            if TROUBLE.search(line) and not REMEDY.search(line)]
+    """Every message reporting a problem without naming the command that fixes it."""
+    return [f"said {message[0].strip()!r} and named no command to fix it"
+            for message in messages(output) if not REMEDY.search("\n".join(message))]
 
 
 def gated(package: Path, manifest: dict) -> list[str]:
@@ -178,13 +198,22 @@ def check(package: Path) -> Report:
         said = first.stdout + first.stderr + second.stdout + second.stderr
         report.findings["idempotent"] = differences(after_first, after_second)
         words = (project / "AGENTS.md").read_text(encoding="utf-8")
-        # An entry point that stopped because its own tool is not on this machine never got as far as the
-        # block, and that is obligation 2 working rather than obligation 3 failing. Said as `not run`, with
-        # what it printed, so a publisher on a machine with the tool sees the real answer.
-        if words == f"# A project\n\n{PERSONS_WORDS}" and TROUBLE.search(said):
-            report.not_run["projects"] = ("its own tool is not on this machine, so it stopped before writing "
-                                          "the block — which is obligation 2 working. Run this again where "
-                                          "the tool is installed to check obligation 3")
+        # An entry point that stopped before the block and said why, with the way forward, never got as far
+        # as writing one — and that is obligation 2 working rather than obligation 3 failing. Said as `not
+        # run`, so a publisher on a machine that has what it wanted sees the real answer.
+        #
+        # *Stopped and gave a way on*, not *its tool is missing*: a missing tool was the only case this
+        # allowed for, and it was recognised by words like `not found`. The scratch project is deliberately
+        # bare, so an extension that acts on a browser app correctly does nothing here and says so — `UI/UX
+        # Pro Max designs screens, and this project has no browser app for it to design` — which reports no
+        # trouble in those words and was failed for it. What makes a stop legitimate is that it names the
+        # way on, which is the same thing obligation 6 asks of every line that does report trouble. An
+        # entry point that writes no block and says nothing at all still fails, which is the case this is
+        # for.
+        if words == f"# A project\n\n{PERSONS_WORDS}" and REMEDY.search(said) and not unsaid(said):
+            report.not_run["projects"] = ("it stopped before writing the block and said why, with the way "
+                                          "on — which is obligation 2 working. Run this again where it has "
+                                          "what it wanted to check obligation 3")
         else:
             report.findings["projects"] = fenced(words, key)
         report.findings["merges"] = ([] if PERSONS_WORDS.strip() in words
