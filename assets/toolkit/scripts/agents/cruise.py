@@ -82,6 +82,7 @@ ROOT = project_root(SCRIPT, 2)
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(SCRIPT.parent))
 import code_index  # noqa: E402
+import harness as harness_module  # noqa: E402
 # The delivery toolkit this script is part of: `commands/`, `scripts/`, `skills/` beside each other, at the root
 # or under the delivery directory of an adopted repository.
 DELIVERY = SCRIPT.parents[2]
@@ -287,107 +288,51 @@ def enabled() -> dict[str, Any]:
 
 
 def registry() -> dict[str, dict[str, Any]]:
-    return {row["key"]: row for row in json.loads(REGISTRY.read_text(encoding="utf-8"))["harnesses"]}
+    return harness_module.registry()
 
 
 def installed_keys() -> list[str]:
-    """The harnesses Spec Kit recorded as installed here, in the order it recorded them; none where it never ran."""
-    if not INTEGRATION.is_file():
-        return []
-    state = json.loads(INTEGRATION.read_text(encoding="utf-8"))
-    keys = state.get("installed_integrations") or [state.get("default_integration")]
-    return [key for key in keys if isinstance(key, str)]
+    return harness_module.installed_keys()
 
 
-def headless_row(harness: dict[str, Any]) -> dict[str, Any] | None:
-    row = harness.get("headless")
-    return row if isinstance(row, dict) else None
+def headless_row(harness: dict[str, Any] | None) -> dict[str, Any] | None:
+    return harness_module.headless_row(harness)
 
 
 def binary_of(harness: dict[str, Any]) -> str:
-    """The executable a harness's headless command starts with: what the runner looks for on PATH."""
-    row = headless_row(harness)
-    assert row is not None
-    return shlex.split(str(row["command"]))[0]
+    return harness_module.binary_of(harness)
 
 
 def choose_harness() -> tuple[dict[str, Any], str]:
-    """The harness an iteration runs through, and a sentence saying why that one.
-
-    The first installed harness with a verified headless command whose binary is on PATH. Nothing else: a
-    harness on PATH that `./init` never initialised here has no projected commands, delegate types or hook
-    files, so `/cruise` is unknown to it and the ladder's delegates and holds are absent — an iteration through
-    it ends with no last line, and the run spends its stuck budget before parking for the wrong reason. So a
-    CLI harness that is on PATH but not initialised is named in the refusal, with the `./init` that adds it
-    beside whatever is installed, rather than driven.
-    """
-    rows = registry()
-    installed = [key for key in installed_keys() if key in rows]
-    for key in installed:
-        harness = rows[key]
-        if headless_row(harness) is not None and shutil.which(binary_of(harness)):
-            return harness, f"harness: {harness['name']}"
-    on_path = [harness for key, harness in rows.items()
-               if key not in installed and headless_row(harness) is not None and shutil.which(binary_of(harness))]
-    able = ", ".join(f"{harness['name']} (`{binary_of(harness)}`)" for harness in rows.values()
-                     if headless_row(harness) is not None)
-    named = ", ".join(rows[key]["name"] for key in installed) or "no harness is initialised here"
-    installed_words = ' is installed' if len(installed) == 1 else ' are installed' if installed else ''
-    if installed and headless_row(rows[installed[0]]) is None:
-        installed_words += ", and the registry records no way to run it headless"
-    elif installed:
-        installed_words += f", and `{binary_of(rows[installed[0]])}` is not on PATH"
-    if on_path:
-        found = ", ".join(f"{harness['name']} (`./init --integration {harness['key']}`)" for harness in on_path)
-        raise RuntimeError(f"no initialised harness this loop can run an iteration through is on PATH: {named}"
-                           f"{installed_words}. On PATH but never initialised here, so its commands, delegate "
-                           f"types and hooks are not projected: {found} — that init adds it beside what is "
-                           "installed; then run again. Or set CRUISE_HARNESS_COMMAND to a shell template with "
-                           "{prompt}")
-    raise RuntimeError(f"no harness this loop can run an iteration through is on PATH: {named}{installed_words}, "
-                       "and none of the harnesses the registry records a headless command for is on PATH — "
-                       f"{able} (scripts/agents/registry.json, `headless`). Install one of those and "
-                       "`./init --integration <key>` it, or set CRUISE_HARNESS_COMMAND to a shell template with "
-                       "{prompt}")
+    """The harness an iteration runs through. `harness.py` decides; the override is this runner's own."""
+    try:
+        return harness_module.choose()
+    except harness_module.NoHarness as refused:
+        raise RuntimeError(f"{refused}. Or set CRUISE_HARNESS_COMMAND to a shell template with "
+                           "{prompt}") from None
 
 
 def harness_command(harness: dict[str, Any], sandbox: bool) -> tuple[str, str]:
-    """The shell template one iteration runs, and the sentence saying which permissions it runs under."""
+    """The shell template one iteration runs. `CRUISE_HARNESS_COMMAND` is a person's to write whole."""
     override = os.environ.get("CRUISE_HARNESS_COMMAND")
     if override:
         return override, "harness: CRUISE_HARNESS_COMMAND, as given"
-    headless = headless_row(harness)
-    assert headless is not None
-    permissions = headless.get("sandboxPermissions" if sandbox else "permissions", "")
-    why = ("--sandbox: every permission check is bypassed, which is only for a container with nothing to lose"
-           if sandbox else
-           "edits are accepted and every other permission is the harness's own to grant or refuse; pass "
-           "--sandbox inside a disposable container to bypass them all")
-    template = str(headless["command"]).replace("{permissions}", permissions)
-    # A headless session in a checkout nobody has trusted ignores the project's own MCP file on some harnesses, so
-    # the row's `headlessFlags` make it honoured — passed only when the file exists, since a flag naming a missing
-    # file refuses to start, and `{root}` is this checkout for a harness that trusts by path.
-    project = harness.get("projectMcp")
-    if isinstance(project, dict) and project.get("headlessFlags") and (ROOT / str(project["file"])).is_file():
-        template = f"{template} {str(project['headlessFlags']).replace('{root}', str(ROOT))}"
-    # The ladder's concurrent slices work in worktrees beside the checkout (`../<project>-<id>`), which a print
-    # session under `acceptEdits` is refused every edit in; the row's `worktreeFlags` name the directory the
-    # checkout sits in as a second working directory, so a slice delegate's first edit is not its last.
-    worktrees = headless.get("worktreeFlags")
-    if worktrees:
-        template = f"{template} {str(worktrees).replace('{parent}', shlex.quote(str(ROOT.parent)))}"
-    return template, why
+    return harness_module.template(harness, sandbox)
 
 
 def model_flags(harness: dict[str, Any] | None, model: str | None) -> str:
-    """What puts the iteration on the model `.specify/cruise.json` names: the harness row's `modelFlag` with the
-    identifier in it, appended to the command. Nothing where no model is named, where the template is the
-    override's (a person's to write whole), or where the row records no flag — `model_lines` says which."""
-    headless = headless_row(harness) if harness is not None else None
-    flag = headless.get("modelFlag") if headless is not None else None
-    if not model or os.environ.get("CRUISE_HARNESS_COMMAND") or not flag:
+    """Nothing where the template is the override's, which is a person's to write whole."""
+    if os.environ.get("CRUISE_HARNESS_COMMAND"):
         return ""
-    return " " + str(flag).replace("{model}", shlex.quote(model))
+    return harness_module.model_flags(harness, model)
+
+
+def prompt_for(harness: dict[str, Any] | None, argument: str | None) -> str:
+    return harness_module.prompt_for(harness, "cruise", COMMAND, argument)
+
+
+def child_environment(harness: dict[str, Any] | None) -> dict[str, str]:
+    return harness_module.child_environment(harness)
 
 
 def model_lines(harness: dict[str, Any] | None, model: str | None) -> list[str]:
@@ -447,17 +392,6 @@ def resolve_harness(sandbox: bool) -> tuple[dict[str, Any] | None, str, str]:
     return harness, template, f"{chosen}; {why}"
 
 
-def prompt_for(harness: dict[str, Any] | None, argument: str | None) -> str:
-    """What an iteration is asked. A harness whose headless row says its print mode resolves the project's slash
-    commands (`prompt: "slash"`) is asked `/cruise`; every other is asked to read the command file and follow
-    it, which needs nothing of a harness beyond reading a file — the same words whatever the harness."""
-    headless = headless_row(harness) if harness is not None else None
-    if headless is not None and headless.get("prompt") == "slash":
-        return f"/cruise {argument}" if argument else "/cruise"
-    tail = f", with `{argument}` as its argument" if argument else "; it is given no argument"
-    return f"Run the /cruise command: read {relative(COMMAND)} and follow it exactly as written{tail}."
-
-
 def fingerprint() -> str:
     """What the tree looks like to the ladder: the commit, the working tree's state, and every file under specs/."""
     digest = hashlib.sha256()
@@ -488,24 +422,6 @@ def record(entry: dict[str, Any]) -> None:
     LOG.parent.mkdir(parents=True, exist_ok=True)
     with LOG.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
-
-
-def child_environment(harness: dict[str, Any] | None) -> dict[str, str]:
-    """What the iteration runs under: this environment, plus what the registry's `headless.env` sets for the
-    harness — Claude Code's wait ceiling, which otherwise ends a print session while its delegates still run —
-    and minus the harness's own session variables, so a session started from inside another never reads its
-    parent's id as its own, or refuses to start as a nested copy of it."""
-    environment = dict(os.environ)
-    for variable in PARENT_SESSION_VARIABLES:
-        environment.pop(variable, None)
-    for row in registry().values():
-        session_variable = (row.get("usage") or {}).get("env")
-        if session_variable:
-            environment.pop(str(session_variable), None)
-    headless = headless_row(harness) if harness is not None else None
-    if headless is not None and isinstance(headless.get("env"), dict):
-        environment.update({str(key): str(value) for key, value in headless["env"].items()})
-    return environment
 
 
 def control_paths() -> list[Path]:

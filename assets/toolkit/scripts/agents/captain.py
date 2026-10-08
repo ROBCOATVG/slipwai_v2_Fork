@@ -9,7 +9,8 @@ lines rather than asking the thing being controlled how it is getting on.
 
 Each turn it: fetches trunk and both logs; derives the fairway's state from its own `claimed` and `merged`
 lines; picks the next slice in split order that `clearance.py` allows; writes `claimed`; dispatches `/drive`
-for that slice in its berth; watches the deck log while it runs; reads the inbox at every boundary and
+for that slice in its berth — a headless session of the installed harness, asked for `/drive <slice>
+fairway=<name>`; watches the deck log while it runs; reads the inbox at every boundary and
 enforces the receipt; asks the harbourmaster for the merge, because a captain holds no credential; and
 writes `merged` against the commit the answer names.
 
@@ -41,6 +42,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shlex
 import subprocess
 import sys
 import time
@@ -50,6 +52,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 import clearance  # noqa: E402
+import harness  # noqa: E402
 import inbox  # noqa: E402
 import logs  # noqa: E402
 
@@ -64,6 +67,9 @@ def project_root() -> Path:
 ROOT = project_root()
 HARBOUR = ROOT / "harbour.json"
 HOOKS = ROOT / "scripts/extensions/hooks.py"
+#: The ladder itself. A harness whose print mode resolves this project's slash commands is asked `/drive`;
+#: every other is asked to read this file and follow it.
+DRIVE_COMMAND = ROOT / "commands/drive.md"
 #: How often a heartbeat is written while a slice is being worked. Short enough that a fleet board can tell a
 #: wedged berth from a slow one, long enough that it is not most of the log.
 HEARTBEAT = 60.0
@@ -214,13 +220,45 @@ def fire(point: str, **given: str) -> None:
     subprocess.run(argv, cwd=ROOT, capture_output=True, text=True)
 
 
-def drive_command(slice_id: str, fairway: str) -> list[str]:
-    """What runs the ladder for one slice. `SLIPWAI_DRIVE` replaces it, which is how a test drives a fake
-    and how a harness other than the default one is pointed at."""
+def drive_command(slice_id: str, fairway: str) -> tuple[list[str], dict[str, str], str]:
+    """What runs the ladder for one slice: (argv, the environment it runs under, what was chosen).
+
+    A headless session of the installed harness, asked for `/drive <slice> fairway=<name>`. The one slice is
+    deliberate: the gate below is per slice — every mark *that slice's* `sets` names, plus *its* demo — and a
+    dispatch handed a whole fairway would make the completion lines unattributable, which is the check that
+    caught `/drive` printing a help message and exiting 0.
+
+    `SLIPWAI_DRIVE` replaces the whole thing and takes `<slice> <fairway>` after it, which is how the suite
+    drives a fake and how a harness the registry does not know is pointed at. It used to fall back to
+    `scripts/agents/drive.py` — the *settings reader* for `/drive`, which prints its table and exits 0 — and
+    that stood in for the ladder in the first real run this loop ever did.
+    """
     named = os.environ.get("SLIPWAI_DRIVE")
     if named:
-        return [*named.split(), slice_id, fairway]
-    return [sys.executable, str(HERE / "drive.py"), slice_id, fairway]
+        return [*named.split(), slice_id, fairway], dict(os.environ), f"SLIPWAI_DRIVE: {named}"
+    chosen, said = harness.choose()
+    template, _ = harness.template(chosen)
+    prompt = harness.prompt_for(chosen, "drive", DRIVE_COMMAND, f"{slice_id} fairway={fairway}")
+    line = template.replace("{prompt}", shlex.quote(prompt)) + harness.model_flags(chosen, drive_model())
+    return shlex.split(line), harness.child_environment(chosen), said
+
+
+def drive_model() -> str | None:
+    """The model the ladder's own session runs on, or None for the harness's default.
+
+    `.specify/cruise.json`'s `model`, and deliberately not `models.json`'s: that file maps a *role* to a
+    model per harness for the stages `/drive` delegates, and the session running `/drive` itself is the
+    `host` it is all relative to. Under `/drive` typed by a person the host is whatever they opened; nobody
+    opens this one, so the same value `/cruise` uses for the same question answers it. Unset means the
+    harness's own default, which is a fact about the run and is said in the turn's line rather than left to
+    be inferred from a transcript.
+    """
+    try:
+        table = json.loads((ROOT / ".specify/cruise.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError, UnicodeDecodeError):
+        return None
+    named = table.get("model") if isinstance(table, dict) else None
+    return named if isinstance(named, str) and named else None
 
 
 def watched(process: subprocess.Popen, feature: str, fairway: str, bound: float,
@@ -300,9 +338,15 @@ def owed(fresh: list[logs.Entry], slice_id: str, promised: list[str]) -> tuple[l
 
 def dispatch(slice_id: str, feature: str, fairway: str) -> tuple[bool, str, list[logs.Entry]]:
     """One run of `/drive`, and the lines it wrote. (finished, why not, the lines written during it)."""
+    try:
+        argv, environment, _said = drive_command(slice_id, fairway)
+    except harness.NoHarness as refused:
+        # Not a park with a mark missing: the ladder never ran, and saying "no `mark-set` was written" about
+        # a session nobody could start would send somebody to read a slice that is fine.
+        return False, f"{refused}. Or set SLIPWAI_DRIVE to a command taking <slice> <fairway>", []
     fire("before-stage", stage="drive", slice=slice_id, fairway=fairway)
     started = len(entries(feature, fairway))
-    process = subprocess.Popen(drive_command(slice_id, fairway), cwd=ROOT)
+    process = subprocess.Popen(argv, cwd=ROOT, env=environment)
     finished, why = watched(process, feature, fairway, stage_bound(), started)
     fire("after-stage", stage="drive", slice=slice_id, fairway=fairway)
     return finished, why, entries(feature, fairway)[started:]

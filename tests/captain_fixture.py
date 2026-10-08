@@ -19,7 +19,11 @@ from slipwai import logs
 from slipwai.assets import TOOLKIT_ROOT
 
 AGENTS = TOOLKIT_ROOT / "scripts/agents"
-CARRIED = ("captain.py", "clearance.py", "inbox.py", "logs.py", "berths.py", "ids.py")
+CARRIED = ("captain.py", "clearance.py", "inbox.py", "logs.py", "berths.py", "ids.py",
+           # The captain dispatches a headless session of the installed harness, so it imports the
+           # module that decides which one and the registry that module reads. Every case here sets
+           # `SLIPWAI_DRIVE`, so neither is consulted — but the import has to resolve.
+           "harness.py", "registry.json")
 #: The chart these tests run against, as data, so the fake `/drive` below sets the marks this says it does.
 #: They were two copies and the fake set `Placed` whatever it was driving, which passed only because the
 #: captain did not read the chart's `sets` — exactly the gap slice 7.8 closes.

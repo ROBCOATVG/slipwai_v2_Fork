@@ -10,6 +10,9 @@ slice and what merges it.
 """
 from __future__ import annotations
 
+import os
+import subprocess
+import sys
 import unittest
 
 import checkout_packages  # noqa: F401
@@ -92,6 +95,20 @@ for n in range(4):
         # watcher's own reason.
         parked = [str(e.fields["why"]) for e in self.read("ORD") if e.kind == "parked"]
         self.assertNotIn("the stage was ended", " ".join(parked), done.stdout)
+
+    def test_with_no_harness_and_no_override_it_says_so_rather_than_naming_a_missing_mark(self) -> None:
+        """The two are different faults with different answers. A session nobody could start is not a slice
+        that was built badly, and parking on "no `mark-set` was written" would send somebody to read a
+        slice that is fine."""
+        done = subprocess.run([sys.executable, str(self.script), "ORD", "--once"],
+                              capture_output=True, text=True, cwd=self.root, timeout=90,
+                              env={key: value for key, value in os.environ.items() if key != "SLIPWAI_DRIVE"})
+        self.assertEqual(done.returncode, 0, done.stderr)
+        parked = [str(e.fields["why"]) for e in self.read("ORD") if e.kind == "parked"]
+        self.assertEqual(len(parked), 1, done.stdout)
+        self.assertIn("no harness", parked[0])
+        self.assertIn("SLIPWAI_DRIVE", parked[0])
+        self.assertNotIn("mark-set", parked[0])
 
     def test_a_drive_that_fails_parks_with_what_it_exited(self) -> None:
         self.captain("ORD", self.drive("import sys\nsys.exit(3)\n"))
