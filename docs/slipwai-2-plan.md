@@ -436,11 +436,14 @@ in passing, which is usually a default or an example in prose.
 So it is a phase rather than a slice, and it needs a contract first: a `TARGET` object answering a
 protocol the way `LANGUAGE` does, a `target.json` manifest, `kind: target` through the chandlery, a
 third conformance profile, and the import surface widened to whatever a target package reads. **This is
-phase 10, after 2.0.0.** Not because it is optional — it is the last place the keel still names a
-product — but because doing it before the release would hold the release behind a second ecosystem
-contract, and the first one is not proven until real packages are rebuilt on it (phase 2's build list).
-A keel that ships the clouds is a keel version 2 can release; a keel that ships them *and* claims to
-name no product is one that cannot.
+phase 10, and from 2026-10-08 it runs before the first 2.x release rather than after it.** It was put after
+because doing it first would hold the release behind a second ecosystem contract while the first one was
+still unproven — and that condition has since been met: the six language packages were rebuilt on the
+contract on 6 October, which is exactly what the ordering was waiting for. The second reason is that the
+release phase 8 cuts is a development version out of this fork; the one that counts is cut after the merge
+back upstream, so there is no release left for phase 10 to hold up. A keel that ships the clouds is a keel
+version 2 can release; a keel that ships them *and* claims to name no product is one that cannot — and a
+2.0.0 with two clouds inside it makes that second claim false on the day it is made.
 
 **What stays in the keel.** Profiles, targets, frontends, axes, adoption, and the toolkit. This is the line that
 issue #26 drew.
@@ -1124,7 +1127,11 @@ first-party package. Then the fork merges back
 to upstream as version 2.
 
 **Phase 9. The README and the docs, rewritten for a first-time reader.** This is the last phase, after everything
-it describes exists. Version 1's README is 34 kilobytes that explain the factory. The rewrite shows the experience
+it describes exists — which from 2026-10-08 means after phases 11 and 12 as well, not after the 2.0.0
+release; phase 10 moved the other way, to before it. Documentation written against a system that is still
+moving is stale the day it is written, and the five pages proved it by going wrong in six places inside
+twenty-four hours. 2.0.0 ships on those five pages, the README and the captures, all written and all held
+by `make test-docs`. What waits is the reference layer. Version 1's README is 34 kilobytes that explain the factory. The rewrite shows the experience
 of using it, in the order a person meets it, and moves every explanation to a reference page that it links to.
 
 - **Open on one session, shown rather than described.** `uv tool install slipwai`, `slipwai generate`, the
@@ -1209,7 +1216,7 @@ The first attempt paid for these rules. They apply from phase 1, inside the fork
 - **Fast checks inside the slice, the full gate before `main`.** Theme B, item 9.
 - **A review and refactor stage before the merge.** Theme B, item 8.
 - **Four release modes, chosen by product state.** Theme E.
-- **The README rewrite is the last phase.** Phase 9.
+- **The README rewrite is the last phase**, and from 2026-10-08 that means after phases 11 and 12 rather than after the release — a page describing rules three phases are still changing is a page written twice. Phase 9. In the same move, **phase 10 came forward to before the release**: the keel that is tagged 2.0.0 has to be one that names no product.
 - **The executable bundles no language; `generate` offers to install.** Theme A, item 5.
 - **Nothing ships on the 1.x line.** The `slipwai-workstreams` commit is salvaged into slice 5.3 and not released on its own; version 1 users get a final 1.5.x that points at 2.0 (slice 8.6).
 - **An open public channel: anyone publishes by pull request, every release is signed by its publisher, and a person confirms a new publisher once at first install.** Theme A, "Trust".
@@ -1673,23 +1680,7 @@ Depends on: phase 4. Runs beside phase 7.
 
 Depends on: 5.13 and 5.14. 7.1 first, then 7.2, then the rest in any order. **7.8, 7.9 and 7.10 are section 14's three designs and close the loop; they are built after phase 9**, in that order — 7.9 is what makes `merged` stop reading 0, and 7.10 is only meaningful once something merges.
 
-### Phase 8. 2.0.0
-
-| Slice | What | From | Size | Done when | Status |
-|---|---|---|---|---|---|
-| 8.1 | `AGENTS.md`'s versioning rules, `changelog.d/`, `make release`, `make changelog`, `requirements-publish.txt`, and `CHANGELOG.md` and `changelog.d/` back in `slipwai.spec`'s datas | upstream | M | The fork's own release machinery is green | done |
-| 8.2 | One 2.0.0 changelog entry written from the fork's history | new | M | Every user-visible change since 1.5.2 is in it, with its catch-up | done |
-| 8.3 | `migrate`: base from an installed 1.x, languages first, the rename table, in-flight work as data (section 6); the installed directory moved from `languages/` to `packages/` | upstream + cruise-2 + new | L | `make test-migration` green for every profile and backend and the adopted fixtures, and an install made under `languages/` is found, moved and loaded from `packages/` |  |
-| 8.4 | The release backstop: one job that runs the matrix across the published packages against the keel about to ship, and the root matrix retired | cruise-2 + new | M | A keel release is refused when a published package fails against it; no per-commit job reads a package | done |
-| 8.4b | The chandlery has something in it: `ROBCOATVG/slipwai-index` created from `slipwai channel new`, the language packages released at 1.0.0 and registered, Pages on. Blocks 8.5 — a 2.0.0 whose `slipwai install go` finds nothing is a 2.0.0 whose headline feature does not work | new | M | A fresh `pip install slipwai` can `search`, `install` a language and `generate` with it | done |
-| 8.5 | `make release` to 2.0.0; the merge back to upstream; the Gitea decision. On the merge, `package_new.KEEL_REPO` and every published package's `uses:` move from the fork to `ROBCOATVG/slipwai`, and `SLIPWAI_KEEL` comes off the channel | new | M | `v2.0.0` tagged, published, and upstream `main` is version 2 |  |
-| 8.6 | A final 1.5.x release whose `slipwai upgrade --check` names 2.0.0 and its migration page | upstream | S | A version 1 user is told where version 2 is and what moving costs |  |
-| 8.7 | `slipwai upgrade` says what changed, read from the changelog the release carries: a line or two for a patch, and for the jump from 1.x to 2.x the whole of what version 2 is and the one command that moves a project to it | new | S | Somebody who upgrades is told what they got without being sent to a web page, and the person who crosses from 1 to 2 is told it is a crossing | done |
-
-Depends on: everything before it.
-
-
-### Phase 10. The clouds as packages, after 2.0.0
+### Phase 10. The clouds as packages, before the first 2.x release
 
 The last place the keel names a product. Scoped from the measurement in theme A: 47 asset files, 612K,
 and 29 modules naming a cloud in 112 places.
@@ -1703,8 +1694,28 @@ and 29 modules naming a cloud in 112 places.
 | 10.5 | The twenty-three passing mentions: defaults, examples and prose that name a cloud | new | M | `grep -ri aws src/slipwai` finds nothing but a comment about there being nothing |  |
 | 10.6 | `check-structure` refuses a keel module naming a target package, as it already refuses a language one | new | S | The rule is a gate and not a habit |  |
 
-Depends on: 2.0.0 shipped, and phase 2's build list proving the package contract on the six real
-languages first.
+Depends on: phase 2's build list, which proved the package contract on the six real languages on 6 October.
+**Moved ahead of phase 8 on 2026-10-08**: the condition that put it after the release is met, and the
+release phase 8 cuts is a development version out of this fork anyway — the one that counts is cut after
+the merge back upstream, once the direction has been seen to be right.
+
+### Phase 8. 2.0.0
+
+| Slice | What | From | Size | Done when | Status |
+|---|---|---|---|---|---|
+| 8.1 | `AGENTS.md`'s versioning rules, `changelog.d/`, `make release`, `make changelog`, `requirements-publish.txt`, and `CHANGELOG.md` and `changelog.d/` back in `slipwai.spec`'s datas | upstream | M | The fork's own release machinery is green | done |
+| 8.2 | One 2.0.0 changelog entry written from the fork's history | new | M | Every user-visible change since 1.5.2 is in it, with its catch-up | done |
+| 8.3 | `migrate`: base from an installed 1.x, languages first, the rename table, in-flight work as data (section 6); the installed directory moved from `languages/` to `packages/` | upstream + cruise-2 + new | L | `make test-migration` green for every profile and backend and the adopted fixtures, and an install made under `languages/` is found, moved and loaded from `packages/` |  |
+| 8.4 | The release backstop: one job that runs the matrix across the published packages against the keel about to ship, and the root matrix retired | cruise-2 + new | M | A keel release is refused when a published package fails against it; no per-commit job reads a package | done |
+| 8.4b | The chandlery has something in it: `ROBCOATVG/slipwai-index` created from `slipwai channel new`, the language packages released at 1.0.0 and registered, Pages on. Blocks 8.5 — a 2.0.0 whose `slipwai install go` finds nothing is a 2.0.0 whose headline feature does not work | new | M | A fresh `pip install slipwai` can `search`, `install` a language and `generate` with it | done |
+| 8.5 | `make release` to 2.0.0; the merge back to upstream; the Gitea decision. On the merge, `package_new.KEEL_REPO` and every published package's `uses:` move from the fork to `ROBCOATVG/slipwai`, and `SLIPWAI_KEEL` comes off the channel | new | M | `v2.0.0` tagged, published, and upstream `main` is version 2 |  |
+| 8.6 | A final 1.5.x release whose `slipwai upgrade --check` names 2.0.0 and its migration page | upstream | S | A version 1 user is told where version 2 is and what moving costs |  |
+| 8.7 | `slipwai upgrade` says what changed, read from the changelog the release carries: a line or two for a patch, and for the jump from 1.x to 2.x the whole of what version 2 is and the one command that moves a project to it | new | S | Somebody who upgrades is told what they got without being sent to a web page, and the person who crosses from 1 to 2 is told it is a crossing | done |
+
+Depends on: everything before it, phase 10 included — the keel that is released has to be one that names
+no product. What this phase tags is a development version out of this fork; the release that counts is cut
+after the merge back upstream.
+
 
 ### Phase 11. Multiplayer, after 2.0.0
 
@@ -1748,9 +1759,22 @@ harness changes its mind. So each slice ships **one** artefact built from what t
 | 12.4 | The decision, written down: which of the three is the supported route and which are conveniences. A project that can be installed four ways and is supported in one has three ways to be wrong about | new | S | `docs/reference/` says which route is held by a gate, and the others say they are not |  |
 
 Depends on: everything above, and especially 9.4 — a plugin is the guide's material with the project taken
-away, so the pages have to be right before they are packaged.
+away, so the pages have to be right before they are packaged. Phase 9's two remaining slices come after
+this phase, not before it: what 12.4 decides is one of the rules the reference layer has to describe.
 
 ### Phase 9. The README and the docs
+
+The rest of the writing is last, and was moved there on 2026-10-08 for a reason the slice before it proved:
+**a page written against a system that is still moving is out of date the day it is written.** The five
+pages of 9.1 were written on 7 October and had six wrong lines in them by the time 9.4 ran on the eighth —
+not through carelessness, but because the keel moved underneath them. 9.4 is what makes writing the rest
+worth doing rather than doing twice: the gate that catches that drift now exists, so what is left is
+written once, at the end, against a system that has stopped changing.
+
+What is already written stays written. The five pages, the README, the captures and the maintainer skills
+are done, and `make test-docs` and the link check hold them; they are what a person reads at 2.0.0. What
+waits is the reference layer and the figure — the two that describe rules in detail, which is exactly what
+phases 10 to 12 are still changing.
 
 | Slice | What | Size | Done when | Status |
 |---|---|---|---|---|
@@ -1764,14 +1788,27 @@ away, so the pages have to be right before they are packaged.
 ### Order, and what runs in parallel
 
 ```
-Phase 1 ──► Phase 2 ──► Phase 3 ──► Phase 4 ──► Phase 6 ──┐
-   │                                       │              ├──► Phase 8 ──► Phase 9
-   └──► Phase 5 (toolkit, from 1.2) ───────┴──► Phase 7 ──┘
+Phase 1 ──► 2 ──► 3 ──► 4 ──► Phase 6 ──┐
+   │                      │             ├──► Phase 10 ──► Phase 8 ──► 11 ──► 12 ──► Phase 9
+   └──► Phase 5 ──────────┴──► Phase 7 ─┘     the clouds     2.0.0        the docs, last
+        (toolkit, from 1.2)                   leave          (a dev version until the merge back)
 ```
 
 Phase 5 starts as soon as 1.2 is green and runs beside phases 2 to 4 on the toolkit assets, which do not import
 the scaffold; its slices from 5.3 on need a generated project, so they wait for 4.1. Phases 6 and 7 run beside
-each other. Nothing in phase 8 starts before phases 6 and 7 are done. Phase 9 is last.
+each other. Nothing in phase 8 starts before phases 6 and 7 are done.
+
+Two phases moved on 2026-10-08, in opposite directions.
+
+**Phase 10 came forward, to before the release.** What put it after was an unproven package contract, and
+that was settled when the six language packages were rebuilt on it on 6 October. What is left of the
+objection is a release it would hold up — and the release phase 8 cuts is a development version out of this
+fork, so there is none. The version that counts is cut after the merge back upstream.
+
+**Phase 9 went back, to after 11 and 12.** A reference page written while the clouds are still leaving the
+keel and the plugin is still being shaped describes a system that will not exist by the time anybody reads
+it. 2.0.0 ships on the five pages, the README and the captures, which are written and are held by
+`make test-docs`.
 
 ### Risks the plan carries, and where each is caught
 
@@ -2623,6 +2660,61 @@ Done when no runner is left in the toolkit and the greenfield of phase 7 — a s
 contexts, generated with the 2.0.0 keel — has run two captains on two machines from start to finish. That
 last half is a person's: it is the first real run.
 
+### Phase 10. The clouds as packages
+
+Before the first 2.x release, for the reason theme A gives — it was after it until 2026-10-08, when the
+condition that put it there turned out to have been met back in phase 2. The shape is the language move again, measured: 47 asset
+files, 29 modules naming a cloud in 112 places.
+
+**10.1 — The target protocol.** `TARGET` as a registry object keyed by `Member` constants the way
+`LANGUAGE` is — the members are what `targets.py`, `project/infra.py`, `project/production.py`,
+`project/deploy_workflow.py` and `preflight.py` currently read per target: the stack assets, the
+provisioning per axis option, the docs page, the preflight tools, the image builder, the two shapes.
+`target.json` as the manifest; `kind: target` through the chandlery, `search --kind target`, and `slipwai
+package new --kind target`; a third conformance profile that generates a project on the target and runs
+`tofu validate`. **10.2** — the import surface widened to what a target package reads, held both ways.
+**10.3, 10.4** — `aws` then `azure` out, each as one repository under `ROBCOATVG` built by `package new`,
+with the keel's `make verify` green with no cloud installed after each. **10.5** — the twenty-three
+passing mentions, until `grep -ri aws src/slipwai` finds only a comment saying there is nothing. **10.6** —
+`check-structure` refuses a `slipwai_target_*` import as it refuses a language one.
+
+### What is still a person's to decide
+
+Collected from above, so they can be taken before the slice that needs them.
+
+1. ~~**Which Sigstore verifier**~~ **Decided 2026-10-07, after reading what npm and PyPI actually do.**
+   Keyless Sigstore signing from GitHub Actions for publishing, and a vendored minimal bundle verifier for
+   installing. Both ecosystems reached the same place and for the same reason: *npm* publishes with
+   `--provenance` from CI and verifies with `npm audit signatures` built into the client; *PyPI* publishes
+   PEP 740 attestations by default from Actions and verifies with its own `pypi-attestations`, which exists
+   precisely so a consumer never touches `cosign`. Neither asks a publisher to hold a key and neither asks
+   an installer to install a tool.
+
+   That is the friction that matters, because there are far more installers than publishers: shelling out
+   to `cosign` makes an install fail on a machine that has not got it, and minisign puts key management
+   back on every publisher, which is the thing keyless signing exists to remove. A vendored verifier costs
+   us maintenance when Sigstore's bundle format moves, and that is a cost we can carry and they cannot.
+
+   **One thing the research is worth reading for, beyond the choice.** In May 2026 a worm published 84
+   malicious versions across 42 TanStack packages and reached 172 packages within 48 hours, with valid
+   provenance throughout. Provenance says where a package came from. It says nothing about what the code
+   does. So signing is what makes *confirm a publisher once* mean something — it is the confirmation that
+   limits blast radius, and the signature is only what stops somebody else answering to that name.
+2. **Gitea or GitHub as canonical** after the merge back (8.5).
+3. ~~**The sandbox on macOS**~~ **Decided 2026-10-07: two kinds, `none` and `sbx`.** No per-platform
+   matrix, so `sandbox-exec`, `bwrap` and Windows Sandbox are all out and the question they raised is
+   closed. `sbx` is Docker Sandboxes, which already creates isolated environments for agents and is the
+   same on every platform Docker runs on; `none` is the honest option for a single captain on a trusted
+   machine, which is most laptops most of the time. Dropping the matrix is most of 5.14b.
+4. **Where the harbourmaster runs under `/cruise`** (7.1): one machine with captains reaching it through
+   the forge, as written, or a small hosted process — the plan says no hosted service before 2.0.0, so
+   the first; worth confirming.
+5. **The phase 7 greenfield**: which small product, two bounded contexts by design, becomes the first
+   thing version 2 builds for real.
+6. **The hook points** (6.1): the six named are the ones an existing extension asked for or the loop
+   makes obvious. Whether `generate` should be one after all, and whether a hook may *block* a stage
+   (today none can — reported, never fatal), are both worth a view before 6.1 starts.
+
 ### Phase 8. 2.0.0
 
 **8.1 — The release machinery.** Bring `make release`, `make changelog`, `scripts/tag-release.py`,
@@ -2688,6 +2780,7 @@ links the migration page, so a version 1 user is told where version 2 is and wha
 ### Phase 9. The README and the docs
 
 Last, after everything it describes exists, and written from real sessions rather than from this plan.
+**Last means after phase 12, not after the release** — section 11's order note says why that moved.
 
 **9.1 — The five pages**, in the order a person meets them: start here; your first feature; a second
 person joins; let it sail; bring an existing codebase. Each from a real transcript, trimmed to what the
@@ -2699,67 +2792,20 @@ test-docs`**: every command in the first three pages run against a fresh generat
 drift; the pattern is `scripts/glossary.py --check`. **9.5 — The five maintainer skills** rewritten as
 prose around the four `slipwai package` verbs and the two package shapes, with `add-target` covering the
 skiff and the liner and `add-backing-service` a catalogue that no longer holds backends. Order: 9.5 can
-start as soon as 6.4 lands; 9.1 to 9.4 and 9.6 wait for 7.7.
+start as soon as 6.4 lands; 9.1, 9.3 and 9.4 wait for 7.7 and are done; 9.2 and 9.6 wait for phase 12.
 
-### Phase 10. The clouds as packages
-
-After 2.0.0, for the reason theme A gives. The shape is the language move again, measured: 47 asset
-files, 29 modules naming a cloud in 112 places.
-
-**10.1 — The target protocol.** `TARGET` as a registry object keyed by `Member` constants the way
-`LANGUAGE` is — the members are what `targets.py`, `project/infra.py`, `project/production.py`,
-`project/deploy_workflow.py` and `preflight.py` currently read per target: the stack assets, the
-provisioning per axis option, the docs page, the preflight tools, the image builder, the two shapes.
-`target.json` as the manifest; `kind: target` through the chandlery, `search --kind target`, and `slipwai
-package new --kind target`; a third conformance profile that generates a project on the target and runs
-`tofu validate`. **10.2** — the import surface widened to what a target package reads, held both ways.
-**10.3, 10.4** — `aws` then `azure` out, each as one repository under `ROBCOATVG` built by `package new`,
-with the keel's `make verify` green with no cloud installed after each. **10.5** — the twenty-three
-passing mentions, until `grep -ri aws src/slipwai` finds only a comment saying there is nothing. **10.6** —
-`check-structure` refuses a `slipwai_target_*` import as it refuses a language one.
-
-### What is still a person's to decide
-
-Collected from above, so they can be taken before the slice that needs them.
-
-1. ~~**Which Sigstore verifier**~~ **Decided 2026-10-07, after reading what npm and PyPI actually do.**
-   Keyless Sigstore signing from GitHub Actions for publishing, and a vendored minimal bundle verifier for
-   installing. Both ecosystems reached the same place and for the same reason: *npm* publishes with
-   `--provenance` from CI and verifies with `npm audit signatures` built into the client; *PyPI* publishes
-   PEP 740 attestations by default from Actions and verifies with its own `pypi-attestations`, which exists
-   precisely so a consumer never touches `cosign`. Neither asks a publisher to hold a key and neither asks
-   an installer to install a tool.
-
-   That is the friction that matters, because there are far more installers than publishers: shelling out
-   to `cosign` makes an install fail on a machine that has not got it, and minisign puts key management
-   back on every publisher, which is the thing keyless signing exists to remove. A vendored verifier costs
-   us maintenance when Sigstore's bundle format moves, and that is a cost we can carry and they cannot.
-
-   **One thing the research is worth reading for, beyond the choice.** In May 2026 a worm published 84
-   malicious versions across 42 TanStack packages and reached 172 packages within 48 hours, with valid
-   provenance throughout. Provenance says where a package came from. It says nothing about what the code
-   does. So signing is what makes *confirm a publisher once* mean something — it is the confirmation that
-   limits blast radius, and the signature is only what stops somebody else answering to that name.
-2. **Gitea or GitHub as canonical** after the merge back (8.5).
-3. ~~**The sandbox on macOS**~~ **Decided 2026-10-07: two kinds, `none` and `sbx`.** No per-platform
-   matrix, so `sandbox-exec`, `bwrap` and Windows Sandbox are all out and the question they raised is
-   closed. `sbx` is Docker Sandboxes, which already creates isolated environments for agents and is the
-   same on every platform Docker runs on; `none` is the honest option for a single captain on a trusted
-   machine, which is most laptops most of the time. Dropping the matrix is most of 5.14b.
-4. **Where the harbourmaster runs under `/cruise`** (7.1): one machine with captains reaching it through
-   the forge, as written, or a small hosted process — the plan says no hosted service before 2.0.0, so
-   the first; worth confirming.
-5. **The phase 7 greenfield**: which small product, two bounded contexts by design, becomes the first
-   thing version 2 builds for real.
-6. **The hook points** (6.1): the six named are the ones an existing extension asked for or the loop
-   makes obvious. Whether `generate` should be one after all, and whether a hook may *block* a stage
-   (today none can — reported, never fatal), are both worth a view before 6.1 starts.
+**What 9.4 changed about the rest.** It was written as insurance and turned out to be what makes the
+ordering work. `make test-docs` runs the first three pages against a fresh generation, so those pages can
+ship now and stay true through three more phases without anybody rereading them, and the two that are left
+can wait for the system to settle without 2.0.0 waiting for them. When 9.2 is written, every rule it
+describes should be one `make test-docs` already asks about, or the page is an assertion nothing holds.
 
 ### A realistic shape for the calendar
 
 Phase 5 is twenty-nine slices and the heart of it; at a slice a sitting it is a month. Phases 6 and 7 run
 beside each other and are each about three weeks. Phase 8 is a week of machinery and a release. Phase 9
-is a fortnight of writing against real runs. Phase 10 is after the release and is its own month. The
+is a fortnight of writing against real runs, and comes after phase 12 rather than after the release. Phase
+10 is its own month, and comes before the release rather than after it. The
 prerequisite — the six packages rebuilt — took the evening of 6 October, and found four keel faults on the way.
 
 ## 13. Multiplayer: a stream taken by another person, on another machine
