@@ -5,9 +5,11 @@ shape of release file, and listed in one index. They differ in what they declare
 it, which is exactly the part a publisher cannot be expected to know by heart — so the verb is one verb that
 works out the kind from the manifest, rather than two that would drift apart.
 
-The four read in the order a publisher uses them. `new` writes a package that already loads. `check` runs the
-conformance suite for whichever kind it is. `release` builds the file and the index entry. `register` puts
-both into a channel and rebuilds its index — which for a private channel is the whole of publishing, and for
+The five read in the order a publisher uses them. `new` writes a package that already loads. `check` runs
+the conformance suite for whichever kind it is. `version` cuts a release — the entry assembled from
+`changelog.d/`, the number written, the fragments gone — which is what the conformance suite demands and
+what nothing could do before. `release` builds the file and the index entry. `register` puts both into a
+channel and rebuilds its index — which for a private channel is the whole of publishing, and for
 the public one is the commit a pull request carries (6.6).
 """
 from __future__ import annotations
@@ -21,6 +23,7 @@ from .errors import GenerationError, refuse
 from .index_schema import EXTENSION
 from .package_new import KINDS, VERBS, write
 from .package_release import kind_of, register, release
+from .package_version import cut
 
 
 def new_package(parsed: argparse.Namespace) -> None:
@@ -45,6 +48,17 @@ def check_package(root: Path) -> int:
     if kind_of(whole) == EXTENSION:
         return conformance(["--extension", str(whole)])
     return conformance([str(whole.parent), whole.name])
+
+
+def cut_release(parsed: argparse.Namespace) -> None:
+    """Assemble the entry, write VERSION, delete the fragments. The thing a person does before tagging."""
+    root = Path(parsed.name).expanduser()
+    version, claimed, used = cut(root, parsed.release or None)
+    print(f"{root.name} {version}" + (f" — {claimed}" if claimed else ""))
+    print(f"  {used} fragment(s) assembled into {root / 'CHANGELOG.md'}, and deleted")
+    print("  VERSION written")
+    print(f"Read the entry, then: git commit -am 'Release {version}' && git tag -a v{version} "
+          f"-m '{root.name} {version}' && git push --follow-tags")
 
 
 def release_package(parsed: argparse.Namespace) -> None:
@@ -84,6 +98,9 @@ def package_main(argv: list[str]) -> None:
                         help="`release` only: where the file and its entry are written (default: dist)")
     parser.add_argument("--channel", metavar="<directory>",
                         help="`register` only: a checkout of the channel to publish into")
+    parser.add_argument("--release", default="", metavar="<version>",
+                        help="`version` only: the number, where it is a decision rather than a sum over "
+                             "what the fragments claim")
     parser.add_argument("--publisher", default="", metavar="<identity>",
                         help="who published it, as the index records it and `slipwai show` prints it")
     parser.add_argument("--file-url", default="", metavar="<url>",
@@ -95,6 +112,8 @@ def package_main(argv: list[str]) -> None:
             new_package(parsed)
         elif parsed.verb == "check":
             raise SystemExit(check_package(Path(parsed.name).expanduser()))
+        elif parsed.verb == "version":
+            cut_release(parsed)
         elif parsed.verb == "release":
             release_package(parsed)
         else:

@@ -76,7 +76,8 @@ TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
               "index_schema", "language_index", "language_release", "language_install", "language_plan",
               "language_upkeep", "browser_app",
               # The other kind of package: its install, its scaffold, and the two verbs over them.
-              "extension_install", "package_new", "package_release", "cli_extension", "cli_package",
+              "extension_install", "package_new", "package_templates", "package_release",
+              "package_version", "cli_extension", "cli_package",
               "trust", "cli_trust", "channel", "channel_new", "cli_channel", "cli_telegraph", "cli_fleet",
               # The board, as a page a person answers from: the render, the server and the verb.
               "bridge", "bridge_page", "cli_bridge",
