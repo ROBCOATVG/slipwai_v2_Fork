@@ -99,7 +99,10 @@ class TickTest(unittest.TestCase):
         self.assertNotRegex(page, r"\| done [0-9a-f]{7,} \|")
         # Not "a tick exists": whether one does depends on the history this checkout has, and a shallow
         # clone has none. What must hold is that a tick, where written, is the stable form.
-        self.assertEqual(page.count("| done |"), len(self.counted(page)))
+        # Also catches a slice shipped with no row: its trailer counts and nothing ticks it, which is
+        # work the plan cannot show anybody. `6.4b` was exactly that until this said so.
+        self.assertEqual(page.count("| done |"), len(self.counted(page)),
+                         "every shipped slice needs a row in the plan to be ticked in")
 
     def test_the_slices_that_predate_the_trailer_are_a_closed_list(self) -> None:
         """It was written once and is never added to; everything after carries its own trailer."""
