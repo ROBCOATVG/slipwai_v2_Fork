@@ -230,6 +230,11 @@ class LoopTest(unittest.TestCase):
         self.addCleanup(manifest.write_text, json.dumps(held, indent=2) + "\n", encoding="utf-8")
 
         self.run_in("scripts/event-model/chart.py")
+        # The repository's own identity, as any repository somebody has committed in has. The merge rebases,
+        # a rebase that replays writes a commit, and a commit needs a committer — the harbourmaster refuses
+        # by name without one, which is what this generation does on a machine with no global identity.
+        self.git("config", "user.name", "t")
+        self.git("config", "user.email", "t@local")
         self.git("add", "-A")
         self.git("commit", "--quiet", "-m", "the chart, and a gate that is one line")
         trunk_was = self.git("rev-parse", "HEAD").stdout.strip()

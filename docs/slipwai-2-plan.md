@@ -1728,7 +1728,7 @@ broken.
 
 | Slice | What | From | Size | Done when | Status |
 |---|---|---|---|---|---|
-| 11.1 | The claim is a git ref: a captain takes `refs/slipwai/claims/<fairway>` by a push that refuses non-fast-forward — an atomic compare-and-swap on every forge, with nothing of ours running — before it writes `claimed`, and a refusal names who holds it and since when | new (section 13) | M | Two machines start a captain for one fairway and the second refuses by name rather than both appending to one log |  |
+| 11.1 | The claim is a git ref: a captain takes `refs/slipwai/claims/<fairway>` by a push that refuses non-fast-forward — an atomic compare-and-swap on every forge, with nothing of ours running — before it writes `claimed`, and a refusal names who holds it and since when. **`held_by` is rendered from that ref and written by nothing** (decided 2026-10-08): a person taking a lane by hand takes the same ref, `make check-rendered` holds the split's column to it, and a harbour with no forge to push to renders `—` and says the claim is local to this machine | new (section 13) | M | Two machines start a captain for one fairway and the second refuses by name rather than both appending to one log; and `held_by` in `story-split.md` is what the refs say, with no verb and no hand edit able to make it say anything else |  |
 | 11.2 | In-flight work travels: the harbourmaster pushes each slice branch every pass as a WIP ref, the way it already pushes the logs, and a claim lapses on a lease derived from `stage_bound` rather than chosen. A captain taking a lapsed stream fetches that branch into its own berth and re-dispatches `/drive`, which enters at the first incomplete stage | new (section 13) | L | A machine closed four rungs into a slice is taken over by another, which resumes at rung five instead of starting again; no lease ever lapses under a captain that is writing |  |
 | 11.3 | One harbourmaster per machine: the harbour log becomes `.slipwai/logs/harbour/<machine>.jsonl`, folded on read exactly like the deck logs, so the single writer is removed rather than elected. The one thing that needs a decider — the merge — is serialised by `refs/slipwai/merge`, taken and released the way a claim is | new (section 13) | L | Three machines write three harbour logs and the board folds them into one; two harbourmasters never rebase at once, and the one that loses queues |  |
 | 11.4 | A berth's database name carries the machine identity the logs ref already uses, so two machines' berths cannot collide on a shared instance without any configuration being refused; `collisions()` checks the arithmetic anyway | new (section 13) | S | Two machines allocate berths against one database server and neither can reach the other's |  |
@@ -3088,6 +3088,21 @@ worth a row.**
   `docs/guide/a-second-person.md` can only tell a second person to pass `fairway=` every time. Either a verb
   sets it or the column should go; a field only a hand edit reaches is the kind of state this method is
   built around not keeping. **Raised 2026-10-08 while making `/drive` bare the documented default.**
+
+  *Asked the same day whether `/cruise` needs it, which would settle the question. It does not, and
+  checking turned the question round.* Nothing in the loop reads `held_by`: `fleet.py`, `captain.py` and
+  `cruise.py` never name it, and `fleet.py` takes its fairways from the chart — every fairway the chart has
+  gets a captain, bounded by `boilers`. The field is read in one place only, by a session following
+  `commands/drive.md`, out of a markdown table.
+
+  So there are two answers to *who holds this fairway* and phase 11 is bringing a third: a name in the
+  split's table, a running captain with a pid file, and `refs/slipwai/claims/<fairway>` (11.1).
+  **Decided 2026-10-08: `held_by` becomes a rendering of the claim ref, and no verb writes it.** 11.1
+  already gives a claim that is durable, atomic across machines, and carries who holds it and since when; a
+  person taking a lane by hand takes the same ref, and the table is folded from it the way every other
+  status here is folded from a log. Nothing new is needed before 11.1, and the alternative — a verb that
+  writes a field — would be a fourth source of truth for a question that is about to have one. **Folded
+  into 11.1's row**, which now has to render the column and say so where it cannot.
 - **The never-list is matched against the asker's own description.** The harbourmaster reads the
   `detail` the captain wrote, not the command that would run. It is defence in depth and the captain's
   own controls are the belt — but it is not written down as a known limit, and with 7.1b the
