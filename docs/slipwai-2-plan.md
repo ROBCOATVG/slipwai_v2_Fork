@@ -1642,7 +1642,7 @@ most worth running in two fairways themselves, once 5.3 exists.
 | 6.4 | `slipwai package check / release / register`, branching on the kind answer, and `make release` in the template behind them. `package new` landed early, in 6.1b, because a publisher needed something to publish | new | M | One language package and one extension package, each made by `new` on an empty machine, pass `check`, release, and register into a local channel without a hand edit | done |
 | 6.4b | `slipwai package version`: cutting a package's release — the entry assembled from `changelog.d/`, the number written, the fragments deleted — and a scaffold that ships a changelog so the chain runs with no hand edit | new | S | A package cut this way passes the conformance suite's version rule, which a hand-edited `VERSION` never does | done |
 | 6.5 | The trust store and the four states: `trust.json`, the `ROBCOATVG` root, the confirm-once prompt, `slipwai trust`, and `verified`/`unverified`/`unsigned`/`untrusted` wherever a package is shown. The cryptography is 6.5b | new | M | A new publisher is confirmed once and then installs silently; a hand-placed package loads and says `unsigned`; a signature nothing checked never reads as checked | done |
-| 6.5b | The verifier the trust store is waiting for, whichever of the three the owner picks: an optional `slipwai[verify]` extra, ed25519 in pure Python, or both by role. One function (`trust.check_signature`) and the signing step in `package release` | new | M | A release signed by its publisher installs as `verified`; one whose bytes were changed after signing is refused naming the publisher and the channel | blocked: owner's decision, see 6.5 |  |
+| 6.5b | The verifier the trust store is waiting for, both by role, decided 2026-10-08: ed25519 for a private channel, Sigstore through the `slipwai[verify]` extra for the public one. One function (`trust.check_signature`) and the signing step in `package release` | new | M | A release signed by its publisher installs as `verified`; one whose bytes were changed after signing is refused naming the publisher and the channel |  |
 | 3.7b | Every published package has CI: it calls the keel's reusable workflow, proves itself on each push, and on a tag builds the release and offers it to a channel. The `keel` input takes any pip spec, so a keel that is not on PyPI yet can be proved against | new | S | Six packages that had no CI at all run conformance on each push |  |
 | 3.7c | The matrix is opt-in and there is a way to opt in: `verify.yml` takes a `matrix` input and passes it on, so a maintainer can run the whole grid on a package from the forge without editing its workflow | new | S | `gh workflow run verify.yml -R <package> -f matrix=true` runs the matrix; a reusable workflow is never the one dispatched | done |
 | 6.6b | A release file lives where its publisher hosts it and the channel holds the entry; `channel check --fetch` holds a remote file to its digest; a tag publishes | new | M | A channel of six packages is 16 KB, and a file served by any web server installs with its digest checked | done |
@@ -2406,7 +2406,12 @@ keel that ships with no dependencies. There are three real ways out, and they ar
    and the keyless argument does not apply; Sigstore through the extra for the public one.
 
 The states are built either way and the verifier plugs into one seam, so whichever is chosen is a slice
-that adds a function and a test, not a redesign. **Owner's decision.**
+that adds a function and a test, not a redesign. **Decided 2026-10-08: both, by role.** Ed25519 for a
+private channel, where an organisation holding its own key is normal and the keyless argument does not
+apply; Sigstore through the `slipwai[verify]` extra for the public one, where it does. Every machine then
+gets real verification on the path it actually uses, and no hand-written cryptography sits on the public
+one. A public install with the extra absent keeps what it has today — the digest, TLS to the channel, and
+the identity the channel's own CI verified — and says `unverified`, which is the honest word for it.
 
 **Built 2026-10-08.** `https://robcoatvg.github.io/slipwai-index/` serves six packages at 1.0.0, each
 registered from the tag that built it, each passing conformance against this keel in its own CI. Proved
@@ -2600,8 +2605,14 @@ release is refused when a published package fails. This is the once-at-release h
 
 **8.5 — The release and the merge back.** `make release` to 2.0.0; `v2.0.0` tagged and published to PyPI
 and as the executable; the fork merged to upstream `main` as one merge with the whole history; the Gitea
-decision taken — whether `git.treyco.dev` stays canonical with GitHub mirroring, or GitHub becomes
-canonical. **Owner's decision.**
+decision taken. **Decided 2026-10-08: GitHub becomes canonical**, on the condition that it is free for open
+source, which it is — Actions on standard hosted runners is unlimited and free for public repositories, as
+are Pages and Packages; only larger runners are billed, and nothing here asks for one. The condition is
+worth recording because it is the thing that would reverse the decision: a chandlery that costs money to
+serve is a chandlery a contributor cannot fork. `git.treyco.dev` becomes the mirror. This is also what the
+chandlery already assumes — the index is served by Pages, the six packages' CI is Actions, and
+`package_new.KEEL_REPO` and every package's `uses:` name GitHub — so the decision removes a split the
+build has been carrying rather than creating a move.
 
 **8.7 — `slipwai upgrade` says what it changed.** Today the command prints what it is about to run and
 then hands the terminal to `pip` or `uv`, so the last thing anybody sees is a package manager's output and
