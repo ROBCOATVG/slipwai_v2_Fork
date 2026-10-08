@@ -265,3 +265,38 @@ class CallerPermissionTest(unittest.TestCase):
     def test_it_is_this_repository_s_contents_and_nobody_else_s(self) -> None:
         """The channel is reached with a token. This permission never touches it."""
         self.assertIn("nobody else", self.caller())
+
+
+class MatrixOptInTest(unittest.TestCase):
+    """The matrix is opt-in because it builds images and starts containers — and there was no way to opt
+    in. The reusable workflow took the input and the scaffold's caller passed nothing, so
+    `gh workflow run ... -f matrix=true` had nowhere to land."""
+
+    def caller(self) -> str:
+        import tempfile
+        from pathlib import Path as P
+
+        from slipwai import package_new
+        area = P(tempfile.mkdtemp())
+        package_new.write("language", "rust", area, "9.0")
+        return (area / "rust/.github/workflows/verify.yml").read_text(encoding="utf-8")
+
+    def test_a_person_can_ask_for_it(self) -> None:
+        import yaml
+        held = yaml.safe_load(self.caller())
+        on = held.get("on") or held.get(True)
+        self.assertIn("matrix", (on["workflow_dispatch"] or {}).get("inputs", {}))
+
+    def test_and_it_is_passed_through_to_the_workflow_that_runs_it(self) -> None:
+        self.assertIn("matrix: ${{ inputs.matrix || false }}", self.caller())
+
+    def test_it_is_off_by_default_so_a_push_never_starts_containers(self) -> None:
+        import yaml
+        held = yaml.safe_load(self.caller())
+        on = held.get("on") or held.get(True)
+        self.assertIs(on["workflow_dispatch"]["inputs"]["matrix"]["default"], False)
+
+    def test_the_command_that_runs_it_is_in_the_file(self) -> None:
+        """Named in the workflow rather than remembered: the verb is `verify.yml`, not `package.yml`,
+        and the reusable one is not dispatchable at all."""
+        self.assertIn("gh workflow run verify.yml", self.caller())
