@@ -1,0 +1,5 @@
+check-chart: 1 chart(s), 2 marks, one setter each, every slice in a capability
+clearance: 3 of 3 slices cleared in model
+  BIL-01
+  ORD-01
+  ORD-02

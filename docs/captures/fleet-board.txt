@@ -1,0 +1,25 @@
+waiting on you: 2
+  billing    told    should a refund be its own capability?
+  billing    told    are you doing anything
+
+berths: 2, 2 stalled
+  fairway   feature  slice   state    last line  tokens  merged  marks
+  --------  -------  ------  -------  ---------  ------  ------  -----
+  billing   model    BIL-01  stalled  989m ago   42      0       1    
+  ordering  model    ORD-02  stalled  990m ago   84      0       1    
+
+telegraph: half-ahead  boilers 3  fanout 2  bunker 126/10000k today
+
+last lines
+  2026-10-07T16:11:51Z  billing    heartbeat
+  2026-10-07T16:11:51Z  billing    mark-set
+  2026-10-07T16:11:53Z  billing    request
+  2026-10-07T16:11:53Z  ordering   claimed
+  2026-10-07T16:11:53Z  ordering   demo
+  2026-10-07T16:11:53Z  ordering   heartbeat
+  2026-10-07T16:11:55Z  billing    told
+  2026-10-07T16:11:55Z  harbour    granted
+  2026-10-07T16:11:55Z  harbour    granted
+  2026-10-07T16:11:55Z  harbour    mark-set
+  2026-10-07T16:11:55Z  ordering   request
+  2026-10-07T16:13:10Z  billing    told

@@ -1,0 +1,10 @@
+ordering: the last 9 line(s) its captain wrote
+  2026-10-07T16:11:48Z  claimed ORD-01
+  2026-10-07T16:11:48Z  set OrderPlaced — ORD-01
+  2026-10-07T16:11:49Z  still going, 42k spent
+  2026-10-07T16:11:49Z  demo of ORD-01: accepted
+  2026-10-07T16:11:50Z  asked to merge: merge slice/ORD-01 into trunk after the full gate
+  2026-10-07T16:11:53Z  claimed ORD-02
+  2026-10-07T16:11:53Z  still going, 42k spent
+  2026-10-07T16:11:53Z  demo of ORD-02: accepted
+  2026-10-07T16:11:55Z  asked to merge: merge slice/ORD-02 into trunk after the full gate

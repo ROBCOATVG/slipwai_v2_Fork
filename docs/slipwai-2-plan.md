@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 95 of 116 slices done** — phase 1 6/6, phase 2 9/9, phase 3 17/21, phase 4 7/7, phase 5 29/29, phase 6 10/12, phase 7 11/12, phase 8 5/8, phase 9 1/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 96 of 117 slices done** — phase 1 6/6, phase 2 9/9, phase 3 18/22, phase 4 7/7, phase 5 29/29, phase 6 10/12, phase 7 11/12, phase 8 5/8, phase 9 1/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1643,6 +1643,7 @@ most worth running in two fairways themselves, once 5.3 exists.
 | 6.5 | The trust store and the four states: `trust.json`, the `ROBCOATVG` root, the confirm-once prompt, `slipwai trust`, and `verified`/`unverified`/`unsigned`/`untrusted` wherever a package is shown. The cryptography is 6.5b | new | M | A new publisher is confirmed once and then installs silently; a hand-placed package loads and says `unsigned`; a signature nothing checked never reads as checked | done |
 | 6.5b | The verifier the trust store is waiting for, whichever of the three the owner picks: an optional `slipwai[verify]` extra, ed25519 in pure Python, or both by role. One function (`trust.check_signature`) and the signing step in `package release` | new | M | A release signed by its publisher installs as `verified`; one whose bytes were changed after signing is refused naming the publisher and the channel | blocked: owner's decision, see 6.5 |  |
 | 3.7b | Every published package has CI: it calls the keel's reusable workflow, proves itself on each push, and on a tag builds the release and offers it to a channel. The `keel` input takes any pip spec, so a keel that is not on PyPI yet can be proved against | new | S | Six packages that had no CI at all run conformance on each push |  |
+| 3.7c | The matrix is opt-in and there is a way to opt in: `verify.yml` takes a `matrix` input and passes it on, so a maintainer can run the whole grid on a package from the forge without editing its workflow | new | S | `gh workflow run verify.yml -R <package> -f matrix=true` runs the matrix; a reusable workflow is never the one dispatched | done |
 | 6.6b | A release file lives where its publisher hosts it and the channel holds the entry; `channel check --fetch` holds a remote file to its digest; a tag publishes | new | M | A channel of six packages is 16 KB, and a file served by any web server installs with its digest checked | done |
 | 6.6c | A channel's front page: what it serves and the command that installs each, generated beside the index from the same entries | new | S | The root of a published channel is a page a person can read rather than a 404 | done |
 | 6.6 | The public channel's contribution path, which `slipwai package register` targets: the index repository, its CI (signature matches publisher, conformance passes, no name collision), and the contributor page | new | M | A package from outside `ROBCOATVG` is listed by a merged pull request and installs with one confirmation | done |
