@@ -3,15 +3,16 @@
 Split from `cruise.py` because that module is at its budget, and because the table is the one part of the
 command that varies with what the project is — the release rows only under a production target, the gaps
 row reading the profile's own artifact, three more rows in an adopted repository — so it is the part most
-often read on its own. The two paths the runner and the audit write, `LOG` and `REPORT`, live here because
-the table is the first thing that names them; `cruise.py` re-exports both.
+often read on its own. `REPORT`, the path the completion audit writes, lives here because the table is the
+first thing that names it; `cruise.py` re-exports it. `LOG` — `specs/cruise-log.jsonl`, one entry per
+iteration — went with the runner in 7.7d: there are no iterations, and where a thing was recorded is the
+stream's own deck log.
 """
 from __future__ import annotations
 
 from ..origin import Adoption
 from .cruise_agents import BOSUN, DEMO_LOG, HAND
 
-LOG = "specs/cruise-log.jsonl"
 REPORT = "specs/<feature>/cruise-report.md"
 
 
@@ -25,7 +26,7 @@ def stop_table(event: bool, target: str, adoption: Adoption | None) -> str:
          "what the ladder says it is, *could not verify this checkout is current*, said in the evidence line, "
          "and the run goes on: without a remote the local branch is the claim, as the ladder says. Never derive "
          "from a tree known to be stale",
-         f"`{LOG}`"),
+         "the stream's deck log"),
         ("Principles: the constitution is unratified",
          "`constitution: ratify` — the skipper drafts it with `/speckit-constitution` from the spec and the "
          "owner brief, answers `/constitution-coverage`, and ratifies it with the line `ratified by cruise "

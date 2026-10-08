@@ -1,9 +1,8 @@
 """The parts that write how a project is run: `/cruise`'s own settings, its CI, and `./init`.
 
 These are the files a generated repository is operated through rather than read through, and the places
-where a wrong string is silent. A `/cruise` that does not end its reply with one of the lines the runner
-parses is a run the runner cannot follow; a shell argument that is not quoted is a project name that
-can run a command.
+where a wrong string is silent: a shell argument that is not quoted is a project name that can run a
+command.
 
 Their suites generate a project and come back in 3.3z. Held here is what has to be true before one
 exists.
@@ -26,22 +25,40 @@ from slipwai.project import (
 
 
 class CruiseTest(unittest.TestCase):
-    def test_every_line_the_runner_parses_is_declared_in_one_place(self) -> None:
-        """The runner reads the last line of a reply. A line it does not know is a stalled run."""
-        self.assertTrue(cruise.LAST_LINES)
-        for line in cruise.LAST_LINES:
-            with self.subTest(line=line):
-                self.assertTrue(line.startswith("cruise: "), line)
-
-    def test_the_lines_are_distinct(self) -> None:
-        self.assertEqual(len(set(cruise.LAST_LINES)), len(cruise.LAST_LINES))
+    """What `/cruise` is after 7.7d: the settings a run gives at the ladder's stops, and nothing that holds
+    a run. The two tests that stood here held the runner's contract — the four last lines it parsed, and the
+    sentence a session printed when nothing was reading them — and both went with it. What replaced the
+    contract is the deck log, which `tests/test_captain.py` holds."""
 
     def test_the_config_it_writes_is_json_and_says_where_it_is_explained(self) -> None:
         written = json.loads(cruise.cruise_config())
         self.assertIn("_comment", written)
 
-    def test_a_cruise_nobody_is_reading_says_so_rather_than_appearing_to_work(self) -> None:
-        self.assertIn("no outer loop is reading this", cruise.UNREAD)
+    def test_it_declares_no_setting_that_bounds_a_loop(self) -> None:
+        """A budget on iterations, wall time or polling is a budget on something that no longer exists. A
+        setting nothing reads is worse than one that was never there: it is answered, committed, and
+        silently ignored."""
+        declared = {key for key, _, _, _ in cruise.SETTINGS}
+        self.assertEqual(declared & {"stuck_after", "max_iterations", "max_hours", "poll_minutes"}, set())
+
+    def test_the_settings_the_stops_need_are_all_still_here(self) -> None:
+        declared = {key for key, _, _, _ in cruise.SETTINGS}
+        self.assertEqual(declared, {"enabled", "decide", "release", "constitution", "hand", "unblock", "model"})
+
+    def test_the_command_names_no_part_of_the_runner(self) -> None:
+        """Prose is where a deletion rots: a command file that still tells somebody to run `cruise.py watch`
+        is a command file that works until they read it."""
+        written = cruise.cruise_command(True, [])
+        for gone in ("cruise.py run", "cruise.py start", "cruise.py watch", "cruise.py tell",
+                     "cruise.py told", "cruise.py loop", "cruise.py stopping", "cruise.py status",
+                     "cruise: continue", "cruise: done", "cruise-checkpoint", "cruise.stop"):
+            with self.subTest(gone=gone):
+                self.assertNotIn(gone, written)
+
+    def test_it_says_what_casts_off_and_what_a_dispatched_session_reads(self) -> None:
+        written = cruise.cruise_command(True, [])
+        self.assertIn("fleet.py start", written)
+        self.assertIn("a stage that wrote no line made no progress", written.lower())
 
 
 class InitScriptTest(unittest.TestCase):

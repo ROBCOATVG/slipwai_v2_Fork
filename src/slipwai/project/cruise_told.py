@@ -25,12 +25,13 @@ never changes a setting; say so and point at `/cruise-settings` where one asks f
 
 
 def seat_queues(script: str) -> str:
-    """The watch seat's rule for something a person types that is for the run, not for the seat."""
-    return f"""Where what they typed is for the run — a steer, a fact it was missing, a scope, an
-answer to the question it parked on — queue it with `python3 {script} tell <<'EOF'` … `EOF` (`/cruise-tell`),
-the message as they said it, and repeat what the script printed: the next iteration carries it, a parked run
-resumes with it, and `--now` as its first word ends the iteration in flight for it, which is done only when they
-ask for that."""
+    """The watch seat's rule for something a person types that is for a stream, not for the seat."""
+    return f"""Where what they typed is for a stream — a steer, a fact it was missing, a scope, an
+answer to what it parked on — write it with `python3 {script} tell <<'EOF'` … `EOF` (`/cruise-tell`), the
+stream first and the message as they said it, and repeat what the script printed. **Ask which stream where
+they have not said**, naming the ones there are: four captains each somewhere different in their work are
+rarely all meant to hear the same thing, and `--everyone` is the deliberate broadcast rather than the
+default."""
 
 
 def boundary_asks(script: str) -> str:
@@ -44,4 +45,5 @@ iteration is not given it again, and the runner puts it in this iteration's log 
 def seat_stands() -> str:
     """The sentence the watch seat carries about the two questions a person asks most, answered from disk."""
     return ("Where they ask where the run stands or what is next, `/where-are-we` and `/whats-next` read the "
-            "runner's state first (`where`) and answer from it — never by sending the question down to the iteration.")
+            "board first (`slipwai fleet`) and answer from it — never by asking a captain, which has no way to "
+            "be asked and would be mid-stage if it had.")

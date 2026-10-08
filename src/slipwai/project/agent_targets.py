@@ -36,14 +36,14 @@ benchmark: ## Show what each slice cost and how each stage of /drive did, from t
 \tpython3 scripts/agents/benchmark.py
 cruise: ## Cast off: start the harbourmaster and a captain per fairway, and exit. Nothing is left holding the state of the run
 \tpython3 scripts/agents/fleet.py start
-cruise-watch: ## Watch a /cruise run from here: what the iteration does as it happens, returning at the iteration's end, a park, or the run's end (CRUISE_FLAGS=\"--minutes 10\" to sit longer)
-	python3 scripts/agents/cruise.py watch $(CRUISE_FLAGS)
+cruise-watch: ## Watch the fleet from here: every stream's lines as they are written, returning after a minute and a half (CRUISE_FLAGS=\"--minutes 10\" to sit longer)
+\tpython3 scripts/agents/fleet.py watch $(CRUISE_FLAGS)
 cruise-status: ## What is running: the harbourmaster and each captain, with their pids. `slipwai fleet` is what they are doing
 \tpython3 scripts/agents/fleet.py list
 cruise-stop: ## Ask the harbourmaster and every captain to stop. A captain stops at its next boundary
 \tpython3 scripts/agents/fleet.py stop
-cruise-tell: ## Queue a message for the next /cruise iteration (MSG=\"…\"; CRUISE_FLAGS=--now ends the iteration in flight so it goes at once)
-\tpython3 scripts/agents/cruise.py tell $(CRUISE_FLAGS) $(MSG)
+cruise-tell: ## Tell one stream something; its captain reads it at the next boundary (STREAM=<name> MSG=\"…\"; CRUISE_FLAGS=--everyone tells them all)
+\tpython3 scripts/agents/fleet.py tell $(CRUISE_FLAGS) $(STREAM) $(MSG)
 check-decisions: ## Fail when a decision log or demo log /cruise wrote has lost its shape
 \tpython3 scripts/check-decisions.py
 """

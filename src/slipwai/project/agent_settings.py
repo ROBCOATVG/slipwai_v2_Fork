@@ -73,11 +73,11 @@ def harness_hooks(layout: Layout) -> dict[str, list[dict[str, object]]]:
     }
 
 
-# What the delivery loop runs in every project whatever its language: the toolkit's own scripts — every verb of
-# `scripts/agents/cruise.py`, the projections, the gates — and the Git a slice is made of. A session that cannot
-# ask is refused every command its rules do not name, and one refused first command parks a `/cruise` run before
-# its first stage: a TypeScript project's first iteration could not run `python3 scripts/agents/cruise.py loop`,
-# its allowlist having no `python3` rule. The headless iteration is now given the shell wholesale by the
+# What the delivery loop runs in every project whatever its language: the toolkit's own scripts — the captain,
+# the harbourmaster, the fleet, the projections, the gates — and the Git a slice is made of. A session that
+# cannot ask is refused every command its rules do not name, and one refused first command parks a run before
+# its first stage: a TypeScript project's first run could not call a single toolkit script, its allowlist
+# having no `python3` rule. The headless session is now given the shell wholesale by the
 # registry's row (`--allowedTools Bash`), because no list can name the compound commands an agent writes; these
 # rules are what keep a person's own session from prompting at every hook and gate, and the deny rules below
 # are what hold in both. Resets and cleans are absent, and a plain force-push is denied rather than merely

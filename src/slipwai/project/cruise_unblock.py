@@ -37,7 +37,7 @@ def unblock_section(script: str) -> str:
 
 Blocked is work before it is a stop. Whenever this ladder would park — an input nobody here has, a question
 whose every option seems to break a MUST, a checkout that will not rebase, a delegate that died mid-slice, a
-run the outer loop reports as making no progress (`/cruise unblock: <reason>` is how it says so) — first
+a slice the captain re-dispatched for making no progress (`/cruise unblock: <reason>` is how it says so) — first
 mark the slice blocked, take the next ready slice, and delegate the blocker to one fresh `{BOSUN}` delegate
 with what was tried in its brief. Its standing brief carries the moves, in order: stub the world behind the
 port the missing thing sits behind, recorded as a deliberate stub in `plan.md` so the board shows it under
@@ -53,16 +53,19 @@ and parks at once.
 
 {catastrophic_list()}
 
-A park is therefore rare, and it says which of those it met, or what the bosun tried. `python3 {script}
-status` shows a parked run's reason beside its checkpoint.
+A park is therefore rare, and it says which of those it met, or what the bosun tried. It is written as a
+line in the stream's own deck log, so `slipwai fleet` shows that stream as waiting on somebody with the
+reason, and `/cruise-tell <stream>` with the answer is what resumes it.
 
 **A failing gate is never repaired in the gate.** `make verify` red on the slice's own tree is the slice's
 work. Red for a reason the tree cannot fix — a browser this machine has not got, a tool not installed, a
 script of a kit's that crashes — is a park: `cruise: parked: <gate>: <its own last lines>`, so a person
-reads what the gate said and not what an iteration made of it. A gate reported as skipped is neither. This is
-not left to the text: on Claude Code, `python3 {script} guard` runs as the `PreToolUse` hook of every editing
-tool and refuses, in a runner's session, an edit under `scripts/`, `tools/`, the `Makefile`, CI or the hook
-settings before it lands; and the runner compares those files before and after every iteration, on every
-harness, and parks the run on any change — `controls_changed` on the log entry names the files — whatever
-the iteration's last line said. A file installed under `tools/` by `./init --extension` is not a change.
+reads what the gate said and not what a stage made of it. A gate reported as skipped is neither. This is
+not left to the text. Two things hold it, and neither is in this session. **The `before-write` and
+`before-command` guards** refuse, in a session a captain dispatched, an edit or a shell write under
+`scripts/`, `tools/`, the `Makefile`, CI, the hook settings or either registry, before it lands — on every
+harness with a pre-tool event, because they are points of a closed set rather than one harness's rows
+(`scripts/agents/session.py`). **And the captain compares those files** before and after every stage, on
+every harness, and parks the slice on any change, naming the files. A file installed under `tools/` by
+`./init --extension` is not a change.
 """

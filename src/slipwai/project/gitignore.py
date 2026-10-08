@@ -10,17 +10,6 @@ from ..npm_workspace import npm
 from ..registry import GITIGNORE, registry
 from ..services import App, backends_of, families_of, needs_environment, services_of, web_apps
 from ..targets import managed
-from .cruise_record import (
-    CHECKPOINT,
-    INBOX,
-    LAST_RESPONSE,
-    RUNNER_LOG,
-    RUNNER_PID,
-    RUNNER_STREAM,
-    STOP_FILE,
-    TOLD,
-    WATCH_CURSOR,
-)
 from .openapi import API_CLIENT
 from .shared_packages import PACKAGES, node_workspace
 
@@ -149,15 +138,10 @@ def build_artifacts(event: bool, apps: list[App], target: str = "none") -> str:
         # scaffolding — committed, it would point somewhere different on every slice branch and conflict at
         # every merge — and `check-slice-scope` refuses a regular file left where the link was.
         + "".join(f"specs/*/{slot}\n" for slot in CANONICAL_SLOTS)
-        # `/cruise`'s checkpoint: the state of the iteration in flight, rewritten at every stage boundary so a
-        # compacted context can resume, and deleted when the iteration ends — run state, never a record.
-        + f"{CHECKPOINT}\n"
-        # The runner's own state beside it: a person's stop signal, the pid of the runner, where a detached runner
-        # writes what a foreground one prints, the raw stream that feed was rendered from, how far the watch seat
-        # has read it, the last message a harness's after-response hook kept, and what a person queued for the run
-        # and an iteration was given — each of which is in the iteration log once delivered.
-        + f"{STOP_FILE}\n{RUNNER_PID}\n{RUNNER_LOG}\n{RUNNER_STREAM}\n{WATCH_CURSOR}\n{LAST_RESPONSE}\n"
-        + f"{INBOX}\n{TOLD}\n"
+        # The runner's files were ignored here until 7.7d: a checkpoint, a stop file, a pid, a feed, a raw
+        # stream, a watch cursor, a kept last message and two inbox files. Every one of them was state held
+        # outside the logs by the single process that held the run, and all nine went with it. Nothing has
+        # replaced them, which is the point: a captain's state is its deck log, and that is committed.
         # The agent projections: derived from `skills/`, `commands/` and `agents/`, rewritten by `./init`, `make agents` and
         # `slipwai migrate`, and never the place to edit — so never committed, whichever harness the project uses.
         + projection_artifacts()

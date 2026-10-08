@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from .cruise import CONFIG
 from .cruise_agents import DECISIONS, DEMO_LOG, HAND, OWNER_BRIEF, SKIPPER
-from .cruise_record import DECISION_ENTRY, DEMO_ENTRY, STOP_FILE
+from .cruise_record import DECISION_ENTRY, DEMO_ENTRY
 
 PAGE = OWNER_BRIEF
 
@@ -66,8 +66,8 @@ taken; the skipper cites it rather than re-taking it.]
 
 [Questions that park a run however clearly the specification seems to answer them — a price, a legal
 wording, anything that reaches a real customer, a release with no flag holding it back. The skipper records
-these as `unavailable` and the run parks with the exact question; `{STOP_FILE}` and `{CONFIG}` say how a run
-stops and what it may decide.]
+these as `unavailable` and the stream parks with the exact question, which is a line on its deck log and a
+row on the board waiting for somebody; `{CONFIG}` says what a run may decide for itself.]
 
 ## What the record looks like
 

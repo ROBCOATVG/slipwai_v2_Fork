@@ -34,7 +34,7 @@ has seen.
 actor's first action is opening it; here the actor was the hand, and it has finished. Once the verdict is
 recorded, end it — `{make} demo-down` or `{make} services-down` where the demo used them, otherwise the process
 the stop started — before Phase 4 or the next slice's delegate, which starts what its own demo needs and would
-otherwise find the port taken; the runner ends anything an iteration still leaves. The hand's writes are
+otherwise find the port taken; the captain ends anything a stage still leaves running. The hand's writes are
 `{DEMO_LOG}` — one section per demo — and its evidence under `{EVIDENCE}`:
 
 ```markdown

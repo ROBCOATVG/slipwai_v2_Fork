@@ -1,33 +1,25 @@
-"""The three records `/cruise` writes in a fixed shape: a decision, a demo, and the checkpoint a compacted context resumes from.
+"""The two records a run writes in a fixed shape: a decision, and a demo.
 
 Their shapes live here, apart from the command that shows them and the brief that repeats them, because
 three things are written from them — `commands/cruise.md`, the owner brief, and the `check-decisions` gate's
-expectations — and a shape stated once cannot drift between them. The checkpoint is the newest: a context can
-be summarised by the harness at any point, and what a summary loses is the state nothing on disk carries —
-which delegates are out, a question half-answered, which slice's demo comes next — so the command keeps that
-in one small file and re-reads it, and the harnesses that can run a command after compaction replay it.
+expectations — and a shape stated once cannot drift between them.
+
+**There were three.** The checkpoint — `specs/cruise-checkpoint.md`, rewritten at every stage boundary so a
+compacted context could resume — went with the runner in 7.7d, along with the stop file, the pid, the feed,
+the stream, the watch cursor and the two inbox files. Each of those was state held outside the logs by the
+one process that held the run, which is exactly what could not survive that process dying or a second machine
+joining. What a compacted context reads now is the deck log, which is written anyway because it is what the
+captain reads, and so is never stale and costs the stage nothing extra.
 """
 from __future__ import annotations
 
 from .cruise_agents import BOSUN, BROWSER, HAND, SKIPPER
 
-CHECKPOINT = "specs/cruise-checkpoint.md"
-STOP_FILE = ".specify/cruise.stop"
-# The runner's pid while it runs, where a detached runner writes what a foreground one prints, and the last
-# message a harness's after-response hook kept for a stop hook whose event does not carry it.
-RUNNER_PID = ".specify/cruise.pid"
-RUNNER_LOG = ".specify/cruise-run.log"
-# The harness's raw event stream the feed in the run log was rendered from, and how far the watch seat has read.
-RUNNER_STREAM = ".specify/cruise-stream.jsonl"
-WATCH_CURSOR = ".specify/cruise-watch.cursor"
-# Where `/cruise` is configured, and the runner every seat command speaks to; `cruise.py` re-exports both.
+# Where `/cruise`'s settings live, and the script that reads them. Both are all that is left of the runner:
+# the settings outlived the loop because they were never the loop's — they are the answers a run gives at
+# `/drive`'s stops, which a captain's dispatched `/drive` reads exactly as a person's would have.
 CONFIG = ".specify/cruise.json"
 SCRIPT = "scripts/agents/cruise.py"
-LAST_RESPONSE = ".specify/cruise-last-response.txt"
-# What a person queued for the run through `tell`, until an iteration takes it; and what an iteration was given,
-# until the runner writes it into that iteration's log entry.
-INBOX = ".specify/cruise-inbox.jsonl"
-TOLD = ".specify/cruise-told.jsonl"
 # The rule that makes a decision entry also an ADR, stated once for the command and read by its tests. `{REPORT}`
 # is `cruise_stops.REPORT`, which the command substitutes.
 ADR_RULE = """\
@@ -39,7 +31,7 @@ the run never accepts its own architecture decision — with the next unused num
 `D<n>` is, and name it in the entry's `Written to` beside the artifact. The entry is the log of what was
 decided; the ADR is where the next slice looks for why, and `{REPORT}` lists every ADR still `Proposed`."""
 DECISION_ENTRY = f"""## D<n> — <the question, in one line>
-- **Stage:** <stage> · **Slice:** <id> · **When:** <ISO instant> · **Iteration:** <n>
+- **Stage:** <stage> · **Slice:** <id> · **When:** <ISO instant> · **Stream:** <fairway>
 - **Question:** <as the stage raised it>
 - **Options:** <each, marking the one the stage recommended>
 - **Decision:** <one>
@@ -48,16 +40,9 @@ DECISION_ENTRY = f"""## D<n> — <the question, in one line>
 - **Confidence:** high | medium | low · **Would reverse if:** <the one condition>
 - **Written to:** <the artifact paths the answer went into>
 - **Status:** standing | overridden by D<m> | overridden by human <date>"""
-DEMO_ENTRY = f"""## <ISO instant> — <accepted | behaviour | implementation> · iteration <n> · {HAND} (<model>)
+DEMO_ENTRY = f"""## <ISO instant> — <accepted | behaviour | implementation> · <slice id> · {HAND} (<model>)
 - **Started with:** <the literal command or URL> · **Seeded:** <what, or none>
 - **Driven through:** {BROWSER} | <harness browser tool> | HTTP | CLI — <why, where not the first>
 - **Examples:** <one line each — R1 e1: passed · R2 e1: failed, expected X, saw Y · R3 e2: unreachable, why>
 - **Evidence:** <paths under demo/>
 - **Feedback:** <what re-entered the ladder and at which stage, or the note for the next slice>"""
-CHECKPOINT_ENTRY = f"""# Cruise checkpoint — iteration <n>
-- **Feature:** <feature> · **Slice:** <id> · **Stage:** <stage> · **Written:** <ISO instant>
-- **Delegates out:** <type · manifest · what it was asked>, one per line, or none
-- **Open question:** <the question and the stage that raised it, or none>
-- **Next:** <the one next step, in the ladder's words>
-- **Rules:** run commands/drive.md as written; decide at its stops by the stop table; decisions to
-  decisions.md; demos to demo-log.md; end with one of the four last lines; `{STOP_FILE}` stops the run"""
