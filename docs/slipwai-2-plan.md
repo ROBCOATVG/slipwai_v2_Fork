@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 98 of 125 slices done** — phase 1 6/6, phase 2 9/9, phase 3 18/22, phase 4 7/7, phase 5 29/29, phase 6 10/12, phase 7 11/15, phase 8 5/8, phase 9 3/6, phase 10 0/6, phase 11 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 99 of 129 slices done** — phase 1 6/6, phase 2 9/9, phase 3 18/22, phase 4 7/7, phase 5 29/29, phase 6 10/12, phase 7 11/15, phase 8 5/8, phase 9 4/6, phase 10 0/6, phase 11 0/5, phase 12 0/4. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1758,7 +1758,7 @@ away, so the pages have to be right before they are packaged.
 | 9.2 | The reference pages under `docs/reference/` | L | Every rule the plan names has a page |  |
 | 9.3 | The captures: the bridge, the fleet board, a demo-stop board, a `/chart` output | S | From real runs, not drawn | done |
 | 9.6 | **From a spec to a delegate**: one figure per profile following a single feature all the way down — spec, model or chart, split into slices, example-mapped into rules and examples, cleared, claimed, and handed to a delegate at the configured width. Drawn, not captured | new | M | A reader who has never used slipwai can point at where a slice comes from and at what one delegate is handed; both profiles are the same figure with two boxes different |  |
-| 9.4 | `make test-docs`: every command in the first three pages run against a fresh generation — the programme generates two projects, drives the interview question by question, seeds the pages' own model and log lines, and asks each command in the order the page asks it. A command on a page that the programme does not have fails the gate | M | The README cannot drift |  |
+| 9.4 | `make test-docs`: every command in the first three pages run against a fresh generation — the programme generates two projects, drives the interview question by question, seeds the pages' own model and log lines, and asks each command in the order the page asks it. A command on a page that the programme does not have fails the gate | M | The README cannot drift | done |
 | 9.5 | The five maintainer skills in `.claude/skills/`, rewritten for version 2's shape: `add-language`, `add-framework` and `add-extension` as prose around the four `slipwai package` verbs and the two package shapes; `add-target` for the skiff and the liner; `add-backing-service` for a catalogue that no longer holds backends | new | L | A contributor who has not seen this repository publishes a package by following one skill; no skill names a step a verb already does; none describes a file version 2 does not have | done |
 
 ### Order, and what runs in parallel
