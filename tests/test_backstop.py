@@ -251,7 +251,7 @@ class CallerPermissionTest(unittest.TestCase):
 
     def test_and_the_called_job_asks_for_no_more_than_that(self) -> None:
         """Every permission the called workflow wants has to be one the caller already granted."""
-        import yaml  # type: ignore[import-untyped]
+        import yaml
         called = yaml.safe_load((ROOT / ".github/workflows/package.yml").read_text(encoding="utf-8"))
         caller = yaml.safe_load(self.caller())
         granted = caller.get("permissions") or {}
