@@ -5,7 +5,7 @@ Two OpenTofu stacks, and two scripts the Makefile hands the production verbs to.
 | Directory | What it is | Who applies it |
 |---|---|---|
 | `bootstrap/` | The state storage account, the pipeline's identity (a user-assigned managed identity with three federated credentials on GitHub, or an app registration with a client secret on a forge without OIDC), and the container registry every service's images go to. Its own state is committed here, encrypted. | `make bootstrap` — a person, once, signed in as an Owner of the subscription. Not needed again when a service is added. |
-| `service/` | Everything an environment is: one Container App per application behind the environment's own ingress, and whatever the answers asked for — the database, the staff identity, the site. `staging` and `production` are workspaces over this one directory, each in a resource group of its own. | The pipeline, on every push to `main`. `make deploy ENV=…` runs the same code path from a laptop. |
+| `service/` | Everything an environment is: one Container App per application behind the environment's own ingress, and whatever the answers asked for — the database, the internal identity, the site. `staging` and `production` are workspaces over this one directory, each in a resource group of its own. | The pipeline, on every push to `main`. `make deploy ENV=…` runs the same code path from a laptop. |
 | `../scripts/bootstrap.py` | What `make bootstrap` runs: reads the forge from the remote, applies `bootstrap/`, writes the outputs to the repository as variables and a secret. `--plan` says what it would do. | `make bootstrap`. |
 | `../scripts/deploy.py` | `push`, `smoke-image`, `deploy`, `rollback`, `promote`, `migrate`, `smoke`, `url` — the verbs behind the other production targets. | Whatever runs `make`. |
 
@@ -43,7 +43,7 @@ rights as well, and the bootstrap refuses before it applies rather than halfway 
   becomes is a user-assigned managed identity, which *is* a subscription resource.
 - **Where this project answered `--auth entra`**, the caller also needs to be able to grant an application
   permission — a **Privileged Role Administrator** or a Global Administrator. The stack grants the deploy
-  identity the narrow `Application.ReadWrite.OwnedBy` Graph role, which is what makes the staff identity a
+  identity the narrow `Application.ReadWrite.OwnedBy` Graph role, which is what makes the internal identity a
   thing the pipeline can provision, and it grants nothing else in the directory. A project with
   `--auth none` needs none of this, and the stack asks for none of it.
 

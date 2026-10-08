@@ -31,7 +31,7 @@ terraform {
       source  = "Azure/azapi"
       version = "2.12.0"
     }
-    # An app registration is a directory object rather than a subscription resource, so the staff identity
+    # An app registration is a directory object rather than a subscription resource, so the internal identity
     # answer is this provider's rather than azurerm's — and so is the permission the bootstrap stack grants
     # the deploy identity to create one.
     azuread = {

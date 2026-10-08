@@ -42,7 +42,7 @@ variable "images" {
 # The project's services, written by the factory into project.auto.tfvars.json from project.json's
 # `deployables` and rewritten by `add-service`. Each entry says what the service answered its axes with in
 # the terms this target provisions them: `store = "flexible-server"` for the Postgres event store,
-# `auth = "entra"` for the staff identity, `users = "entra-external"` for the product's users; how its
+# `auth = "entra"` for the internal identity, `users = "entra-external"` for the product's users; how its
 # migrations run once it is an image; and the environment its backend needs in production over and above
 # the port.
 # The two probes answer two different questions. `health_path` is readiness — "send me traffic" — which

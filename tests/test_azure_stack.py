@@ -119,7 +119,7 @@ class AzureStackTest(FactoryTestCase):
             self.assertIn('azuread_service_principal.msgraph.app_role_ids["Application.ReadWrite.OwnedBy"]', granted)
             # And the staff identity is app roles rather than directory groups, so the claim carries the
             # same plain strings the local Keycloak realm does and nothing needs `Group.ReadWrite.All`.
-            staff = (repo / "infra/service/entra_staff.tf").read_text(encoding="utf-8")
+            staff = (repo / "infra/service/entra_internal.tf").read_text(encoding="utf-8")
             self.assertIn('OIDC_GROUPS_CLAIM   = "roles"', staff)
             self.assertIn('OIDC_GROUP_ADMIN    = "app-admin"', staff)
             self.assertNotIn("azuread_group", staff)
@@ -131,7 +131,7 @@ class AzureStackTest(FactoryTestCase):
                 cwd=repo, check=True, capture_output=True,
             )
             self.assertNotIn("Application.ReadWrite", (repo / "infra/bootstrap/main.tf").read_text(encoding="utf-8"))
-            self.assertEqual((repo / "infra/service/entra_staff.tf").read_text(encoding="utf-8"), "")
+            self.assertEqual((repo / "infra/service/entra_internal.tf").read_text(encoding="utf-8"), "")
 
     def test_every_stack_validates_against_the_real_providers_before_and_after_a_prune(self) -> None:
         if shutil.which("tofu") is None:
@@ -149,7 +149,7 @@ class AzureStackTest(FactoryTestCase):
                 cwd=maximal, check=True, capture_output=True,
             )
             self.assertEqual((maximal / "infra/service/postgres.tf").read_text(encoding="utf-8"), "")
-            self.assertEqual((maximal / "infra/service/entra_staff.tf").read_text(encoding="utf-8"), "")
+            self.assertEqual((maximal / "infra/service/entra_internal.tf").read_text(encoding="utf-8"), "")
             self.assertNotIn("backing-service:postgres",
                 (maximal / "infra/service/main.tf").read_text(encoding="utf-8"))
             self.validate(maximal / "infra/service")

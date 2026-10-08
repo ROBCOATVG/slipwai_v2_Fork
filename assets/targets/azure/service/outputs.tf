@@ -5,7 +5,7 @@ output "url" {
 
 # What the browser app is built with for this environment: Vite bakes VITE_* values into the bundle, so the
 # bundle is built once per environment by scripts/deploy.py, from these. Empty unless this project answered
-# the customer-identity axis, which under this target means Auth0.
+# the external user-identity axis, which under this target means Auth0.
 output "web_environment" {
   description = "The VITE_* values the browser app is built with in this environment."
   value = merge(

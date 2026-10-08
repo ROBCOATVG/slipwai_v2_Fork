@@ -35,11 +35,11 @@ locals {
       },
       service.environment,
       # backing-service:keycloak:begin
-      service.auth == "entra" ? local.staff_environment : {},
-      service.auth == "auth0" ? local.auth0_staff_environment : {},
+      service.auth == "entra" ? local.internal_environment : {},
+      service.auth == "auth0" ? local.auth0_internal_environment : {},
       # backing-service:keycloak:end
       # backing-service:users-keycloak:begin
-      service.users == "auth0" ? local.auth0_customers_environment : {},
+      service.users == "auth0" ? local.auth0_external_environment : {},
       # backing-service:users-keycloak:end
       {},
     )
@@ -58,9 +58,9 @@ locals {
       # backing-service:postgres:end
       # backing-service:keycloak:begin
       service.auth == "entra" ? {
-        "oidc-client-secret" = { variable = "OIDC_CLIENT_SECRET", id = one(azurerm_key_vault_secret.staff_client[*].id) }
+        "oidc-client-secret" = { variable = "OIDC_CLIENT_SECRET", id = one(azurerm_key_vault_secret.internal_client[*].id) }
       } : {},
-      service.auth == "auth0" ? local.auth0_staff_secrets : {},
+      service.auth == "auth0" ? local.auth0_internal_secrets : {},
       # backing-service:keycloak:end
       {},
     )
@@ -119,7 +119,7 @@ resource "azurerm_role_assignment" "pull" {
 
 # ── Secrets ────────────────────────────────────────────────────────────────────────────────────────────
 
-# One vault per environment: the database URL, the staff client's secret, and every feature flag. Always
+# One vault per environment: the database URL, the internal client's secret, and every feature flag. Always
 # created, even where none of those exist yet, because a flag is added by whoever writes the code that
 # reads one and a vault that appears on the day of the first flag is a resource nobody expected in that
 # diff. An empty vault is billed per operation and performs none.

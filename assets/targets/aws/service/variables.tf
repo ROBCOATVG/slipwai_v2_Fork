@@ -24,7 +24,7 @@ variable "images" {
 # The project's services, written by the factory into project.auto.tfvars.json from project.json's
 # `deployables` and rewritten by `add-service`. Each entry says what the service answered its axes with in
 # the terms this target provisions them: `store = "rds"` for the Postgres event store, `auth = "cognito"`
-# for the staff identity, `users = "cognito"` for the product's users; how its migrations run once it is an
+# for the internal identity, `users = "cognito"` for the product's users; how its migrations run once it is an
 # image; and the environment its backend needs in production over and above the port.
 # `health_path` is *readiness* — "send me traffic" — which asks the service's driven ports whether it can
 # serve, and it is what the target group's health check gates on, so a task whose event store is

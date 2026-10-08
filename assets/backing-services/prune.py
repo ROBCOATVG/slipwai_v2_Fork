@@ -344,15 +344,15 @@ MARKED_FILES: tuple[str, ...] = (
     # missing is skipped.
     "infra/service/main.tf",
     "infra/service/rds.tf",
-    "infra/service/cognito_staff.tf",
-    "infra/service/cognito_customers.tf",
+    "infra/service/cognito_internal.tf",
+    "infra/service/cognito_external.tf",
     # The one output both clouds assemble from whichever external-identity answer was given, so the merge
     # has a region per contributor and an answer taken away takes its line with it.
     "infra/service/outputs.tf",
     # The same, for the other cloud. A file listed here that is missing is skipped, so one list serves
     # every target and a project carries only its own.
     "infra/service/postgres.tf",
-    "infra/service/entra_staff.tf",
+    "infra/service/entra_internal.tf",
     # The third identity answer, and the only one written as a whole file rather than a region of one: the
     # Auth0 provider cannot configure itself without a tenant credential, so a project that did not choose
     # it carries `no-auth0.tf` under this name instead, whose regions are the same and hold nothing.

@@ -14,9 +14,9 @@
 # and per-environment credentials — a change to how the pipeline passes secrets, not to this file — and
 # `docs/adr/0002-production-target.md` records the choice rather than leaving it to be discovered.
 #
-# ── Why the staff roles arrive through an action ──────────────────────────────────────────────────────
+# ── Why the internal roles arrive through an action ──────────────────────────────────────────────────────
 # Auth0 puts no roles in a token by default, and the RBAC setting that puts `permissions` in an access
-# token does not touch the ID token, which is what the staff adapter validates. So the roles reach the
+# token does not touch the ID token, which is what the internal adapter validates. So the roles reach the
 # token the way Auth0 documents: a post-login action setting one namespaced custom claim, whose name is
 # OIDC_GROUPS_CLAIM. The values inside it are the same three plain strings Keycloak and Cognito use, so
 # the adapters cannot tell the three providers apart except by configuration — which is the property this
@@ -30,11 +30,11 @@ data "auth0_tenant" "current" {}
 
 locals {
   # The issuer every token from this tenant carries, and the one value both identity answers share — which
-  # is the difference from Keycloak and Cognito worth knowing before a validator is written. There, staff
-  # and customers differ by issuer and an issuer check alone separates them. Here they are one tenant, and
-  # what separates them is the audience: a staff ID token is minted for the staff client, a customer's
-  # access token for the customers API. A resource server that checks the signature and the issuer but not
-  # `aud` would accept a staff member as a customer. Both adapters already list the `aud` check as
+  # is the difference from Keycloak and Cognito worth knowing before a validator is written. There, internal
+  # and external differ by issuer and an issuer check alone separates them. Here they are one tenant, and
+  # what separates them is the audience: an internal ID token is minted for the internal client, an external user's
+  # access token for the external API. A resource server that checks the signature and the issuer but not
+  # `aud` would accept an internal user as an external user. Both adapters already list the `aud` check as
   # required; under this answer it is the check that does the work.
   #
   # A tenant with a custom domain issues on that domain instead. This reads the tenant's own domain, so a
@@ -45,14 +45,14 @@ locals {
 
 # backing-service:keycloak:begin
 locals {
-  auth0_staff_wanted = anytrue([for service in var.services : service.auth == "auth0"])
-  auth0_staff_roles  = ["app-admin", "app-operator", "app-viewer"]
+  auth0_internal_wanted = anytrue([for service in var.services : service.auth == "auth0"])
+  auth0_internal_roles  = ["app-admin", "app-operator", "app-viewer"]
   # A custom claim must be namespaced with a URL that is not Auth0's own, and the name is per environment
   # so that two environments sharing one tenant cannot be read as one.
   auth0_roles_claim = "https://${local.prefix}/roles"
-  auth0_staff_environment = local.auth0_staff_wanted ? {
+  auth0_internal_environment = local.auth0_internal_wanted ? {
     OIDC_ISSUER         = local.auth0_issuer
-    OIDC_CLIENT_ID      = auth0_client.staff[0].client_id
+    OIDC_CLIENT_ID      = auth0_client.internal[0].client_id
     OIDC_GROUPS_CLAIM   = local.auth0_roles_claim
     OIDC_GROUP_ADMIN    = "app-admin"
     OIDC_GROUP_OPERATOR = "app-operator"
@@ -60,61 +60,61 @@ locals {
   } : {}
 }
 
-variable "auth0_staff_callback_urls" {
-  description = "Where the staff login may redirect back to. A placeholder until the flow exists; then this environment's real URL."
+variable "auth0_internal_callback_urls" {
+  description = "Where the internal login may redirect back to. A placeholder until the flow exists; then this environment's real URL."
   type        = list(string)
   default     = ["http://localhost:3000/auth/callback"]
 }
 
-# Staff sign in against a database connection of their own, never the customers' one — the same separation
-# the local Keycloak makes with two realms, and Cognito with two pools. Sign-up is off: staff are accounts
+# Internal sign in against a database connection of their own, never the external' one — the same separation
+# the local Keycloak makes with two realms, and Cognito with two pools. Sign-up is off: internal are accounts
 # an administrator creates.
-resource "auth0_connection" "staff" {
-  count = local.auth0_staff_wanted ? 1 : 0
+resource "auth0_connection" "internal" {
+  count = local.auth0_internal_wanted ? 1 : 0
 
-  name     = "${local.prefix}-staff"
+  name     = "${local.prefix}-internal"
   strategy = "auth0"
 
   options {
-    disable_signup          = true
-    password_policy         = "good"
-    brute_force_protection  = true
-    requires_username       = false
-    strategy_version        = 2
+    disable_signup         = true
+    password_policy        = "good"
+    brute_force_protection = true
+    requires_username      = false
+    strategy_version       = 2
   }
 }
 
-resource "auth0_client" "staff" {
-  count = local.auth0_staff_wanted ? 1 : 0
+resource "auth0_client" "internal" {
+  count = local.auth0_internal_wanted ? 1 : 0
 
-  name            = "${local.prefix}-staff"
+  name            = "${local.prefix}-internal"
   app_type        = "regular_web"
   oidc_conformant = true
   # Confidential: the services hold the secret, injected from Secrets Manager as OIDC_CLIENT_SECRET.
-  grant_types                = ["authorization_code", "refresh_token"]
-  callbacks                  = var.auth0_staff_callback_urls
-  allowed_logout_urls        = var.auth0_staff_callback_urls
-  is_first_party             = true
-  cross_origin_auth          = false
+  grant_types                 = ["authorization_code", "refresh_token"]
+  callbacks                   = var.auth0_internal_callback_urls
+  allowed_logout_urls         = var.auth0_internal_callback_urls
+  is_first_party              = true
+  cross_origin_auth           = false
   require_proof_of_possession = false
 }
 
-resource "auth0_client_credentials" "staff" {
-  count = local.auth0_staff_wanted ? 1 : 0
+resource "auth0_client_credentials" "internal" {
+  count = local.auth0_internal_wanted ? 1 : 0
 
-  client_id             = auth0_client.staff[0].id
+  client_id             = auth0_client.internal[0].id
   authentication_method = "client_secret_post"
 }
 
-resource "auth0_connection_clients" "staff" {
-  count = local.auth0_staff_wanted ? 1 : 0
+resource "auth0_connection_clients" "internal" {
+  count = local.auth0_internal_wanted ? 1 : 0
 
-  connection_id   = auth0_connection.staff[0].id
-  enabled_clients = [auth0_client.staff[0].id]
+  connection_id   = auth0_connection.internal[0].id
+  enabled_clients = [auth0_client.internal[0].id]
 }
 
-resource "auth0_role" "staff" {
-  for_each = local.auth0_staff_wanted ? toset(local.auth0_staff_roles) : toset([])
+resource "auth0_role" "internal" {
+  for_each = local.auth0_internal_wanted ? toset(local.auth0_internal_roles) : toset([])
 
   name        = "${local.prefix}-${each.key}"
   description = "The ${each.key} role for ${var.project} in ${var.environment}."
@@ -125,10 +125,10 @@ resource "auth0_role" "staff" {
 # is the shape every adapter already reads through OIDC_GROUPS_CLAIM. Role names carry the environment
 # prefix in Auth0 so two environments in one tenant do not collide; the claim is trimmed back to the plain
 # three so what a service sees is identical to Keycloak's and Cognito's.
-resource "auth0_action" "staff_roles" {
-  count = local.auth0_staff_wanted ? 1 : 0
+resource "auth0_action" "internal_roles" {
+  count = local.auth0_internal_wanted ? 1 : 0
 
-  name    = "${local.prefix}-staff-roles"
+  name    = "${local.prefix}-internal-roles"
   runtime = "node22"
   deploy  = true
   code    = <<-JS
@@ -149,67 +149,67 @@ resource "auth0_action" "staff_roles" {
   }
 }
 
-resource "auth0_trigger_action" "staff_roles" {
-  count = local.auth0_staff_wanted ? 1 : 0
+resource "auth0_trigger_action" "internal_roles" {
+  count = local.auth0_internal_wanted ? 1 : 0
 
   trigger   = "post-login"
-  action_id = auth0_action.staff_roles[0].id
+  action_id = auth0_action.internal_roles[0].id
 }
 
-resource "aws_secretsmanager_secret" "auth0_staff_client" {
-  count = local.auth0_staff_wanted ? 1 : 0
+resource "aws_secretsmanager_secret" "auth0_internal_client" {
+  count = local.auth0_internal_wanted ? 1 : 0
 
   name                    = "${local.prefix}/AUTH0_OIDC_CLIENT_SECRET"
   recovery_window_in_days = 0
 }
 
-resource "aws_secretsmanager_secret_version" "auth0_staff_client" {
-  count = local.auth0_staff_wanted ? 1 : 0
+resource "aws_secretsmanager_secret_version" "auth0_internal_client" {
+  count = local.auth0_internal_wanted ? 1 : 0
 
-  secret_id     = aws_secretsmanager_secret.auth0_staff_client[0].id
-  secret_string = auth0_client_credentials.staff[0].client_secret
+  secret_id     = aws_secretsmanager_secret.auth0_internal_client[0].id
+  secret_string = auth0_client_credentials.internal[0].client_secret
 }
 
 # The Secrets Manager ARN main.tf injects, behind a local so that a project without this answer can name
 # the same thing and get nothing — `no-auth0.tf` is the other half.
 locals {
-  auth0_staff_secrets = local.auth0_staff_wanted ? {
-    OIDC_CLIENT_SECRET = aws_secretsmanager_secret.auth0_staff_client[0].arn
+  auth0_internal_secrets = local.auth0_internal_wanted ? {
+    OIDC_CLIENT_SECRET = aws_secretsmanager_secret.auth0_internal_client[0].arn
   } : {}
 }
 
-output "auth0_staff_login" {
-  description = "The tenant that authenticates staff, once the flow exists to send them there."
-  value       = local.auth0_staff_wanted ? local.auth0_issuer : null
+output "auth0_internal_login" {
+  description = "The tenant that authenticates internal, once the flow exists to send them there."
+  value       = local.auth0_internal_wanted ? local.auth0_issuer : null
 }
 # backing-service:keycloak:end
 
 # backing-service:users-keycloak:begin
-# The product's users, provisioned as a second database connection and a public client — never the staff
+# The product's users, provisioned as a second database connection and a public client — never the internal
 # connection with a flag on it, for the reason the local Keycloak has two realms. Self-registration and
 # password reset are on, and the browser app performs the code flow with PKCE exactly as it does against
-# the local `customers` realm.
+# the local `external` realm.
 locals {
-  auth0_customers_wanted = anytrue([for service in var.services : service.users == "auth0"])
-  # The API the browser app asks for a token for. Its identifier is the `aud` of every customer access
-  # token, and it is what tells a customer's token apart from a staff member's in this one tenant.
-  auth0_customers_audience = "https://${local.prefix}/customers"
-  auth0_customers_environment = local.auth0_customers_wanted ? {
+  auth0_external_wanted = anytrue([for service in var.services : service.users == "auth0"])
+  # The API the browser app asks for a token for. Its identifier is the `aud` of every external user access
+  # token, and it is what tells an external user's token apart from an internal user's in this one tenant.
+  auth0_external_audience = "https://${local.prefix}/external"
+  auth0_external_environment = local.auth0_external_wanted ? {
     USERS_OIDC_ISSUER   = local.auth0_issuer
-    USERS_OIDC_AUDIENCE = local.auth0_customers_audience
+    USERS_OIDC_AUDIENCE = local.auth0_external_audience
   } : {}
-  auth0_web_environment = local.auth0_customers_wanted ? {
+  auth0_web_environment = local.auth0_external_wanted ? {
     VITE_USERS_ISSUER    = local.auth0_issuer
-    VITE_USERS_CLIENT_ID = auth0_client.customers[0].client_id
-    VITE_USERS_AUDIENCE  = local.auth0_customers_audience
+    VITE_USERS_CLIENT_ID = auth0_client.external[0].client_id
+    VITE_USERS_AUDIENCE  = local.auth0_external_audience
   } : {}
 }
 
-# Where the customer login may return the browser to. RFC 9700 wants exact URIs and no wildcard, so this is
+# Where the external user login may return the browser to. RFC 9700 wants exact URIs and no wildcard, so this is
 # a list of literal addresses. The default is empty and the real value is this environment's own site,
 # which nothing outside this stack knows until it has been applied.
-variable "auth0_customer_callback_urls" {
-  description = "Extra exact URLs the customer login may return to, beyond this environment's own site."
+variable "auth0_external_callback_urls" {
+  description = "Extra exact URLs the external user login may return to, beyond this environment's own site."
   type        = list(string)
   default     = []
 }
@@ -217,26 +217,26 @@ variable "auth0_customer_callback_urls" {
 locals {
   # The browser app uses `${window.location.origin}/` for both redirect_uri and post_logout_redirect_uri,
   # so the trailing slash is part of the address Auth0 is asked to match.
-  auth0_customer_login_urls = concat(["${local.public_url}/"], var.auth0_customer_callback_urls)
+  auth0_external_login_urls = concat(["${local.public_url}/"], var.auth0_external_callback_urls)
 }
 
-resource "auth0_resource_server" "customers" {
-  count = local.auth0_customers_wanted ? 1 : 0
+resource "auth0_resource_server" "external" {
+  count = local.auth0_external_wanted ? 1 : 0
 
-  name       = "${local.prefix}-customers"
-  identifier = local.auth0_customers_audience
+  name        = "${local.prefix}-external"
+  identifier  = local.auth0_external_audience
   signing_alg = "RS256"
-  # Customers have no roles: whether a customer may see an order is a question of ownership, decided in the
+  # External users have no roles: whether an external user may see an order is a question of ownership, decided in the
   # use case that loads it. So no RBAC here, and nothing authorisation-shaped in the token.
-  enforce_policies   = false
-  token_dialect      = "access_token"
+  enforce_policies     = false
+  token_dialect        = "access_token"
   allow_offline_access = true
 }
 
-resource "auth0_connection" "customers" {
-  count = local.auth0_customers_wanted ? 1 : 0
+resource "auth0_connection" "external" {
+  count = local.auth0_external_wanted ? 1 : 0
 
-  name     = "${local.prefix}-customers"
+  name     = "${local.prefix}-external"
   strategy = "auth0"
 
   options {
@@ -248,25 +248,97 @@ resource "auth0_connection" "customers" {
   }
 }
 
-resource "auth0_client" "customers" {
-  count = local.auth0_customers_wanted ? 1 : 0
+resource "auth0_client" "external" {
+  count = local.auth0_external_wanted ? 1 : 0
 
-  name            = "${local.prefix}-customers"
+  name            = "${local.prefix}-external"
   app_type        = "spa"
   oidc_conformant = true
   # Public: the browser holds no secret and the code flow is protected by PKCE.
   grant_types         = ["authorization_code", "refresh_token"]
-  callbacks           = local.auth0_customer_login_urls
-  allowed_logout_urls = local.auth0_customer_login_urls
+  callbacks           = local.auth0_external_login_urls
+  allowed_logout_urls = local.auth0_external_login_urls
   web_origins         = [local.public_url]
   allowed_origins     = [local.public_url]
   is_first_party      = true
 }
 
-resource "auth0_connection_clients" "customers" {
-  count = local.auth0_customers_wanted ? 1 : 0
+resource "auth0_connection_clients" "external" {
+  count = local.auth0_external_wanted ? 1 : 0
 
-  connection_id   = auth0_connection.customers[0].id
-  enabled_clients = [auth0_client.customers[0].id]
+  connection_id   = auth0_connection.external[0].id
+  enabled_clients = [auth0_client.external[0].id]
 }
 # backing-service:users-keycloak:end
+
+# ─────────────────────────────────────────────────────────────────────────────────────────────────────
+# Renamed 2026-10-08: `staff` is `internal` and `customers` is `external`, because the two identity axes
+# are now asked that way. A resource address is state, not a name — without these blocks the first apply
+# after the rename destroys every resource below and creates it again, which for a user pool is every
+# account in it. `tofu plan` reads these and moves the state instead; read the plan before you apply, and
+# it must say no destroy.
+# ─────────────────────────────────────────────────────────────────────────────────────────────────────
+moved {
+  from = auth0_connection.staff
+  to   = auth0_connection.internal
+}
+
+moved {
+  from = auth0_client.staff
+  to   = auth0_client.internal
+}
+
+moved {
+  from = auth0_client_credentials.staff
+  to   = auth0_client_credentials.internal
+}
+
+moved {
+  from = auth0_connection_clients.staff
+  to   = auth0_connection_clients.internal
+}
+
+moved {
+  from = auth0_role.staff
+  to   = auth0_role.internal
+}
+
+moved {
+  from = auth0_action.staff_roles
+  to   = auth0_action.internal_roles
+}
+
+moved {
+  from = auth0_trigger_action.staff_roles
+  to   = auth0_trigger_action.internal_roles
+}
+
+moved {
+  from = aws_secretsmanager_secret.auth0_staff_client
+  to   = aws_secretsmanager_secret.auth0_internal_client
+}
+
+moved {
+  from = aws_secretsmanager_secret_version.auth0_staff_client
+  to   = aws_secretsmanager_secret_version.auth0_internal_client
+}
+
+moved {
+  from = auth0_resource_server.customers
+  to   = auth0_resource_server.external
+}
+
+moved {
+  from = auth0_connection.customers
+  to   = auth0_connection.external
+}
+
+moved {
+  from = auth0_client.customers
+  to   = auth0_client.external
+}
+
+moved {
+  from = auth0_connection_clients.customers
+  to   = auth0_connection_clients.external
+}

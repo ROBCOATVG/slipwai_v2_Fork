@@ -37,12 +37,12 @@ locals {
       },
       service.environment,
       # backing-service:keycloak:begin
-      service.auth == "cognito" ? local.staff_environment : {},
-      service.auth == "auth0" ? local.auth0_staff_environment : {},
+      service.auth == "cognito" ? local.internal_environment : {},
+      service.auth == "auth0" ? local.auth0_internal_environment : {},
       # backing-service:keycloak:end
       # backing-service:users-keycloak:begin
-      service.users == "cognito" ? local.customers_environment : {},
-      service.users == "auth0" ? local.auth0_customers_environment : {},
+      service.users == "cognito" ? local.external_environment : {},
+      service.users == "auth0" ? local.auth0_external_environment : {},
       # backing-service:users-keycloak:end
       {},
     )
@@ -56,8 +56,8 @@ locals {
       service.store == "rds" ? { DATABASE_URL = one(aws_secretsmanager_secret.database[*].arn) } : {},
       # backing-service:postgres:end
       # backing-service:keycloak:begin
-      service.auth == "cognito" ? { OIDC_CLIENT_SECRET = one(aws_secretsmanager_secret.staff_client[*].arn) } : {},
-      service.auth == "auth0" ? local.auth0_staff_secrets : {},
+      service.auth == "cognito" ? { OIDC_CLIENT_SECRET = one(aws_secretsmanager_secret.internal_client[*].arn) } : {},
+      service.auth == "auth0" ? local.auth0_internal_secrets : {},
       # backing-service:keycloak:end
       {},
     )

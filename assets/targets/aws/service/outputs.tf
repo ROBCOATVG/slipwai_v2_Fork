@@ -10,7 +10,7 @@ output "urls" {
 
 # What the browser app is built with for this environment: Vite bakes VITE_* values into the bundle, so the
 # bundle is built once per environment by scripts/deploy.py, from these. One output, contributed to by
-# whichever customer-identity answer this project gave — at most one of them is ever non-empty.
+# whichever external user-identity answer this project gave — at most one of them is ever non-empty.
 output "web_environment" {
   description = "The VITE_* values the browser app is built with in this environment."
   value = merge(

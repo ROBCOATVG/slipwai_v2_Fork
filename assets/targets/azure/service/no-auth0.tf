@@ -10,9 +10,9 @@
 # "nothing". Naming them here rather than guarding every use keeps the merge in `main.tf` one expression
 # with one shape, whichever answer this project gave.
 locals {
-  auth0_staff_wanted          = false
-  auth0_staff_environment     = {}
-  auth0_staff_secrets         = {}
-  auth0_customers_environment = {}
-  auth0_web_environment       = {}
+  auth0_internal_wanted      = false
+  auth0_internal_environment = {}
+  auth0_internal_secrets     = {}
+  auth0_external_environment = {}
+  auth0_web_environment      = {}
 }

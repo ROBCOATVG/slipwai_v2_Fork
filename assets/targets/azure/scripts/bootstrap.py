@@ -338,7 +338,7 @@ ALSO_ENOUGH = ("Contributor", ("User Access Administrator", "Role Based Access C
 
 
 # The directory roles that let a caller create an app registration and its service principal, and — for the
-# staff-identity answer — grant that principal a Graph role. Directory roles are not subscription roles:
+# internal-identity answer — grant that principal a Graph role. Directory roles are not subscription roles:
 # Owner of the subscription holds none of them, which is the whole reason this is a second check.
 CREATES_APPLICATIONS = (
     "Application Developer", "Application Administrator",
@@ -399,7 +399,7 @@ def check_directory(deploy_with: str) -> None:
         ))
     if answers_entra():
         wants.append((
-            "grant that principal a Graph role, which is what lets it provision the staff identity",
+            "grant that principal a Graph role, which is what lets it provision the internal identity",
             GRANTS_PERMISSIONS,
             "Or regenerate with an identity answer that asks the directory for nothing: `--auth none`, "
             "or `--auth auth0`, whose objects live in an Auth0 tenant rather than in Entra.",
@@ -444,7 +444,7 @@ def identity_name() -> str:
 
 
 def answers_entra() -> bool:
-    """Whether any service in this project answered the staff-identity axis with Entra ID, read from the
+    """Whether any service in this project answered the internal-identity axis with Entra ID, read from the
     same file the stack reads."""
     data = ROOT / "infra/service/project.auto.tfvars.json"
     if not data.is_file():

@@ -192,7 +192,7 @@ resource "azurerm_federated_identity_credential" "deploy" {
 # The two *directory* objects this stack creates, and it creates them only on the access-key path — a forge
 # without OIDC federation has nothing else to sign in with. Owner of the subscription grants nothing here:
 # an app registration is outside subscription RBAC entirely, which `infra/README.md` now lists as a
-# prerequisite of this path and not only of the staff-identity answer.
+# prerequisite of this path and not only of the internal-identity answer.
 #
 # `owners` is stated rather than left to Graph's default. Where a caller manages applications under the
 # narrow owned-applications permission rather than a directory-wide one, creating the service principal for
@@ -298,7 +298,7 @@ resource "azurerm_role_assignment" "deploy_push" {
 # registrations and manage the ones it owns, and nothing else in the directory. It does not let it read
 # users, write groups, or touch an application somebody else made. Granting it needs a Privileged Role
 # Administrator or a Global Administrator, which is why `make bootstrap` says so before it applies and why
-# `infra/README.md` lists it as a prerequisite of the staff-identity answer rather than of the target.
+# `infra/README.md` lists it as a prerequisite of the internal-identity answer rather than of the target.
 #
 # This region goes with the `keycloak` feature, so a project that answered `--auth none` has no such grant:
 # the permission arrives with the answer that needs it, and with nothing else.
