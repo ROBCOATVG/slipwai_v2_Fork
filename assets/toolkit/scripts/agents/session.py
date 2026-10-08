@@ -295,6 +295,21 @@ def session() -> int:
     return extensions(GUARDS, "session", about())
 
 
+def after_delegate() -> int:
+    """A delegate has answered, before its answer is used. The one guard that fires *after* a tool call.
+
+    It is a guard and not a hook because of what refusing it does: the answer is not used and the agent is
+    told why and asks again, which is a thing that stops happening — one tool call — rather than a stage
+    that fails. The same test every other guard passes.
+
+    A delegate came back having edited whatever it edited, so this is also where an extension that keeps an
+    index of the tree gets to notice; refusing is the rarer half of what it is for.
+    """
+    given = event().get("tool_input")
+    given = given if isinstance(given, dict) else {}
+    return extensions(GUARDS, "after-delegate", {**about(), "tool": str(event().get("tool_name") or "")})
+
+
 
 def ending_message(given: dict) -> str:
     """The message the turn ends on: the event's own copy, under whichever name this harness gives it, then
@@ -417,6 +432,7 @@ VERBS = {
     "before-write": before_write,
     "before-command": before_command,
     "before-fetch": before_fetch,
+    "after-delegate": after_delegate,
     "before-stop": before_stop,
     "before-compact": before_compact,
     "after-compact": after_compact,

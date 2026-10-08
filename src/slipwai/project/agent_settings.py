@@ -66,10 +66,13 @@ def harness_hooks(layout: Layout) -> dict[str, list[dict[str, object]]]:
                        # the captain's, because the rule is the project's and not the run's.
                        {"matcher": "Grep|Bash|mcp__codegraph__.*",
                         "hooks": [{"type": "command", "command": f"python3 {index} guard"}]}],
-        # A delegate came back having edited what it edited, and CodeGraph's own watcher is off wherever it decides
-        # it is sandboxed: the index is synced here rather than trusted to have followed.
+        # The one guard that fires after a tool call rather than before it: a delegate has answered and its
+        # answer has not been used yet, so an extension may still refuse it and have the agent ask again. A
+        # delegate also came back having edited whatever it edited, which is why an index syncs here rather
+        # than being trusted to have followed.
         "PostToolUse": [{"matcher": "Agent|Task",
-                         "hooks": [{"type": "command", "command": f"python3 {index} sync"}]}],
+                         "hooks": [{"type": "command", "command": f"python3 {script} after-delegate"},
+                                   {"type": "command", "command": f"python3 {index} sync"}]}],
     }
 
 

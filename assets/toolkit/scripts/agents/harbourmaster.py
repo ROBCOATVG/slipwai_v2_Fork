@@ -345,6 +345,27 @@ def advance(name: str, commit: str) -> str:
     return "" if moved.returncode == 0 else (moved.stderr or moved.stdout).strip().splitlines()[-1]
 
 
+HOOKS = ROOT / "scripts/extensions/hooks.py"
+
+
+def fire(point: str, **given: str) -> None:
+    """One hook point, which never costs the merge. The twin of `captain.fire`, and deliberately a second
+    small copy rather than a shared import: these two processes are started separately, run on different
+    machines in the general case, and a module one of them imported from the other would be a dependency
+    between two things whose whole design is that neither waits on the other.
+
+    `hooks.py` exits 0 whatever a hook did and this does not read its output, so an extension cannot change
+    what the harbourmaster does next — which matters more here than anywhere, because what it does next is
+    move trunk.
+    """
+    if not HOOKS.is_file():
+        return
+    argv = [sys.executable, str(HOOKS), point]
+    for name, value in given.items():
+        argv += [f"--{name}", value]
+    subprocess.run(argv, cwd=ROOT, capture_output=True, text=True)
+
+
 def merge(slice_id: str) -> tuple[str, str, bool]:
     """Rebase this slice onto trunk, gate it there, and advance trunk.
 
@@ -576,6 +597,11 @@ def answer(entry: logs.Entry, trunk_state: str = "unverified") -> list[logs.Entr
         # a trunk nobody here can move.
         return [logs.entry("refused", harbour=True, fairway=fairway, request=request, why=fault,
                            resolve=resolvable)]
+    # `after-merge`, and only here: the slice is on trunk and pushed, which is a different event from the
+    # gate passing on the rebased branch — `before-merge` is that one, and the merge can still be refused
+    # after it. An extension with something to do once the commit exists had no point to say so at, and
+    # `before-merge` was the nearest wrong answer.
+    fire("after-merge", slice=slice_id, fairway=fairway, commit=commit)
     # `ci` says what was known about trunk when this was granted. `unverified` is not `green`: a harbour
     # with no forge keeps working, and nobody reads the line later as a run that was checked.
     return [logs.entry("granted", harbour=True, fairway=fairway, request=request, what=what,

@@ -47,10 +47,11 @@ class VerbTest(unittest.TestCase):
         point nothing could use would be a promise with no caller."""
         self.assertEqual(self.verbs() - set(guards.NAMES) - set(hooks.NAMES), {"responded"})
 
-    def test_the_guard_points_a_harness_can_reach_are_all_answered(self) -> None:
-        """Every guard but `after-delegate`, which is a post-tool moment and is fired by the ladder rather
-        than by a harness's own pre-tool event."""
-        self.assertEqual(set(guards.NAMES) - self.verbs(), {"after-delegate"})
+    def test_every_guard_is_answered(self) -> None:
+        """All seven, with no exception — including `after-delegate`, which fires on a harness's post-tool
+        event rather than its pre-tool one. A guard the script does not answer is a guard an extension can
+        declare, be elected for, and never once be run at: installed, valid, and silent for ever."""
+        self.assertEqual(set(guards.NAMES) - self.verbs(), set())
 
     def test_the_compaction_pair_are_answered_and_the_rung_points_are_not(self) -> None:
         """A rung point is the captain's to fire, because a rung is the captain's. Only the moments a
@@ -86,6 +87,56 @@ class VerbTest(unittest.TestCase):
                 with self.subTest(harness=row.get("key"), verb=verb):
                     self.assertIn(verb, verbs)
         self.assertGreater(found, 0, "no harness projects a hook file; the check proved nothing")
+
+
+class FiredTest(unittest.TestCase):
+    """Every point of both closed sets has something that fires it.
+
+    This is the rule the sets are written against, turned into a gate. A point nobody fires is the worst
+    kind of broken thing here: an extension declares it, passes conformance, is elected, and then never runs
+    — installed, valid, and silent for ever. The keel refuses a point an extension *invents* for exactly
+    that reason, and a point the keel declares and never calls is the same failure with the keel's name on
+    it.
+
+    It cost two of them to find out. `after-merge` was added with 7.7b and was fired by nothing until the
+    harbourmaster called it; `after-delegate` was declared in 6.1d and had no caller at all until
+    `session.py` answered it on the post-tool event.
+    """
+
+    #: The two points that are still run by *convention* rather than through the registry: an extension's
+    #: `init.py` is executed by name at `./init --extension`, and its `project_guidance()` by name at `make
+    #: agents`. Both therefore happen — but an extension that declared a different script at either point
+    #: would be ignored, which is the convention-not-declaration failure `hooks.py` opens by describing.
+    #: Closing it means deciding whether `init.py` becomes the point's default declaration, which is a change
+    #: to a closed set and is slice 6.1e rather than something to settle in a test.
+    BY_CONVENTION = {"init", "project"}
+
+    def callers(self) -> str:
+        """Every toolkit script that could fire one, read as text. The calls are one-line `fire(...)`, verb
+        tables and Makefile targets, so what is held is that the name reaches something that runs."""
+        scripts = sorted(AGENTS.glob("*.py")) + sorted((AGENTS.parent / "extensions").glob("*.py"))
+        from slipwai.project.agent_targets import agent_targets  # noqa: PLC0415
+        return "\n".join(path.read_text(encoding="utf-8") for path in scripts) + agent_targets()
+
+    def test_every_hook_point_is_fired_by_something(self) -> None:
+        text = self.callers()
+        for name in sorted(set(hooks.NAMES) - self.BY_CONVENTION):
+            with self.subTest(point=name):
+                self.assertIn(name, text,
+                              f"`{name}` is a point the keel promises and nothing in the toolkit fires")
+
+    def test_every_guard_is_fired_by_something(self) -> None:
+        text = self.callers()
+        for name in guards.NAMES:
+            with self.subTest(guard=name):
+                self.assertIn(f'"{name}"', text,
+                              f"`{name}` is a guard the keel promises and nothing in the toolkit fires")
+
+    def test_the_two_run_by_convention_are_named_and_no_others_are(self) -> None:
+        """The exemption is the finding, so it is held to its size. A third point added to this set would be
+        a third promise the keel makes and does not keep, and it would go in silently."""
+        self.assertEqual(self.BY_CONVENTION, {"init", "project"})
+        self.assertTrue(self.BY_CONVENTION.issubset(hooks.NAMES))
 
 
 class RunTest(unittest.TestCase):
