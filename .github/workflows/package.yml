@@ -33,6 +33,16 @@ on:
         required: false
         default: false
         type: boolean
+      beside:
+        description: >
+          Packages to install beside this one before conformance runs, space-separated. A framework needs
+          its family and names it in `language.json`'s `requires`, so that one is worked out and this does
+          not have to say it. A *family* is the case this is for: it declares no backend of its own, so the
+          suite proves it through one of its frameworks, and which framework is the publisher's to choose —
+          `java` names `java-spring`. Empty for a package that stands alone, which is most of them.
+        required: false
+        default: ''
+        type: string
       channel:
         description: >
           The channel to publish into, as `<owner>/<repo>`. On a tag, and only on a tag, a package whose
@@ -76,6 +86,43 @@ jobs:
               *)       echo "${{ inputs.keel }}" ;;
             esac)"
           slipwai --version
+
+      # **A package is proved with whatever it is proved through beside it.** The checkout is one directory
+      # under `$PWD` and conformance reads `$PWD`, so without this step a framework meets its own family
+      # missing — `requires java >=1.0,<2; java is not loaded` — and a family meets no framework to be
+      # checked through. Three of the six published languages were red on exactly that.
+      #
+      # Into `$PWD` and not the default directory: `SLIPWAI_LANGUAGES` names the one directory the keel
+      # looks in, so pointing it here means the sibling lands beside the checkout and the checkout is the
+      # copy under test. Installed from the chandlery, which is where a sibling comes from for anybody
+      # proving one package on its own.
+      - name: Install what this package is proved beside
+        if: inputs.kind != 'extension'
+        run: |
+          set -eu
+          needed=$(python - "$PWD/${{ inputs.package }}/language.json" <<'PY'
+          import json, sys
+          try:
+              manifest = json.loads(open(sys.argv[1], encoding="utf-8").read())
+          except (OSError, ValueError):
+              manifest = {}
+          requires = manifest.get("requires")
+          print(" ".join(sorted(requires)) if isinstance(requires, dict) else "")
+          PY
+          )
+          beside="$needed ${{ inputs.beside }}"
+          if [ -z "$(printf '%s' "$beside" | tr -d ' ')" ]; then
+            echo "nothing to install beside ${{ inputs.package }}; it stands alone"
+            exit 0
+          fi
+          for sibling in $beside; do
+            # An `if`, not `[ … ] && continue`: under `set -eu` that list exits the step the first time the
+            # test is false, which is every sibling that is not this package — so the skip would be the
+            # whole step.
+            if [ "$sibling" = "${{ inputs.package }}" ]; then continue; fi
+            echo "installing $sibling beside ${{ inputs.package }}"
+            SLIPWAI_LANGUAGES="$PWD" slipwai install "$sibling" --accept-publisher
+          done
 
       # One suite per kind. A language's asks the package questions and checks the answers; an extension's
       # builds a scratch project, runs the entry point in it, and looks at what happened to the project.

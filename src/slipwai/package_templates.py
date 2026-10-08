@@ -215,6 +215,10 @@ jobs:
       # One line, not a folded block: this feeds a `type: boolean` input, and a folded scalar is one more
       # thing between the expression and the value that could hand it a string with a newline on the end.
       matrix: ${{{{ inputs.matrix || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}}}
+      # Packages to install beside this one before conformance, space-separated. A framework's family is
+      # worked out from its own `requires` and does not go here. This is for a *family*, which declares no
+      # backend of its own and is proved through one of its frameworks — `java` names `java-spring`.
+      beside: ''
       # Where a tag publishes to. Empty publishes nowhere, which is right for a fork.
       channel: ''
       # Which keel to prove against: a bare version is one on PyPI, anything else is passed to pip as it

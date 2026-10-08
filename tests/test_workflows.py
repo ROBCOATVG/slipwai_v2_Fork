@@ -61,6 +61,31 @@ class PackageWorkflowTest(unittest.TestCase):
         self.assertRegex(self.workflow, r"package:\s*\n(\s+.*\n)*?\s+required: true")
         self.assertIn("keel:", self.workflow)
 
+    def test_a_package_is_proved_with_what_it_is_proved_through_beside_it(self) -> None:
+        """The checkout is one directory and conformance reads the directory above it, so without this step
+        a framework meets its own family missing and a family meets no framework to be checked through.
+        Three of the six published languages were red on exactly that, each saying so in as many words."""
+        self.assertIn("Install what this package is proved beside", self.workflow)
+        beside = self.workflow[self.workflow.index("Install what this package is proved beside"):
+                               self.workflow.index("- name: Conformance")]
+        # Into the checkout's own directory, or the published copy would shadow the package under test.
+        self.assertIn('SLIPWAI_LANGUAGES="$PWD" slipwai install', beside)
+        # A framework's family is read from its own manifest; a family's framework is the `beside` input.
+        self.assertIn("requires", beside)
+        self.assertIn("${{ inputs.beside }}", beside)
+        self.assertIn("beside:", self.workflow)
+
+    def test_installing_a_sibling_runs_before_conformance_and_not_after(self) -> None:
+        self.assertLess(self.workflow.index("Install what this package is proved beside"),
+                        self.workflow.index("python -m slipwai.conformance"))
+
+    def test_an_extension_is_proved_alone(self) -> None:
+        """It has no family and no framework; the step would have nothing to read and no manifest to read
+        it from."""
+        beside = self.workflow[self.workflow.index("Install what this package is proved beside"):
+                               self.workflow.index("- name: Conformance")]
+        self.assertIn("if: inputs.kind != 'extension'", beside)
+
     def test_the_matrix_is_opt_in(self) -> None:
         """It builds images and starts containers; a package that has not got that far says so."""
         self.assertRegex(self.workflow, r"matrix:\s*\n(\s+.*\n)*?\s+default: false")
