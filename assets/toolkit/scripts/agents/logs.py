@@ -90,6 +90,14 @@ HARBOUR_KINDS: dict[str, tuple[str, ...]] = {
     # left no line is one the captain waits on for ever and nobody can explain afterwards.
     "granted": ("fairway", "request", "what"),
     "refused": ("fairway", "request", "why"),
+    # Trunk's own CI, which is harbour-wide rather than one fairway's: the gate before a merge is `make
+    # verify` and CI runs `make ci`, so trunk can go red from a check `verify` never ran. Written once per
+    # change of state — a board that said `trunk-red` every fifteen seconds is one nobody reads.
+    "trunk-red": ("commit", "job", "why"),
+    "trunk-green": ("commit",),
+    # Sent to the captain whose `merged` line names the commit that went red. The harbourmaster wrote that
+    # line, which is how it knows where to send it; a red nothing accounts for is a `park` for a person.
+    "fix-trunk": ("fairway", "slice", "commit", "job"),
 }
 
 

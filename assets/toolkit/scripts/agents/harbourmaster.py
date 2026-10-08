@@ -50,6 +50,23 @@ Four things about how, each of which was a choice:
   half-done, and the captain resolves in its own berth — where the context is — and asks again. This
   process stays credentials-and-gate only, which matters because it is the one thing here with push rights.
 
+**And trunk's own CI is read before any merge is granted, so the fleet stops adding to a red build.** The
+gate above is `make verify`; CI runs `make ci`, which adds `audit` and `test-integration` — so trunk can go
+red from a check `verify` never ran, and without this nothing would notice while every fairway kept merging
+onto it. A red trunk is harbour-wide rather than one fairway's fault, which is why it is a harbour line and
+not just a refusal.
+
+Red refuses every merge and writes `trunk-red` naming the commit and the job; the queue drains the moment
+trunk is green again, which is written once as `trunk-green`. A forge this cannot reach reads *could not
+verify*, never *green*: the merge still goes ahead — a harbour with no forge has to keep working — and the
+`granted` line says the CI was unverified, so nobody reads it later as a run that was checked.
+
+**The fix goes to the captain that broke it, not to a person.** This process wrote the `merged` line for the
+commit that went red, so it knows the fairway and the slice: `fix-trunk` names them, and that captain takes
+the fix at its next turn ahead of any new slice. A red trunk no `merged` line accounts for — a direct push,
+or a red older than any merge — parks for a person at once, because guessing who broke it would send a
+captain to rewrite somebody else's work.
+
 Standalone and dependency-free, like everything under `scripts/`: this runs inside a generated project, which
 has no slipwai to import. `logs.py` and `berths.py` beside it are the keel's own modules, carried here by
 `make shared` and byte-identical to their source.
@@ -59,6 +76,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -107,6 +125,13 @@ NEVER: tuple[tuple[str, str], ...] = (
     (r"(?i)--no-verify\b|--skip-checks?\b", "that skips the gate rather than passing it"),
 )
 HEARTBEAT = 15.0
+#: How many of trunk's runs to read. Enough to see every workflow of the newest commit that has any, few
+#: enough that the forge is asked one small question.
+RUNS_READ = 20
+#: What a completed run's conclusion means. Anything else — `cancelled`, `action_required`, a word a forge
+#: adds next year — is *not a verdict*, and a verdict is the one thing this must not invent.
+GREEN = ("success", "skipped", "neutral")
+RED = ("failure", "timed_out", "startup_failure")
 #: Where a merge is rebased and gated. Under `.slipwai/` so it is ignored by git and swept with the rest.
 SCRATCH = ROOT / ".slipwai/merge"
 #: What the branch for a slice is called, which `check-slice-scope` holds every branch to as well.
@@ -368,6 +393,125 @@ def merge(slice_id: str) -> tuple[str, str, bool]:
         git("worktree", "remove", "--force", str(SCRATCH))
 
 
+def ci_command(trunk_name: str) -> tuple[list[str], str]:
+    """What is run to ask the forge about trunk, or ([], why nothing can be).
+
+    `gh` by default, which is GitHub's own client and already holds a credential — this process is the one
+    thing in a harbour that may hold one, and a second way of authenticating would be a second thing to
+    leak. `harbour.json`'s `ci` replaces the argv for a harbour on another forge, with `{trunk}` and
+    `{limit}` filled in; `"ci": "off"` says do not ask, which reads *unverified* and never *green*.
+
+    Whatever runs has to print what `gh run list --json status,conclusion,headSha,workflowName,url`
+    prints: a JSON list of runs. That is a shape, not a vendor — a dozen lines of any forge's API answer
+    it, and a forge that cannot is one this says it could not verify rather than guessing about.
+    """
+    named = config().get("ci")
+    if named == "off":
+        return [], "`harbour.json` says `ci: off`, so trunk's CI is not read here"
+    if isinstance(named, list) and named:
+        return [str(word).replace("{trunk}", trunk_name).replace("{limit}", str(RUNS_READ))
+                for word in named], ""
+    if not shutil.which("gh"):
+        return [], "`gh` is not on PATH, so trunk's CI cannot be read here; `harbour.json`'s `ci` takes a " \
+                   "command for another forge, and `ci: off` says not to ask"
+    return ["gh", "run", "list", "--branch", trunk_name, "--limit", str(RUNS_READ), "--json",
+            "status,conclusion,headSha,workflowName,url"], ""
+
+
+def forge_runs(trunk_name: str) -> tuple[list[dict], str]:
+    """Trunk's recent CI runs as the forge reports them, or ([], why they could not be read)."""
+    argv, fault = ci_command(trunk_name)
+    if fault:
+        return [], fault
+    done = subprocess.run(argv, cwd=ROOT, capture_output=True, text=True, check=False)
+    if done.returncode != 0:
+        said = (done.stderr or done.stdout).strip().splitlines()
+        return [], f"the forge could not be asked ({said[-1] if said else 'gh failed'})"
+    try:
+        found = json.loads(done.stdout or "[]")
+    except ValueError:
+        return [], "the forge's answer was not JSON"
+    return (found, "") if isinstance(found, list) else ([], "the forge's answer was not a list of runs")
+
+
+def trunk_ci(trunk_name: str) -> tuple[str, dict]:
+    """What trunk's CI says: ("green"|"red"|"unverified", what it says).
+
+    Every *completed* run of the newest commit that has one, and all of them have to be green for trunk to
+    be. One workflow passing while another fails is a red trunk, and reading only the first would call it
+    green — which is the whole failure this is here to stop.
+    """
+    runs, fault = forge_runs(trunk_name)
+    if fault:
+        return "unverified", {"why": fault}
+    done = [one for one in runs if one.get("status") == "completed"]
+    if not done:
+        return "unverified", {"why": f"no CI run of {trunk_name} has finished yet"}
+    commit = str(done[0].get("headSha", ""))
+    mine = [one for one in done if str(one.get("headSha", "")) == commit]
+    failed = [one for one in mine if str(one.get("conclusion", "")) in RED]
+    if failed:
+        return "red", {"commit": commit,
+                       "job": ", ".join(sorted({str(one.get("workflowName", "?")) for one in failed})),
+                       "url": str(failed[0].get("url", "")),
+                       "why": f"trunk is red at {commit[:8]}"}
+    if all(str(one.get("conclusion", "")) in GREEN for one in mine):
+        return "green", {"commit": commit}
+    return "unverified", {"why": f"no run of {commit[:8]} reached a verdict this reader knows"}
+
+
+def broke_it(commit: str) -> tuple[str, str]:
+    """The fairway and slice whose `merged` line names that commit, or ("", "").
+
+    This process wrote that line, which is the whole reason the fix can be sent anywhere at all. Nothing
+    there is a direct push or a red older than any merge, and the answer to that is a person.
+    """
+    for path in deck_logs():
+        try:
+            found = logs.fold(path.read_text(encoding="utf-8").splitlines())
+        except (OSError, UnicodeDecodeError, logs.Unreadable):
+            continue
+        for entry in found:
+            if entry.kind == "merged" and str(entry.fields.get("commit", "")).startswith(commit[:8]):
+                return str(entry.fields.get("fairway", "")), str(entry.fields.get("slice", ""))
+    return "", ""
+
+
+def last_trunk_word() -> str:
+    """What the harbour log last said about trunk, so a state is written once and not every pass."""
+    for entry in reversed(harbour_entries()):
+        if entry.kind in ("trunk-red", "trunk-green"):
+            return entry.kind
+    return ""
+
+
+def watch_trunk() -> tuple[str, list[logs.Entry]]:
+    """Read trunk's CI and say what the harbour log owes. (the verdict, the lines to write).
+
+    Written once per change of state rather than every pass: a board that said `trunk-red` fifteen times a
+    minute is one nobody reads, and the fifteenth says nothing the first did not.
+    """
+    verdict, said = trunk_ci(trunk())
+    was = last_trunk_word()
+    if verdict == "red" and was != "trunk-red":
+        fairway, slice_id = broke_it(str(said.get("commit", "")))
+        lines = [logs.entry("trunk-red", harbour=True, commit=str(said.get("commit", "")),
+                            job=str(said.get("job", "")), why=str(said.get("why", "")))]
+        if fairway and slice_id:
+            lines.append(logs.entry("fix-trunk", harbour=True, fairway=fairway, slice=slice_id,
+                                    commit=str(said.get("commit", "")), job=str(said.get("job", ""))))
+        else:
+            lines.append(logs.entry("park", harbour=True, fairway="",
+                                    why=f"trunk is red at {str(said.get('commit', ''))[:8]} "
+                                        f"({said.get('job', 'a job')}) and no `merged` line accounts for "
+                                        f"that commit, so nobody here broke it. A person decides what "
+                                        f"happens; no merge is granted until trunk is green"))
+        return verdict, lines
+    if verdict == "green" and was == "trunk-red":
+        return verdict, [logs.entry("trunk-green", harbour=True, commit=str(said.get("commit", "")))]
+    return verdict, []
+
+
 def never(detail: str) -> str | None:
     """Why this request is one the harbourmaster will never do, or None."""
     for pattern, why in NEVER:
@@ -391,7 +535,7 @@ def slice_asked(entry: logs.Entry) -> str:
     return given.removeprefix("merge-") if given.startswith("merge-") else ""
 
 
-def answer(entry: logs.Entry) -> list[logs.Entry]:
+def answer(entry: logs.Entry, trunk_state: str = "unverified") -> list[logs.Entry]:
     """The harbour-log line(s) one `request` gets: `granted` or `refused`, and always one of them.
 
     A granted merge is *performed* here before the line is written, so `granted` carries the commit trunk is
@@ -413,6 +557,12 @@ def answer(entry: logs.Entry) -> list[logs.Entry]:
                            why=f"{refusal}. Asked: {detail}")]
     if what != "merge":
         return [logs.entry("granted", harbour=True, fairway=fairway, request=request, what=what)]
+    if trunk_state == "red":
+        return [logs.entry("refused", harbour=True, fairway=fairway, request=request,
+                           why="trunk is red, and nothing merges onto a red trunk. The harbour log says "
+                               "which commit and which job; no fairway is granted a merge until it is "
+                               "green, and the queue drains the moment it is",
+                           resolve=False)]
     slice_id = slice_asked(entry)
     if not slice_id:
         return [logs.entry("refused", harbour=True, fairway=fairway, request=request,
@@ -426,8 +576,10 @@ def answer(entry: logs.Entry) -> list[logs.Entry]:
         # a trunk nobody here can move.
         return [logs.entry("refused", harbour=True, fairway=fairway, request=request, why=fault,
                            resolve=resolvable)]
+    # `ci` says what was known about trunk when this was granted. `unverified` is not `green`: a harbour
+    # with no forge keeps working, and nobody reads the line later as a run that was checked.
     return [logs.entry("granted", harbour=True, fairway=fairway, request=request, what=what,
-                       slice=slice_id, commit=commit)]
+                       slice=slice_id, commit=commit, ci=trunk_state)]
 
 
 def allocation(fairway: str, taken: list[str]) -> logs.Entry:
@@ -439,7 +591,7 @@ def allocation(fairway: str, taken: list[str]) -> logs.Entry:
                       berth=berths.berth(name, index).name)
 
 
-def carried(entries: list[logs.Entry], taken: list[str]) -> list[logs.Entry]:
+def carried(entries: list[logs.Entry], taken: list[str], trunk_state: str = "unverified") -> list[logs.Entry]:
     """Every harbour-log line this batch of deck-log lines produces, in the order they were written."""
     written: list[logs.Entry] = []
     for entry in entries:
@@ -456,7 +608,7 @@ def carried(entries: list[logs.Entry], taken: list[str]) -> list[logs.Entry]:
             if name not in taken:
                 taken.append(name)
         elif entry.kind == "request":
-            written += answer(entry)
+            written += answer(entry, trunk_state)
     return written
 
 
@@ -509,10 +661,14 @@ def once() -> int:
             unreadable(path, str(fault))
             continue
         cursors[key_of(path)] = reached
+    # Trunk first, because what it says decides whether any merge in this batch is granted at all. Asked
+    # once a pass rather than once a request: it is a question for the forge, and the answer cannot change
+    # between two requests answered a millisecond apart.
+    trunk_state, trunk_said = watch_trunk()
     # By the clock rather than by file, so requests are answered in the order they were asked across every
     # fairway and not in the order the directory happens to list. It is the merge that makes this matter:
     # one at a time, each gated on a trunk that already holds the one before it.
-    written: list[logs.Entry] = carried(sorted(fresh, key=lambda one: one.t), taken)
+    written: list[logs.Entry] = trunk_said + carried(sorted(fresh, key=lambda one: one.t), taken, trunk_state)
     written += bank() or rung()
     if written:
         append(written)

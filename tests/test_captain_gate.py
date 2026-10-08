@@ -91,5 +91,51 @@ exec({fake_drive("behaviour")!r} if first else {fake_drive()!r})
         self.assertEqual(len([e for e in self.read("ORD") if e.kind == "demo"]), 1)
 
 
+class FixTrunkTest(Fixture):
+    """A trunk this fairway reddened is worth more than any slice it could start.
+
+    The harbourmaster wrote the `merged` line for the commit that went red, so it knows whose it was and
+    sends `fix-trunk`. Captains elsewhere keep building throughout, and that work is not wasted, because a
+    sibling is cleared by a mark being set and not by a merge.
+    """
+
+    def order(self, slice_id: str = "ORD-01", fairway: str = "ORD", job: str = "audit") -> None:
+        self.harbour(logs.entry("fix-trunk", harbour=True, fairway=fairway, slice=slice_id,
+                                commit="a1b2c3d4", job=job))
+
+    def test_the_fix_is_taken_before_any_new_slice(self) -> None:
+        """ORD-02 is what split order would give it next. The order outranks split order."""
+        self.deck("ORD", logs.entry("claimed", fairway="ORD", slice="ORD-01"),
+                  logs.entry("merged", fairway="ORD", slice="ORD-01", commit="a1b2c3d4"))
+        self.order()
+        self.grant("ORD-01")
+        done = self.captain("ORD", self.drive(WORKS))
+        claimed = [e.fields["slice"] for e in self.read("ORD") if e.kind == "claimed"]
+        self.assertEqual(claimed[-1], "ORD-01", done.stdout)
+        self.assertIn("trunk is red", done.stdout)
+
+    def test_an_order_another_fairway_was_sent_is_not_this_one_s(self) -> None:
+        self.order(slice_id="BIL-01", fairway="BIL")
+        self.grant("ORD-01")
+        done = self.captain("ORD", self.drive(WORKS))
+        claimed = [e.fields["slice"] for e in self.read("ORD") if e.kind == "claimed"]
+        self.assertEqual(claimed, ["ORD-01"], done.stdout)
+        self.assertNotIn("trunk is red", done.stdout)
+
+    def test_an_order_already_answered_by_a_later_merge_is_not_taken_again(self) -> None:
+        """The fix reaches trunk the way everything else does, so the line that says any slice is done is
+        the line that says this one is."""
+        self.order()
+        self.deck("ORD", logs.entry("claimed", fairway="ORD", slice="ORD-01"),
+                  logs.entry("merged", fairway="ORD", slice="ORD-01", commit="fixed001"))
+        done = self.captain("ORD", self.drive(WORKS))
+        self.assertNotIn("trunk is red", done.stdout)
+        # Back to split order, which here has nothing ready — `Placed` was never set, because the lines
+        # above are seeded rather than driven. What matters is that it went looking rather than re-driving
+        # a slice it has already fixed.
+        self.assertIn("ORD-02 waits on", done.stdout)
+        self.assertEqual([e.fields["slice"] for e in self.read("ORD") if e.kind == "claimed"], ["ORD-01"])
+
+
 if __name__ == "__main__":
     unittest.main()
