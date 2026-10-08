@@ -2392,6 +2392,23 @@ keel that ships with no dependencies. There are three real ways out, and they ar
 The states are built either way and the verifier plugs into one seam, so whichever is chosen is a slice
 that adds a function and a test, not a redesign. **Owner's decision.**
 
+**Built 2026-10-08.** `https://robcoatvg.github.io/slipwai-index/` serves six packages at 1.0.0, each
+registered from the tag that built it, each passing conformance against this keel in its own CI. Proved
+the way it is meant to be proved — `slipwai search`, `slipwai install typescript`, `slipwai generate`,
+927 files — against the published URL and nothing local.
+
+Four things only doing it could have found, each now fixed: a channel could not check itself because
+`pip install slipwai` gets version 1; `channel new` refused a freshly cloned repository because `.git`
+counted as contents; a called workflow cannot ask for more permission than its caller granted, which
+fails with no job and no log; and **nothing could cut a package's release** — the conformance suite has
+always demanded that `VERSION`, `CHANGELOG.md` and `changelog.d/` agree, and there was no command to make
+them, so the number was a hand edit and the hand edit is what the suite catches.
+
+One mistake worth keeping: the six tags were force-moved after the first cut, which changed every tarball
+and left the channel naming digests that no longer existed. That is exactly what *a release is immutable*
+prevents, and it was survivable only because the channel was an hour old and nobody had installed
+anything.
+
 **6.6 — The public channel's contribution path.** `slipwai channel new|build|check` writes a channel
 repository, regenerates its index from `entries/`, and checks a pull request against the questions a
 reviewer cannot answer by reading: the release file the entry names is there, its digest is the one the
