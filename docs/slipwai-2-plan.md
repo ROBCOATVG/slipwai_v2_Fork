@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 92 of 113 slices done** — phase 1 6/6, phase 2 9/9, phase 3 17/20, phase 4 7/7, phase 5 29/29, phase 6 8/10, phase 7 11/12, phase 8 4/8, phase 9 1/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 92 of 114 slices done** — phase 1 6/6, phase 2 9/9, phase 3 17/21, phase 4 7/7, phase 5 29/29, phase 6 8/10, phase 7 11/12, phase 8 4/8, phase 9 1/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1641,6 +1641,7 @@ most worth running in two fairways themselves, once 5.3 exists.
 | 6.4 | `slipwai package check / release / register`, branching on the kind answer, and `make release` in the template behind them. `package new` landed early, in 6.1b, because a publisher needed something to publish | new | M | One language package and one extension package, each made by `new` on an empty machine, pass `check`, release, and register into a local channel without a hand edit | done |
 | 6.5 | The trust store and the four states: `trust.json`, the `ROBCOATVG` root, the confirm-once prompt, `slipwai trust`, and `verified`/`unverified`/`unsigned`/`untrusted` wherever a package is shown. The cryptography is 6.5b | new | M | A new publisher is confirmed once and then installs silently; a hand-placed package loads and says `unsigned`; a signature nothing checked never reads as checked | done |
 | 6.5b | The verifier the trust store is waiting for, whichever of the three the owner picks: an optional `slipwai[verify]` extra, ed25519 in pure Python, or both by role. One function (`trust.check_signature`) and the signing step in `package release` | new | M | A release signed by its publisher installs as `verified`; one whose bytes were changed after signing is refused naming the publisher and the channel | blocked: owner's decision, see 6.5 |  |
+| 3.7b | Every published package has CI: it calls the keel's reusable workflow, proves itself on each push, and on a tag builds the release and offers it to a channel. The `keel` input takes any pip spec, so a keel that is not on PyPI yet can be proved against | new | S | Six packages that had no CI at all run conformance on each push |  |
 | 6.6b | A release file lives where its publisher hosts it and the channel holds the entry; `channel check --fetch` holds a remote file to its digest; a tag publishes | new | M | A channel of six packages is 16 KB, and a file served by any web server installs with its digest checked | done |
 | 6.6 | The public channel's contribution path, which `slipwai package register` targets: the index repository, its CI (signature matches publisher, conformance passes, no name collision), and the contributor page | new | M | A package from outside `ROBCOATVG` is listed by a merged pull request and installs with one confirmation | done |
 
