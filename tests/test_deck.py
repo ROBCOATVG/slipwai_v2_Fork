@@ -51,7 +51,11 @@ class SaidTest(unittest.TestCase):
         """A sentence that is just the kind again is the raw line with extra steps."""
         for kind, fields in logs.DECK_KINDS.items():
             with self.subTest(kind=kind):
-                said_fields: dict[str, object] = {name: f"<{name}>" for name in fields}
+                # A field with a closed set gets one of its values: a placeholder is refused on the way in,
+                # which is the point of `logs.CLOSED` and not a thing to work around here.
+                allowed = logs.CLOSED.get(kind, {})
+                said_fields: dict[str, object] = {
+                    name: (allowed[name][0] if name in allowed else f"<{name}>") for name in fields}
                 entry = logs.entry(kind, False, **said_fields)
                 self.assertNotEqual(said(entry).strip(), kind)
 

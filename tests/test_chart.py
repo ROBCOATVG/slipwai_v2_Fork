@@ -168,6 +168,34 @@ class WholenessTest(unittest.TestCase):
         self.assertEqual(done.returncode, 1, done.stdout)
         self.assertIn("mark `InvoiceRaised` is declared and no slice sets or steers by it", done.stderr)
 
+    def test_a_slice_that_does_not_say_sets_is_refused_once_the_split_has_run(self) -> None:
+        """An empty list is an answer; an absent key is not.
+
+        The captain holds a slice to the marks its `sets` names, so a slice that simply left the key out
+        would take a demo-only gate by omission — the quietest way there is to pass a gate. On the event
+        profile the renderer always writes both keys; on the standard profile the split authors them, and
+        this gate read them with `body.get("sets") or []`, under which the two are the same thing.
+        """
+        self.split_has_run()
+        done = self.run_gate(WHOLE.replace(
+            "ORD-01: {fairway: ORD, capability: place-an-order, sets: [OrderPlaced], steers_by: []}",
+            "ORD-01: {fairway: ORD, capability: place-an-order, sets: [OrderPlaced]}"))
+        self.assertEqual(done.returncode, 1, done.stdout)
+        self.assertIn("slice ORD-01 does not say `steers_by`", done.stderr)
+        self.assertIn("gate taken by omission", done.stderr)
+
+    def test_an_empty_list_is_an_answer_and_passes(self) -> None:
+        self.split_has_run()
+        self.assertEqual(self.run_gate(WHOLE).returncode, 0)
+
+    def test_both_keys_are_only_owed_once_the_split_has_run(self) -> None:
+        """Pass one has no slices block to carry them, so demanding them before it is the gate refusing the
+        state the stage tells you to be in."""
+        done = self.run_gate(WHOLE.replace(
+            "ORD-01: {fairway: ORD, capability: place-an-order, sets: [OrderPlaced], steers_by: []}",
+            "ORD-01: {fairway: ORD, capability: place-an-order, sets: [OrderPlaced]}"))
+        self.assertEqual(done.returncode, 0, done.stderr)
+
     def test_a_fairway_that_owns_nothing_is_refused(self) -> None:
         """`owns` is the whole of the boundary check-slice-scope holds, so an empty one protects nothing."""
         done = self.run_gate(WHOLE.replace(", owns: [apps/billing/**]", ""))

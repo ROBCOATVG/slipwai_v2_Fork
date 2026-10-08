@@ -12,11 +12,13 @@ that wrote no line made no progress.
 from __future__ import annotations
 
 import json
+import re
 import unittest
 
 import checkout_packages  # noqa: F401
 
 from slipwai import logs
+from slipwai.assets import TOOLKIT_ROOT as TOOLKIT
 
 
 class ShapeTest(unittest.TestCase):
@@ -133,6 +135,42 @@ class PathTest(unittest.TestCase):
     def test_the_logs_are_under_a_path_git_ignores(self) -> None:
         """Heartbeat and token lines arrive every few seconds and have no place in trunk's history."""
         self.assertTrue(logs.LOGS.startswith(".slipwai/"))
+
+
+class ClosedTest(unittest.TestCase):
+    """A field whose values are a closed set, checked on the way in and on the way out.
+
+    `verdict` is the one, and it is read rather than displayed: the captain retries a slice whose demo came
+    back and closes one whose demo was accepted. A free-form verdict makes that a guess about somebody's
+    wording, and the three here are the ones `check-decisions.py` already holds the demo log to.
+    """
+
+    def test_a_verdict_outside_the_set_is_refused_on_the_way_in(self) -> None:
+        with self.assertRaises(logs.Unreadable) as refused:
+            logs.entry("demo", fairway="ORD", slice="ORD-01", verdict="looks fine to me")
+        self.assertIn("accepted, behaviour, implementation", str(refused.exception))
+
+    def test_a_verdict_outside_the_set_is_refused_on_the_way_out(self) -> None:
+        """A log is read by things that did not write it, so the rule has to hold at the reader too."""
+        line = json.dumps({"v": logs.V, "t": logs.now(), "kind": "demo", "fairway": "ORD",
+                           "slice": "ORD-01", "verdict": "ok"})
+        with self.assertRaises(logs.Unreadable):
+            logs.read(line)
+
+    def test_every_verdict_in_the_set_is_taken(self) -> None:
+        for verdict in logs.VERDICTS:
+            with self.subTest(verdict=verdict):
+                entry = logs.entry("demo", fairway="ORD", slice="ORD-01", verdict=verdict)
+                self.assertEqual(logs.read(entry.line()).fields["verdict"], verdict)
+
+    def test_the_set_is_the_one_the_demo_log_is_already_held_to(self) -> None:
+        """Two copies of a vocabulary drift. This one is named in `check-decisions.py`, which holds the
+        markdown the hand writes, and the log line has to mean the same thing as the heading above it."""
+        source = (TOOLKIT / "scripts/check-decisions.py").read_text(encoding="utf-8")
+        found = re.search(r"^VERDICTS = \((.*?)\)$", source, re.M)
+        if found is None:
+            self.fail("check-decisions.py no longer declares VERDICTS as a literal tuple")
+        self.assertEqual(tuple(re.findall(r'"([^"]+)"', found.group(1))), logs.VERDICTS)
 
 
 if __name__ == "__main__":  # pragma: no cover

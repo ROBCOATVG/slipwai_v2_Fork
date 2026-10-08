@@ -6,6 +6,8 @@ hand is eight edits, and anybody doing it in a hurry gets some of them.
 from __future__ import annotations
 
 import json
+import pathlib
+import re
 import subprocess
 import sys
 import tempfile
@@ -123,10 +125,36 @@ class FileTest(unittest.TestCase):
 
     def test_a_width_that_belongs_to_drive_is_written_where_drive_reads_it(self) -> None:
         (self.root / ".specify").mkdir()
-        (self.root / ".specify/drive.json").write_text(json.dumps({"delegate": 3}), encoding="utf-8")
-        set_one(self.root, ["delegate=1"])
-        self.assertEqual(json.loads((self.root / ".specify/drive.json").read_text())["delegate"], 1)
+        (self.root / ".specify/drive.json").write_text(json.dumps({"delegate": "task"}), encoding="utf-8")
+        set_one(self.root, ["delegate=rule"])
+        self.assertEqual(json.loads((self.root / ".specify/drive.json").read_text())["delegate"], "rule")
         self.assertNotIn("delegate", self.held())
+
+    def test_the_two_mirrored_settings_take_their_own_words_and_not_numbers(self) -> None:
+        """They were described here as numbers and parsed as numbers, so the only values either takes were
+        both refused and a meaningless number was accepted. `delegate` is how much of a slice one delegate
+        is handed; `cycle` is how many failing tests one RED-GREEN-REFACTOR cycle opens with."""
+        for pair in ("delegate=story", "delegate=rule", "delegate=task", "cycle=rule", "cycle=example"):
+            with self.subTest(pair=pair):
+                name, value = telegraph.parse_setting(pair)
+                self.assertEqual(f"{name}={value}", pair)
+        for pair in ("delegate=2", "cycle=3", "cycle=story"):
+            with self.subTest(pair=pair), self.assertRaises(telegraph.Refused):
+                telegraph.parse_setting(pair)
+
+    def test_the_mirrored_values_are_the_ones_drive_itself_takes(self) -> None:
+        """A project has no slipwai to import, so `scripts/agents/drive.py` has its own copy of these sets
+        and this is the second. Held as an equality rather than left to drift, which is what put a count in
+        the description of a setting whose values are words."""
+        source = (pathlib.Path(__file__).resolve().parents[1]
+                  / "assets/toolkit/scripts/agents/drive.py").read_text(encoding="utf-8")
+        for name, key in (("delegate", "DELEGATES"), ("cycle", "CYCLES")):
+            with self.subTest(name=name):
+                found = re.search(key + r" = \{(.*?)\n\}", source, re.S)
+                if found is None:
+                    self.fail(f"drive.py no longer declares {key} as a literal mapping")
+                self.assertEqual(tuple(re.findall(r'^\s*"([^"]+)":', found.group(1), re.M)),
+                                 telegraph.MIRRORED[name][1])
 
     def test_showing_names_what_every_number_means(self) -> None:
         said = "\n".join(shown(self.held()))

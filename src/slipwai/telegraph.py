@@ -1,4 +1,4 @@
-"""The telegraph: one lever a person rings, and the eight numbers it sets.
+"""The telegraph: one lever a person rings, and the nine numbers it sets.
 
 A run has a dozen numbers that all mean the same thing in different units — how many berths are lit, how many
 delegates each captain may have, what a slice may spend, what a day may spend, how long a stage may take.
@@ -47,6 +47,12 @@ MEANS = {
     "bar": "the severity at or above which an adversary finding must close before a merge",
     "decision_ceiling": "decisions that may stand unread before a fairway parks",
     "wait_bound": "minutes any wait may last before it is a parked line with a reason",
+    # Added with slice 7.8, which needed a retry bound and found that `cycle` is not one — `cycle` is the
+    # TDD unit (`rule` or `example`), not a count, and the captain needs to know how many times it may
+    # re-dispatch `/drive` for one slice before parking. A send-back at the demo is the case that matters:
+    # the person who sent it back is present and has just given notes, so trying again beats parking, and
+    # a bound stops "trying again" from being the whole afternoon.
+    "attempts": "times one slice may be re-dispatched before the fairway parks",
 }
 #: Each position's numbers. Not a formula: `bar` and `decision_ceiling` tighten as the run slows because a
 #: slower run is one somebody is already unhappy about, and that is a judgement rather than an arithmetic.
@@ -56,19 +62,33 @@ MEANS = {
 #: deferred, not more.
 SETTINGS: dict[str, dict[str, object]] = {
     "full-ahead": {"boilers": 5, "fanout": 3, "bunker_per_slice": 1500, "bunker_per_day": 20000,
-                   "stage_scale": 1.0, "bar": "HIGH", "decision_ceiling": 12, "wait_bound": 90},
+                   "stage_scale": 1.0, "bar": "HIGH", "decision_ceiling": 12, "wait_bound": 90,
+                   "attempts": 3},
     "half-ahead": {"boilers": 3, "fanout": 2, "bunker_per_slice": 1000, "bunker_per_day": 10000,
-                   "stage_scale": 1.0, "bar": "MEDIUM", "decision_ceiling": 10, "wait_bound": 60},
+                   "stage_scale": 1.0, "bar": "MEDIUM", "decision_ceiling": 10, "wait_bound": 60,
+                   "attempts": 2},
     "slow-ahead": {"boilers": 2, "fanout": 1, "bunker_per_slice": 700, "bunker_per_day": 5000,
-                   "stage_scale": 0.75, "bar": "MEDIUM", "decision_ceiling": 5, "wait_bound": 30},
+                   "stage_scale": 0.75, "bar": "MEDIUM", "decision_ceiling": 5, "wait_bound": 30,
+                   "attempts": 2},
     "dead-slow": {"boilers": 1, "fanout": 1, "bunker_per_slice": 400, "bunker_per_day": 2000,
-                  "stage_scale": 0.5, "bar": "LOW", "decision_ceiling": 3, "wait_bound": 20},
+                  "stage_scale": 0.5, "bar": "LOW", "decision_ceiling": 3, "wait_bound": 20,
+                  "attempts": 1},
     "stop": {"boilers": 0, "fanout": 0, "bunker_per_slice": 0, "bunker_per_day": 0,
-             "stage_scale": 0.0, "bar": "LOW", "decision_ceiling": 0, "wait_bound": 0},
+             "stage_scale": 0.0, "bar": "LOW", "decision_ceiling": 0, "wait_bound": 0,
+             "attempts": 0},
 }
 #: Mirrored from `.specify/drive.json` so a person sets every width in one place. The telegraph does not own
 #: them — `/drive` does — so a position never sets them and `--set` writes them back where they came from.
-MIRRORED = {"delegate": "how wide one stage may delegate", "cycle": "how many iterations one slice may take"}
+#: **Both are words, not numbers**, which is what their values are: `delegate` is how much of a slice one
+#: delegate is handed, `cycle` is how many failing tests a RED-GREEN-REFACTOR cycle opens with. They were
+#: described here as numbers and parsed as numbers, so `--set delegate=story` and `--set cycle=rule` — the
+#: only values either takes — were both refused, and `--set cycle=3` was accepted. `scripts/agents/drive.py`
+#: owns these sets; `tests/test_telegraph.py` holds the two in step, because a project has no slipwai to
+#: import and this is the second copy either way.
+MIRRORED = {
+    "delegate": ("how much of a slice one delegate is handed", ("story", "rule", "task")),
+    "cycle": ("how many failing tests one RED-GREEN-REFACTOR cycle opens with", ("rule", "example")),
+}
 NUMBERS = tuple(MEANS)
 
 
@@ -100,16 +120,20 @@ def parse_setting(text: str) -> tuple[str, object]:
     if not value:
         raise Refused(f"`--set` takes `<name>=<value>`; {text!r} has no value")
     if name not in MEANS and name not in MIRRORED:
-        known = {**MEANS, **MIRRORED}
-        raise Refused(f"`{name}` is not a number the telegraph sets. It sets: "
+        known = {**MEANS, **{one: said for one, (said, _) in MIRRORED.items()}}
+        raise Refused(f"`{name}` is not a setting the telegraph has. It sets: "
                               + "; ".join(f"{one} ({said})" for one, said in known.items()))
+    if name in MIRRORED:
+        said, allowed = MIRRORED[name]
+        if value not in allowed:
+            raise Refused(f"`{name}` is {said}, which is one of {', '.join(allowed)}; {value!r} is not")
+        return name, value
     if name == "bar":
         return name, value.upper()
     try:
         return name, float(value) if name == "stage_scale" else int(value)
     except ValueError:
-        raise Refused(f"`{name}` is {MEANS.get(name, MIRRORED.get(name))}, which is a number; "
-                              f"{value!r} is not one") from None
+        raise Refused(f"`{name}` is {MEANS[name]}, which is a number; {value!r} is not one") from None
 
 
 def adjusted(name: str, held: dict) -> bool:

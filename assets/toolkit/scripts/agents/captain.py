@@ -16,6 +16,19 @@ enforces the receipt; and asks the harbourmaster for the merge, because a captai
 written nothing for its wall budget is ended and `parked` with the reason — not because the agent said it was
 stuck, which a stuck agent cannot say, but because the log stopped.
 
+**And a slice is through its gate only when the log says so, in lines written during this turn.** That rule
+was applied to the wall budget and nowhere else, so the first real run had `/drive` print a help message,
+exit 0, and this file write `claimed`, then `request: merge`, and report the slice through its gate — with
+no `mark-set` and no `demo` anywhere. What closes a slice now is every mark the chart says it `sets`, plus a
+`demo`, all after the index this turn started at. *During this turn* is the whole of it: without it a retry
+passes on the previous turn's lines, which is the same fault as a cursor that outlives its log.
+
+A demo that came back `behaviour` or `implementation` is not a park, it is a retry. The person who sent it
+back is present and has just written notes, and parking would ask them to come back and restart a fairway
+before anything acts on them. `/drive` re-enters at the first incomplete stage, so a retry resumes at the
+demo rung with the notes in the slice. `attempts` in `harbour.json` bounds it; when it is spent the fairway
+parks naming the verdict and the count.
+
 **A hook never costs the rung.** The extension hook points fire around each rung, at each boundary and before
 a merge; `hooks.py` always exits 0 for them, and the captain does not read their output. A hook is a second
 belt, and a second belt that can stop the run is the thing it was meant to be instead of.
@@ -58,6 +71,11 @@ POLL = 2.0
 #: Used where `harbour.json` is absent or unreadable — the file is the answer, and these keep the loop
 #: bounded while somebody fixes it rather than letting an unbounded stage be the cost of a typo.
 DEFAULT_STAGE_MINUTES = 30
+#: Re-dispatches of `/drive` for one slice, where `harbour.json` does not say. `half-ahead`'s number, which
+#: is what a fresh harbour is at.
+DEFAULT_ATTEMPTS = 2
+#: The verdict that closes a slice, and the two that send it back. `logs.VERDICTS` is the whole set.
+ACCEPTED = "accepted"
 
 
 def harbour() -> dict:
@@ -76,6 +94,12 @@ def stage_bound() -> float:
                if isinstance(row, dict)] if isinstance(stages, dict) else []
     found = [one for one in minutes if isinstance(one, int | float) and one > 0]
     return (max(found) if found else DEFAULT_STAGE_MINUTES) * 60.0
+
+
+def attempts() -> int:
+    """Re-dispatches of `/drive` one slice may have. `0` means one run and no retry."""
+    held = harbour().get("attempts")
+    return held if isinstance(held, int) and held >= 0 else DEFAULT_ATTEMPTS
 
 
 def deck(feature: str, fairway: str) -> Path:
@@ -202,16 +226,65 @@ def boundary(feature: str, fairway: str) -> str:
             f"{owed.get('ceiling')}. A backlog of judgement nobody has looked at is not judgement")
 
 
-def work(slice_id: str, feature: str, fairway: str) -> tuple[bool, str]:
-    """One slice, start to finish. (did it finish, why it did not)."""
-    write(feature, fairway, logs.entry("claimed", fairway=fairway, slice=slice_id))
+def sets_of(slice_id: str) -> list[str]:
+    """The marks the chart says this slice publishes, which is what its gate is.
+
+    An absent `sets` reads as none here and is refused by `make check-chart` once the split has run, where
+    it can say which slice and what to write. This is the reader, not the gate.
+    """
+    charted, _ = clearance.chart()
+    body = (charted.get("slices") or {}).get(slice_id) or {}
+    return [str(mark) for mark in (body.get("sets") or [])]
+
+
+def owed(fresh: list[logs.Entry], slice_id: str, promised: list[str]) -> tuple[list[str], str]:
+    """What this slice still owes from the lines written this turn: (marks not set, the demo's verdict).
+
+    The verdict is `""` where no demo was written at all, which is a different fault from one that was
+    written and sent back — the first says the rung never ran, the second says a person watched it and
+    wanted something changed, and they get different answers.
+    """
+    mine = [e for e in fresh if str(e.fields.get("slice", "")) == slice_id]
+    done = {str(e.fields["mark"]) for e in mine if e.kind == "mark-set"}
+    verdicts = [str(e.fields["verdict"]) for e in mine if e.kind == "demo"]
+    return [mark for mark in promised if mark not in done], (verdicts[-1] if verdicts else "")
+
+
+def dispatch(slice_id: str, feature: str, fairway: str) -> tuple[bool, str, list[logs.Entry]]:
+    """One run of `/drive`, and the lines it wrote. (finished, why not, the lines written during it)."""
     fire("before-stage", stage="drive", slice=slice_id, fairway=fairway)
     started = len(entries(feature, fairway))
     process = subprocess.Popen(drive_command(slice_id, fairway), cwd=ROOT)
     finished, why = watched(process, feature, fairway, stage_bound(), started)
     fire("after-stage", stage="drive", slice=slice_id, fairway=fairway)
-    if not finished:
-        return False, why
+    return finished, why, entries(feature, fairway)[started:]
+
+
+def work(slice_id: str, feature: str, fairway: str) -> tuple[bool, str]:
+    """One slice, start to finish. (did it finish, why it did not)."""
+    write(feature, fairway, logs.entry("claimed", fairway=fairway, slice=slice_id))
+    promised = sets_of(slice_id)
+    bound, sent_back = attempts(), 0
+    while True:
+        finished, why, fresh = dispatch(slice_id, feature, fairway)
+        if not finished:
+            return False, why
+        missing, verdict = owed(fresh, slice_id, promised)
+        if not missing and verdict == ACCEPTED:
+            break
+        if verdict and verdict != ACCEPTED:
+            sent_back += 1
+            if sent_back <= bound:
+                continue
+            return False, (f"the demo came back {verdict!r} {sent_back} time(s), which is what `attempts` "
+                           f"allows. The notes are in the slice; a person decides what happens next")
+        if missing:
+            return False, (f"the chart says {slice_id} sets {', '.join(promised)}, and this turn wrote no "
+                           f"`mark-set` for {', '.join(missing)}. A stage that wrote no line made no "
+                           f"progress, so nothing here is evidence the slice was built")
+        return False, (f"this turn wrote no `demo` line for {slice_id}, so nothing says a person watched it "
+                       f"work. `/drive` exiting 0 is the agent's account of itself, which is the one thing "
+                       f"this loop does not read")
     held = boundary(feature, fairway)
     if held:
         return False, held

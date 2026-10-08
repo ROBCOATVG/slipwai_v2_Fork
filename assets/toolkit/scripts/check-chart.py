@@ -23,6 +23,13 @@ Five rules, and each one exists because its absence fails quietly rather than lo
    naming none would never complete one, so no demo would ever come due and nothing would say why — the
    loop would run to the end of a feature having stopped nobody, which reads exactly like a loop with
    nothing to show.
+6. **Once the split has run, every slice says `sets` and `steers_by` out loud.** An empty list is an answer;
+   an absent key is refused. This is new with slice 7.8, and it is what makes the captain's gate readable:
+   a slice is through its gate when the log holds a `mark-set` for every mark its `sets` names, so `sets: []`
+   has to be a positive statement that this slice publishes nothing. On the event profile the renderer
+   always writes both keys, so it was one already; on the standard profile the split authors them and this
+   read them with `body.get("sets") or []`, under which a slice that simply forgot the key took a
+   demo-only gate by omission — the quietest way there is to pass a gate.
 
 On the event-modelling profile there is a sixth, and it is about where the chart came from rather than
 what it says: the committed chart must be what `make chart` would render from `model.yaml`. The model is
@@ -184,6 +191,16 @@ def rule_faults(chart: dict, path: Path) -> list[str]:
             faults.append(f"{where}: mark `{forgotten}` is declared and no slice sets or steers by it. "
                           f"Either a slice publishes it, or it was a promise pass one made and the split "
                           f"dropped")
+
+        for slice_id, body in slices.items():
+            for key in ("sets", "steers_by"):
+                if key not in body:
+                    faults.append(f"{where}: slice {slice_id} does not say `{key}`. Write `{key}: []` where "
+                                  f"the answer is none — a captain holds a slice to the marks its `sets` "
+                                  f"names, so an absent key is a gate taken by omission rather than an "
+                                  f"answer")
+                elif body[key] is not None and not isinstance(body[key], list):
+                    faults.append(f"{where}: slice {slice_id}'s `{key}` is not a list")
 
     for slice_id, body in slices.items():
         if not body.get("capability"):

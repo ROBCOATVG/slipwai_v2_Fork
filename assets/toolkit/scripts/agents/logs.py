@@ -49,7 +49,7 @@ DECK_KINDS: dict[str, tuple[str, ...]] = {
     # Written at the setting slice's first stage, in its own worktree. This is what clears a sibling, which
     # is why it is not `merged`: waiting for a merge would serialise every fairway behind every other.
     "mark-set": ("fairway", "slice", "mark"),
-    "demo": ("fairway", "slice", "verdict"),
+    "demo": ("fairway", "slice", "verdict"),  # `verdict` is one of VERDICTS, below
     # Against a capability rather than a slice: a person's demo is of a whole chunk of work (theme B, 10).
     "accepted": ("fairway", "capability"),
     "demo-due": ("fairway", "capability"),
@@ -66,6 +66,16 @@ DECK_KINDS: dict[str, tuple[str, ...]] = {
     "stowed": ("fairway", "slice", "from", "what"),
     "parked": ("fairway", "why"),
 }
+
+#: What a demo can have said, and the only three. The same three `check-decisions.py` already holds the demo
+#: log's markdown to and `benchmark.py` records as an outcome, so this names the vocabulary rather than
+#: inventing one: `accepted`, or sent back because the *behaviour* is wrong or because the *implementation*
+#: is. The captain reads it — a sent-back demo is a retry and an accepted one closes the slice's gate — and
+#: a free-form verdict would make that a guess about somebody's wording.
+VERDICTS = ("accepted", "behaviour", "implementation")
+#: Field → the only values it may hold, per kind. Checked on the way in *and* on the way out, like every
+#: other rule here: a line nobody can interpret reads exactly like a line that was never written.
+CLOSED: dict[str, dict[str, tuple[str, ...]]] = {"demo": {"verdict": VERDICTS}}
 
 #: Each harbour-log kind. Only the harbourmaster writes these, which is how one shared file never conflicts.
 HARBOUR_KINDS: dict[str, tuple[str, ...]] = {
@@ -121,6 +131,15 @@ def declared(kind: str, harbour: bool = False) -> tuple[str, ...]:
     return kinds[kind]
 
 
+def closed(kind: str, body: dict) -> None:
+    """Refuse a field whose value is outside the set its kind allows, naming the set."""
+    for name, allowed in CLOSED.get(kind, {}).items():
+        value = body.get(name)
+        if value is not None and value not in allowed:
+            raise Unreadable(f"a {kind!r} line's {name} is one of {', '.join(allowed)}; this one says "
+                             f"{value!r}, which no reader can act on")
+
+
 def entry(kind: str, harbour: bool = False, **fields: object) -> Entry:
     """One entry, with every field its kind declares, or a refusal naming what is missing.
 
@@ -132,6 +151,7 @@ def entry(kind: str, harbour: bool = False, **fields: object) -> Entry:
     if missing:
         raise Unreadable(f"a {kind!r} line carries {', '.join(required)}; this one has no "
                          f"{', '.join(missing)}")
+    closed(kind, fields)
     return Entry(kind=kind, fields=dict(fields))
 
 
@@ -159,6 +179,7 @@ def read(line: str, harbour: bool = False) -> Entry:
     if missing:
         raise Unreadable(f"a {kind!r} line carries {', '.join(required)}; this one has no "
                          f"{', '.join(missing)}")
+    closed(kind, body)
     known = {*COMMON, *required}
     return Entry(kind=kind, t=str(body.get("t", "")),
                  fields={name: value for name, value in body.items() if name not in known} |

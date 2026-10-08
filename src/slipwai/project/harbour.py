@@ -56,7 +56,9 @@ COMMENT = (
     "any not named. `bar` is the severity at or above which an adversary finding must close before the "
     "merge; below it a finding is stowed into the fairway's careen and the slice merges, and nothing "
     "CRITICAL is ever stowed. `decision_ceiling` is how many decisions may stand unread before a fairway "
-    "parks. `wait_bound` is how long any wait may last before it is a parked line with a reason. Change "
+    "parks. `wait_bound` is how long any wait may last before it is a parked line with a reason. "
+    "`attempts` is how many times a captain may re-dispatch `/drive` for one slice — a demo sent back is a "
+    "retry, not a park — before the fairway parks naming what is still missing. Change "
     "them here, or ring the telegraph — `slipwai telegraph slow-ahead` sets the group, `slipwai telegraph --set "
     "boilers=2` sets one, and `slipwai telegraph` shows where it is."
 )

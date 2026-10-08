@@ -1674,9 +1674,9 @@ Depends on: phase 4. Runs beside phase 7.
 | 7.4c | The run drawn on the event model: the browsable page and the bridge colour each slice by **two** bands — what `model.yaml` intends, and what the logs say happened — folded at render time and written back nowhere. Never into `model.drawio`, which is committed | new | M | A slice badged `implemented` whose log holds nothing is visible on the page as the drift it is, and a mark being set lights the slices it clears | done |
 | 7.7a | `/cruise` casts off: `scripts/agents/fleet.py` starts the harbourmaster and one captain per fairway under the telegraph's `boilers`, and exits. `make cruise`, `cruise-status` and `cruise-stop` point at it | new | S | Typing `/cruise` leaves nothing holding the state of the run | done |
 | 7.7b | Delete the runner: `cruise.py`'s loop, its seat commands re-pointed at the logs, and its harness-hook verbs (`guard`, `compacting`, `resume`, `stopping`) moved to where the captain owns them — the same knot as 6.1c, untied by the second closed set (6.1b2) | new | L | No runner left in the toolkit, and the greenfield of phase 7 has run two captains on two machines start to finish |  |
-| 7.8 | The captain requires the ladder's completion lines: a slice is through its gate when the log holds every mark the chart's `sets` names and a `demo`, all written during this turn. A sent-back demo is a retry in the same turn, bounded by `cycle`, then a park naming the verdict and the count. `verdict` becomes a closed set; `check-chart` requires `sets` and `steers_by` explicitly once `story-split.md` exists, so an empty list is an answer and an absent key is not | new (section 14) | M | The run that started this — `/drive` printing a help message, exiting 0 and writing nothing — parks instead of reporting a slice through its gate; a slice that sets no mark still passes on its `demo` |  |
-| 7.9 | The harbourmaster performs the merge: it takes the request in order, one at a time, rebases in a scratch worktree of its own, runs the project's `make verify` there, pushes, and writes `merged` with the commit. A conflict is `git rebase --abort` and `refused` naming the paths, and the captain resolves in its own berth bounded by `cycle`; a red gate is `refused` with the failing check. The berth is never written by two processes and stays allocated until `merged` | new (section 14) | L | `merged` stops reading 0 on the board: a slice accepted at its demo reaches trunk with no person in the path, and a conflict comes back as two named paths rather than a wedged worktree |  |
-| 7.10 | Trunk's CI is watched, so the fleet stops adding to a red build: before granting any merge the harbourmaster reads trunk's last completed run, and a red one is `refused` plus a harbour `park` naming the commit and the job, with no fairway granted a merge until it is green. The fix goes to the captain whose `merged` line names that commit, bounded by `cycle`, then to a person; a red no `merged` line accounts for parks for a person at once. A forge it cannot reach reads *could not verify*, never *green* | new (owner, 2026-10-08) | M | A trunk reddened by `audit` or `test-integration` — which `make verify` never runs — stops the merge queue within one pass, and the fairway that broke it is the one dispatched at it |  |
+| 7.8 | The captain requires the ladder's completion lines: a slice is through its gate when the log holds every mark the chart's `sets` names and a `demo`, all written during this turn. A sent-back demo is a retry in the same turn, bounded by `attempts`, then a park naming the verdict and the count. `verdict` becomes a closed set; `check-chart` requires `sets` and `steers_by` explicitly once `story-split.md` exists, so an empty list is an answer and an absent key is not | new (section 14) | M | The run that started this — `/drive` printing a help message, exiting 0 and writing nothing — parks instead of reporting a slice through its gate; a slice that sets no mark still passes on its `demo` |  |
+| 7.9 | The harbourmaster performs the merge: it takes the request in order, one at a time, rebases in a scratch worktree of its own, runs the project's `make verify` there, pushes, and writes `merged` with the commit. A conflict is `git rebase --abort` and `refused` naming the paths, and the captain resolves in its own berth bounded by `attempts`; a red gate is `refused` with the failing check. The berth is never written by two processes and stays allocated until `merged` | new (section 14) | L | `merged` stops reading 0 on the board: a slice accepted at its demo reaches trunk with no person in the path, and a conflict comes back as two named paths rather than a wedged worktree |  |
+| 7.10 | Trunk's CI is watched, so the fleet stops adding to a red build: before granting any merge the harbourmaster reads trunk's last completed run, and a red one is `refused` plus a harbour `park` naming the commit and the job, with no fairway granted a merge until it is green. The fix goes to the captain whose `merged` line names that commit, bounded by `attempts`, then to a person; a red no `merged` line accounts for parks for a person at once. A forge it cannot reach reads *could not verify*, never *green* | new (owner, 2026-10-08) | M | A trunk reddened by `audit` or `test-integration` — which `make verify` never runs — stops the merge queue within one pass, and the fairway that broke it is the one dispatched at it |  |
 
 Depends on: 5.13 and 5.14. 7.1 first, then 7.2, then the rest in any order. **7.8, 7.9 and 7.10 are section 14's three designs and close the loop; they are built after phase 9**, in that order — 7.9 is what makes `merged` stop reading 0, and 7.10 is only meaningful once something merges.
 
@@ -2968,9 +2968,9 @@ worth a row.**
   - *The lines must be written during this turn.* `work()` already takes `started = len(entries(...))`
     before it dispatches, so the index is there for nothing. Without it a retry of a slice passes on the
     previous turn's lines, which is the same class of fault as the harbourmaster's cursor outliving its log.
-  - *A demo that was sent back is a retry, in the same turn, bounded by `cycle`.* `work()` re-dispatches for
+  - *A demo that was sent back is a retry, in the same turn, bounded by `attempts`.* `work()` re-dispatches for
     the same slice; the ladder re-enters at the first incomplete stage, so it resumes at the demo rung with
-    the notes in the slice. When `cycle` is spent it parks, naming the verdict and the count. Parking at
+    the notes in the slice. When `attempts` is spent it parks, naming the verdict and the count. Parking at
     once was rejected for a reason worth keeping: the person who sent the demo back is present and has just
     given notes, and parking asks them to come back and restart a fairway before anything acts on them.
   - *The standard profile reads the same, and the gate is tightened so that it can.* The rule rests on
@@ -2980,15 +2980,26 @@ worth a row.**
     So: once `story-split.md` exists, every slice must carry `sets` and `steers_by` explicitly. An empty
     list is an answer; an absent key is refused, naming the slice.
 
-  *Still open:* `verdict` is free-form today (the captures show `accepted`). It becomes a closed set, or at
-  least acceptance against everything else, in the same slice.
+  *Answered while building it, 2026-10-08:* **the retry bound is a new telegraph number, `attempts`, and not
+  `cycle`.** The design above named `cycle` three times, and `cycle` is not a count — it is `/drive`'s TDD
+  unit, `rule` or `example`, mirrored from `.specify/drive.json`. The telegraph's own table described it as
+  "how many iterations one slice may take" and parsed it as an integer, so `slipwai telegraph --set
+  cycle=rule` and `--set delegate=story` — the only values either takes — were both refused and `--set
+  cycle=3` was accepted. Both are fixed, their value sets are held against `drive.py`'s, and `attempts`
+  joins the telegraph's own numbers: 3 at `full-ahead` down to 0 at `stop`, because a run somebody has
+  slowed is one where less is retried on its own.
+
+  *And `verdict` was free-form (the captures show `accepted`). It is now the three
+  `check-decisions.py` already holds the demo log's markdown to* — `accepted`, `behaviour`,
+  `implementation` — checked on the way in and on the way out, because the captain reads it to decide
+  between a retry and a merge.
 - **The harbourmaster performs the merge.** It holds the credentials, so it rebases, runs the full gate
   on the rebased branch, pushes, and writes `merged` with the commit; a red gate is `refused` with the
   reason and the captain parks. **The four open questions were answered 2026-10-08, and a fifth was found
   in the answering:**
   - *A rebase conflict is aborted and refused, naming the paths.* `git rebase --abort`, so nothing is left
     half-done, then `refused` listing what conflicts. The captain re-dispatches `/drive` in its own berth to
-    rebase and resolve, bounded by `cycle`, and asks again — and the harbourmaster rebases afresh, because
+    rebase and resolve, bounded by `attempts`, and asks again — and the harbourmaster rebases afresh, because
     trunk may have moved again. Resolving a conflict is work on code, which belongs where the context is;
     the harbourmaster stays credentials-and-gate only, which matters because it is the one component with
     push rights. Cross-fairway conflicts should be rare by construction, since `check-slice-scope` refuses a
@@ -3022,7 +3033,7 @@ worth a row.**
 
     **The fix goes to the captain that broke it, not to a person.** The harbourmaster wrote the `merged`
     line for the commit that went red, so it knows the fairway and the slice. That captain takes the fix at
-    its next boundary instead of its next slice, bounded by `cycle`; when those attempts are spent it writes
+    its next boundary instead of its next slice, bounded by `attempts`; when those attempts are spent it writes
     a harbour `park` naming the job, the commit and what it tried. A red trunk that no `merged` line
     accounts for — a direct push, or a red older than any merge — parks for a person at once, because
     guessing who broke it would send a captain to rewrite somebody else's work. Captains keep building
