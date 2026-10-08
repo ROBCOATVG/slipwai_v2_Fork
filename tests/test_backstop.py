@@ -228,3 +228,40 @@ class KeelSpecTest(unittest.TestCase):
         from slipwai.package_new import KEEL_REPO
         self.assertTrue((ROOT / ".github/workflows/package.yml").is_file())
         self.assertIn("slipwai", KEEL_REPO)
+
+
+class CallerPermissionTest(unittest.TestCase):
+    """A called workflow cannot ask for more than its caller has. The publish job attaches a release to
+    the package's own tag, so the caller grants `contents: write` — without it the run fails before it
+    starts, with no job and no log to read."""
+
+    def caller(self) -> str:
+        import tempfile
+        from pathlib import Path as P
+
+        from slipwai import package_new
+        area = P(tempfile.mkdtemp())
+        package_new.write("language", "rust", area, "9.0")
+        return (area / "rust/.github/workflows/verify.yml").read_text(encoding="utf-8")
+
+    def test_the_caller_grants_what_the_publish_job_needs(self) -> None:
+        import yaml  # type: ignore[import-untyped]
+        held = yaml.safe_load(self.caller())
+        self.assertEqual((held.get("permissions") or {}).get("contents"), "write")
+
+    def test_and_the_called_job_asks_for_no_more_than_that(self) -> None:
+        """Every permission the called workflow wants has to be one the caller already granted."""
+        import yaml  # type: ignore[import-untyped]
+        called = yaml.safe_load((ROOT / ".github/workflows/package.yml").read_text(encoding="utf-8"))
+        caller = yaml.safe_load(self.caller())
+        granted = caller.get("permissions") or {}
+        for name, job in called["jobs"].items():
+            for scope, level in (job.get("permissions") or {}).items():
+                with self.subTest(job=name, scope=scope):
+                    self.assertEqual(granted.get(scope), level,
+                                     f"{name} wants {scope}: {level}, and the caller grants "
+                                     f"{granted.get(scope)}")
+
+    def test_it_is_this_repository_s_contents_and_nobody_else_s(self) -> None:
+        """The channel is reached with a token. This permission never touches it."""
+        self.assertIn("nobody else", self.caller())
