@@ -19,6 +19,8 @@ from .errors import GenerationError, refuse
 from .extension_directory import MANIFEST
 from .extension_install import catalogue, install, remove
 from .extension_shape import OBLIGATIONS
+from .guards import GUARDS
+from .guards import declared as declared_guards
 from .hooks import POINTS, declared
 from .language_directory import directory
 
@@ -42,6 +44,11 @@ def rows() -> list[str]:
         except (ValueError, KeyError) as error:  # a manifest the loader already refused, said once more here
             points = f"unreadable ({error})"
         lines.append(f"      hooks: {points or 'none'}")
+        try:
+            may_refuse = ", ".join(sorted(declared_guards(manifest)))
+        except (ValueError, KeyError) as error:
+            may_refuse = f"unreadable ({error})"
+        lines.append(f"      guards: {may_refuse or 'none'}")
     return lines
 
 
@@ -54,21 +61,41 @@ def list_extensions() -> None:
             print(f"  {line}")
 
 
-def hooks_listing() -> list[str]:
-    """Every point, what fires it, what it is given, and which installed extension attaches to it."""
-    attached: dict[str, list[str]] = {}
+def attached_to(reader) -> dict[str, list[str]]:
+    """Which installed extension declares what, by name, for one of the two sets."""
+    found: dict[str, list[str]] = {}
     for key, manifest in catalogue(directory()):
         try:
-            for name in declared(manifest):
-                attached.setdefault(name, []).append(key)
+            for name in reader(manifest):
+                found.setdefault(name, []).append(key)
         except (ValueError, KeyError):
             continue
+    return found
+
+
+def hooks_listing() -> list[str]:
+    """Every point, what fires it, what it is given, and which installed extension attaches to it."""
+    attached = attached_to(declared)
     lines: list[str] = []
     for point in POINTS:
         who = ", ".join(sorted(attached.get(point.name, []))) or "nothing attached"
         lines.append(f"  {point.name}")
         lines.append(f"      fires {point.when}")
         lines.append(f"      given {', '.join(point.given)}")
+        lines.append(f"      {who}")
+    return lines
+
+
+def guards_listing() -> list[str]:
+    """Every guard, what fires it, what it is given, what refusing does, and who may."""
+    attached = attached_to(declared_guards)
+    lines: list[str] = []
+    for one in GUARDS:
+        who = ", ".join(sorted(attached.get(one.name, []))) or "nothing attached"
+        lines.append(f"  {one.name}")
+        lines.append(f"      fires {one.when}")
+        lines.append(f"      given {', '.join(one.given)}")
+        lines.append(f"      refusing it: {one.refusing}")
         lines.append(f"      {who}")
     return lines
 
@@ -80,6 +107,13 @@ def hooks_main(argv: list[str]) -> None:
     print("hook points — a hook is reported and never fatal to the rung it runs around")
     for line in hooks_listing():
         print(line)
+    print()
+    print("guards — a guard may refuse one tool call by exiting 2, and the rung still completes")
+    for line in guards_listing():
+        print(line)
+    print()
+    print("  a hook is run where an extension is elected; a guard is also agreed to, because it refuses")
+    print("  things a person asked for. An extension declaring a guard nobody agreed to fires none")
 
 
 def check_main(path: str) -> None:
@@ -102,6 +136,8 @@ def check_main(path: str) -> None:
     print(f"  shown as     {manifest['name']}")
     print(f"  core         {manifest['core']}")
     print(f"  hooks        {', '.join(sorted(declared(manifest))) or 'none'}")
+    print(f"  guards       {', '.join(sorted(declared_guards(manifest))) or 'none'}  — these may refuse a "
+          f"tool call, and are agreed to at election")
     print("  obligations, which `slipwai conformance --extension` runs:")
     for name, said in OBLIGATIONS:
         print(f"    {name:<10} {said}")

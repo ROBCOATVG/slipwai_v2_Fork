@@ -15,7 +15,14 @@ import unittest
 
 import checkout_packages  # noqa: F401
 
-from slipwai.project import ci_workflows, cruise, existing, init_script, integration
+from slipwai.project import (
+    ci_workflows,
+    cruise,
+    existing,
+    init_extensions,
+    init_script,
+    integration,
+)
 
 
 class CruiseTest(unittest.TestCase):
@@ -42,12 +49,12 @@ class InitScriptTest(unittest.TestCase):
 
     def test_a_value_with_a_quote_in_it_cannot_close_the_quote_around_it(self) -> None:
         """The whole of what stops a project name being a command."""
-        quoted = init_script._sh_single_quote("it's; rm -rf /")
+        quoted = init_extensions._sh_single_quote("it's; rm -rf /")
         self.assertTrue(quoted.startswith("'") and quoted.endswith("'"))
         self.assertNotIn("'it's", quoted)
 
     def test_an_ordinary_value_is_still_quoted(self) -> None:
-        self.assertEqual(init_script._sh_single_quote("demo"), "'demo'")
+        self.assertEqual(init_extensions._sh_single_quote("demo"), "'demo'")
 
     def test_the_argument_scan_names_every_axis_it_is_given(self) -> None:
         written = init_script.argument_scan(["event-store", "http"], ["codegraph"])

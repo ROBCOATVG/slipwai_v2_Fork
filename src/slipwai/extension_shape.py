@@ -24,6 +24,7 @@ Everything else — found through the chandlery, signed, installed into a direct
 """
 from __future__ import annotations
 
+from .guards import declared as declared_guards
 from .hooks import declared as declared_hooks
 from .language_shape import name_fault
 
@@ -35,7 +36,7 @@ KIND = "extension"
 REQUIRED = ("key", "name", "description", "kind", "core")
 #: Declarable and not required. `ignore` is the gitignore text its local state needs — version 1's catalogue
 #: entry carried exactly this and nothing else, which is why it is still spelled the same.
-OPTIONAL = ("ignore", "publisher", "tags", "hooks")
+OPTIONAL = ("ignore", "publisher", "tags", "hooks", "guards")
 #: The six, in the order `docs/extensions.md` sets them, each as the conformance suite names its check.
 OBLIGATIONS = (
     ("idempotent", "running it twice does what running it once did"),
@@ -74,6 +75,9 @@ def validate(manifest: dict) -> None:
         raise ValueError(f"an extension declares {', '.join(sorted(unknown))}, which the keel does not read. "
                          f"It may declare: {', '.join(sorted({*REQUIRED, *OPTIONAL}))}")
     declared_hooks(manifest)
+    # The second closed set, checked the same way and for the same reason: a guard the keel has not
+    # got would leave the extension installed, the manifest valid, and nothing happening for ever.
+    declared_guards(manifest)
 
 
 def catalogue_entry(manifest: dict) -> dict:

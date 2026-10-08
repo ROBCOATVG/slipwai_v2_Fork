@@ -15,6 +15,7 @@ from .capabilities import declared_for, pruning_capabilities, serves
 from .catalog import CATALOG, EXTENSIONS, family_of, framework_of
 from .examples import Speaker, resolve_examples_for, stamp_pseudocode_notes
 from .extension_directory import files as package_files
+from .guards import declared as guards_declared
 from .hooks import declared
 from .registry import EXECUTABLES, registry
 from .services import APPLICATIONS, FIRST_SERVICE, FIRST_WEB, App, families_of, services_of, web_apps, wrapped_of
@@ -206,6 +207,10 @@ EXTENSION_ROOT = "scripts/extensions"
 #: is not where one is read — but the hooks are, because `./init` has to write the registry from what was
 #: elected and there is no keel in a project to ask.
 EXTENSION_HOOKS = f"{EXTENSION_ROOT}/available.json"
+#: The same, for the second closed set. Separate from the hooks file because the two are agreed to
+#: separately: electing an extension runs its hooks, and a guard — which may refuse a tool call a person
+#: asked for — is a question `./init` asks and a person answers.
+EXTENSION_GUARDS = f"{EXTENSION_ROOT}/available-guards.json"
 
 
 def extension_files() -> dict[str, str]:
@@ -222,8 +227,10 @@ def extension_files() -> dict[str, str]:
     """
     written: dict[str, str] = {}
     attached: dict[str, dict] = {}
+    guarding: dict[str, dict] = {}
     for extension in EXTENSIONS:
         attached[extension.name] = declared(extension.manifest)
+        guarding[extension.name] = guards_declared(extension.manifest)
         for relative in package_files(extension.root):
             try:
                 text = (extension.root / relative).read_text(encoding="utf-8")
@@ -231,6 +238,7 @@ def extension_files() -> dict[str, str]:
                 continue
             written[f"{EXTENSION_ROOT}/{extension.name}/{relative.as_posix()}"] = text
     written[EXTENSION_HOOKS] = json.dumps(attached, indent=2, sort_keys=True) + "\n"
+    written[EXTENSION_GUARDS] = json.dumps(guarding, indent=2, sort_keys=True) + "\n"
     return written
 
 

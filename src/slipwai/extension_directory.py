@@ -27,6 +27,7 @@ from typing import Any
 from .assets import this_command
 from .errors import one_line
 from .extension_shape import catalogue_entry, validate
+from .guards import declared as guards_declared
 from .hooks import declared
 from .language_directory import VARIABLE, parse_manifest
 from .versions import below, satisfies
@@ -51,6 +52,12 @@ class Extension:
     def hooks(self) -> dict[str, dict]:
         """Its hooks, normalised, keyed by the point each attaches to."""
         return declared(self.manifest)
+
+    @property
+    def guards(self) -> dict[str, dict]:
+        """Its guards, normalised, keyed by the moment each may refuse at. The second closed set: a hook is
+        never fatal to a rung, and a guard may refuse one tool call."""
+        return guards_declared(self.manifest)
 
 
 def named(name: str, root: Path) -> str:

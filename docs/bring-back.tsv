@@ -44,6 +44,7 @@ examples	184	assets catalog errors registry	PROFILE_ROOT TOOLKIT_ROOT
 extensions	37		
 family_only	141		
 features	99	errors	
+guards	118		
 harness	155	assets	TOOLKIT_ROOT
 images	194	backends registry	
 language_directory	308	assets errors language_shape registry versions	
@@ -127,9 +128,10 @@ project.gitignore	153	assets catalog extensions npm_workspace project.cruise_rec
 project.ground_command	342	convergence layout origin services	
 project.guidance	333	catalog npm_workspace project.compose project.existing project.flags project.rules registry services targets	
 project.infra	183	assets catalog images probes project.flag_route project.provisioning project.target_docs registry services targets tooling	TARGET_ROOT
+project.init_extensions	94		
 project.init_languages	41		
 project.init_production	74		
-project.init_script	349	catalog extensions layout project.init_languages project.init_production project.pins project.rules services targets	
+project.init_script	272	catalog extensions layout project.init_extensions project.init_languages project.init_production project.pins project.rules services targets	
 project.integration	79	project.native_commands services tooling	
 project.languages	39	registry services tooling	
 project.makefile	326	backends catalog layout probes project.adopted_targets project.agent_targets project.compose project.flags project.integration project.model_targets project.mutation project.native_commands project.openapi project.production project.shared_packages registry services targets tooling	
