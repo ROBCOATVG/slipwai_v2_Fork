@@ -1,0 +1,6 @@
+  go            language  1.0.0         available  backends: go
+  java          language  1.0.0         available  no description
+  java-quarkus  language  1.0.0         available  backends: java-quarkus
+  java-spring   language  1.0.0         available  backends: java-spring
+  python        language  1.0.0         installed  backends: python
+  typescript    language  1.0.0         available  backends: typescript

@@ -42,13 +42,20 @@ merged anywhere:
 
 ```console
 $ slipwai fleet booking
-booking: the last 2 line(s) its captain wrote
+booking: the last 5 line(s) its captain wrote
   2026-10-08T09:14:48Z  claimed BOK-01
   2026-10-08T09:14:48Z  set BookingHeld — BOK-01
+  2026-10-08T09:14:49Z  still going, 42k spent
+  2026-10-08T09:14:49Z  demo of BOK-01: accepted
+  2026-10-08T09:14:50Z  asked to merge: merge slice/BOK-01 into trunk after the full gate
 
 $ python3 scripts/agents/clearance.py
 clearance: 3 of 3 slices cleared in booking
 ```
+
+**Read the first two lines, and then the last one.** The mark was set a second after the slice was claimed.
+The merge was not even asked for until four lines later, and nothing has performed it. `AVA-01` was cleared
+by line two.
 
 It is safe because of the rule the chart enforces: **one setter per mark**. `BookingHeld` has exactly one
 owner and one typed definition, so a second fairway building against it cannot be building against a
@@ -62,11 +69,11 @@ anything:
 
 ```console
 $ slipwai fleet
-berths: 2, 2 working
+berths: 2
   fairway       feature  slice   state    last line  tokens  merged  marks
   ------------  -------  ------  -------  ---------  ------  ------  -----
-  booking       booking  BOK-02  working  12s ago    84      1       1
   availability  booking  AVA-01  working  31s ago    42      0       0
+  booking       booking  BOK-02  working  12s ago    84      1       1
 ```
 
 Each berth is a separate working directory on the same repository, so two gates can run at once without

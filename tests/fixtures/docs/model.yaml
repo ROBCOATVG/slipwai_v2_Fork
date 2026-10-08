@@ -1,0 +1,67 @@
+# The model the three guide pages are written against. `make test-docs` copies this into a fresh
+# generation so the commands those pages print can actually be run, and their output compared.
+#
+# It is the restaurant booking feature the pages describe, and nothing else: three slices in two
+# contexts, which is the smallest model that makes "two fairways and nobody waiting" a real claim
+# rather than a diagram. Keep it in step with docs/guide/ — a page that prints a slice id this file
+# does not have is the drift this fixture exists to catch.
+version: 1
+
+render:
+  lanes:
+    ui: actor
+    data: none
+    events: stream
+  framesPerSegment: 6
+
+slices:
+  - id: BOK-01
+    name: Hold a table
+    capability: Taking a booking
+    context: booking
+    pattern: state-change
+    status: planned
+    stream: booking-{bookingId}
+    frames:
+      - type: ui
+        name: BookingForm
+      - type: cmd
+        name: HoldTable
+      - type: evt
+        name: BookingHeld
+
+  - id: BOK-02
+    name: See tonight's list
+    capability: Taking a booking
+    context: booking
+    pattern: state-view
+    status: planned
+    materialisation: live
+    liveBudget:
+      events: 50
+      because: one evening's holds, and an evening is bounded by the covers a restaurant has
+    reads: [BookingHeld]
+    frames:
+      - type: rmo
+        name: TonightsList
+      - type: ui
+        name: TonightPage
+
+  - id: AVA-01
+    name: Take the table out of availability
+    capability: Taking a booking
+    context: availability
+    pattern: automation
+    status: planned
+    materialisation: async
+    reads: [BookingHeld]
+    stream: table-{tableId}
+    frames:
+      - type: rmo
+        name: HeldTables
+      - type: pcr
+        name: Allocator
+      - type: cmd
+        name: TakeTable
+      - type: evt
+        name: TableTaken

@@ -39,13 +39,18 @@ model this feature using skills/event-modeling/SKILL.md
 ```
 
 Modelling is a skill rather than a command, because it is a conversation: you and the agent name the
-commands, events and read models together. On the event-modelling profile it writes `docs/event-model/model.yaml`: the commands somebody issues, the
-events that are the record of what happened, the read models the screens are built from, and which slice
+commands, events and read models together. On the event-modelling profile it writes
+`docs/event-model/model.yaml`: the commands somebody issues, the events that are the record of what happened, the read models the screens are built from, and which slice
 each belongs to. One file, and everything downstream is rendered from it.
 
 ```console
 $ make model
-model: docs/event-model/index.html written — 3 slices, 2 contexts, 6 events
+  wrote docs/event-model/model.svg
+  wrote docs/event-model/slices/BOK-01.mmd
+  wrote docs/event-model/model.html
+  wrote README.md (event-model block)
+
+model: 3 slices rendered. Open docs/event-model/model.html to browse it.
 ```
 
 Open it. You get the timeline with a swimlane per context, each slice as a vertical stripe through it, and
@@ -89,14 +94,13 @@ marks it steers by.
 
 ```console
 $ python3 scripts/agents/clearance.py
-clearance: 3 of 3 slices cleared in booking
+clearance: 1 of 3 slices cleared in booking
   BOK-01
-  BOK-02
-  AVA-01
 ```
 
-**Cleared** means every mark this slice steers by has been set. A slice that is not cleared names what it
-is waiting for and who is setting it, so "blocked" is never a mood — it is a mark with an owner.
+**Cleared** means every mark this slice steers by has been set. Nothing has been set yet, so only the slice
+that waits for nothing may start. A slice that is not cleared names what it is waiting for and who is
+setting it, so "blocked" is never a mood — it is a mark with an owner.
 
 ## 5. Drive one
 
@@ -131,6 +135,8 @@ booking: the last 5 line(s) its captain wrote
   2026-10-08T09:14:50Z  asked to merge: merge slice/BOK-01 into trunk after the full gate
 ```
 
+The timestamps are that run's; yours will be your own.
+
 **That is the fifteen minutes.** One slice, specified, modelled, charted, built, and accepted by a person
 who watched it work.
 
@@ -145,10 +151,14 @@ worktree, before anything merged. Run clearance again and the slice in the other
 ```console
 $ python3 scripts/agents/clearance.py
 clearance: 3 of 3 slices cleared in booking
+  AVA-01
+  BOK-01
+  BOK-02
 ```
 
-Nothing merged. A second fairway can start on the strength of a contract that exists and has one owner,
-which is why two people — or two agents — are not queueing behind each other's branches. That is the claim
+One line in a log, and two more slices may start. **Nothing merged.** A second fairway can start on the
+strength of a contract that exists and has one owner, which is why two people — or two agents — are not
+queueing behind each other's branches. That is the claim
 version 2 is built on, and the next page is what it looks like with more than one of you.
 
 ## Next

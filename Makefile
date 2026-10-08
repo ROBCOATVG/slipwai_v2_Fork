@@ -86,6 +86,13 @@ test-executable: executable ## Build it, then prove it scaffolds with Git alone
 starters: ## Materialise every starter combination under build/ for inspection
 	python3 scripts/regenerate-starters.py
 
+# Not in `verify`, and deliberately: it generates two projects, drives the interview, renders the model
+# through Node and runs the full generated gate, which is a minute or two. The inner loop stops being run
+# the moment it is not quick. It runs in CI on every change, which is where a page drifts from the keel.
+.PHONY: test-docs
+test-docs: ## Run every command the first three guide pages print, against a fresh generation
+	python3 scripts/test-docs.py
+
 .PHONY: check-structure
 check-structure: ## Fail when a module imports against the declared direction, cycles, or outgrows its budget
 	python3 scripts/check-structure.py

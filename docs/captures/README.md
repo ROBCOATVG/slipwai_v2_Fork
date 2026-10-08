@@ -15,6 +15,7 @@ How each was made, so the next person can remake them rather than touch them up.
 | `fleet-board.txt` | The board, folded from the logs | `slipwai fleet` |
 | `stream-log.txt` | One stream's own log, said a line at a time | `slipwai fleet ordering` |
 | `chart-and-clearance.txt` | The chart's gate, and what may start | `check-chart.py`, `clearance.py` |
+| `chandlery-search.txt` | What the published chandlery offers | `SLIPWAI_INDEX=https://robcoatvg.github.io/slipwai-index slipwai search` |
 
 ## The run behind them
 
@@ -28,3 +29,10 @@ different stream — was cleared by that, with nothing merged.** That is the cla
 
 What the captures also show honestly: `merged 0`. The harbourmaster grants a merge and nothing performs
 one yet — section 14 of the plan, link 3.
+
+## Why `chandlery-search.txt` names its index
+
+`slipwai search` with no `SLIPWAI_INDEX` reaches the index the keel ships as its default, and nothing is
+published there yet — so the capture was taken against the index that is. `make test-docs` holds
+`docs/guide/start-here.md` to this file rather than to a live search, because that page must be right for a
+reader whose machine has no network and no chandlery account.

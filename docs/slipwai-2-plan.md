@@ -1726,6 +1726,30 @@ Depends on: phase 7's 7.8 to 7.10, which close the loop on one machine first. No
 not a merge-conflict strategy: everything here is a forge, a ref and a log, which is also what keeps it
 working for one person with no network at all.
 
+### Phase 12. Native to the harness, last
+
+Asked 2026-10-08, and scheduled last on purpose: nothing here changes what slipwai does, only how a person
+reaches it. Today the delivery material is files in a generated project — `commands/`, `skills/`,
+`agents/` — which `./init` projects into whichever of the thirty-six harnesses `registry.json` knows, and
+`slipwai fleet` and `slipwai bridge` are things a person runs in a terminal beside their agent. Both of
+those are the right shape for a repository and the wrong shape for two things people now expect: installing
+the material **without** generating a project, and letting the agent itself read the board.
+
+The risk this phase carries, and why it is last: every one of these is somebody else's format, and three of
+them are a year old. A keel that ships a plugin manifest per harness is a keel that is edited whenever any
+harness changes its mind. So each slice ships **one** artefact built from what the project already declares
+— the registry and the canonical directories — and none of them becomes a second source of truth.
+
+| Slice | What | From | Size | Done when | Status |
+|---|---|---|---|---|---|
+| 12.1 | `slipwai package plugin`: render a Claude Code plugin — `.claude-plugin/plugin.json` over the canonical `commands/`, `skills/`, `agents/` and the elected hooks — from the toolkit, so the material installs into a harness with no project generated. Built by the same four verbs a language package is, and published to the chandlery as a third package kind | new | M | A person with no slipwai project installs the plugin and `/drive` is there; `./init` in a generated project still writes the same files and the two never disagree, because one is rendered from the other |  |
+| 12.2 | An MCP server over the read side: `fleet`, `fleet <stream>`, `clearance`, `check-chart` and the inbox as tools, so an agent can ask what is waiting and answer it without a person copying a board between two windows. Read, plus the one write the bridge already allows — answering a `told` | new | M | An agent asked "what is blocked" answers from the logs, and an answer it gives a stream is the same line the bridge would have written |  |
+| 12.3 | The same material for the harnesses that are not Claude Code: Codex's prompts directory and its MCP configuration, and anything else `registry.json` already declares a native location for. One renderer, one row per harness, no per-harness prose | new | M | A second harness installs the material by its own mechanism from the same source, and adding a third is a row rather than a slice |  |
+| 12.4 | The decision, written down: which of the three is the supported route and which are conveniences. A project that can be installed four ways and is supported in one has three ways to be wrong about | new | S | `docs/reference/` says which route is held by a gate, and the others say they are not |  |
+
+Depends on: everything above, and especially 9.4 — a plugin is the guide's material with the project taken
+away, so the pages have to be right before they are packaged.
+
 ### Phase 9. The README and the docs
 
 | Slice | What | Size | Done when | Status |
@@ -1734,7 +1758,7 @@ working for one person with no network at all.
 | 9.2 | The reference pages under `docs/reference/` | L | Every rule the plan names has a page |  |
 | 9.3 | The captures: the bridge, the fleet board, a demo-stop board, a `/chart` output | S | From real runs, not drawn | done |
 | 9.6 | **From a spec to a delegate**: one figure per profile following a single feature all the way down — spec, model or chart, split into slices, example-mapped into rules and examples, cleared, claimed, and handed to a delegate at the configured width. Drawn, not captured | new | M | A reader who has never used slipwai can point at where a slice comes from and at what one delegate is handed; both profiles are the same figure with two boxes different |  |
-| 9.4 | `make test-docs`: every command in the first three pages run against a fresh generation | M | The README cannot drift |  |
+| 9.4 | `make test-docs`: every command in the first three pages run against a fresh generation — the programme generates two projects, drives the interview question by question, seeds the pages' own model and log lines, and asks each command in the order the page asks it. A command on a page that the programme does not have fails the gate | M | The README cannot drift |  |
 | 9.5 | The five maintainer skills in `.claude/skills/`, rewritten for version 2's shape: `add-language`, `add-framework` and `add-extension` as prose around the four `slipwai package` verbs and the two package shapes; `add-target` for the skiff and the liner; `add-backing-service` for a catalogue that no longer holds backends | new | L | A contributor who has not seen this repository publishes a package by following one skill; no skill names a step a verb already does; none describes a file version 2 does not have | done |
 
 ### Order, and what runs in parallel

@@ -45,11 +45,15 @@ REGISTRY = Path(__file__).with_name("registry.json")
 PROJECT = Path(__file__).with_name("project.py")
 MODELS = ROOT / ".specify/models.json"
 INTEGRATION = ROOT / ".specify/integration.json"
-# Every stage the table may name, keyed by the command the stage runs. The factory writes the same list into
-# `.specify/models.json`; a key outside it is a typo the check reports rather than a row `/drive` never reads.
+# Every stage the table may name, in ladder order, keyed by the command the stage runs. The factory writes
+# the same list into `.specify/models.json`; a key outside it is a typo the check reports rather than a row
+# `/drive` never reads. The keel's `slipwai.project.stage_models.STAGES` is the source of this order, and
+# `tests/test_agents.py` holds the two in step — four stages were missing here while the factory wrote them,
+# so `make verify` was red on a project nobody had touched, which is the one state the first page promises.
 KNOWN_STAGES = (
-    "principles", "specify", "event-model", "split", "example-map", "gaps", "release-constraint", "plan", "tasks",
-    "implement", "converge", "demo", "adversary", "mutation", "skipper", "hand", "bosun",
+    "principles", "specify", "mockups", "event-model", "chart", "split", "example-map", "gaps",
+    "release-constraint", "plan", "tasks", "implement", "converge", "demo", "review", "adversary", "mutation",
+    "merge", "skipper", "hand", "bosun",
 )
 # A role mapped to this runs on the model running `/drive` itself: no delegation, said in as many words.
 HOST = "host"

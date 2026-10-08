@@ -82,3 +82,21 @@ jobs:
           test "$(slipwai --version)" = "$expected"
           test "$(python -m slipwai --version)" = "$expected"
           echo "$expected on ${{ runner.os }}"
+
+  # The guide, run. Its own job rather than a step of the gate: it generates two projects, drives the
+  # interview, renders the model through Node and runs a generated project's whole gate, which is a minute
+  # or two that the three-platform matrix above has no reason to pay three times. Ubuntu only, for the same
+  # reason — a page drifting from the keel is not a per-platform fault.
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      # `make model` renders the diagrams through mermaid, and `check-drawio` inside the generated gate
+      # needs it too. Without Node the run reports what it skipped rather than passing on less.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: make test-docs

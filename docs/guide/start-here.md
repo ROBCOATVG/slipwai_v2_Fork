@@ -32,27 +32,28 @@ those come from the **chandlery**, which is the index of packages it can install
 
 ```console
 $ slipwai search
-  typescript     1.0.0  available    TypeScript — Node, Fastify, Vitest, Biome
-  python         1.0.0  available    Python — uv, FastAPI, pytest, ruff
-  go             1.0.0  available    Go — modules, chi, gofmt
-  java           1.0.0  available    Java — Maven, Spring Boot, JUnit
-  csharp         1.0.0  available    C# — .NET, minimal APIs, xUnit
-  rust           1.0.0  available    Rust — cargo, axum, clippy
+  go            language  1.0.0         available  backends: go
+  java          language  1.0.0         available  no description
+  java-quarkus  language  1.0.0         available  backends: java-quarkus
+  java-spring   language  1.0.0         available  backends: java-spring
+  python        language  1.0.0         installed  backends: python
+  typescript    language  1.0.0         available  backends: typescript
 ```
 
-`slipwai search postgres` narrows by what a package *answers* rather than by its name, which is the search
-you usually want: you know you need something that will talk to Postgres for you, not what it is called.
+The last column is what each package *answers*, and `slipwai search postgres` searches that rather than the
+name — which is usually the search you want: you know you need something that will talk to Postgres for
+you, not what it is called.
 
 Install one:
 
-```console
-$ slipwai install typescript
-typescript installed from the slipwai chandlery 1.0.0, published by ROBCOATVG (verified)
+```sh
+slipwai install typescript
 ```
 
-The first time you install from a publisher you have not met, you are asked once and the answer is
-remembered. Everything after that is silent. The file's checksum is checked against what the index listed
-every time, whoever published it.
+It says where the package came from, which version, who published it, and whether their signature is one
+you have trusted. The first time you install from a publisher you have not met you are asked once, and the
+answer is remembered; everything after that is silent. The file's checksum is checked against what the
+index listed every time, whoever published it.
 
 ## 3. Generate the repository
 
@@ -69,10 +70,10 @@ Create a new product monorepo. Press Enter to accept a shown default.
 Project name: bookings
 
 Delivery foundation:
-  event-modelling — everything above, plus events as the source of truth, built one stamped slice at
-    a time. Cost per slice stays flat as the system grows…
-  standard — walking skeleton, executable test and the CD gate, over state-stored persistence. The
-    cheaper start and the irreversible one…
+  event-modelling — Event Modeling — everything above, plus events as the source of truth, built one
+    stamped slice at a time. Cost per slice stays flat as the system grows…
+  standard — Standard — walking skeleton, executable test and the CD gate, over state-stored
+    persistence. The cheaper start and the irreversible one…
 Use Event Modeling? [Y/n]:
 
 Production target:
@@ -88,12 +89,31 @@ What does bookings own? (a sentence or two; Enter to decide later): Taking and c
 Bounded contexts bookings holds, comma-separated [bookings]: booking, availability
 Frontend (none/react-vite) [react-vite]:
 Browser app name [web]:
-Event store (memory/sqlite/postgres) [memory]:
-Staff authentication (none/keycloak) [none]:
-Customer authentication (none/keycloak) [none]:
 
-  bookings/ written — 927 files
+Event store:
+  Where events live. Every answer is an append-only log behind one port…
+
+  memory — In-memory — zero infrastructure, loses all truth on restart…
+  postgres — Postgres — append-only table, unique (stream, version) as the concurrency control
+Choose (memory/postgres) [postgres]: memory
+
+Staff authentication:
+  …
+Choose (none/keycloak) [none]:
+
+Customer authentication:
+  …
+Choose (none/keycloak) [none]:
+
+Output parent [~/code]:
+created: /Users/you/code/bookings
 ```
+
+A question with nothing to explain is the one-line form — `Language (typescript) [typescript]:`. One where
+the answers need describing prints them first and then asks, which is why `Event store` and the two
+authentication questions look different. In a terminal all of them are a list you move through with the
+arrow keys; the typed form above is what you get in a pipe, a script, or a terminal that cannot be put into
+raw mode.
 
 **The first question is the one that matters, and it is the only one that is hard to undo.** An event log
 folds down into tables whenever you decide it should, so a project can stop being event-sourced. State

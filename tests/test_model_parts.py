@@ -8,11 +8,18 @@ Their suites generate a project and come back in 3.3z.
 """
 from __future__ import annotations
 
+import re
 import unittest
+from pathlib import Path
 
 import checkout_packages  # noqa: F401
 
 from slipwai.project import biome, event_model, frontend, gitignore, stage_models
+
+#: The toolkit's own copy of the ladder's stage names, which runs inside a generated project where
+#: there is no slipwai to import. Read as text rather than imported: it sits outside the keel's
+#: package and importing it would make the keel's gate depend on a project runtime's imports.
+CHECKER = Path(__file__).resolve().parents[1] / "assets/toolkit/scripts/agents/models.py"
 
 
 class StagesTest(unittest.TestCase):
@@ -45,6 +52,22 @@ class StagesTest(unittest.TestCase):
         for stage in stage_models.STAGES:
             with self.subTest(stage=stage.key):
                 self.assertTrue(stage.role)
+
+    def test_the_toolkit_knows_every_stage_the_factory_writes(self) -> None:
+        """`.specify/models.json` is written from `STAGES` here and checked against `KNOWN_STAGES` there.
+
+        The two were separate lists and drifted: `mockups`, `chart`, `review` and `merge` were stages the
+        factory wrote and the project's own checker then called typos, so `make verify` was red on a
+        generated repository nobody had touched — the one state `docs/guide/start-here.md` promises. Held
+        as an equality rather than a subset, because the checker prints this tuple as "known" and a list
+        in a different order is a worse message, not a correct one.
+        """
+        source = CHECKER.read_text(encoding="utf-8")
+        found = re.search(r"KNOWN_STAGES = \((.*?)\n\)", source, re.S)
+        if found is None:
+            self.fail(f"{CHECKER} no longer declares KNOWN_STAGES as a literal tuple")
+        known = tuple(re.findall(r'"([^"]+)"', found.group(1)))
+        self.assertEqual(known, tuple(stage.key for stage in stage_models.STAGES))
 
     def test_the_skipper_has_a_role_of_its_own(self) -> None:
         """So a project can put a bigger model on deciding than on driving, without moving every
