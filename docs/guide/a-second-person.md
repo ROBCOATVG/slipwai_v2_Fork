@@ -42,20 +42,21 @@ merged anywhere:
 
 ```console
 $ slipwai fleet booking
-booking: the last 5 line(s) its captain wrote
+booking: the last 6 line(s) its captain wrote
   2026-10-08T09:14:48Z  claimed BOK-01
   2026-10-08T09:14:48Z  set BookingHeld — BOK-01
   2026-10-08T09:14:49Z  still going, 42k spent
   2026-10-08T09:14:49Z  demo of BOK-01: accepted
   2026-10-08T09:14:50Z  asked to merge: merge slice/BOK-01 into trunk after the full gate
+  2026-10-08T09:14:58Z  merged BOK-01 as a1b2c3d4
 
 $ python3 scripts/agents/clearance.py
 clearance: 3 of 3 slices cleared in booking
 ```
 
-**Read the first two lines, and then the last one.** The mark was set a second after the slice was claimed.
-The merge was not even asked for until four lines later, and nothing has performed it. `AVA-01` was cleared
-by line two.
+**Read the second line, and then the last one.** The mark was set one second after the slice was claimed.
+Nothing reached trunk until ten seconds later, and `AVA-01` was cleared by line two — eight seconds and four
+rungs before the thing it steers by existed anywhere but in one worktree.
 
 It is safe because of the rule the chart enforces: **one setter per mark**. `BookingHeld` has exactly one
 owner and one typed definition, so a second fairway building against it cannot be building against a

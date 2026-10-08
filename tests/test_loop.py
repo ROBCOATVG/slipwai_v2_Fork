@@ -118,6 +118,12 @@ class LoopTest(unittest.TestCase):
         assert "slices: []" in held, "the seeded model no longer ends on an empty slice list"
         model.write_text(held.replace("slices: []\n", SLICES), encoding="utf-8")
         (cls.project / "drive-stand-in.py").write_text(DRIVE, encoding="utf-8")
+        # A captain waits for the harbourmaster's answer to its merge request, bounded by `wait_bound`.
+        # Most of these cases run a captain with no harbourmaster behind it, which is the state they are
+        # about — so the bound is seconds here rather than the hour a real harbour allows.
+        harbour = cls.project / "harbour.json"
+        config = json.loads(harbour.read_text(encoding="utf-8"))
+        harbour.write_text(json.dumps({**config, "wait_bound": 0.05}, indent=2) + "\n", encoding="utf-8")
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -146,6 +152,10 @@ class LoopTest(unittest.TestCase):
 
     def kinds(self, fairway: str) -> list[str]:
         return [entry["kind"] for entry in self.entries(fairway)]
+
+    def git(self, *argv: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@local", *argv],
+                              cwd=self.project, capture_output=True, text=True, check=False)
 
 
     def test_the_chart_renders_from_the_model(self) -> None:
@@ -190,6 +200,60 @@ class LoopTest(unittest.TestCase):
         self.assertIn("mark-set", self.kinds("ordering"))
         self.assertIn("request", self.kinds("ordering"))
 
+    def test_a_merge_nobody_answers_parks_rather_than_waiting_for_ever(self) -> None:
+        """Nothing merges without the harbourmaster, and a wait with no end is indistinguishable from a run
+        that has stopped. With none running, the fairway says so in its own log."""
+        self.run_in("scripts/event-model/chart.py")
+        self.run_in("scripts/agents/captain.py", "ordering", "--once", drive=True)
+        parked = [one for one in self.entries("ordering") if one["kind"] == "parked"]
+        self.assertEqual(len(parked), 1)
+        self.assertIn("did not answer", parked[0]["why"])
+
+    def test_the_whole_loop_reaches_trunk_with_no_person_in_the_path(self) -> None:
+        """7.9's claim, end to end in a generated project, with both processes actually running.
+
+        A captain claims, drives, holds the slice to its gate and asks; a harbourmaster rebases, gates,
+        advances trunk and answers with the commit; the captain writes `merged`. Nobody is asked anything.
+
+        Two stand-ins, both named: `/drive` is the one above, and the project's gate is one line. What is
+        being proved is that the merge happens and trunk moves — that a real `make verify` passes on a
+        fresh generation is `make test-docs`'s job, and running it per case would make this suite minutes
+        long.
+        """
+        gate = self.project / "gate"
+        gate.mkdir(exist_ok=True)
+        (gate / "Makefile").write_text("verify:\n\t@echo 'verify: all gates passed'\n", encoding="utf-8")
+        manifest = self.project / "project.json"
+        held = json.loads(manifest.read_text(encoding="utf-8"))
+        manifest.write_text(json.dumps({**held, "layout": {**held["layout"], "delivery": "gate"}},
+                                       indent=2) + "\n", encoding="utf-8")
+        self.addCleanup(manifest.write_text, json.dumps(held, indent=2) + "\n", encoding="utf-8")
+
+        self.run_in("scripts/event-model/chart.py")
+        self.git("add", "-A")
+        self.git("commit", "--quiet", "-m", "the chart, and a gate that is one line")
+        trunk_was = self.git("rev-parse", "HEAD").stdout.strip()
+        # The berth's branch, made here because no berth is allocated in this test.
+        self.git("checkout", "--quiet", "-b", "slice/ORD-01")
+        (self.project / "placed.txt").write_text("ORD-01\n", encoding="utf-8")
+        self.git("add", "-A")
+        self.git("commit", "--quiet", "-m", "ORD-01")
+        self.git("checkout", "--quiet", "main")
+
+        with subprocess.Popen(
+                [sys.executable, "scripts/agents/harbourmaster.py", "--no-fetch", "--interval", "1"],
+                cwd=self.project, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) as keeper:
+            try:
+                done = self.run_in("scripts/agents/captain.py", "ordering", "--once", drive=True)
+            finally:
+                keeper.terminate()
+        self.assertIn("merged", self.kinds("ordering"), done.stdout + done.stderr)
+        landed = [one for one in self.entries("ordering") if one["kind"] == "merged"][0]
+        self.assertEqual(landed["commit"], self.git("rev-parse", "main").stdout.strip())
+        self.assertNotEqual(landed["commit"], trunk_was)
+        self.assertTrue((self.project / "placed.txt").is_file(),
+                        "trunk moved, and the checkout sitting on it moved with it")
+
     def test_it_holds_no_credential_and_the_merge_is_asked_for(self) -> None:
         """A berth with a token in it is a sandbox with a way out."""
         self.run_in("scripts/event-model/chart.py")
@@ -203,13 +267,18 @@ class LoopTest(unittest.TestCase):
         self.assertIn("no slices", done.stdout)
 
     def test_it_carries_a_mark_and_answers_the_request(self) -> None:
+        """Both outcomes are written. There is no `slice/ORD-01` branch in this case, so the answer is a
+        refusal that says so — which is the point: a request that left no line is one the captain waits on
+        for ever and nobody can explain afterwards."""
         self.run_in("scripts/event-model/chart.py")
         self.run_in("scripts/agents/captain.py", "ordering", "--once", drive=True)
         self.run_in("scripts/agents/harbourmaster.py", "--once", "--no-fetch")
         harbour = (self.project / ".slipwai/logs/harbour.jsonl").read_text(encoding="utf-8")
-        kinds = [json.loads(line)["kind"] for line in harbour.splitlines() if line.strip()]
-        self.assertIn("mark-set", kinds)
-        self.assertIn("granted", kinds)
+        lines = [json.loads(line) for line in harbour.splitlines() if line.strip()]
+        self.assertIn("mark-set", [one["kind"] for one in lines])
+        answers = [one for one in lines if one["kind"] in ("granted", "refused")]
+        self.assertEqual(len(answers), 1, lines)
+        self.assertIn("no branch slice/ORD-01", answers[0]["why"])
 
     def test_the_board_folds_what_the_run_wrote(self) -> None:
         self.run_in("scripts/event-model/chart.py")
@@ -224,11 +293,18 @@ class LoopTest(unittest.TestCase):
         self.assertIn("ORD-01", done.stdout)
 
     def test_the_run_state_overlay_is_folded_from_the_same_lines(self) -> None:
+        """The model page's colour, from the lines and from nothing else. The merge is answered here by a
+        stand-in for the harbourmaster, so the slice reaches the last state there is."""
         self.run_in("scripts/event-model/chart.py")
+        harbour = self.project / ".slipwai/logs/harbour.jsonl"
+        harbour.parent.mkdir(parents=True, exist_ok=True)
+        harbour.write_text(json.dumps({"v": 1, "t": "2026-10-08T09:00:00Z", "kind": "granted",
+                                       "fairway": "ordering", "request": "merge-ORD-01", "what": "merge",
+                                       "slice": "ORD-01", "commit": "a1b2c3d"}) + "\n", encoding="utf-8")
         self.run_in("scripts/agents/captain.py", "ordering", "--once", drive=True)
         done = self.run_in("scripts/agents/run-state.py", "--print")
         held = json.loads(done.stdout)
-        self.assertEqual(held["slices"]["ORD-01"]["state"], "demoed")
+        self.assertEqual(held["slices"]["ORD-01"]["state"], "merged")
         self.assertIn("OrderPlaced", held["marks"])
 
 

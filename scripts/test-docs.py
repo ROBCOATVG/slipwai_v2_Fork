@@ -232,8 +232,10 @@ def drive_bok01(project: Path) -> None:
         {"t": when(130), "kind": "mark-set", "fairway": "booking", "slice": "BOK-01", "mark": "BookingHeld"},
         {"t": when(90), "kind": "heartbeat", "fairway": "booking", "tokens": 42},
         {"t": when(60), "kind": "demo", "fairway": "booking", "slice": "BOK-01", "verdict": "accepted"},
-        {"t": when(30), "kind": "request", "fairway": "booking", "id": "r1", "what": "merge",
-         "detail": "merge slice/BOK-01 into trunk after the full gate"},
+        {"t": when(30), "kind": "request", "fairway": "booking", "id": "merge-BOK-01", "what": "merge",
+         "slice": "BOK-01", "detail": "merge slice/BOK-01 into trunk after the full gate"},
+        {"t": when(20), "kind": "merged", "fairway": "booking", "slice": "BOK-01",
+         "commit": "a1b2c3d4e5f6a7b8"},
     ])
 
 

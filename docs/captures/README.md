@@ -27,8 +27,10 @@ one, and `BIL-01` charges for one and steers by `OrderPlaced`.
 different stream — was cleared by that, with nothing merged.** That is the claim version 2 rests on, and
 `fleet-board.txt` and `chart-and-clearance.txt` are what it looked like.
 
-What the captures also show honestly: `merged 0`. The harbourmaster grants a merge and nothing performs
-one yet — section 14 of the plan, link 3.
+What the captures also show honestly: `merged 0`. On the day of that run the harbourmaster granted a merge
+and nothing performed one — section 14 of the plan, link 3. **Slice 7.9 closed that on 2026-10-08**, so a
+run today reaches trunk; these files are left as they were taken, because a capture edited to say what the
+code does now is a drawing again.
 
 ## Why `chandlery-search.txt` names its index
 

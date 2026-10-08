@@ -3038,6 +3038,20 @@ worth a row.**
     accounts for — a direct push, or a red older than any merge — parks for a person at once, because
     guessing who broke it would send a captain to rewrite somebody else's work. Captains keep building
     throughout: that work is not wasted, because a sibling is cleared by a mark and not by a merge.
+  *Answered while building it, 2026-10-08, and neither was in the design:*
+
+  - **A refusal has to say whether a berth could change the answer.** A conflict and a red gate are work on
+    code and the captain should go back in and try again; a branch that is not there and a trunk nobody here
+    can move are not, and a captain that retried those would drive a slice `attempts` more times to be told
+    the same thing. So `refused` carries `resolve`, and the captain reads it.
+  - **Advancing trunk with no remote is not the same action as with one.** With a forge it is a push and
+    nobody's working tree is touched. Without one there is only the local ref — and a harbour where the
+    person's own checkout is sitting on trunk would have that ref moved under them, which leaves their
+    working tree reading as a mass deletion. So that case is a fast-forward *in their checkout* when its
+    tracked files are clean, and a refusal naming the uncommitted changes when they are not. Untracked
+    files are not counted: they do not stop a fast-forward unless the merge wants the same path, and
+    `--ff-only` refuses that itself with a better sentence.
+
 - **The logs travel, and a claim comes with them.** The harbourmaster writes each log into
   `refs/slipwai/logs/<machine>` and pushes every pass; a captain takes `refs/slipwai/claims/<fairway>`
   before it claims and refuses with who holds it and since when. **Section 13's four questions were

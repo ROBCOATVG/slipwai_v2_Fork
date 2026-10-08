@@ -127,15 +127,18 @@ Say yes and the line goes in the log. Say no with notes and they go back into th
 
 ```console
 $ slipwai fleet booking
-booking: the last 5 line(s) its captain wrote
+booking: the last 6 line(s) its captain wrote
   2026-10-08T09:14:48Z  claimed BOK-01
   2026-10-08T09:14:48Z  set BookingHeld — BOK-01
   2026-10-08T09:14:49Z  still going, 42k spent
   2026-10-08T09:14:49Z  demo of BOK-01: accepted
   2026-10-08T09:14:50Z  asked to merge: merge slice/BOK-01 into trunk after the full gate
+  2026-10-08T09:14:58Z  merged BOK-01 as a1b2c3d4
 ```
 
-The timestamps are that run's; yours will be your own.
+The timestamps are that run's; yours will be your own. The last line is the harbourmaster's work, not the
+captain's: a captain holds no credential, so it asks, and the thing that holds them rebases the branch onto
+trunk, runs the whole gate there, and answers with the commit.
 
 **That is the fifteen minutes.** One slice, specified, modelled, charted, built, and accepted by a person
 who watched it work.

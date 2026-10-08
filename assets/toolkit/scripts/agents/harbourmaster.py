@@ -25,6 +25,31 @@ closed list, and it is checked against the request's own text rather than truste
 can explain afterwards. That is the same rule as every other log line here: a thing that wrote no line did
 not happen.
 
+**And a merge is performed, not just permitted.** For a long while `granted` was written and read by nothing,
+no `merged` line was written by anything, and the board said `merged: 0` for ever while slices were being
+accepted at their demos. A granted merge now rebases the slice branch onto trunk in a scratch worktree of
+this process's own, runs the project's own gate there, and advances trunk — then `granted` carries the
+commit, and the captain writes `merged` into its own log against it.
+
+Four things about how, each of which was a choice:
+
+- **One at a time, in the order they were asked.** Each gate then runs on a trunk that already holds every
+  merge before it, so a green result is evidence about the trunk the commit will actually land on. Gating
+  two in parallel wins nothing, because `make verify` is a whole-repo gate and a result measured against a
+  trunk that has since moved has to be measured again.
+- **A scratch worktree, never the berth.** The berth belongs to a captain that may still be writing in it,
+  and the person's own checkout belongs to the person. `make verify` needs no ports and no Docker — the
+  in-memory adapter is what the port's contract runs against — so the scratch worktree needs no berth
+  resources and is removed either way.
+- **The gate is the project's own `make verify`.** Exactly what the two-gate rule already names, so a
+  project that adds a check gets it at the merge for nothing. `make ci` was rejected because it wants
+  Docker or the network and a laptop without them could then never merge; a gate narrowed to the changed
+  paths was rejected because a narrow gate that passes where `verify` would fail is the worst outcome
+  available.
+- **A conflict is aborted and refused, naming the paths.** `git rebase --abort`, so nothing is left
+  half-done, and the captain resolves in its own berth — where the context is — and asks again. This
+  process stays credentials-and-gate only, which matters because it is the one thing here with push rights.
+
 Standalone and dependency-free, like everything under `scripts/`: this runs inside a generated project, which
 has no slipwai to import. `logs.py` and `berths.py` beside it are the keel's own modules, carried here by
 `make shared` and byte-identical to their source.
@@ -82,6 +107,12 @@ NEVER: tuple[tuple[str, str], ...] = (
     (r"(?i)--no-verify\b|--skip-checks?\b", "that skips the gate rather than passing it"),
 )
 HEARTBEAT = 15.0
+#: Where a merge is rebased and gated. Under `.slipwai/` so it is ignored by git and swept with the rest.
+SCRATCH = ROOT / ".slipwai/merge"
+#: What the branch for a slice is called, which `check-slice-scope` holds every branch to as well.
+BRANCH = "slice/{slice}"
+#: Used where nothing says otherwise. `origin/HEAD` answers it on a repository with a remote.
+DEFAULT_TRUNK = "main"
 
 
 def read_cursors() -> dict[str, int]:
@@ -221,6 +252,116 @@ def write_position(name: str) -> None:
     HARBOUR_CONFIG.write_text(json.dumps(whole, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+def git(*argv: str, where: Path | None = None) -> subprocess.CompletedProcess[str]:
+    """One git command, never raising: every caller here reads the code and says what it means."""
+    return subprocess.run(["git", *argv], cwd=where or ROOT, capture_output=True, text=True, check=False)
+
+
+def trunk() -> str:
+    """The branch a merge lands on: what `harbour.json` says, else what the remote calls its head, else main."""
+    named = config().get("trunk")
+    if isinstance(named, str) and named:
+        return named
+    found = git("symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD")
+    head = found.stdout.strip().removeprefix("origin/") if found.returncode == 0 else ""
+    return head or DEFAULT_TRUNK
+
+
+def gate() -> list[str]:
+    """The project's own full gate, where its Makefile is.
+
+    `layout.delivery` is `.` in a generated project and a subdirectory in an adopted one, which is the same
+    answer `./init` writes into the agent's own instructions — read from the manifest rather than assumed,
+    because a repository that keeps its Makefile elsewhere would otherwise be ungateable here.
+    """
+    try:
+        manifest = json.loads((ROOT / "project.json").read_text(encoding="utf-8"))
+        delivery = str((manifest.get("layout") or {}).get("delivery") or ".")
+    except (OSError, ValueError, UnicodeDecodeError):
+        delivery = "."
+    return ["make", "verify"] if delivery == "." else ["make", "-f", f"{delivery}/Makefile", "verify"]
+
+
+def base() -> str:
+    """What to rebase onto: the remote's trunk where there is one, else the local branch."""
+    name = trunk()
+    return f"origin/{name}" if git("rev-parse", "--verify", "--quiet", f"origin/{name}").returncode == 0 else name
+
+
+def conflicting() -> list[str]:
+    """The paths a rebase stopped on, read before it is aborted — afterwards there is nothing to read."""
+    found = git("diff", "--name-only", "--diff-filter=U", where=SCRATCH)
+    return sorted({line.strip() for line in found.stdout.splitlines() if line.strip()})
+
+
+def advance(name: str, commit: str) -> str:
+    """Move trunk to this commit, and say what went wrong, or nothing.
+
+    Pushed where there is a remote, because then nobody's working tree is touched and every checkout catches
+    up on its own next fetch. With no remote there is only the local ref — and if the person's own checkout
+    is sitting on trunk, moving the ref under it would leave their working tree looking like a mass
+    deletion, so that case is a fast-forward in their checkout when it is clean and a refusal when it is not.
+    """
+    if git("rev-parse", "--verify", "--quiet", "origin/" + name).returncode == 0:
+        pushed = git("push", "origin", f"{commit}:refs/heads/{name}")
+        return "" if pushed.returncode == 0 else (pushed.stderr or pushed.stdout).strip().splitlines()[-1]
+    head = git("symbolic-ref", "--quiet", "--short", "HEAD")
+    if head.returncode == 0 and head.stdout.strip() == name:
+        # Tracked changes only. An untracked file does not stop a fast-forward unless the merge wants to
+        # create that same path, and `--ff-only` refuses that case itself with a better sentence than a
+        # blanket check would — while a blanket check would refuse every harbour, since a run's own
+        # `.slipwai/` is untracked in anything but a generated project.
+        if git("status", "--porcelain", "--untracked-files=no").stdout.strip():
+            return (f"this checkout is on {name} with uncommitted changes, so trunk cannot be moved under "
+                    f"it. Commit or stash them and ask again")
+        moved = git("merge", "--ff-only", commit)
+        return "" if moved.returncode == 0 else (moved.stderr or moved.stdout).strip().splitlines()[-1]
+    moved = git("update-ref", f"refs/heads/{name}", commit)
+    return "" if moved.returncode == 0 else (moved.stderr or moved.stdout).strip().splitlines()[-1]
+
+
+def merge(slice_id: str) -> tuple[str, str, bool]:
+    """Rebase this slice onto trunk, gate it there, and advance trunk.
+
+    `(commit, "", False)` where it landed, or `("", why not, whether a berth can fix it)`. That last flag is
+    what tells a captain whether to go back into its berth and try again or to stop and park: a conflict and
+    a failed gate are work on code, and a missing branch or an unmovable trunk are not.
+
+    Everything happens in a scratch worktree made for this merge and removed afterwards either way, so a
+    failure leaves no half-rebased branch anywhere a captain or a person is working.
+    """
+    branch = BRANCH.format(slice=slice_id)
+    if git("rev-parse", "--verify", "--quiet", branch).returncode != 0:
+        return "", f"there is no branch {branch} to merge", False
+    git("fetch", "--quiet", "origin", trunk())
+    onto = base()
+    git("worktree", "remove", "--force", str(SCRATCH))  # a worktree left by a run that was killed
+    SCRATCH.parent.mkdir(parents=True, exist_ok=True)
+    made = git("worktree", "add", "--quiet", "--detach", str(SCRATCH), branch)
+    if made.returncode != 0:
+        return "", f"a worktree for {branch} could not be made ({(made.stderr or made.stdout).strip()})", False
+    try:
+        rebased = git("rebase", onto, where=SCRATCH)
+        if rebased.returncode != 0:
+            paths = conflicting()
+            git("rebase", "--abort", where=SCRATCH)
+            return "", (f"{branch} conflicts with {onto} in {', '.join(paths) or 'files git did not name'}. "
+                        f"The rebase was aborted, so nothing is half-done; resolve it in your own berth and "
+                        f"ask again"), True
+        done = subprocess.run(gate(), cwd=SCRATCH, capture_output=True, text=True, check=False)
+        if done.returncode != 0:
+            said = [line for line in (done.stdout + done.stderr).splitlines() if line.strip()]
+            return "", (f"the full gate failed on {branch} rebased onto {onto}: "
+                        f"{said[-1] if said else 'no output'}"), True
+        commit = git("rev-parse", "HEAD", where=SCRATCH).stdout.strip()
+        fault = advance(trunk(), commit)
+        if fault:
+            return "", f"{branch} passed the gate and trunk could not be moved: {fault}", False
+        return commit, "", False
+    finally:
+        git("worktree", "remove", "--force", str(SCRATCH))
+
+
 def never(detail: str) -> str | None:
     """Why this request is one the harbourmaster will never do, or None."""
     for pattern, why in NEVER:
@@ -229,21 +370,58 @@ def never(detail: str) -> str | None:
     return None
 
 
-def answer(entry: logs.Entry) -> logs.Entry:
-    """The harbour-log line one `request` gets: `granted` or `refused`, and always one of them."""
+def slice_asked(entry: logs.Entry) -> str:
+    """Which slice a merge request is about: the field where there is one, else the id it was given.
+
+    The id is `merge-<slice>` and has been since the captain first wrote one, so an older log still answers.
+    The field is what a reader should use, because an id is a name and names get reformatted.
+    """
+    named = entry.fields.get("slice")
+    if isinstance(named, str) and named:
+        return named
+    given = str(entry.fields.get("id", ""))
+    # Only where the id really is one of ours. An id of some other shape names nothing, and treating it as
+    # a slice would have this merge a branch whose name came from a string that was never about a branch.
+    return given.removeprefix("merge-") if given.startswith("merge-") else ""
+
+
+def answer(entry: logs.Entry) -> list[logs.Entry]:
+    """The harbour-log line(s) one `request` gets: `granted` or `refused`, and always one of them.
+
+    A granted merge is *performed* here before the line is written, so `granted` carries the commit trunk is
+    now at and a captain has something to write `merged` against. A merge that could not be done is a
+    refusal with the reason, which is the same outcome shape as a refusal of policy — the captain reads one
+    thing either way.
+    """
     fairway = str(entry.fields.get("fairway", ""))
     request = str(entry.fields.get("id", ""))
     what = str(entry.fields.get("what", ""))
     detail = str(entry.fields.get("detail", ""))
     if what not in ACTIONS:
-        return logs.entry("refused", harbour=True, fairway=fairway, request=request,
-                          why=f"{what!r} is not something a captain may ask for. It may ask for: "
-                              f"{', '.join(ACTIONS)}")
+        return [logs.entry("refused", harbour=True, fairway=fairway, request=request,
+                           why=f"{what!r} is not something a captain may ask for. It may ask for: "
+                               f"{', '.join(ACTIONS)}")]
     refusal = never(detail)
     if refusal is not None:
-        return logs.entry("refused", harbour=True, fairway=fairway, request=request,
-                          why=f"{refusal}. Asked: {detail}")
-    return logs.entry("granted", harbour=True, fairway=fairway, request=request, what=what)
+        return [logs.entry("refused", harbour=True, fairway=fairway, request=request,
+                           why=f"{refusal}. Asked: {detail}")]
+    if what != "merge":
+        return [logs.entry("granted", harbour=True, fairway=fairway, request=request, what=what)]
+    slice_id = slice_asked(entry)
+    if not slice_id:
+        return [logs.entry("refused", harbour=True, fairway=fairway, request=request,
+                           why="a merge request says which slice, in `slice` or in an id of `merge-<slice>`; "
+                               "this one says neither, and guessing which branch to merge is not a thing to "
+                               "guess at")]
+    commit, fault, resolvable = merge(slice_id)
+    if fault:
+        # `resolve` says whether going back into the berth could change the answer. A captain reads it to
+        # decide between another turn and a park, which is the difference between a conflict it can fix and
+        # a trunk nobody here can move.
+        return [logs.entry("refused", harbour=True, fairway=fairway, request=request, why=fault,
+                           resolve=resolvable)]
+    return [logs.entry("granted", harbour=True, fairway=fairway, request=request, what=what,
+                       slice=slice_id, commit=commit)]
 
 
 def allocation(fairway: str, taken: list[str]) -> logs.Entry:
@@ -272,7 +450,7 @@ def carried(entries: list[logs.Entry], taken: list[str]) -> list[logs.Entry]:
             if name not in taken:
                 taken.append(name)
         elif entry.kind == "request":
-            written.append(answer(entry))
+            written += answer(entry)
     return written
 
 
@@ -316,16 +494,19 @@ def once() -> int:
     """One pass: read what is new in every deck log, write what the harbour log needs. Returns lines written."""
     cursors = read_cursors()
     taken = allocated_already()
-    written: list[logs.Entry] = []
+    fresh: list[logs.Entry] = []
     for path in deck_logs():
         lines, reached = new_lines(path, cursors)
         try:
-            entries = logs.fold(lines)
+            fresh += logs.fold(lines)
         except logs.Unreadable as fault:
             unreadable(path, str(fault))
             continue
-        written += carried(entries, taken)
         cursors[key_of(path)] = reached
+    # By the clock rather than by file, so requests are answered in the order they were asked across every
+    # fairway and not in the order the directory happens to list. It is the merge that makes this matter:
+    # one at a time, each gated on a trunk that already holds the one before it.
+    written: list[logs.Entry] = carried(sorted(fresh, key=lambda one: one.t), taken)
     written += bank() or rung()
     if written:
         append(written)

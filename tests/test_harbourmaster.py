@@ -5,53 +5,13 @@ directory laid out the way a project is — rather than imported into the keel's
 """
 from __future__ import annotations
 
-import subprocess
-import sys
-import tempfile
 import unittest
-from pathlib import Path
 
 import checkout_packages  # noqa: F401
+from harbourmaster_fixture import Fixture, MergeFixture  # noqa: F401
 
 from slipwai import logs
-from slipwai.assets import TOOLKIT_ROOT
 
-AGENTS = TOOLKIT_ROOT / "scripts/agents"
-
-
-class Fixture(unittest.TestCase):
-    """A project laid out the way a generated one is, with the three scripts in it.
-
-    A mixin rather than a base other cases inherit tests from: a subclass of a case re-runs every test in
-    it, which costs a second a time and makes a failure appear three times under three names.
-    """
-
-    def setUp(self) -> None:
-        self.root = Path(tempfile.mkdtemp())
-        (self.root / "project.json").write_text("{}", encoding="utf-8")
-        place = self.root / "scripts/agents"
-        place.mkdir(parents=True)
-        for name in ("harbourmaster.py", "logs.py", "berths.py", "telegraph.py"):
-            (place / name).write_text((AGENTS / name).read_text(encoding="utf-8"), encoding="utf-8")
-        self.script = place / "harbourmaster.py"
-
-    def deck(self, feature: str, fairway: str, *entries: logs.Entry) -> Path:
-        path = self.root / logs.deck_path(feature, fairway)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("a", encoding="utf-8") as handle:
-            for entry in entries:
-                handle.write(entry.line())
-        return path
-
-    def run_once(self) -> subprocess.CompletedProcess:
-        return subprocess.run([sys.executable, str(self.script), "--once", "--no-fetch"],
-                              capture_output=True, text=True, cwd=self.root)
-
-    def harbour(self) -> list[logs.Entry]:
-        path = self.root / logs.HARBOUR
-        if not path.is_file():
-            return []
-        return logs.fold(path.read_text(encoding="utf-8").splitlines(), harbour=True)
 
 class HarbourTest(Fixture):
     def test_two_captains_marks_reach_each_other_through_the_harbour_log(self) -> None:

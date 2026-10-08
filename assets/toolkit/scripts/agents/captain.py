@@ -10,7 +10,8 @@ lines rather than asking the thing being controlled how it is getting on.
 Each turn it: fetches trunk and both logs; derives the fairway's state from its own `claimed` and `merged`
 lines; picks the next slice in split order that `clearance.py` allows; writes `claimed`; dispatches `/drive`
 for that slice in its berth; watches the deck log while it runs; reads the inbox at every boundary and
-enforces the receipt; and asks the harbourmaster for the merge, because a captain holds no credential.
+enforces the receipt; asks the harbourmaster for the merge, because a captain holds no credential; and
+writes `merged` against the commit the answer names.
 
 **Nothing it relies on is in the agent's answer.** Progress is a new line in the deck log. A stage that has
 written nothing for its wall budget is ended and `parked` with the reason — not because the agent said it was
@@ -76,6 +77,10 @@ DEFAULT_STAGE_MINUTES = 30
 DEFAULT_ATTEMPTS = 2
 #: The verdict that closes a slice, and the two that send it back. `logs.VERDICTS` is the whole set.
 ACCEPTED = "accepted"
+#: How often the harbour log is re-read while waiting for an answer to a request.
+ANSWER_POLL = 2.0
+#: Minutes a wait may last where `harbour.json` does not say. `half-ahead`'s number.
+DEFAULT_WAIT_MINUTES = 60
 
 
 def harbour() -> dict:
@@ -100,6 +105,49 @@ def attempts() -> int:
     """Re-dispatches of `/drive` one slice may have. `0` means one run and no retry."""
     held = harbour().get("attempts")
     return held if isinstance(held, int) and held >= 0 else DEFAULT_ATTEMPTS
+
+
+def wait_bound() -> float:
+    """Seconds any wait may last before it is a parked line with a reason."""
+    held = harbour().get("wait_bound")
+    return (held if isinstance(held, int | float) and held > 0 else DEFAULT_WAIT_MINUTES) * 60.0
+
+
+def harbour_entries() -> list[logs.Entry]:
+    """The harbour log, or nothing where it cannot be read.
+
+    Read rather than refused, unlike this fairway's own deck log: the harbour log is somebody else's file
+    and a captain that stopped dead because of a line in it would be stopped by another fairway's fault.
+    """
+    path = ROOT / logs.HARBOUR
+    if not path.is_file():
+        return []
+    try:
+        return logs.fold(path.read_text(encoding="utf-8").splitlines(), harbour=True)
+    except logs.Unreadable:
+        return []
+
+
+def answered(request: str) -> logs.Entry | None:
+    """The harbourmaster's answer to this request, or None while there is not one yet."""
+    return next((e for e in reversed(harbour_entries())
+                 if e.kind in ("granted", "refused") and str(e.fields.get("request", "")) == request), None)
+
+
+def await_answer(request: str, bound: float) -> logs.Entry | None:
+    """Wait for the answer to one request. None where the bound ran out before it came.
+
+    A captain holds no credential, so this is the one place its own progress depends on another process —
+    and a wait with no bound is indistinguishable from a run that has stopped, which is why there is one.
+    """
+    until = time.monotonic() + bound
+    while True:
+        found = answered(request)
+        if found is not None:
+            return found
+        if time.monotonic() >= until:
+            return None
+        time.sleep(ANSWER_POLL)
 
 
 def deck(feature: str, fairway: str) -> Path:
@@ -260,18 +308,22 @@ def dispatch(slice_id: str, feature: str, fairway: str) -> tuple[bool, str, list
     return finished, why, entries(feature, fairway)[started:]
 
 
-def work(slice_id: str, feature: str, fairway: str) -> tuple[bool, str]:
-    """One slice, start to finish. (did it finish, why it did not)."""
-    write(feature, fairway, logs.entry("claimed", fairway=fairway, slice=slice_id))
+def through_its_gate(slice_id: str, feature: str, fairway: str, bound: int) -> tuple[bool, str]:
+    """Drive the slice until its gate is satisfied, or say why it will not be. (satisfied, why not).
+
+    The gate is every mark the chart says this slice `sets`, plus a `demo`, written during the turn that
+    just ran. A demo that came back is driven again, up to `attempts`; anything else stops here, because a
+    turn that wrote none of what closes a slice has given no evidence that anything was built.
+    """
+    sent_back = 0
     promised = sets_of(slice_id)
-    bound, sent_back = attempts(), 0
     while True:
         finished, why, fresh = dispatch(slice_id, feature, fairway)
         if not finished:
             return False, why
         missing, verdict = owed(fresh, slice_id, promised)
         if not missing and verdict == ACCEPTED:
-            break
+            return True, ""
         if verdict and verdict != ACCEPTED:
             sent_back += 1
             if sent_back <= bound:
@@ -285,14 +337,70 @@ def work(slice_id: str, feature: str, fairway: str) -> tuple[bool, str]:
         return False, (f"this turn wrote no `demo` line for {slice_id}, so nothing says a person watched it "
                        f"work. `/drive` exiting 0 is the agent's account of itself, which is the one thing "
                        f"this loop does not read")
+
+
+def merged(slice_id: str, feature: str, fairway: str, bound: int) -> tuple[bool, str]:
+    """Ask for the merge until it lands or until asking again cannot change the answer.
+
+    A refusal says whether a berth could fix it. A conflict and a failed gate are work on code, so `/drive`
+    is dispatched again — in this fairway's own berth, where the context is — and the merge asked for
+    afresh, because trunk may have moved again in the meantime. A refusal nothing here can act on stops at
+    once rather than driving a slice four more times to be told the same thing.
+    """
+    for asked in range(bound + 1):
+        landed, why, resolvable = ask_to_merge(slice_id, feature, fairway, asked)
+        if landed:
+            return True, ""
+        if not resolvable:
+            return False, why
+        if asked == bound:
+            return False, f"{why}. That is {asked + 1} attempt(s), which is what `attempts` allows"
+        finished, fault, _ = dispatch(slice_id, feature, fairway)
+        if not finished:
+            return False, fault
+    return False, "unreachable"
+
+
+def work(slice_id: str, feature: str, fairway: str) -> tuple[bool, str]:
+    """One slice, start to finish. (did it finish, why it did not)."""
+    write(feature, fairway, logs.entry("claimed", fairway=fairway, slice=slice_id))
+    bound = attempts()
+    ok, why = through_its_gate(slice_id, feature, fairway, bound)
+    if not ok:
+        return False, why
     held = boundary(feature, fairway)
     if held:
         return False, held
     fire("before-merge", slice=slice_id, fairway=fairway)
+    return merged(slice_id, feature, fairway, bound)
+
+
+def ask_to_merge(slice_id: str, feature: str, fairway: str,
+                 asked: int) -> tuple[bool, str, bool]:
+    """Ask the harbourmaster to merge, and wait for its answer. (it landed, why not, worth another turn).
+
+    A captain holds no credential, so it asks; the harbourmaster rebases, gates and advances trunk, and its
+    `granted` carries the commit. `merged` is written here, in this fairway's own log, because one writer
+    per file is the rule that makes every other reader safe — and because the fairway's own log is where a
+    reader looks for what this fairway did.
+    """
+    request = f"merge-{slice_id}-{asked}" if asked else f"merge-{slice_id}"
     write(feature, fairway, logs.entry(
-        "request", fairway=fairway, id=f"merge-{slice_id}", what="merge",
+        "request", fairway=fairway, id=request, what="merge", slice=slice_id,
         detail=f"merge slice/{slice_id} into trunk after the full gate"))
-    return True, ""
+    found = await_answer(request, wait_bound())
+    if found is None:
+        return False, (f"the harbourmaster did not answer {request} within the wait bound. Nothing merges "
+                       f"without it, and a wait with no end is indistinguishable from a run that stopped"), False
+    if found.kind == "refused":
+        why = str(found.fields.get("why", "no reason given"))
+        return False, f"the merge was refused: {why}", bool(found.fields.get("resolve"))
+    commit = str(found.fields.get("commit", ""))
+    if not commit:
+        return False, (f"the merge of {slice_id} was granted and the answer names no commit, so nothing here "
+                       f"can say what trunk is at"), False
+    write(feature, fairway, logs.entry("merged", fairway=fairway, slice=slice_id, commit=commit))
+    return True, "", False
 
 
 def fetch() -> None:
@@ -315,7 +423,7 @@ def turn(fairway: str) -> str:
         return f"captain: nothing to start in {fairway} — {why}"
     done, fault = work(slice_id, feature, fairway)
     if done:
-        return f"captain: {slice_id} is through its gate; the merge is asked of the harbourmaster"
+        return f"captain: {slice_id} is through its gate and merged"
     write(feature, fairway, logs.entry("parked", fairway=fairway, why=f"{slice_id}: {fault}"))
     return f"captain: {fairway} parked at {slice_id} — {fault}"
 
