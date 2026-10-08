@@ -9,3 +9,8 @@ ruff==0.16.3
 # this package leans on everywhere. mypy is what catches a backend handed where a family was meant, and
 # an Optional read as though it were not; `compileall` catches neither.
 mypy==2.3.1
+# The suite reads YAML that nothing in `src/` does: the four workflow files `test_backstop.py` holds, the
+# chart `test_chart_render.py` renders, and the model `test_loop.py` drives a captain against. It was not
+# pinned here, so those tests ran on a laptop that happened to have PyYAML and errored in CI, which is the
+# shape of failure this file exists to stop — a gate that proves less on the machine that matters.
+PyYAML==6.0.3

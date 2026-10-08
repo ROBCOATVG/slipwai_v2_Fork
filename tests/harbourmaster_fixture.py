@@ -71,6 +71,11 @@ class MergeFixture(Fixture):
         (self.root / "project.json").write_text(json.dumps({"layout": {"delivery": "."}}), encoding="utf-8")
         (self.root / "harbour.json").write_text(json.dumps({"trunk": "main"}), encoding="utf-8")
         self.git("init", "--quiet", "--initial-branch=main")
+        # The repository's own identity, as any repository somebody has committed in has. Without it a
+        # rebase that replays a commit cannot write one, and git only guesses from the hostname where the
+        # hostname has a domain — so this passed on a laptop and refused every replayed merge in CI.
+        self.git("config", "user.name", "t")
+        self.git("config", "user.email", "t@local")
         # As a generated project has it: the logs are a run's own working state and never trunk's history.
         (self.root / ".gitignore").write_text(".slipwai/\n", encoding="utf-8")
         (self.root / "Makefile").write_text(self.GATE, encoding="utf-8")

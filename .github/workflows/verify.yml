@@ -99,4 +99,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      # mermaid renders through a headless Chromium, and Chromium's own sandbox cannot initialise on a
+      # runner. Without this the page's `make model` output goes unchecked — the gate says so rather than
+      # passing, which is how this was found, but a check that is always skipped is not a check.
+      - name: Chromium without the sandbox a runner cannot give it
+        run: printf '%s' '{"args":["--no-sandbox","--disable-dev-shm-usage"]}' > /tmp/mermaid-puppeteer.json
       - run: make test-docs
+        env:
+          MERMAID_PUPPETEER_CONFIG: /tmp/mermaid-puppeteer.json

@@ -64,6 +64,31 @@ def fairways() -> list[str]:
 
 
 def alive(pid: int) -> bool:
+    """Whether that process is still running. Asked, never acted on.
+
+    **`os.kill(pid, 0)` is not a question on Windows.** There `os.kill` is `TerminateProcess`, so the
+    signal number is the exit code and 0 is as fatal as any other — this function killed every process it
+    was asked about, which is why `fleet list` and a second `fleet start` reported nothing running: they
+    had just ended it. So Windows is asked through the process handle instead.
+
+    A process that exited with code 259 reads as running on Windows, because that is the same value as
+    `STILL_ACTIVE` and the API has no way to tell them apart. Nothing here exits 259.
+    """
+    if sys.platform == "win32":  # pragma: no cover - the other platform's branch
+        import ctypes  # noqa: PLC0415 - only this branch needs it
+
+        query_limited_information, still_active = 0x1000, 259
+        kernel = ctypes.windll.kernel32
+        handle = kernel.OpenProcess(query_limited_information, False, pid)
+        if not handle:
+            return False
+        try:
+            code = ctypes.c_ulong()
+            if not kernel.GetExitCodeProcess(handle, ctypes.byref(code)):
+                return False
+            return code.value == still_active
+        finally:
+            kernel.CloseHandle(handle)
     try:
         os.kill(pid, 0)
     except (OSError, ProcessLookupError):

@@ -333,6 +333,12 @@ def merge(slice_id: str) -> tuple[str, str, bool]:
     branch = BRANCH.format(slice=slice_id)
     if git("rev-parse", "--verify", "--quiet", branch).returncode != 0:
         return "", f"there is no branch {branch} to merge", False
+    # A rebase that replays a commit writes one, and writing one needs a committer. Asked before the
+    # worktree is made rather than read out of a failed rebase: git's own answer there is nine lines of
+    # advice about `--global`, inside a refusal that has already said something else went wrong.
+    if git("var", "GIT_COMMITTER_IDENT").returncode != 0:
+        return "", ("this repository has no `user.name` and `user.email`, and a rebase writes commits. "
+                    "`git config user.email you@example.com` here, or set one globally"), False
     git("fetch", "--quiet", "origin", trunk())
     onto = base()
     git("worktree", "remove", "--force", str(SCRATCH))  # a worktree left by a run that was killed

@@ -523,6 +523,26 @@ def check_chart_block(page: str, text: str, project: Path) -> list[str]:
     return findings
 
 
+#: A command this gate cannot run on this machine, and what in its output says so. A *skip*, printed and
+#: counted, never a pass: the whole point of the three tiers is that nothing is silently unchecked, and a
+#: machine that could not run something has to say which something.
+CANNOT = (
+    ("make verify", ("npm", "not found"), "Node is not installed, and `check-drawio` needs it"),
+    ("make model", ("Failed to launch", "browser"),
+     "mermaid renders through a headless Chromium and none will start here; "
+     "MERMAID_PUPPETEER_CONFIG with `--no-sandbox` is what a container or a runner needs"),
+    ("make model", ("npm", "not found"), "Node is not installed, and the renderer runs on it"),
+)
+
+
+def refused_here(command: str, output: str) -> str | None:
+    """Why this machine could not run that command, or None where it ran."""
+    for named, markers, why in CANNOT:
+        if named == command and all(marker in output for marker in markers):
+            return why
+    return None
+
+
 def run(command: str, where: Path) -> str:
     argv = command.split()
     if argv[0] == "slipwai":
@@ -604,8 +624,8 @@ def main(argv: list[str]) -> int:
                 continue
             assert isinstance(step, Run)
             output = run(step.command, where[step.where])
-            if step.command == "make verify" and "npm" in output and "not found" in output:
-                skipped.append(f"{step.command} — Node is not installed, and `check-drawio` needs it")
+            if (why := refused_here(step.command, output)) is not None:
+                skipped.append(f"{step.command} — {why}")
                 continue
             compare = same_release if step.command == "slipwai --version" else missing
             if gone := compare(one.output, output):

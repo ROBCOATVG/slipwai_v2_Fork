@@ -21,6 +21,10 @@ typecheck: ## Byte-compile everything, then type-check it with mypy
 	python3 -m compileall -q src scripts tests
 	./scripts/verify --typecheck-only
 
+# `.python-tools` is on the path beside `src`, because the pinned tooling is where PyYAML is: the suite
+# reads YAML that nothing in `src/` does, and a test that imports it has to find the version this
+# repository pinned rather than whatever the machine happens to carry.
+TEST_PATH := src:.python-tools
 # The suite, or a slice of it: `TESTS="test_registry test_cli"` runs those modules, `SKIP="test_registry"`
 # every module but those. CI holds the gate in parallel jobs this way; `make verify` still runs the whole
 # suite.
@@ -28,7 +32,7 @@ ALL_TESTS := $(patsubst tests/%.py,%,$(wildcard tests/test_*.py))
 TESTS ?= $(if $(SKIP),$(filter-out $(SKIP),$(ALL_TESTS)),)
 .PHONY: test
 test: ## Run the keel's test suite, or a slice: TESTS="test_a test_b", or SKIP="test_a"
-	$(if $(TESTS),PYTHONPATH=src:tests python3 -m unittest -v $(TESTS),PYTHONPATH=src python3 -m unittest discover -s tests -v)
+	$(if $(TESTS),PYTHONPATH=$(TEST_PATH):tests python3 -m unittest -v $(TESTS),PYTHONPATH=$(TEST_PATH) python3 -m unittest discover -s tests -v)
 
 # The fast half of the suite: everything that does not generate a project, shell out, or reach the network.
 # A slice that adds a test of that kind adds its module to SLOW in the same commit, because the value of
@@ -41,7 +45,7 @@ SLOW := test_generated test_upgrade test_conformance test_chart test_chart_rende
 UNIT_TESTS := $(filter-out $(SLOW),$(ALL_TESTS))
 .PHONY: unit
 unit: ## The fast tests only — the per-increment gate, with the slow modules left out
-	$(if $(UNIT_TESTS),PYTHONPATH=src:tests python3 -m unittest $(UNIT_TESTS),@echo 'unit: no test modules yet')
+	$(if $(UNIT_TESTS),PYTHONPATH=$(TEST_PATH):tests python3 -m unittest $(UNIT_TESTS),@echo 'unit: no test modules yet')
 
 .PHONY: glossary
 glossary: ## Rewrite GLOSSARY.md from the plan's vocabulary (tests/test_glossary.py holds them in step)

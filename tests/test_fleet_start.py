@@ -6,12 +6,14 @@ thing that died at iteration two.
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 
 import checkout_packages  # noqa: F401
 
@@ -91,6 +93,36 @@ class CastOffTest(Fixture):
         done = self.run_it("start")
         self.assertEqual(self.pids(), before)
         self.assertIn("already running", done.stdout)
+
+
+class AliveTest(unittest.TestCase):
+    """Asking whether a process is running must not end it.
+
+    `os.kill(pid, 0)` is a signal on Unix and `TerminateProcess` on Windows, where the signal number is the
+    exit code and 0 is as fatal as any other. So this read as "nothing is running" on Windows for the best
+    of reasons: it had just killed everything it asked about. Run on every platform, because a check that
+    only runs where the bug was not is not a check.
+    """
+
+    fleet: Any
+
+    def setUp(self) -> None:
+        spec = importlib.util.spec_from_file_location("fleet_script", AGENTS / "fleet.py")
+        assert spec is not None and spec.loader is not None
+        self.fleet = importlib.util.module_from_spec(spec)
+        sys.dont_write_bytecode = True
+        spec.loader.exec_module(self.fleet)
+
+    def test_asking_does_not_kill(self) -> None:
+        child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+        self.addCleanup(child.wait)
+        self.addCleanup(child.kill)
+        self.assertTrue(self.fleet.alive(child.pid))
+        self.assertTrue(self.fleet.alive(child.pid), "the first ask ended it")
+        self.assertIsNone(child.poll(), "asking whether it was running stopped it")
+
+    def test_a_pid_nothing_is_using_reads_as_gone(self) -> None:
+        self.assertFalse(self.fleet.alive(999999))
 
 
 class StopTest(Fixture):
