@@ -1332,7 +1332,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 105 of 137 slices done** — phase 1 6/6, phase 2 9/9, phase 3 18/22, phase 4 7/7, phase 5 29/29, phase 6 11/13, phase 7 15/16, phase 8 5/8, phase 9 5/8, phase 10 0/6, phase 11 0/5, phase 12 0/4, phase 13 0/4. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 105 of 138 slices done** — phase 1 6/6, phase 2 9/9, phase 3 18/22, phase 4 7/7, phase 5 29/29, phase 6 11/13, phase 7 15/16, phase 8 5/8, phase 9 5/8, phase 10 0/6, phase 11 0/5, phase 12 0/4, phase 13 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1738,7 +1738,7 @@ Depends on: phase 7's 7.8 to 7.10, which close the loop on one machine first. No
 not a merge-conflict strategy: everything here is a forge, a ref and a log, which is also what keeps it
 working for one person with no network at all.
 
-### Phase 13. A setup worth sharing, after 2.0.0
+### Phase 13. Quickstarts, after 2.0.0
 
 Asked 2026-10-08. Generating a project today is a language and nothing else: the chandlery is searched, one
 language is installed, and the extensions are a menu `./init` shows once and a person answers from memory.
@@ -1746,20 +1746,28 @@ Somebody who has decided *this is how we start a project here* — TypeScript, c
 extensions — has no way to say it once, and every repository after the first is that decision re-made from
 recollection.
 
-The word is deliberately not **profile**: a profile is `standard` or `event-modelling`, the delivery
-foundation, and it is the one answer that is hard to undo. This is the opposite — a set of packages and
-elections, every one of them reversible, and naming it after the irreversible thing would be the first
-mistake.
+**It is called a quickstart because of who it is for.** The owner's second thought was the better one: the
+person this helps most is the one who does not know what `uipro` is, or which of six languages answers the
+npm workspace, or that an extension has to be elected as well as installed. A quickstart is one answer to
+all of that. The method's own word for a kit of parts would have been clearer to the method and no help at
+all to them.
+
+It is *not* a `--profile`, and the two must not be run together in a person's head. A profile is `standard`
+or `event-modelling`, the delivery foundation, and section 4 calls it the one answer that is hard to undo.
+A quickstart is a set of reversible choices — which languages, which axes, which extensions — and naming it
+after the irreversible thing would be the first mistake. A quickstart may *name* a profile; it never
+replaces the question.
 
 | Slice | What | From | Size | Done when | Status |
 |---|---|---|---|---|---|
-| 13.1 | The **rig**: a named set of packages to install and extensions to elect, as one file — `slipwai rig save <name>` writes what this project actually has, `slipwai rig show <name>` says what it would do, and `slipwai generate --rig <name>` installs the languages, answers the axes it names, and elects the extensions. Read from `~/.slipwai/rigs/` and from a path, so one is kept beside a team's own repository | new (owner, 2026-10-08) | M | A second project is generated with the same languages, the same axes and the same extensions as the first, from one name and no remembering |  |
-| 13.2 | A rig travels: `kind: rig` through the chandlery and the four `slipwai package` verbs, so an organisation publishes its own and `slipwai install <rig>` fetches it. It names packages by version range, never by snapshot, so a rig does not pin a team to the day it was written | new | M | `slipwai search` lists a published rig beside the languages, and installing one makes `--rig` work with nothing else set up |  |
-| 13.3 | **The guard question is asked once per rig, not once per project.** A rig that elects an extension declaring a guard carries that agreement, because a person who said yes when they wrote the rig has said yes — and a rig whose guards changed since asks again, naming what is new | new | S | Electing a rig's extensions asks nothing a person already answered, and a rig that gained a guard asks about that one |  |
-| 13.4 | The one the owner asked for, shipped as an example rather than a default: a rig of TypeScript, `codegraph`, `uipro` and `ux-gates`, in `docs/reference/` and in the chandlery | new (owner) | S | `slipwai generate bookings --rig typescript-ui` produces what that owner would have assembled by hand |  |
+| 13.1 | The quickstart: a named set of languages to install, axis answers to give and extensions to elect, as one file. `slipwai quickstart save <name>` writes what this project actually has, `slipwai quickstart show <name>` says in plain words what it would do before it does any of it, and `slipwai generate --quickstart <name>` carries it out. Read from `~/.slipwai/quickstarts/` and from a path, so one lives beside a team's own repository | new (owner, 2026-10-08) | M | A second project is generated with the same languages, the same axes and the same extensions as the first, from one name and no remembering |  |
+| 13.2 | **The interview offers them first**, which is the slice that serves the person this is for: before the delivery foundation, `slipwai generate` asks whether to start from a quickstart, lists what each one is *in a sentence about the product it suits* rather than in package names, and leaves every question it answers visible and changeable afterwards. Declining is one keystroke and the interview is exactly what it is today | new (owner) | M | Somebody who has never heard of a chandlery generates a working TypeScript project with the UI extensions elected, having answered one question; and the transcript still shows them what was chosen on their behalf |  |
+| 13.3 | A quickstart travels: `kind: quickstart` through the chandlery and the four `slipwai package` verbs, so an organisation publishes its own and `slipwai install <name>` fetches it. It names packages by version range, never by snapshot, so a quickstart does not pin a team to the day it was written | new | M | `slipwai search` lists a published quickstart beside the languages, and installing one makes `--quickstart` work with nothing else set up |  |
+| 13.4 | **The guard question is asked once per quickstart, not once per project.** One that elects an extension declaring a guard carries that agreement, because a person who said yes when they wrote it has said yes — and one whose guards changed since asks again, naming only what is new | new | S | Electing a quickstart's extensions asks nothing a person already answered, and one that gained a guard asks about that one |  |
+| 13.5 | The one the owner asked for, shipped as an example rather than as a default: TypeScript, `codegraph`, `uipro` and `ux-gates`, in `docs/reference/` and in the chandlery. An example, because a default quickstart is a default set of third-party tools, and nobody asked this keel to choose those | new (owner) | S | `slipwai generate bookings --quickstart typescript-ui` produces what that owner would have assembled by hand |  |
 
-Depends on: phase 6's packaging, 6.1d's guards (13.3 is their second question), and 12.4's decision about
-which install route is supported — a rig that installed a plugin one way while `./init` installed it
+Depends on: phase 6's packaging, 6.1d's guards (13.4 is their second question), and 12.4's decision about
+which install route is supported — a quickstart that installed a plugin one way while `./init` installed it
 another would be the fourth source of truth phase 12 exists to avoid.
 
 ### Phase 12. Native to the harness, last
