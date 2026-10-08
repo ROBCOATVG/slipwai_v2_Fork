@@ -254,3 +254,90 @@ class HostedElsewhereTest(unittest.TestCase):
         """Which is where a pull request from somebody nobody knows is actually decided."""
         said = (self.channel / ".github/workflows/channel.yml").read_text(encoding="utf-8")
         self.assertIn("slipwai channel check . --fetch", said)
+
+
+class FrontPageTest(unittest.TestCase):
+    """A channel is a static site and the root of one was a 404. The machine's answer was there and the
+    person's was not, which is the wrong way round for a URL somebody is sent to."""
+
+    def setUp(self) -> None:
+        self.area = Path(tempfile.mkdtemp())
+        self.channel = self.area / "channel"
+        channel_new.write("The test chandlery", self.channel, "https://example.invalid/chan")
+        package_new.write("extension", "lens", self.area, CORE)
+        (self.area / "lens/VERSION").write_text("1.0.0\n", encoding="utf-8")
+
+    def register(self, **kw: object) -> None:
+        package_release.register(self.area / "lens", self.channel, "ACME", **kw)  # type: ignore[arg-type]
+
+    def page(self) -> str:
+        return (self.channel / "index.html").read_text(encoding="utf-8")
+
+    def test_build_writes_the_page_beside_the_index(self) -> None:
+        self.register()
+        self.assertTrue((self.channel / "index.html").is_file())
+        self.assertTrue((self.channel / "slipwai-languages/index.json").is_file())
+
+    def test_it_lists_what_the_channel_serves(self) -> None:
+        self.register()
+        said = self.page()
+        self.assertIn("lens", said)
+        self.assertIn("1.0.0", said)
+        self.assertIn("ACME", said)
+
+    def test_it_gives_the_command_that_installs_each_one(self) -> None:
+        """Which is what somebody who opened the URL came for."""
+        self.register()
+        self.assertIn("slipwai extension install lens", self.page())
+
+    def test_a_language_gets_the_other_verb(self) -> None:
+        package_new.write("language", "rust", self.area, CORE)
+        (self.area / "rust/VERSION").write_text("1.0.0\n", encoding="utf-8")
+        package_release.register(self.area / "rust", self.channel, "ACME")
+        self.assertIn("slipwai install rust", self.page())
+
+    def test_it_names_where_the_channel_is_served_from(self) -> None:
+        self.register()
+        self.assertIn("SLIPWAI_CHANDLERY=https://example.invalid/chan", self.page())
+
+    def test_an_empty_channel_says_so_rather_than_showing_an_empty_table(self) -> None:
+        package_release.rebuild(self.channel, "The test chandlery")
+        self.assertIn("serves nothing yet", self.page())
+
+    def test_one_row_per_package_and_it_is_the_newest(self) -> None:
+        """A list showing every version of everything is a list nobody scans."""
+        self.register()
+        (self.area / "lens/VERSION").write_text("1.1.0\n", encoding="utf-8")
+        self.register()
+        said = self.page()
+        self.assertEqual(said.count("<tr>"), 2)   # the header row, and one package
+        self.assertIn("1.1.0", said)
+
+    def test_a_description_somebody_wrote_is_escaped(self) -> None:
+        import json as _json
+        self.register()
+        path = next((self.channel / "entries").glob("*.json"))
+        held = _json.loads(path.read_text(encoding="utf-8"))
+        held["description"] = "<script>alert(1)</script>"
+        path.write_text(_json.dumps(held), encoding="utf-8")
+        package_release.rebuild(self.channel, "The test chandlery")
+        self.assertNotIn("<script>alert(1)</script>", self.page())
+
+    def test_it_needs_no_script_to_show_the_list(self) -> None:
+        """A page that read its own JSON at load would be blank wherever script is off, for a list that
+        is already known when it is written."""
+        self.register()
+        self.assertNotIn("<script", self.page())
+        self.assertNotIn("fetch(", self.page())
+
+    def test_it_carries_the_mark_and_its_own_icon(self) -> None:
+        self.register()
+        self.assertIn('class="mark"', self.page())
+        self.assertIn('rel="icon"', self.page())
+
+    def test_the_channel_remembers_its_name_and_base(self) -> None:
+        """So `channel build` need not be told them again, and CI need not pass them."""
+        import json as _json
+        held = _json.loads((self.channel / "channel.json").read_text(encoding="utf-8"))
+        self.assertEqual(held["name"], "The test chandlery")
+        self.assertEqual(held["base"], "https://example.invalid/chan")

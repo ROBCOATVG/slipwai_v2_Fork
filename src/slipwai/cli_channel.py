@@ -13,7 +13,7 @@ from .assets import this_command
 from .channel import check
 from .channel_new import write
 from .errors import GenerationError, refuse
-from .package_release import rebuild
+from .package_release import rebuild, settings
 
 VERBS = ("new", "build", "check")
 
@@ -28,6 +28,8 @@ def channel_main(argv: list[str]) -> None:
     parser.add_argument("verb", choices=VERBS)
     parser.add_argument("directory", nargs="?", default=".", help="the channel's directory (default: here)")
     parser.add_argument("--name", default="", metavar="<title>", help="`new` only: what the README calls it")
+    parser.add_argument("--base", default="", metavar="<url>",
+                        help="where this channel is served from, for its front page to show")
     parser.add_argument("--fetch", action="store_true",
                         help="`check` only: fetch each file a publisher hosts elsewhere and hold it to its "
                              "digest. What CI does; off by default so a local check waits on no download")
@@ -35,13 +37,15 @@ def channel_main(argv: list[str]) -> None:
     place = Path(parsed.directory).expanduser()
     try:
         if parsed.verb == "new":
-            for path in write(parsed.name or place.name or "a slipwai channel", place):
+            for path in write(parsed.name or place.name or "a slipwai channel", place, parsed.base):
                 print(f"  {path}")
             print(f"Serve it and name its base URL in SLIPWAI_CHANDLERY. "
                   f"`{prog} check {place}` is what a pull request to it is held to")
             return
         if parsed.verb == "build":
-            print(f"{rebuild(place)} written from {place / 'entries'}")
+            held = settings(place)
+            written = rebuild(place, parsed.name or held.get("name", ""), parsed.base or held.get("base", ""))
+            print(f"{written} and {place / 'index.html'} written from {place / 'entries'}")
             return
         findings = check(place, parsed.fetch)
     except GenerationError as error:

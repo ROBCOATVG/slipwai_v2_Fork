@@ -6,17 +6,25 @@ the public channel honest: it is tested by the code every private channel runs, 
 """
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from .errors import GenerationError
-from .package_release import DOCUMENT, ENTRIES
+from .package_release import DOCUMENT, ENTRIES, SETTINGS
 
 SERVING = DOCUMENT.rsplit("/", 1)[0]
 
 
-def files(name: str) -> dict[str, str]:
+
+
+
+def files(name: str, base: str = "") -> dict[str, str]:
     """Every file a channel repository starts with."""
     return {
+        # What the front page calls this channel and where it is served from. Written once so `build`
+        # need not be told them again, and read by nothing else — the client is told the base by
+        # `SLIPWAI_CHANDLERY` and never by the channel.
+        SETTINGS: json.dumps({"name": name, "base": base}, indent=2, ensure_ascii=False) + "\n",
         f"{ENTRIES}/README.md": ENTRIES_README,
         "README.md": README.format(name=name),
         "CONTRIBUTING.md": CONTRIBUTING.format(name=name),
@@ -38,12 +46,12 @@ def occupied(into: Path) -> list[str]:
     return sorted(one.name for one in into.iterdir() if one.name not in ALLOWED)
 
 
-def write(name: str, into: Path) -> list[str]:
+def write(name: str, into: Path, base: str = "") -> list[str]:
     """Write the channel under `into`, or refuse a directory that already holds something of its own."""
     if (found := occupied(into)):
         raise GenerationError(f"{into} already holds {', '.join(found[:5])}. A channel is a whole "
                               f"repository, so it is written into an empty directory or a fresh clone")
-    for path, text in files(name).items():
+    for path, text in files(name, base).items():
         target = into / path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(text, encoding="utf-8")

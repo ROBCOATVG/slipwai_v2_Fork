@@ -39,11 +39,24 @@ from .language_release import ReleaseError, pack, read_package
 
 #: Where a channel keeps one file per release, and the document built from them.
 ENTRIES = "entries"
+#: What a channel calls itself and where it is served from, written once by `channel new`. Read here
+#: rather than passed around: `register` rebuilds a channel too, and a page titled after whatever
+#: directory it happened to be cloned into is the kind of thing nobody notices until it is published.
+SETTINGS = "channel.json"
 DOCUMENT = "slipwai-languages/index.json"
 FORMAT = 2
 #: What an entry declares about itself beyond the manifest. Read off the package or given by the publisher;
 #: none of it is typed twice.
 CARRIED = ("publisher", "description", "tags")
+
+
+def settings(channel: Path) -> dict:
+    """What a channel calls itself and where it is served from, or nothing where it says neither."""
+    try:
+        held = json.loads((channel / SETTINGS).read_text(encoding="utf-8"))
+    except (OSError, ValueError, UnicodeDecodeError):
+        return {}
+    return held if isinstance(held, dict) else {}
 
 
 def digest(path: Path) -> str:
@@ -132,12 +145,21 @@ def document(entries: list[dict]) -> dict:
     return {"index": FORMAT, BLOCK[FORMAT]: dict(sorted(packages.items()))}
 
 
-def rebuild(channel: Path) -> Path:
-    """Write the channel's index from its entry files, and return where it went."""
+def rebuild(channel: Path, name: str = "", base: str = "") -> Path:
+    """Write the channel's index and its front page from its entry files. Returns where the index went.
+
+    Both, because a channel is a static site and the root of one was a 404: the machine's answer was
+    there and the person's was not, which is the wrong way round for a URL somebody is sent to. Generated
+    together so a release that changes one changes the other, and neither is edited by hand.
+    """
+    from .channel_page import page
+    held = settings(channel)
+    name, base = name or str(held.get("name") or channel.name), base or str(held.get("base") or "")
+    entries = entries_in(channel)
     path = channel / DOCUMENT
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(document(entries_in(channel)), indent=2, ensure_ascii=False) + "\n",
-                    encoding="utf-8")
+    path.write_text(json.dumps(document(entries), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    (channel / "index.html").write_text(page(name or channel.name, entries, base), encoding="utf-8")
     return path
 
 
