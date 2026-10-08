@@ -25,11 +25,24 @@ def files(name: str) -> dict[str, str]:
     }
 
 
+#: What a directory may already hold and still count as empty. A fresh clone of the repository somebody
+#: made for this is the normal place to run `channel new`, and it has a `.git` in it — refusing that sent
+#: people to an empty directory they then had to turn into a repository by hand.
+ALLOWED = {".git", ".gitignore", ".DS_Store", "README.md", "LICENSE"}
+
+
+def occupied(into: Path) -> list[str]:
+    """What is in the way, or nothing. Named rather than counted, so a refusal says what to move."""
+    if not into.exists():
+        return []
+    return sorted(one.name for one in into.iterdir() if one.name not in ALLOWED)
+
+
 def write(name: str, into: Path) -> list[str]:
-    """Write the channel under `into`, or refuse a directory that already holds something."""
-    if into.exists() and any(into.iterdir()):
-        raise GenerationError(f"{into} already holds something. A channel is a whole repository, so it is "
-                              f"written into an empty directory or none at all")
+    """Write the channel under `into`, or refuse a directory that already holds something of its own."""
+    if (found := occupied(into)):
+        raise GenerationError(f"{into} already holds {', '.join(found[:5])}. A channel is a whole "
+                              f"repository, so it is written into an empty directory or a fresh clone")
     for path, text in files(name).items():
         target = into / path
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -77,6 +90,19 @@ name an earlier channel lists is that channel's.
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). It is four commands.
+
+## Which keel checks this
+
+CI installs `slipwai` from PyPI and runs `slipwai channel check .` — the keel's own code, not this
+repository's, because a channel that checks itself is only as good as that channel.
+
+To check against a keel that is not on PyPI yet, set a repository variable:
+
+```sh
+gh variable set SLIPWAI_KEEL -R <owner>/<repo> --body 'git+https://github.com/ROBCOATVG/slipwai@main'
+```
+
+Unset it once the version you need is published.
 """
 
 CONTRIBUTING = """# Publishing to {name}
@@ -133,7 +159,19 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-      - run: python -m pip install --disable-pip-version-check slipwai
+      # Which keel checks this channel. `slipwai` from PyPI is the answer once version 2 is published
+      # there; until then it is not, and a channel created today would install a keel with no `channel`
+      # verb in it and fail on the first push with a usage error. So it is a repository variable:
+      #
+      #   gh variable set SLIPWAI_KEEL -R <owner>/<repo> \
+      #     --body 'git+https://github.com/ROBCOATVG/slipwai@main'
+      #
+      # Unset, it installs `slipwai`, which is what every channel should end up doing.
+      - name: Install the keel that checks this channel
+        run: |
+          set -eu
+          python -m pip install --disable-pip-version-check "${{ vars.SLIPWAI_KEEL || 'slipwai' }}"
+          slipwai --version
       - name: Check the channel
         run: slipwai channel check .
 

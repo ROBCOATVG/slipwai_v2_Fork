@@ -120,3 +120,68 @@ class NewTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FreshCloneTest(unittest.TestCase):
+    """`channel new` into a clone of the repository somebody just made for it, which is the normal way.
+
+    It refused that, because `.git` counted as "already holds something" — so the instruction was to run
+    it somewhere else and then turn that into a repository by hand.
+    """
+
+    def setUp(self) -> None:
+        self.area = Path(tempfile.mkdtemp())
+
+    def test_a_fresh_clone_counts_as_empty(self) -> None:
+        place = self.area / "channel"
+        (place / ".git").mkdir(parents=True)
+        (place / ".git/config").write_text("", encoding="utf-8")
+        channel_new.write("a channel", place)
+        self.assertTrue((place / "CONTRIBUTING.md").is_file())
+
+    def test_and_so_do_the_files_a_new_repository_is_made_with(self) -> None:
+        place = self.area / "channel"
+        place.mkdir()
+        for name in ("README.md", "LICENSE", ".gitignore"):
+            (place / name).write_text("", encoding="utf-8")
+        channel_new.write("a channel", place)
+        self.assertTrue((place / "CONTRIBUTING.md").is_file())
+
+    def test_anything_else_is_refused_and_named(self) -> None:
+        """Named rather than counted, so the refusal says what to move."""
+        from slipwai.errors import GenerationError
+        place = self.area / "channel"
+        place.mkdir()
+        (place / "my-notes.md").write_text("", encoding="utf-8")
+        with self.assertRaises(GenerationError) as refused:
+            channel_new.write("a channel", place)
+        self.assertIn("my-notes.md", str(refused.exception))
+
+
+class KeelTest(unittest.TestCase):
+    """Which keel checks a channel. A channel created today installed `slipwai` from PyPI, got version 1,
+    and failed on its first push with `invalid choice: 'channel'` — because the verb that checks it is in
+    version 2 and version 2 is not published yet. Found on the first real push of `slipwai-index`."""
+
+    def workflow(self) -> str:
+        area = Path(tempfile.mkdtemp())
+        channel_new.write("a channel", area / "channel")
+        return (area / "channel/.github/workflows/channel.yml").read_text(encoding="utf-8")
+
+    def test_the_keel_can_be_named_by_a_repository_variable(self) -> None:
+        self.assertIn("vars.SLIPWAI_KEEL", self.workflow())
+
+    def test_and_defaults_to_the_published_one(self) -> None:
+        """Which is what every channel should end up doing, once there is one to install."""
+        self.assertIn("|| 'slipwai'", self.workflow())
+
+    def test_it_says_which_keel_it_installed(self) -> None:
+        """A check that failed against the wrong keel should not need the log read twice to see that."""
+        self.assertIn("slipwai --version", self.workflow())
+
+    def test_the_readme_says_how_to_point_it_somewhere_else(self) -> None:
+        area = Path(tempfile.mkdtemp())
+        channel_new.write("a channel", area / "channel")
+        said = (area / "channel/README.md").read_text(encoding="utf-8")
+        self.assertIn("SLIPWAI_KEEL", said)
+        self.assertIn("gh variable set", said)
