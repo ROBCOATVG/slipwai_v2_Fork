@@ -86,7 +86,11 @@ jobs:
       - name: Install ${{ matrix.package }} from the channel
         run: |
           set -eu
-          slipwai install "${{ matrix.package }}" --accept-publisher \
+          # `--accept-publisher` is `extension install`'s flag and nothing else's: the language path does
+          # not ask about a publisher, so passing it there is an argument error rather than a no-op — and
+          # the `||` then sent a language to the extension installer, which refused it for a second reason.
+          # Found 2026-10-08, in a workflow that has never run.
+          slipwai install "${{ matrix.package }}" \
             || slipwai extension install "${{ matrix.package }}" --accept-publisher
 
       - name: Conformance

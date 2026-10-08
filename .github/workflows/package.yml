@@ -121,7 +121,9 @@ jobs:
             # whole step.
             if [ "$sibling" = "${{ inputs.package }}" ]; then continue; fi
             echo "installing $sibling beside ${{ inputs.package }}"
-            SLIPWAI_LANGUAGES="$PWD" slipwai install "$sibling" --accept-publisher
+            # No `--accept-publisher`: that flag is `slipwai extension install`'s, and the language path
+            # does not ask about a publisher at all. Passing it is an argument error, not a no-op.
+            SLIPWAI_LANGUAGES="$PWD" slipwai install "$sibling"
           done
 
       # One suite per kind. A language's asks the package questions and checks the answers; an extension's

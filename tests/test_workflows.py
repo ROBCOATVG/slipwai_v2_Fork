@@ -46,6 +46,23 @@ class GateTest(unittest.TestCase):
         self.assertNotIn("slipwai.matrix", self.gate)
 
 
+class PublisherFlagTest(unittest.TestCase):
+    """`--accept-publisher` is `slipwai extension install`'s and nothing else's.
+
+    `trust.admitted` is called from `extension_install` alone, so the language path never asks about a
+    publisher — and a workflow that passed the flag to it got an argument error rather than a no-op. It was
+    in both workflows, and neither had ever reached that line.
+    """
+
+    def test_no_workflow_passes_it_to_a_language_install(self) -> None:
+        for name in ("package.yml", "backstop.yml"):
+            with self.subTest(workflow=name):
+                for line in read(name).splitlines():
+                    said = line.strip()
+                    if said.startswith("slipwai install") or "slipwai install \"" in said:
+                        self.assertNotIn("--accept-publisher", said)
+
+
 class PackageWorkflowTest(unittest.TestCase):
     def setUp(self) -> None:
         self.workflow = read("package.yml")
@@ -70,6 +87,9 @@ class PackageWorkflowTest(unittest.TestCase):
                                self.workflow.index("- name: Conformance")]
         # Into the checkout's own directory, or the published copy would shadow the package under test.
         self.assertIn('SLIPWAI_LANGUAGES="$PWD" slipwai install', beside)
+        # `--accept-publisher` belongs to `slipwai extension install` and to nothing else. The language
+        # path does not ask about a publisher, so passing it there is an argument error, not a no-op.
+        self.assertNotIn("slipwai install \"$sibling\" --accept-publisher", beside)
         # A framework's family is read from its own manifest; a family's framework is the `beside` input.
         self.assertIn("requires", beside)
         self.assertIn("${{ inputs.beside }}", beside)
