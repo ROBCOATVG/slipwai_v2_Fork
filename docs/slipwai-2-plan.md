@@ -1635,6 +1635,7 @@ most worth running in two fairways themselves, once 5.3 exists.
 |---|---|---|---|---|---|
 | 6.1a | The hook points: the closed set in `src/slipwai/hooks.py`, the `hooks` block an `extension.json` declares, and `.slipwai/hooks.json` resolved from the elected extensions in firing order | new | M | A manifest declaring a point the keel does not fire is refused by name; two extensions on one point run in a written order, each with a budget | done |
 | 6.1b | The rest of the extension package shape: `extension.json`, `init.py`, the loader reading either manifest, the conformance profile for the six obligations, `slipwai hooks`, and `codegraph`, `uipro` and `ux-gates` moved out into their own repositories | new | L | `./init --extension codegraph` installs from a directory package, and a hook that fails is a `hook` line and never a failed stage | done |
+| 6.1b2 | The guard: a second closed set beside `hooks`, declared in `extension.json` under `guards`, fired by `scripts/extensions/guards.py`, and carrying a tool-call refusal back to the agent. `session`, `before-search`, `after-delegate`. Election names an extension's guards and takes the person's word once; `slipwai hooks` lists both sets and says which may refuse | new | M | A guard that exits 2 stops one tool call and the rung still completes; an extension that declares a guard nobody agreed to fires none |  |
 | 6.1c | The keel stops shipping an extension's parts to every project: `scripts/codegraph` and `scripts/agents/code_index.py` move into the codegraph package, the harness hook rows that name them come from the extension rather than from `agent_settings.py`, and the keel's own prose says *the code index* where it said *CodeGraph*. What stays is what degrades on its own: `slipwai survey` reads `.codegraph/codegraph.db` if it is there, the way it reads `.git` | new | M | A project that elected no extension ships no file belonging to one, and its `AGENTS.md` names none; one that elected codegraph is unchanged |  |
 | 6.2 | The index schema with publishers, checksums, the signature field, descriptions and tags; the public channel as a Pages site | cruise-2 + new | M | `slipwai search` and `slipwai install` read it for both kinds | done |
 | 6.3 | A private channel per organisation, `SLIPWAI_LANGUAGE_INDEX` generalised to `SLIPWAI_CHANDLERY` | cruise-2 | S | An organisation's index serves its own packages | done |
@@ -1665,7 +1666,7 @@ Depends on: phase 4. Runs beside phase 7.
 | 7.4b | A stream's own log, read from the board: `slipwai fleet <stream>` in the terminal and a drawer under each row on the bridge, each line said rather than printed | new | S | The question the board provokes — what has this one been doing — is answered without opening a `.jsonl` | done |
 | 7.4c | The run drawn on the event model: the browsable page and the bridge colour each slice by **two** bands — what `model.yaml` intends, and what the logs say happened — folded at render time and written back nowhere. Never into `model.drawio`, which is committed | new | M | A slice badged `implemented` whose log holds nothing is visible on the page as the drift it is, and a mark being set lights the slices it clears | done |
 | 7.7a | `/cruise` casts off: `scripts/agents/fleet.py` starts the harbourmaster and one captain per fairway under the telegraph's `boilers`, and exits. `make cruise`, `cruise-status` and `cruise-stop` point at it | new | S | Typing `/cruise` leaves nothing holding the state of the run | done |
-| 7.7b | Delete the runner: `cruise.py`'s loop, its seat commands re-pointed at the logs, and its harness-hook verbs (`guard`, `compacting`, `resume`, `stopping`) moved to where the captain owns them — the same knot as 6.1c, and it unties with the same decision | new | L | No runner left in the toolkit, and the greenfield of phase 7 has run two captains on two machines start to finish |  |
+| 7.7b | Delete the runner: `cruise.py`'s loop, its seat commands re-pointed at the logs, and its harness-hook verbs (`guard`, `compacting`, `resume`, `stopping`) moved to where the captain owns them — the same knot as 6.1c, untied by the second closed set (6.1b2) | new | L | No runner left in the toolkit, and the greenfield of phase 7 has run two captains on two machines start to finish |  |
 
 Depends on: 5.13 and 5.14. 7.1 first, then 7.2, then the rest in any order.
 
@@ -2321,16 +2322,28 @@ index call; and the rows in `.claude/settings.json` that call them at four harne
 opening, before a search, after a delegate, and the index's own session rebuild. The first two move into the
 package the way the two gates did. The rows cannot, and that is the question.
 
-**The question: may a hook refuse?** The four moments are not on the closed set, and two of them are guards —
-a `PreToolUse` hook that exits 2 stops the tool call, which is the whole point of refusing a grep that should
-have asked the index. So either the keel grows three points (`session`, `before-search`, `after-delegate`),
-and `before-search` is a second exception to "a hook is never fatal", alongside `check`; or the harness rows
-stay the keel's and the keel keeps naming one extension's script. The first is the better shape and the
-larger decision: a point that can refuse a tool call is a point an extension can use to stop work, which is
-exactly what "a hook is a second belt" was written to prevent — and the answer may be that a *guard* is a
-different kind of thing from a hook and deserves its own closed set, declared separately and confirmed when
-the extension is elected. **For a person to answer before 6.1c is built.** Until then the rows stay where
-they are and the keel names the one script, which is a known debt rather than a surprise.
+**The question was: may a hook refuse? Answered 2026-10-08 — a guard is its own kind.** The keel grows a
+second closed set, declared separately from `hooks`: `session`, `before-search`, `after-delegate`. A guard
+may exit 2; a hook still may not. An extension that declares guards is named at election and the person
+agrees to them once, by name, the way a publisher is confirmed once.
+
+**Why that is a clarification and not an exception.** The question was framed as "a point that can refuse a
+tool call is a point an extension can use to stop work", and that framing was wrong — it read the rule as
+*never fatal* when what `project/ladder.py` and `hooks.py` both actually say is **never fatal to the rung**.
+A `PreToolUse` guard that exits 2 blocks one tool call and hands the reason back to the agent, which then
+does something else: an index call rather than a grep. The rung completes. `check` fails a gate; a guard
+redirects a tool call; the two are different axes and the rule only ever spoke about one of them. So the
+second closed set does not carve an exception into anything — it names a distinction the rule implies.
+Growing the `hooks` set instead would have been the damaging shape: it files a tool-call refusal under the
+same word as a gate failure and then owes an exception for it.
+
+**What the rule is actually protecting, and what still protects it.** Of the three rules in `hooks.py`, the
+load-bearing one is *the captain depends on no hook* — the last line, the controlled-files diff, the bounded
+waits and the inbox receipt all work with every hook and every guard removed. A guard does not touch it.
+The one real risk left is practical rather than formal: a guard that refuses every search stalls a rung
+without ever being fatal to it, because the agent loops or gives up and the log goes quiet. That is already
+caught, by the control that catches every other silent stall — a stage that has written no line for its wall
+budget is ended and `parked` with the reason.
 
 What stays in the keel either way: `slipwai survey` reads `.codegraph/codegraph.db` where it exists, the way
 it reads `.git`. That is not coupling — it is a keel capability that degrades on its own when the file is not
@@ -2550,8 +2563,9 @@ about four hundred lines. Its **harness-hook verbs** — `guard`, `compacting`, 
 called from the rows `agent_settings.py` writes into `.claude/settings.json`, and they are the control-file
 guard and the compaction protocol, which now belong to the captain. That last part is the same knot as
 6.1c: a keel writing harness hook rows that name one script, where the right shape is a point an extension
-or a captain attaches to and one of those points is a guard that may refuse. **It unties with the same
-decision**, which is why the two are one slice's worth of work and not two.
+or a captain attaches to and one of those points is a guard that may refuse. **It untied with the same
+decision** — the second closed set, 2026-10-08 — which is why the two are one slice's worth of work and not
+two. `guard` and `stopping` become guards the captain owns; `compacting` and `resume` are hooks.
 
 Done when no runner is left in the toolkit and the greenfield of phase 7 — a small product with two bounded
 contexts, generated with the 2.0.0 keel — has run two captains on two machines from start to finish. That
