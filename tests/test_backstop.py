@@ -287,14 +287,31 @@ class MatrixOptInTest(unittest.TestCase):
         on = held.get("on") or held.get(True)
         self.assertIn("matrix", (on["workflow_dispatch"] or {}).get("inputs", {}))
 
-    def test_and_it_is_passed_through_to_the_workflow_that_runs_it(self) -> None:
-        self.assertIn("matrix: ${{ inputs.matrix || false }}", self.caller())
+    def test_main_and_a_tag_run_it_without_being_asked(self) -> None:
+        """The two-gate split, for a package. A check whose only way in is a person typing
+        `gh workflow run` is a check that is off — which is what it was."""
+        passed = self.caller()
+        self.assertIn("github.ref == 'refs/heads/main'", passed)
+        self.assertIn("startsWith(github.ref, 'refs/tags/v')", passed)
 
-    def test_it_is_off_by_default_so_a_push_never_starts_containers(self) -> None:
+    def test_a_pull_request_gets_conformance_and_not_the_matrix(self) -> None:
+        """The fast half, which is the one an author runs over and over. The matrix builds images and
+        starts containers, and a pull request that paid that on every push is one nobody opens.
+
+        Read as the expression itself rather than as a run: nothing here can start a workflow, and an
+        expression naming only `main`, a tag and the dispatch input is one a pull request cannot satisfy.
+        """
+        line = next(one for one in self.caller().splitlines() if one.strip().startswith("matrix:"))
+        self.assertNotIn("pull_request", line)
+        self.assertNotIn("github.event_name", line)
+
+    def test_the_dispatch_input_still_asks_for_it_on_a_branch(self) -> None:
+        """For a change somebody wants matrixed before it reaches main."""
         import yaml
         held = yaml.safe_load(self.caller())
         on = held.get("on") or held.get(True)
         self.assertIs(on["workflow_dispatch"]["inputs"]["matrix"]["default"], False)
+        self.assertIn("inputs.matrix", self.caller())
 
     def test_the_command_that_runs_it_is_in_the_file(self) -> None:
         """Named in the workflow rather than remembered: the verb is `verify.yml`, not `package.yml`,

@@ -184,9 +184,8 @@ on:
     # chose. `git tag v1.1.0 && git push --follow-tags` is the whole of releasing.
     tags: ['v*']
   pull_request:
-  # The matrix is opt-in because it builds images and starts containers, and this is how it is opted
-  # into. Without the input there was no way to ask for it at all: the reusable workflow took it and
-  # nothing passed it, so the opt-in could not be opted into.
+  # Asking for the matrix on a branch nobody has merged yet. On `main` and on a tag it runs anyway —
+  # see the `matrix:` line below — so this is for checking a change before it gets there.
   #
   #   gh workflow run verify.yml -R <owner>/<repo> -f matrix=true
   workflow_dispatch:
@@ -208,7 +207,14 @@ jobs:
     with:
       package: {name}
       kind: {kind}
-      matrix: ${{{{ inputs.matrix || false }}}}
+      # **The two-gate split, for a package.** A pull request gets conformance, which is the fast half and
+      # the one an author runs over and over. `main` and a tag get the matrix as well — every generated
+      # variant of every backend, each held to its own native gate — because that is the integration point
+      # and a check nobody remembers to ask for is not a check. It was opt-in everywhere, and the only way
+      # to opt in was a person typing `gh workflow run`, which is the same as off.
+      # One line, not a folded block: this feeds a `type: boolean` input, and a folded scalar is one more
+      # thing between the expression and the value that could hand it a string with a newline on the end.
+      matrix: ${{{{ inputs.matrix || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}}}
       # Where a tag publishes to. Empty publishes nowhere, which is right for a fork.
       channel: ''
       # Which keel to prove against: a bare version is one on PyPI, anything else is passed to pip as it
