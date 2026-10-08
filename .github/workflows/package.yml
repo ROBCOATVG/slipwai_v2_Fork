@@ -110,20 +110,36 @@ jobs:
           print(" ".join(sorted(requires)) if isinstance(requires, dict) else "")
           PY
           )
-          beside="$needed ${{ inputs.beside }}"
+          beside=""
+          for word in $needed ${{ inputs.beside }}; do
+            # An `if`, not `[ … ] && continue`: under `set -eu` that list exits the step the first time the
+            # test is false, which is every sibling that is not this package — so the skip would be the
+            # whole step.
+            if [ "$word" = "${{ inputs.package }}" ]; then continue; fi
+            beside="$beside $word"
+          done
           if [ -z "$(printf '%s' "$beside" | tr -d ' ')" ]; then
             echo "nothing to install beside ${{ inputs.package }}; it stands alone"
             exit 0
           fi
+
+          # Installed into the keel's own directory first and copied across after, which is not a
+          # roundabout way of doing it — it is the only way. `slipwai install` loads the directory it is
+          # installing into, so installing *into* `$PWD` means loading the checkout, and the checkout is a
+          # framework whose family is the thing not there yet: the install refuses with the very message it
+          # was run to fix. The default directory holds no checkout, so there is nothing half-resolved in it.
+          #
+          # A family's framework needs the family to load, and here the family is the checkout and not
+          # published-and-installed — so the first install can fail for that reason alone, and the retry
+          # adds this package's own published copy to satisfy it. Only the siblings are copied across:
+          # `$PWD` keeps the checkout as the copy under test.
+          echo "installing$beside beside ${{ inputs.package }}"
+          # No `--accept-publisher`: that flag is `slipwai extension install`'s, and the language path does
+          # not ask about a publisher at all. Passing it is an argument error, not a no-op.
+          slipwai install $beside || slipwai install "${{ inputs.package }}" $beside
           for sibling in $beside; do
-            # An `if`, not `[ … ] && continue`: under `set -eu` that list exits the step the first time the
-            # test is false, which is every sibling that is not this package — so the skip would be the
-            # whole step.
-            if [ "$sibling" = "${{ inputs.package }}" ]; then continue; fi
-            echo "installing $sibling beside ${{ inputs.package }}"
-            # No `--accept-publisher`: that flag is `slipwai extension install`'s, and the language path
-            # does not ask about a publisher at all. Passing it is an argument error, not a no-op.
-            SLIPWAI_LANGUAGES="$PWD" slipwai install "$sibling"
+            rm -rf "$PWD/$sibling"
+            cp -R "$HOME/.slipwai/languages/$sibling" "$PWD/$sibling"
           done
 
       # One suite per kind. A language's asks the package questions and checks the answers; an extension's

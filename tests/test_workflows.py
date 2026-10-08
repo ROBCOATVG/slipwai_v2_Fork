@@ -85,8 +85,12 @@ class PackageWorkflowTest(unittest.TestCase):
         self.assertIn("Install what this package is proved beside", self.workflow)
         beside = self.workflow[self.workflow.index("Install what this package is proved beside"):
                                self.workflow.index("- name: Conformance")]
-        # Into the checkout's own directory, or the published copy would shadow the package under test.
-        self.assertIn('SLIPWAI_LANGUAGES="$PWD" slipwai install', beside)
+        # Installed into the keel's own directory and copied across, because `slipwai install` loads the
+        # directory it installs into: installing *into* `$PWD` loads the checkout, and the checkout is the
+        # thing whose family is missing — the install refuses with the message it was run to fix.
+        self.assertIn('cp -R "$HOME/.slipwai/languages/$sibling" "$PWD/$sibling"', beside)
+        # Only the siblings are copied. `$PWD` keeps the checkout as the copy under test.
+        self.assertNotIn('cp -R "$HOME/.slipwai/languages/${{ inputs.package }}"', beside)
         # `--accept-publisher` belongs to `slipwai extension install` and to nothing else. The language
         # path does not ask about a publisher, so passing it there is an argument error, not a no-op.
         self.assertNotIn("slipwai install \"$sibling\" --accept-publisher", beside)
