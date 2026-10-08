@@ -1325,7 +1325,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 98 of 117 slices done** — phase 1 6/6, phase 2 9/9, phase 3 18/22, phase 4 7/7, phase 5 29/29, phase 6 10/12, phase 7 11/12, phase 8 5/8, phase 9 3/6, phase 10 0/6. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 98 of 125 slices done** — phase 1 6/6, phase 2 9/9, phase 3 18/22, phase 4 7/7, phase 5 29/29, phase 6 10/12, phase 7 11/15, phase 8 5/8, phase 9 3/6, phase 10 0/6, phase 11 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1667,8 +1667,11 @@ Depends on: phase 4. Runs beside phase 7.
 | 7.4c | The run drawn on the event model: the browsable page and the bridge colour each slice by **two** bands — what `model.yaml` intends, and what the logs say happened — folded at render time and written back nowhere. Never into `model.drawio`, which is committed | new | M | A slice badged `implemented` whose log holds nothing is visible on the page as the drift it is, and a mark being set lights the slices it clears | done |
 | 7.7a | `/cruise` casts off: `scripts/agents/fleet.py` starts the harbourmaster and one captain per fairway under the telegraph's `boilers`, and exits. `make cruise`, `cruise-status` and `cruise-stop` point at it | new | S | Typing `/cruise` leaves nothing holding the state of the run | done |
 | 7.7b | Delete the runner: `cruise.py`'s loop, its seat commands re-pointed at the logs, and its harness-hook verbs (`guard`, `compacting`, `resume`, `stopping`) moved to where the captain owns them — the same knot as 6.1c, untied by the second closed set (6.1b2) | new | L | No runner left in the toolkit, and the greenfield of phase 7 has run two captains on two machines start to finish |  |
+| 7.8 | The captain requires the ladder's completion lines: a slice is through its gate when the log holds every mark the chart's `sets` names and a `demo`, all written during this turn. A sent-back demo is a retry in the same turn, bounded by `cycle`, then a park naming the verdict and the count. `verdict` becomes a closed set; `check-chart` requires `sets` and `steers_by` explicitly once `story-split.md` exists, so an empty list is an answer and an absent key is not | new (section 14) | M | The run that started this — `/drive` printing a help message, exiting 0 and writing nothing — parks instead of reporting a slice through its gate; a slice that sets no mark still passes on its `demo` |  |
+| 7.9 | The harbourmaster performs the merge: it takes the request in order, one at a time, rebases in a scratch worktree of its own, runs the project's `make verify` there, pushes, and writes `merged` with the commit. A conflict is `git rebase --abort` and `refused` naming the paths, and the captain resolves in its own berth bounded by `cycle`; a red gate is `refused` with the failing check. The berth is never written by two processes and stays allocated until `merged` | new (section 14) | L | `merged` stops reading 0 on the board: a slice accepted at its demo reaches trunk with no person in the path, and a conflict comes back as two named paths rather than a wedged worktree |  |
+| 7.10 | Trunk's CI is watched, so the fleet stops adding to a red build: before granting any merge the harbourmaster reads trunk's last completed run, and a red one is `refused` plus a harbour `park` naming the commit and the job, with no fairway granted a merge until it is green. The fix goes to the captain whose `merged` line names that commit, bounded by `cycle`, then to a person; a red no `merged` line accounts for parks for a person at once. A forge it cannot reach reads *could not verify*, never *green* | new (owner, 2026-10-08) | M | A trunk reddened by `audit` or `test-integration` — which `make verify` never runs — stops the merge queue within one pass, and the fairway that broke it is the one dispatched at it |  |
 
-Depends on: 5.13 and 5.14. 7.1 first, then 7.2, then the rest in any order.
+Depends on: 5.13 and 5.14. 7.1 first, then 7.2, then the rest in any order. **7.8, 7.9 and 7.10 are section 14's three designs and close the loop; they are built after phase 9**, in that order — 7.9 is what makes `merged` stop reading 0, and 7.10 is only meaningful once something merges.
 
 ### Phase 8. 2.0.0
 
@@ -1702,6 +1705,26 @@ and 29 modules naming a cloud in 112 places.
 
 Depends on: 2.0.0 shipped, and phase 2's build list proving the package contract on the six real
 languages first.
+
+### Phase 11. Multiplayer, after 2.0.0
+
+Section 13's four questions, answered 2026-10-08. Two people on two machines works *today* in a way that
+is misleading: the logs sync, the marks carry and the board folds, and nothing stops two machines running a
+captain for the same fairway — which is a merge conflict in the one file the design promised would never
+have one. This phase makes *one writer per file* true across machines rather than surviving its being
+broken.
+
+| Slice | What | From | Size | Done when | Status |
+|---|---|---|---|---|---|
+| 11.1 | The claim is a git ref: a captain takes `refs/slipwai/claims/<fairway>` by a push that refuses non-fast-forward — an atomic compare-and-swap on every forge, with nothing of ours running — before it writes `claimed`, and a refusal names who holds it and since when | new (section 13) | M | Two machines start a captain for one fairway and the second refuses by name rather than both appending to one log |  |
+| 11.2 | In-flight work travels: the harbourmaster pushes each slice branch every pass as a WIP ref, the way it already pushes the logs, and a claim lapses on a lease derived from `stage_bound` rather than chosen. A captain taking a lapsed stream fetches that branch into its own berth and re-dispatches `/drive`, which enters at the first incomplete stage | new (section 13) | L | A machine closed four rungs into a slice is taken over by another, which resumes at rung five instead of starting again; no lease ever lapses under a captain that is writing |  |
+| 11.3 | One harbourmaster per machine: the harbour log becomes `.slipwai/logs/harbour/<machine>.jsonl`, folded on read exactly like the deck logs, so the single writer is removed rather than elected. The one thing that needs a decider — the merge — is serialised by `refs/slipwai/merge`, taken and released the way a claim is | new (section 13) | L | Three machines write three harbour logs and the board folds them into one; two harbourmasters never rebase at once, and the one that loses queues |  |
+| 11.4 | A berth's database name carries the machine identity the logs ref already uses, so two machines' berths cannot collide on a shared instance without any configuration being refused; `collisions()` checks the arithmetic anyway | new (section 13) | S | Two machines allocate berths against one database server and neither can reach the other's |  |
+| 11.5 | The proof: two machines, one harbour, a stream taken from one by the other mid-slice and carried to a merge | new | M | A second person on a second machine finishes a slice the first machine started, and the first machine's board says so without being told |  |
+
+Depends on: phase 7's 7.8 to 7.10, which close the loop on one machine first. Not a hosted service, and
+not a merge-conflict strategy: everything here is a forge, a ref and a log, which is also what keeps it
+working for one person with no network at all.
 
 ### Phase 9. The README and the docs
 
