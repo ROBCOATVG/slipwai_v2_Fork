@@ -285,6 +285,10 @@ WORKFLOW = """name: verify
 on:
   push:
     branches: [main]
+    # A tag is what publishes. A green run on `main` is a package that works; it is not a package
+    # anybody asked for, and publishing every commit is how a chandlery fills with versions nobody
+    # chose. `git tag v1.1.0 && git push --follow-tags` is the whole of releasing.
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
@@ -294,4 +298,11 @@ jobs:
     with:
       package: {name}
       kind: {kind}
+      # Where a tag publishes to. Empty publishes nowhere, which is right for a fork.
+      channel: ''
+    # A token that may open a pull request on that channel. Without it a tag still builds the release
+    # and attaches it to itself, and `slipwai package register` finishes the job by hand — so a fork
+    # needs no credential and a package nobody owns can still be proved.
+    secrets:
+      chandlery_token: ${{{{ secrets.CHANDLERY_TOKEN }}}}
 """

@@ -15,15 +15,22 @@ read off the thing being released. What a publisher writes is the description an
 where they are also what the keel reads — so there is one place to get them wrong rather than two places to
 get them out of step.
 
-**Registering is a file operation, and that is deliberate.** A channel is a directory of JSON and release
-files, served as a static site. `register` writes into a checkout of one; whether that checkout is pushed,
-reviewed or merged is the channel's own business, which is what makes a private channel and the public one
-the same shape (6.6 is the public one's review path).
+**Registering is a file operation, and that is deliberate.** A channel is a directory of JSON, served as a
+static site. `register` writes into a checkout of one; whether that checkout is pushed, reviewed or merged
+is the channel's own business, which is what makes a private channel and the public one the same shape.
+
+**The release file does not have to live in the channel, and should not.** An entry's `file` may be an
+absolute URL, which the client joins against nothing and fetches anonymously — the channel's credentials
+go only to the channel's own origin, and the digest proves the bytes either way. So the ordinary
+arrangement is the tarball on the tag that built it and the channel holding JSON alone: git keeps every
+version of every file for ever, and a channel that stored its own tarballs would grow without bound while
+GitHub already hosts the same bytes for nothing.
 """
 from __future__ import annotations
 
 import hashlib
 import json
+import tempfile
 from pathlib import Path
 
 from .errors import GenerationError
@@ -52,12 +59,13 @@ def kind_of(root: Path) -> str:
     raise GenerationError(f"{root} holds neither a language.json nor an extension.json, so it is no package")
 
 
-def entry_for(root: Path, archive: Path, publisher: str = "") -> dict:
+def entry_for(root: Path, archive: Path, publisher: str = "", file_url: str = "") -> dict:
     """The index entry for a built release: where the file is, what is in it, and who says so.
 
-    The file is named relative to nothing — a channel's index and its release files sit in one directory, and
-    the client joins the name against the document's own URL. A channel that serves them from elsewhere
-    rewrites this one field, which is the only field that is about where rather than about what.
+    `file_url` is where the bytes actually are, where that is not beside the index — the release asset on
+    the tag that built them, usually. Absent, the file is named relative to the index, which is the
+    arrangement a `file:` channel and a first try both want. It is the only field in an entry that is about
+    *where* rather than about *what*, and the digest is what makes either safe.
     """
     source = read_package(root)
     if source.version == "unknown":
@@ -67,7 +75,7 @@ def entry_for(root: Path, archive: Path, publisher: str = "") -> dict:
     manifest = source.fragment
     entry = {
         "version": source.version,
-        "file": archive.name,
+        "file": file_url or archive.name,
         "sha256": digest(archive),
         "kind": kind,
         kind: manifest,
@@ -88,13 +96,13 @@ def written_entry(name: str, entry: dict, into: Path) -> Path:
     return path
 
 
-def release(root: Path, out: Path, publisher: str = "") -> tuple[Path, Path, dict]:
+def release(root: Path, out: Path, publisher: str = "", file_url: str = "") -> tuple[Path, Path, dict]:
     """Build the release file and its entry under `out`. (file, entry file, entry). Writes nowhere else."""
     try:
         archive = pack(root, out)
     except ReleaseError as error:
         raise GenerationError(str(error)) from None
-    entry = entry_for(root, archive, publisher)
+    entry = entry_for(root, archive, publisher, file_url)
     return archive, written_entry(read_package(root).name, entry, out / ENTRIES), entry
 
 
@@ -133,8 +141,12 @@ def rebuild(channel: Path) -> Path:
     return path
 
 
-def register(root: Path, channel: Path, publisher: str = "") -> tuple[Path, Path, Path]:
-    """Build a release of `root` into `channel` and rebuild its index. (file, entry file, index).
+def register(root: Path, channel: Path, publisher: str = "",
+             file_url: str = "") -> tuple[Path | None, Path, Path]:
+    """Build a release of `root` and add it to `channel`. (file or None, entry file, index).
+
+    With `file_url` the tarball is built into a temporary place and only its digest is kept: the channel
+    gets the entry and nothing else, which is what keeps it from growing a copy of every version for ever.
 
     Refuses a version the channel already lists with different bytes. A release file is immutable by the
     time anyone has installed it, and replacing one silently is how a digest somebody checked stops meaning
@@ -143,11 +155,14 @@ def register(root: Path, channel: Path, publisher: str = "") -> tuple[Path, Path
     """
     name = read_package(root).name
     serving = channel / DOCUMENT.rsplit("/", 1)[0]
-    try:
-        archive = pack(root, serving)
-    except ReleaseError as error:
-        raise GenerationError(str(error)) from None
-    entry = entry_for(root, archive, publisher)
+    kept: Path | None = None
+    with tempfile.TemporaryDirectory() as elsewhere:
+        try:
+            archive = pack(root, Path(elsewhere) if file_url else serving)
+        except ReleaseError as error:
+            raise GenerationError(str(error)) from None
+        entry = entry_for(root, archive, publisher, file_url)
+        kept = None if file_url else archive
     standing = channel / ENTRIES / f"{name}-{entry['version']}.json"
     if standing.is_file():
         held = json.loads(standing.read_text(encoding="utf-8"))
@@ -155,4 +170,4 @@ def register(root: Path, channel: Path, publisher: str = "") -> tuple[Path, Path
             raise GenerationError(f"{channel} already lists {name} {entry['version']}, with a different file. "
                                   f"A release is immutable once anybody has installed it: release a new "
                                   f"version rather than replacing this one")
-    return archive, written_entry(name, entry, channel / ENTRIES), rebuild(channel)
+    return kept, written_entry(name, entry, channel / ENTRIES), rebuild(channel)

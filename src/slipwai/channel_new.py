@@ -85,7 +85,11 @@ name an earlier channel lists is that channel's.
 | --- | --- |
 | `entries/<name>-<version>.json` | One file per release. The only thing a contribution adds |
 | `slipwai-languages/index.json` | Generated from `entries/`. Never edited |
-| `slipwai-languages/*.tar.gz` | The release files themselves |
+
+A release file lives on the tag that built it, not here: git keeps every version of every file for ever,
+and a channel holding its own tarballs grows without bound. An entry names the URL and the digest, and the
+digest is what makes somebody else's URL safe to list — a publisher who replaces the file afterwards has
+broken their own package, because the client refuses bytes that are not the bytes the index named.
 
 ## Contributing
 
@@ -120,7 +124,7 @@ git switch -c publish-<name>-<version> && git add -A && git commit && git push
 Then open a pull request. CI runs `slipwai channel check`, which asks the questions a reviewer cannot
 answer by reading:
 
-- the release file the entry names is here, and its sha256 is the one the entry publishes;
+- the release file the entry names is fetched and its sha256 is the one the entry publishes;
 - the entry is one the client would actually read, manifest and all;
 - the index is what `entries/` renders to, because it is generated and never edited;
 - the name is not already another publisher's.
@@ -129,7 +133,9 @@ answer by reading:
 is an install silently fetching a different person's code under a name a project already depends on.
 
 **A release is immutable.** Changing the file under a version somebody has installed makes a digest they
-checked into a lie. Release a new version instead; `register` refuses the other thing.
+checked into a lie. Release a new version instead; `register` refuses the other thing — and if you replace
+the asset your tag hosts, every install of that version starts failing, which is a thing you have done to
+yourself rather than to anybody who trusted you.
 
 Your package's own CI should call the keel's reusable workflow, which `slipwai package new` writes for you.
 """
@@ -172,8 +178,12 @@ jobs:
           set -eu
           python -m pip install --disable-pip-version-check "${{ vars.SLIPWAI_KEEL || 'slipwai' }}"
           slipwai --version
+      # `--fetch` because this is where a pull request from somebody nobody knows is decided: every file
+      # a publisher hosts themselves is downloaded and held to the digest their entry publishes. Without
+      # it the check is a read of the JSON, which proves the entry is well formed and nothing about the
+      # bytes it names.
       - name: Check the channel
-        run: slipwai channel check .
+        run: slipwai channel check . --fetch
 
   publish:
     needs: check

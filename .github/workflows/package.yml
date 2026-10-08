@@ -30,6 +30,21 @@ on:
         required: false
         default: false
         type: boolean
+      channel:
+        description: >
+          The channel to publish into, as `<owner>/<repo>`. On a tag, and only on a tag, a package whose
+          conformance passed is built and offered to it. Empty: nothing is published, which is the right
+          answer for a fork and for anyone proving a package they do not own.
+        required: false
+        default: ''
+        type: string
+    secrets:
+      chandlery_token:
+        description: >
+          A token that may open a pull request on `channel`. Absent, the release is still built and
+          attached to the tag — a publisher registers it by hand with one command, and nothing in this
+          repository has ever held a credential for somebody else's.
+        required: false
 
 permissions:
   contents: read
@@ -75,3 +90,82 @@ jobs:
       - name: The generated-variant matrix
         if: ${{ inputs.matrix && inputs.kind != 'extension' }}
         run: python -m slipwai.matrix "$PWD" "${{ inputs.package }}"
+
+  # Publishing, and only from a tag. A green run on `main` is a package that works; it is not a package
+  # anybody asked for. A tag is somebody saying "this one" — which is the same reason `make release`
+  # refuses to invent a version and `package register` refuses to replace one.
+  publish:
+    needs: conformance
+    if: startsWith(github.ref, 'refs/tags/v') && inputs.channel != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # to attach the release file to this package's own tag
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: ${{ inputs.package }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install the keel
+        run: |
+          set -eu
+          if [ -n "${{ inputs.keel }}" ]; then
+            python -m pip install --disable-pip-version-check "slipwai==${{ inputs.keel }}"
+          else
+            python -m pip install --disable-pip-version-check slipwai
+          fi
+          slipwai --version
+
+      # Built here rather than taken from the publisher's machine: a release file nobody can reproduce is
+      # a release file nobody can check, and this is the one place the bytes and the tag are known to
+      # belong to each other.
+      - name: Build the release
+        id: built
+        run: |
+          set -eu
+          cd "${{ inputs.package }}"
+          version="$(cat VERSION)"
+          name="${{ inputs.package }}"
+          # Where the bytes will be once this job has attached them: the asset on this tag. The channel
+          # then holds the entry alone, and git is not asked to keep a copy of every release for ever.
+          url="${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/$name-$version.tar.gz"
+          slipwai package release . --out ../dist --publisher "${{ github.repository_owner }}" \
+            --file-url "$url"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Attach it to the tag
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.tar.gz
+            dist/entries/*.json
+
+      # The pull request is the whole of publishing: a channel's gate runs on it, a person merges it, and
+      # the index is rebuilt from the entry it added. Without a token this step says so and stops, which
+      # leaves a release attached to the tag and one command to register it.
+      - name: Offer it to ${{ inputs.channel }}
+        env:
+          GH_TOKEN: ${{ secrets.chandlery_token }}
+        run: |
+          set -eu
+          if [ -z "${GH_TOKEN:-}" ]; then
+            printf '%s\n' "no chandlery_token, so nothing was offered to ${{ inputs.channel }}." >&2
+            printf '%s\n' "The release is attached to this tag. To publish it:" >&2
+            printf '%s\n' "  slipwai package register . --channel <a checkout of ${{ inputs.channel }}>" >&2
+            exit 0
+          fi
+          name="${{ inputs.package }}"
+          version="${{ steps.built.outputs.version }}"
+          gh repo clone "${{ inputs.channel }}" channel -- --depth 1
+          cd channel
+          git switch -c "publish-$name-$version"
+          slipwai package register "../${{ inputs.package }}" --channel . \
+            --publisher "${{ github.repository_owner }}" --file-url "${{ steps.built.outputs.url }}"
+          git add -A
+          git -c user.email=actions@github.com -c user.name="${{ inputs.package }} release" \
+            commit -m "Publish $name $version"
+          git push -u origin "publish-$name-$version"
+          gh pr create --fill --title "Publish $name $version" \
+            --body "Released by $GITHUB_REPOSITORY from the tag \`$GITHUB_REF_NAME\`, with conformance green. The channel's own check runs on this pull request."

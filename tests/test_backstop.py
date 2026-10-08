@@ -137,3 +137,55 @@ class MessageTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TagPublishTest(unittest.TestCase):
+    """A tag publishes; a green run on main does not. A green run is a package that works, and that is
+    not a package anybody asked for — publishing every commit is how a chandlery fills with versions
+    nobody chose."""
+
+    def setUp(self) -> None:
+        self.text = (ROOT / ".github/workflows/package.yml").read_text(encoding="utf-8")
+
+    def test_the_publish_job_runs_on_a_tag_and_on_nothing_else(self) -> None:
+        self.assertIn("startsWith(github.ref, 'refs/tags/v')", self.text)
+
+    def test_it_waits_for_conformance(self) -> None:
+        """A package that does not pass its own suite is not one to put in front of anybody."""
+        self.assertIn("needs: conformance", self.text)
+
+    def test_the_release_is_built_in_ci_and_not_taken_from_a_machine(self) -> None:
+        """A release file nobody can reproduce is a release file nobody can check, and this is the one
+        place the bytes and the tag are known to belong to each other."""
+        self.assertIn("slipwai package release .", self.text)
+
+    def test_a_channel_it_was_not_given_publishes_nowhere(self) -> None:
+        """Which is right for a fork, and for anyone proving a package they do not own."""
+        self.assertIn("inputs.channel != ''", self.text)
+
+    def test_without_a_token_it_says_so_and_leaves_the_release_attached(self) -> None:
+        """Nothing in a package repository has ever held a credential for somebody else's."""
+        self.assertIn("no chandlery_token", self.text)
+        self.assertIn("slipwai package register", self.text)
+
+    def test_the_token_is_a_secret_and_never_required(self) -> None:
+        self.assertIn("chandlery_token:", self.text)
+        self.assertIn("required: false", self.text)
+
+    def test_publishing_is_a_pull_request_rather_than_a_push(self) -> None:
+        """The channel's own gate runs on it and a person merges it, which is the whole of the path a
+        contributor from outside follows too."""
+        self.assertIn("gh pr create", self.text)
+        self.assertNotIn("git push -u origin main", self.text)
+
+    def test_the_scaffold_wires_a_tag_to_it(self) -> None:
+        import tempfile
+        from pathlib import Path as P
+
+        from slipwai import package_new
+        area = P(tempfile.mkdtemp())
+        package_new.write("extension", "lens", area, "9.0")
+        said = (area / "lens/.github/workflows/verify.yml").read_text(encoding="utf-8")
+        self.assertIn("tags: ['v*']", said)
+        self.assertIn("chandlery_token", said)
+        self.assertIn("channel: ''", said)

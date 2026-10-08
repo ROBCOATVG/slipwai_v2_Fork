@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import urllib.parse
 from pathlib import Path
 
 from .index_schema import KINDS, entry_of, format_of
@@ -43,14 +44,52 @@ def claims(entries: list[dict]) -> dict[str, set[str]]:
     return found
 
 
-def file_findings(channel: Path, entry: dict) -> list[str]:
-    """What is wrong with one entry's release file: missing, or not the bytes the entry publishes a digest of."""
+def elsewhere(entry: dict) -> str:
+    """The absolute URL this entry's file is at, or `''` where the file is beside the index.
+
+    A publisher hosting their own bytes is the ordinary arrangement and the one that scales: a channel
+    that stored every tarball would grow a copy of every version for ever, and a contributor's pull
+    request would carry a binary a reviewer cannot read.
+    """
+    found = str(entry.get("file") or "")
+    # `file:` counts, because a channel tried as a `file:` tree is how a private one is tried before it is
+    # published and how this is tested. Listing one in a public channel is not a way in: the client
+    # refuses a `file:` release named by an index that is not itself a `file:` tree.
+    return found if urllib.parse.urlsplit(found).scheme in ("http", "https", "file") else ""
+
+
+def fetched_findings(entry: dict, url: str) -> list[str]:
+    """Fetch a file the publisher hosts and hold it to the digest the entry publishes.
+
+    This is what makes somebody else's URL safe to list. The publisher can replace the asset after the
+    pull request merges — nobody can stop them — and the digest is why that costs them their own package
+    rather than anybody's trust: the client refuses bytes that are not the bytes the index named.
+    """
+    from .language_index import RELEASE_LIMIT, Unreachable, fetch
     name, version = entry["name"], entry.get("version")
-    path = release_file(channel, entry)
+    try:
+        data = fetch(url, "the channel", url, RELEASE_LIMIT)
+    except Unreachable as fault:
+        return [f"{name} {version}: {url} could not be fetched ({fault.reason}). A file the index names "
+                f"and nobody can reach is an entry that installs for nobody"]
+    if hashlib.sha256(data).hexdigest() != entry.get("sha256"):
+        return [f"{name} {version}: {url} is not the file the entry publishes a digest of. Either the "
+                f"entry or the file was changed after the other; release a new version"]
+    return []
+
+
+def file_findings(channel: Path, entry: dict, fetch_remote: bool = False) -> list[str]:
+    """What is wrong with one entry's release file: missing, or not the bytes the entry's digest names."""
+    name, version = entry["name"], entry.get("version")
     if not entry.get("file"):
         return [f"{name} {version}: the entry names no file"]
+    url = elsewhere(entry)
+    if url:
+        return fetched_findings(entry, url) if fetch_remote else []
+    path = release_file(channel, entry)
     if not path.is_file():
-        return [f"{name} {version}: {path.relative_to(channel)} is not in this channel"]
+        return [f"{name} {version}: {path.relative_to(channel)} is not in this channel, and the entry "
+                f"names no URL it is at instead"]
     held = hashlib.sha256(path.read_bytes()).hexdigest()
     if held != entry.get("sha256"):
         return [f"{name} {version}: {path.relative_to(channel)} is not the file the entry publishes a digest "
@@ -74,8 +113,13 @@ def shape_findings(entry: dict) -> list[str]:
     return []
 
 
-def check(channel: Path) -> list[str]:
-    """Everything wrong with this channel, a line each. Empty is a channel that serves what it claims to."""
+def check(channel: Path, fetch_remote: bool = False) -> list[str]:
+    """Everything wrong with this channel, a line each. Empty is a channel that serves what it claims to.
+
+    `fetch_remote` fetches each file a publisher hosts elsewhere and holds it to its digest. Off by
+    default, so a person checking a channel on a train is not waiting on a hundred downloads; on in CI,
+    which is where a pull request from somebody nobody knows is actually decided.
+    """
     try:
         entries = entries_in(channel)
     except Exception as error:  # a channel whose entries cannot be read is one finding, not a traceback
@@ -83,7 +127,7 @@ def check(channel: Path) -> list[str]:
     findings: list[str] = []
     for entry in entries:
         findings += shape_findings(entry)
-        findings += file_findings(channel, entry)
+        findings += file_findings(channel, entry, fetch_remote)
     for name, publishers in sorted(claims(entries).items()):
         named = sorted(one for one in publishers if one)
         if len(named) > 1:

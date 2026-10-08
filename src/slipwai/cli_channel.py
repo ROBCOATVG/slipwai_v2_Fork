@@ -28,6 +28,9 @@ def channel_main(argv: list[str]) -> None:
     parser.add_argument("verb", choices=VERBS)
     parser.add_argument("directory", nargs="?", default=".", help="the channel's directory (default: here)")
     parser.add_argument("--name", default="", metavar="<title>", help="`new` only: what the README calls it")
+    parser.add_argument("--fetch", action="store_true",
+                        help="`check` only: fetch each file a publisher hosts elsewhere and hold it to its "
+                             "digest. What CI does; off by default so a local check waits on no download")
     parsed = parser.parse_args(argv)
     place = Path(parsed.directory).expanduser()
     try:
@@ -40,7 +43,7 @@ def channel_main(argv: list[str]) -> None:
         if parsed.verb == "build":
             print(f"{rebuild(place)} written from {place / 'entries'}")
             return
-        findings = check(place)
+        findings = check(place, parsed.fetch)
     except GenerationError as error:
         refuse(prog, error)
     if findings:

@@ -49,7 +49,8 @@ def check_package(root: Path) -> int:
 
 def release_package(parsed: argparse.Namespace) -> None:
     root = Path(parsed.name).expanduser()
-    archive, entry_file, entry = release(root, Path(parsed.out).expanduser(), parsed.publisher)
+    archive, entry_file, entry = release(root, Path(parsed.out).expanduser(), parsed.publisher,
+                                        parsed.file_url)
     print(f"{entry['kind']} {root.name} {entry['version']}")
     print(f"  file          {archive}")
     print(f"  sha256        {entry['sha256']}")
@@ -60,9 +61,9 @@ def release_package(parsed: argparse.Namespace) -> None:
 def register_package(parsed: argparse.Namespace) -> None:
     root = Path(parsed.name).expanduser()
     channel = Path(parsed.channel).expanduser()
-    archive, entry_file, index = register(root, channel, parsed.publisher)
+    archive, entry_file, index = register(root, channel, parsed.publisher, parsed.file_url)
     print(f"registered in {channel}:")
-    print(f"  file          {archive.relative_to(channel)}")
+    print(f"  file          {archive.relative_to(channel) if archive else parsed.file_url}")
     print(f"  entry         {entry_file.relative_to(channel)}")
     print(f"  index         {index.relative_to(channel)}")
     print(f"Serve {channel} and name it in SLIPWAI_CHANDLERY to install from it; "
@@ -85,6 +86,9 @@ def package_main(argv: list[str]) -> None:
                         help="`register` only: a checkout of the channel to publish into")
     parser.add_argument("--publisher", default="", metavar="<identity>",
                         help="who published it, as the index records it and `slipwai show` prints it")
+    parser.add_argument("--file-url", default="", metavar="<url>",
+                        help="where the release file is, where that is not beside the index — the asset on "
+                             "the tag that built it, usually. The channel then holds the entry alone")
     parsed = parser.parse_args(argv)
     try:
         if parsed.verb == "new":

@@ -185,3 +185,72 @@ class KeelTest(unittest.TestCase):
         said = (area / "channel/README.md").read_text(encoding="utf-8")
         self.assertIn("SLIPWAI_KEEL", said)
         self.assertIn("gh variable set", said)
+
+
+class HostedElsewhereTest(unittest.TestCase):
+    """A release file lives on the tag that built it; the channel holds the entry.
+
+    Git keeps every version of every file for ever, so a channel that stored its own tarballs would grow a
+    copy of every release anybody ever made — and a contribution would carry a binary a reviewer cannot
+    read. The six that opened this channel went from 1.2 MB to 16 KB.
+    """
+
+    def setUp(self) -> None:
+        self.area = Path(tempfile.mkdtemp())
+        self.channel = self.area / "channel"
+        channel_new.write("a channel", self.channel)
+        package_new.write("extension", "lens", self.area, CORE)
+        (self.area / "lens/VERSION").write_text("1.0.0\n", encoding="utf-8")
+        self.url = "https://example.invalid/lens/releases/download/v1.0.0/lens-1.0.0.tar.gz"
+
+    def test_the_entry_names_the_url_and_the_channel_holds_no_tarball(self) -> None:
+        archive, entry_file, _ = package_release.register(
+            self.area / "lens", self.channel, "ACME", file_url=self.url)
+        self.assertIsNone(archive)
+        self.assertEqual(json.loads(entry_file.read_text(encoding="utf-8"))["file"], self.url)
+        self.assertEqual(list((self.channel / "slipwai-languages").glob("*.tar.gz")), [])
+
+    def test_the_digest_is_still_of_the_bytes_that_were_built(self) -> None:
+        """Which is the whole of what makes somebody else's URL safe to list."""
+        _, entry_file, _ = package_release.register(
+            self.area / "lens", self.channel, "ACME", file_url=self.url)
+        held = json.loads(entry_file.read_text(encoding="utf-8"))
+        self.assertRegex(held["sha256"], r"^[0-9a-f]{64}$")
+
+    def test_a_check_that_does_not_fetch_passes_without_reaching_the_network(self) -> None:
+        """A person checking a channel on a train should not wait on a hundred downloads."""
+        package_release.register(self.area / "lens", self.channel, "ACME", file_url=self.url)
+        self.assertEqual(channel.check(self.channel), [])
+
+    def test_a_file_hosted_elsewhere_is_recognised_as_such(self) -> None:
+        self.assertEqual(channel.elsewhere({"file": self.url}), self.url)
+        self.assertEqual(channel.elsewhere({"file": "lens-1.0.0.tar.gz"}), "")
+
+    def test_a_local_file_that_is_not_there_says_the_entry_names_no_url_either(self) -> None:
+        """The two ways an entry can name bytes, and a refusal that mentions only one would read as
+        though the other were not allowed."""
+        package_release.register(self.area / "lens", self.channel, "ACME")
+        for path in (self.channel / "slipwai-languages").glob("*.tar.gz"):
+            path.unlink()
+        found = channel.check(self.channel)
+        self.assertTrue(any("names no URL it is at instead" in line for line in found), found)
+
+    def test_a_url_that_cannot_be_fetched_is_a_finding_when_fetching(self) -> None:
+        """A file the index names and nobody can reach is an entry that installs for nobody."""
+        package_release.register(self.area / "lens", self.channel,
+                                 "ACME", file_url=(self.area / "nothing.tar.gz").as_uri())
+        found = channel.check(self.channel, fetch_remote=True)
+        self.assertTrue(any("could not be fetched" in line for line in found), found)
+
+    def test_a_url_whose_bytes_are_not_the_digest_is_caught_when_fetching(self) -> None:
+        """The publisher can replace the asset and nobody can stop them. This is what it costs them."""
+        other = self.area / "something-else.tar.gz"
+        other.write_bytes(b"not the package")
+        package_release.register(self.area / "lens", self.channel, "ACME", file_url=other.as_uri())
+        found = channel.check(self.channel, fetch_remote=True)
+        self.assertTrue(any("not the file the entry publishes a digest of" in line for line in found), found)
+
+    def test_the_channel_s_ci_fetches(self) -> None:
+        """Which is where a pull request from somebody nobody knows is actually decided."""
+        said = (self.channel / ".github/workflows/channel.yml").read_text(encoding="utf-8")
+        self.assertIn("slipwai channel check . --fetch", said)
