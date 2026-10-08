@@ -2822,13 +2822,74 @@ worth a row.**
 
 - **A captain requires the ladder's completion lines.** A slice is through its gate when the log holds
   every mark the chart says it sets and a `demo`. A turn that wrote none of them parks, naming what is
-  missing. *Open:* what the completion lines are for a slice that sets no mark; whether a demo that was
-  sent back is a park or a retry; how this reads for the standard profile.
+  missing. **The three open questions were answered 2026-10-08:**
+  - *A slice that sets no mark needs a `demo` and nothing else.* One rule, no special case: every mark in
+    the chart's `sets`, which is vacuous when that is empty, plus a `demo`. A no-mark slice's whole gate is
+    one line, and that line carries a `verdict`, so writing it means the demo rung ran. What is being
+    defended against is the observed failure — `/drive` printed a help message, exited 0 and wrote nothing
+    — and one required line catches it.
+  - *The lines must be written during this turn.* `work()` already takes `started = len(entries(...))`
+    before it dispatches, so the index is there for nothing. Without it a retry of a slice passes on the
+    previous turn's lines, which is the same class of fault as the harbourmaster's cursor outliving its log.
+  - *A demo that was sent back is a retry, in the same turn, bounded by `cycle`.* `work()` re-dispatches for
+    the same slice; the ladder re-enters at the first incomplete stage, so it resumes at the demo rung with
+    the notes in the slice. When `cycle` is spent it parks, naming the verdict and the count. Parking at
+    once was rejected for a reason worth keeping: the person who sent the demo back is present and has just
+    given notes, and parking asks them to come back and restart a fairway before anything acts on them.
+  - *The standard profile reads the same, and the gate is tightened so that it can.* The rule rests on
+    `sets: []` being a positive statement. On the event profile it is, because the renderer writes the key.
+    On the standard profile the split authors it, and `check-chart.py` reads `body.get("sets") or []`, so a
+    missing key and an empty list are the same thing — a slice could take a `demo`-only gate by omission.
+    So: once `story-split.md` exists, every slice must carry `sets` and `steers_by` explicitly. An empty
+    list is an answer; an absent key is refused, naming the slice.
+
+  *Still open:* `verdict` is free-form today (the captures show `accepted`). It becomes a closed set, or at
+  least acceptance against everything else, in the same slice.
 - **The harbourmaster performs the merge.** It holds the credentials, so it rebases, runs the full gate
   on the rebased branch, pushes, and writes `merged` with the commit; a red gate is `refused` with the
-  reason and the captain parks. *Open:* what it does with a rebase conflict; whether the gate it runs is
-  the project's `make verify` or something narrower; what happens to the berth while it merges; whether
-  two grants can run at once.
+  reason and the captain parks. **The four open questions were answered 2026-10-08, and a fifth was found
+  in the answering:**
+  - *A rebase conflict is aborted and refused, naming the paths.* `git rebase --abort`, so nothing is left
+    half-done, then `refused` listing what conflicts. The captain re-dispatches `/drive` in its own berth to
+    rebase and resolve, bounded by `cycle`, and asks again — and the harbourmaster rebases afresh, because
+    trunk may have moved again. Resolving a conflict is work on code, which belongs where the context is;
+    the harbourmaster stays credentials-and-gate only, which matters because it is the one component with
+    push rights. Cross-fairway conflicts should be rare by construction, since `check-slice-scope` refuses a
+    branch that writes outside its fairway; what will conflict is what a fairway boundary cannot partition —
+    lockfiles, `chart.yaml`, generated API documents.
+  - *The gate is the project's own `make verify`.* Exactly what the two-gate rule already names, and a
+    project that adds a check gets it at the merge for nothing. `make ci` was rejected because it needs
+    Docker or the network, so a laptop without them could not merge at all; a gate narrowed to the changed
+    paths was rejected because a narrow gate that passes where `verify` would fail is the worst outcome
+    available, and because a second definition of "the gate" is what this project refuses everywhere else.
+  - *The berth is untouched; the harbourmaster uses a scratch worktree of its own.* Made from the branch
+    ref, rebased and gated there, removed afterwards either way. `make verify` needs no ports and no Docker
+    — the in-memory adapter is what the port's contract runs against — so that worktree needs no berth
+    resources. The berth stays allocated until `merged` is written, because a refusal sends the captain
+    straight back into it. The captain waits for the answer, bounded by `wait_bound`.
+  - *One merge at a time, in request order.* Each gate then runs on a trunk that already includes every
+    merge before it, so a green result is evidence about the trunk the commit will actually land on.
+    Gating in parallel wins nothing: `make verify` is a whole-repo gate, so a result measured against a
+    trunk that has since moved has to be thrown away and measured again.
+  - **The fifth, raised by the owner while answering: something has to watch trunk's CI, or the fleet keeps
+    adding to a red build.** The harbourmaster gates with `make verify` before it pushes, and CI runs the
+    extended gate — `make ci` adds `audit` and `test-integration` — so trunk can go red from a check
+    `verify` never ran, and nothing above would notice. A red trunk is harbour-wide rather than one
+    fairway's, which is why the answer is a harbour line and not a refusal.
+
+    Before granting any merge, the harbourmaster reads trunk's most recent completed CI run. Green, it
+    proceeds. Red, it refuses and writes a harbour `park` naming the commit and the failing job, and no
+    fairway is granted a merge until trunk is green; the queue drains the moment it is. The forge
+    unreachable reads *could not verify*, never *green* — the rule `/drive` already uses for a fetch it
+    could not run.
+
+    **The fix goes to the captain that broke it, not to a person.** The harbourmaster wrote the `merged`
+    line for the commit that went red, so it knows the fairway and the slice. That captain takes the fix at
+    its next boundary instead of its next slice, bounded by `cycle`; when those attempts are spent it writes
+    a harbour `park` naming the job, the commit and what it tried. A red trunk that no `merged` line
+    accounts for — a direct push, or a red older than any merge — parks for a person at once, because
+    guessing who broke it would send a captain to rewrite somebody else's work. Captains keep building
+    throughout: that work is not wasted, because a sibling is cleared by a mark and not by a merge.
 - **The logs travel, and a claim comes with them.** The harbourmaster writes each log into
   `refs/slipwai/logs/<machine>` and pushes every pass; a captain takes `refs/slipwai/claims/<fairway>`
   before it claims and refuses with who holds it and since when. *Open:* everything in section 13's four
