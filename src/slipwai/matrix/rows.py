@@ -46,6 +46,32 @@ class Row:
         return said
 
 
+def takes(catalog: Mapping[str, Any], axis: str, option: str, backend: str, target: str) -> bool:
+    """Whether this backend, on this target, can actually be generated with that answer.
+
+    The same two questions `selection.py` asks before it refuses — is the option implemented for this
+    backend, and is it offered under this target — read here so that a row generation would refuse is
+    never planned. A row that cannot generate is not a failing matrix, it is a matrix that was written
+    down wrong, and the two look identical in a CI log.
+
+    The language template is what found this. Every real language implements both stores and Keycloak, so
+    the rows were hard-coded and nothing noticed; the toy implements none of them, and its first matrix run
+    planned four rows whose own refusals say `a half-ported version is deliberately not emitted`.
+    """
+    spec = catalog["axes"].get(axis)
+    if not isinstance(spec, dict) or option not in spec.get("options", {}):
+        return False
+    held = spec["options"][option]
+    return backend in held.get("backends", []) and target in held.get("targets", [])
+
+
+def plannable(catalog: Mapping[str, Any], row: Row) -> bool:
+    """Whether every answer this row names is one its backend can be generated with."""
+    target = next((option for axis, option in row.answers if axis == "target"), "none")
+    return all(takes(catalog, axis, option, row.backend, target)
+               for axis, option in row.answers if axis != "target")
+
+
 def covered(catalog: Mapping[str, Any]) -> None:
     """A `ValueError` unless the diagonals still cover every profile and every frontend the catalog has."""
     for what, expected in (("profiles", PROFILES), ("frontends", FRONTENDS)):
@@ -74,7 +100,11 @@ def native_rows(catalog: Mapping[str, Any], backend: str) -> list[Row]:
     rows += [Row(f"verify-{backend}-{store}", "event-modelling", backend, "none", (("event-store", store), *every))
              for store in STORES]
     production = (("event-store", "postgres"), ("http", transport), ("auth", "cognito"), ("target", "aws"))
-    return [*rows, Row(f"verify-production-event-modelling-{backend}", "event-modelling", backend, "none", production)]
+    rows.append(Row(f"verify-production-event-modelling-{backend}", "event-modelling", backend, "none", production))
+    # Only the rows this backend can be generated with. The two diagonals name no answers and are always
+    # plannable; the rest name stores, identity and a target, and a package that implements none of them —
+    # the template's toy — is left with the two that prove what it does have.
+    return [row for row in rows if plannable(catalog, row)]
 
 
 def image_row(catalog: Mapping[str, Any], backend: str) -> Row:

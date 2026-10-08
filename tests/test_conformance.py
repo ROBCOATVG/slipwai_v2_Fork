@@ -58,14 +58,24 @@ class EntryPointTest(unittest.TestCase):
 
     def test_the_matrix_plans_the_toys_variants(self) -> None:
         """Once the toy brought a transport of its own there were variants to generate, so the matrix
-        plans them: the two diagonals, one per event store, and the production row."""
+        plans them — the ones it can actually be generated with.
+
+        This asserted the store and production rows too, which is the bug it was written over: the toy
+        implements neither store, no identity and no cloud target, and generation refuses each of those
+        with `a half-ported version is deliberately not emitted`. Nothing noticed until the template
+        repository ran its own matrix for the first time, because every real language implements all of
+        them.
+        """
         done = entry_point("slipwai.matrix", TOY, "--list")
         printed = done.stdout + done.stderr
         self.assertEqual(done.returncode, 0, printed)
-        for row in ("verify-standard-toy-plain-none", "verify-toy-plain-postgres",
-                    "verify-production-event-modelling-toy-plain"):
+        for row in ("verify-standard-toy-plain-none", "verify-event-modelling-toy-plain-react-vite"):
             with self.subTest(row=row):
                 self.assertIn(row, printed)
+        for refused in ("verify-toy-plain-postgres", "verify-toy-plain-sqlite",
+                        "verify-production-event-modelling-toy-plain"):
+            with self.subTest(refused=refused):
+                self.assertNotIn(refused, printed)
 
 
 class RowsTest(unittest.TestCase):
@@ -87,6 +97,35 @@ class RowsTest(unittest.TestCase):
     def test_the_diagonals_still_cover_every_profile_and_frontend_the_catalogue_has(self) -> None:
         """A profile added to the catalogue and not to the diagonals is a variant nobody generates."""
         rows.covered(CATALOG)
+
+
+class PlannableTest(unittest.TestCase):
+    """A row generation would refuse is never planned.
+
+    The store and identity rows were hard-coded, and every real language implements both stores and
+    Keycloak, so nothing noticed. The language template's toy implements none of them — and its first
+    matrix run planned four rows whose own refusals say `a half-ported version is deliberately not
+    emitted`. A row that cannot generate is not a failing matrix; it is a matrix written down wrong, and
+    the two look identical in a CI log.
+    """
+
+    def test_a_backend_that_implements_nothing_gets_the_two_rows_that_name_nothing(self) -> None:
+        planned = [row.name for row in rows.native_rows(CATALOG, "toy-plain")]
+        self.assertEqual(planned, ["verify-standard-toy-plain-none",
+                                   "verify-event-modelling-toy-plain-react-vite"])
+
+    def test_a_row_naming_an_option_this_backend_has_not_got_is_not_plannable(self) -> None:
+        row = rows.Row("x", "event-modelling", "toy-plain", "none", (("event-store", "sqlite"),))
+        self.assertFalse(rows.plannable(CATALOG, row))
+
+    def test_a_row_naming_nothing_is_always_plannable(self) -> None:
+        self.assertTrue(rows.plannable(CATALOG, rows.Row("x", "standard", "toy-plain", "none")))
+
+    def test_an_option_is_judged_against_the_target_the_row_names(self) -> None:
+        """`takes` asks both of `selection.py`'s questions — implemented for this backend, offered under
+        this target — because a row refused for the second reason reads exactly like one refused for the
+        first."""
+        self.assertFalse(rows.takes(CATALOG, "event-store", "sqlite", "toy-plain", "aws"))
 
 
 class ImageToolTest(unittest.TestCase):
