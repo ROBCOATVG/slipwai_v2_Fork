@@ -2717,7 +2717,8 @@ prerequisite — the six packages rebuilt — took the evening of 6 October, and
 
 ## 13. Multiplayer: a stream taken by another person, on another machine
 
-**Asked 2026-10-07. Nothing here is decided.** This section is the investigation, not the answer.
+**Asked 2026-10-07. Answered 2026-10-08**, working through the four one at a time; the investigation is
+kept above the answers because what the questions rule out is most of the reasoning.
 
 ### What already works, and why that is misleading
 
@@ -2760,6 +2761,49 @@ and the credential answers are the lines that genuinely need one decider.**
 index; two machines allocating independently is fine, because the ports are local to each. What is not
 fine is the database name, if two people point at one shared database. Either the berth name carries the
 machine, or a shared database is simply refused.
+
+### The four, answered 2026-10-08
+
+**1. A claim is a git ref, `refs/slipwai/claims/<fairway>`.** Taken by a push that refuses
+non-fast-forward, which is an atomic compare-and-swap on every forge and needs no server of ours up. A deck
+log line was never a candidate: it is the thing being protected.
+
+**2. A claim lapses on a lease, and in-flight work travels.** The consequential half of this question is
+not the number. A captain holds no credential, so a slice branch lives only on the machine that built it —
+a lapsed claim leaves the work not merely unclaimed but *unreachable*, and whoever takes the stream starts
+from nothing. So **the harbourmaster pushes each slice branch every pass, as a WIP ref**, the way it
+already pushes the logs. When a lease lapses the taking captain fetches that branch into its own berth and
+re-dispatches `/drive`, which enters at the first incomplete stage because it reads artefacts from disk
+rather than conversation memory. The work survives the machine, which is the whole point.
+
+*The lease is derived from `stage_bound`, not chosen.* A captain that writes nothing for `stage_bound` ends
+that stage itself, so a lease above it can never take a stream from a working captain — the guarantee falls
+out rather than being asserted. It moves with the telegraph for free, because `stage_scale` multiplies
+every stage budget: 35 minutes at half-ahead, 20 at dead-slow. Liveness is judged on the *pushed* log, so
+the lease has to exceed the heartbeat (60 seconds) plus the push interval plus the taker's fetch interval,
+and every derived value clears that by an order of magnitude. This follows the berth rule — nobody chooses
+a number.
+
+**3. One harbourmaster per machine, and the merge is serialised by a ref.** Answer 2 forces this: the
+harbourmaster pushes WIP branches, and it can only push branches it can see, because berths are local to a
+machine. A single elected harbourmaster could never push another machine's in-flight work. So the harbour
+log becomes one file per machine, `.slipwai/logs/harbour/<machine>.jsonl`, folded on read exactly like the
+deck logs — which costs nothing at read time and removes the single writer rather than electing one.
+
+The plan guessed this and named its cost: `berth-allocated` and the credential answers are the lines that
+genuinely need one decider. Berth allocation turns out to be safe, because ports are local to each machine
+and allocation is arithmetic over an index. The merge is the real one, and section 14's design settled that
+it is one at a time in request order — so it is serialised by the same mechanism as a claim. A
+harbourmaster takes `refs/slipwai/merge` before it rebases and releases it after; one that loses the race
+queues and retries at its next pass. No election, no failover, nothing of ours running.
+
+**4. A berth's database name carries the machine.** Ports needed nothing: they are local, so two machines
+allocating independently cannot collide. The database was the exposure, and only where people point at a
+shared instance — every generated default is local, being in-memory, a SQLite file, or a container from the
+project's own compose file. Putting the machine identity that `refs/slipwai/logs/<machine>` already uses
+into the name removes the collision instead of refusing the configuration: `bookings_booking` becomes
+`bookings_<machine>_booking`. `collisions()` checks the arithmetic anyway, because "by construction" is a
+claim like any other.
 
 ### What it is not
 
@@ -2892,8 +2936,8 @@ worth a row.**
     throughout: that work is not wasted, because a sibling is cleared by a mark and not by a merge.
 - **The logs travel, and a claim comes with them.** The harbourmaster writes each log into
   `refs/slipwai/logs/<machine>` and pushes every pass; a captain takes `refs/slipwai/claims/<fairway>`
-  before it claims and refuses with who holds it and since when. *Open:* everything in section 13's four
-  questions, which this is the first half of.
+  before it claims and refuses with who holds it and since when. **Section 13's four questions were
+  answered 2026-10-08 — see there.**
 - **Packages before the keel.** Slice 8.4b: the channel exists and the languages are released and
   registered before 2.0.0 is cut. A 2.0.0 whose `slipwai install go` finds nothing is a 2.0.0 whose
   headline feature does not work on the day it ships.
