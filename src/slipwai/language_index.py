@@ -33,12 +33,15 @@ from typing import Any
 from .assets import VERSION
 from .errors import GenerationError
 from .index_schema import CHANDLERY, FORMATS, Index, Release, format_of, releases_of
-from .upgrade import FORGE, INDEX, RECEIPT, credentials, following_snapshots, index_of, refusal
+from .upgrade import INDEX, RECEIPT, credentials, following_snapshots, index_of, refusal
 from .versions import is_prerelease, key, satisfies
 
-# The raw files of a forge repository a person creates and pushes the index to; `upgrade.index_of`'s own default is
-# PyPI's simple index, which cannot serve this tree.
-DEFAULT = f"{FORGE.rsplit('/', 1)[0]}/slipwai-index/raw/branch/main"
+# The published chandlery. Written out rather than derived from `FORGE`, which is where the *keel* lives and
+# is a different thing: deriving one from the other pointed every default install at a Gitea path that has
+# never served an index, so `slipwai search` and `slipwai install` failed for anybody who had not set
+# `SLIPWAI_INDEX` — including the package repositories' own CI, which cannot fetch a sibling without it.
+# `upgrade.index_of`'s own default is PyPI's simple index, which cannot serve this tree either.
+DEFAULT = "https://robcoatvg.github.io/slipwai-index"
 DOCUMENT = "slipwai-languages/index.json"
 #: What `slipwai package release` writes, and the newest format this keel reads. `FORMATS` is both.
 FORMAT = max(FORMATS)

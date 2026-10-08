@@ -34,7 +34,9 @@ code does now is a drawing again.
 
 ## Why `chandlery-search.txt` names its index
 
-`slipwai search` with no `SLIPWAI_INDEX` reaches the index the keel ships as its default, and nothing is
-published there yet — so the capture was taken against the index that is. `make test-docs` holds
-`docs/guide/start-here.md` to this file rather than to a live search, because that page must be right for a
-reader whose machine has no network and no chandlery account.
+It was taken with `SLIPWAI_INDEX` set, because the keel's default pointed at a forge path that has never
+served an index — **fixed on 2026-10-08**, so `slipwai search` with nothing set now prints this. The capture
+keeps the variable it was taken with rather than being retyped without it.
+
+`make test-docs` holds `docs/guide/start-here.md` to this file rather than to a live search either way,
+because that page must be right for a reader whose machine has no network.

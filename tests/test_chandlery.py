@@ -151,6 +151,32 @@ class ShowLinesTest(unittest.TestCase):
         self.assertIn("fastapi", said)
 
 
+class DefaultIndexTest(unittest.TestCase):
+    """Where `slipwai search` and `slipwai install` look when nobody has said.
+
+    It was derived from `FORGE` — where the *keel* lives — which gave a Gitea path that has never served an
+    index. Every default install failed with *it is not a chandlery index*, including the package
+    repositories' own CI, which cannot fetch a sibling without one. The two are different things and the
+    default is written out now.
+    """
+
+    def test_the_default_is_the_published_chandlery_and_not_the_keel_s_forge(self) -> None:
+        from slipwai import upgrade
+        from slipwai.language_index import DEFAULT
+        self.assertNotIn(upgrade.FORGE.rsplit("/", 1)[0], DEFAULT)
+        self.assertTrue(DEFAULT.startswith("https://"), DEFAULT)
+
+    def test_the_document_hangs_off_it_without_a_second_slash(self) -> None:
+        import os
+
+        from slipwai.language_index import DOCUMENT, location
+        was = os.environ.pop("SLIPWAI_INDEX", None)
+        self.addCleanup(lambda: os.environ.__setitem__("SLIPWAI_INDEX", was) if was else None)
+        _name, url = location(receipt=Path("/nonexistent-receipt"))
+        self.assertTrue(url.endswith(f"/{DOCUMENT}"), url)
+        self.assertNotIn("//slipwai-languages", url)
+
+
 class LocalIndexTest(unittest.TestCase):
     """The whole path, against an index written to disk: what `search` shows is what `install` reads."""
 
