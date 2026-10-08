@@ -24,6 +24,11 @@ from .errors import GenerationError
 from .extension_shape import OBLIGATIONS
 from .language_shape import name_fault
 
+#: Where the reusable workflow a package's CI calls actually lives. Version 1's repository has a
+#: `package.yml` too, with different inputs — a package pointed at it would fail on the first push with
+#: inputs that workflow has never heard of. This becomes `ROBCOATVG/slipwai` when version 2 merges back
+#: there (slice 8.5), and that row says so.
+KEEL_REPO = "ROBCOATVG/slipwai_v2_Fork"
 KINDS = ("extension", "language")
 #: The publisher's verbs, in the order they are used.
 VERBS = ("new", "check", "release", "register")
@@ -73,7 +78,7 @@ def extension_files(name: str, schema: str) -> dict[str, str]:
         "README.md": README.format(name=name, title=title_of(name), obligations=obligations,
                                    command=this_command()),
         "Makefile": MAKEFILE.format(name=name, kind="extension"),
-        ".github/workflows/verify.yml": WORKFLOW.format(name=name, kind="extension"),
+        ".github/workflows/verify.yml": WORKFLOW.format(name=name, kind="extension", keel=KEEL_REPO),
     }
 
 
@@ -94,7 +99,7 @@ def language_files(name: str, schema: str) -> dict[str, str]:
         f"{module}/__init__.py": LANGUAGE_MODULE.format(name=name, module=module, title=title_of(name)),
         "README.md": LANGUAGE_README.format(name=name, title=title_of(name), command=this_command()),
         "Makefile": MAKEFILE.format(name=name, kind="language"),
-        ".github/workflows/verify.yml": WORKFLOW.format(name=name, kind="language"),
+        ".github/workflows/verify.yml": WORKFLOW.format(name=name, kind="language", keel=KEEL_REPO),
     }
 
 
@@ -294,12 +299,15 @@ on:
 
 jobs:
   conformance:
-    uses: ROBCOATVG/slipwai/.github/workflows/package.yml@main
+    uses: {keel}/.github/workflows/package.yml@main
     with:
       package: {name}
       kind: {kind}
       # Where a tag publishes to. Empty publishes nowhere, which is right for a fork.
       channel: ''
+      # Which keel to prove against: a bare version is one on PyPI, anything else is passed to pip as it
+      # stands. Empty installs `slipwai`, which is right once the version you need is published.
+      keel: ''
     # A token that may open a pull request on that channel. Without it a tag still builds the release
     # and attaches it to itself, and `slipwai package register` finishes the job by hand — so a fork
     # needs no credential and a package nobody owns can still be proved.

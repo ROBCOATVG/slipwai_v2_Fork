@@ -21,7 +21,10 @@ on:
         default: language
         type: string
       keel:
-        description: The keel to prove against — a version on PyPI, or a git ref of this repository
+        description: >
+          The keel to prove against. A bare version is one on PyPI (`2.0.0`); anything else is passed to
+          pip as it stands, so `git+https://github.com/owner/repo@main` works for a keel that is not
+          published yet. Empty installs `slipwai`, which is right once the version you need is on PyPI.
         required: false
         default: ''
         type: string
@@ -66,11 +69,12 @@ jobs:
       - name: Install the keel this package is built for
         run: |
           set -eu
-          if [ -n "${{ inputs.keel }}" ]; then
-            python -m pip install --disable-pip-version-check "slipwai==${{ inputs.keel }}"
-          else
-            python -m pip install --disable-pip-version-check slipwai
-          fi
+          python -m pip install --disable-pip-version-check "$(
+            case "${{ inputs.keel }}" in
+              "")      echo slipwai ;;
+              [0-9]*)  echo "slipwai==${{ inputs.keel }}" ;;
+              *)       echo "${{ inputs.keel }}" ;;
+            esac)"
           slipwai --version
 
       # One suite per kind. A language's asks the package questions and checks the answers; an extension's
@@ -110,11 +114,12 @@ jobs:
       - name: Install the keel
         run: |
           set -eu
-          if [ -n "${{ inputs.keel }}" ]; then
-            python -m pip install --disable-pip-version-check "slipwai==${{ inputs.keel }}"
-          else
-            python -m pip install --disable-pip-version-check slipwai
-          fi
+          python -m pip install --disable-pip-version-check "$(
+            case "${{ inputs.keel }}" in
+              "")      echo slipwai ;;
+              [0-9]*)  echo "slipwai==${{ inputs.keel }}" ;;
+              *)       echo "${{ inputs.keel }}" ;;
+            esac)"
           slipwai --version
 
       # Built here rather than taken from the publisher's machine: a release file nobody can reproduce is

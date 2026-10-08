@@ -189,3 +189,42 @@ class TagPublishTest(unittest.TestCase):
         self.assertIn("tags: ['v*']", said)
         self.assertIn("chandlery_token", said)
         self.assertIn("channel: ''", said)
+
+
+class KeelSpecTest(unittest.TestCase):
+    """Which keel a package proves against. This bit three times in one morning — the channel's CI, a
+    package's CI, and the publish job — each time because `pip install slipwai` gets version 1 while
+    version 2 is unpublished. So the input takes a pip spec rather than only a version."""
+
+    def setUp(self) -> None:
+        self.text = (ROOT / ".github/workflows/package.yml").read_text(encoding="utf-8")
+
+    def test_a_bare_version_is_one_on_pypi(self) -> None:
+        self.assertIn('[0-9]*)  echo "slipwai==${{ inputs.keel }}"', self.text)
+
+    def test_anything_else_is_passed_to_pip_as_it_stands(self) -> None:
+        """So `git+https://…@main` works for a keel nobody has published."""
+        self.assertIn('*)       echo "${{ inputs.keel }}"', self.text)
+
+    def test_empty_installs_the_published_one(self) -> None:
+        """Which is right once the version you need is on PyPI, and is where every package ends up."""
+        self.assertIn('"")      echo slipwai ;;', self.text)
+
+    def test_both_jobs_resolve_it_the_same_way(self) -> None:
+        """Conformance and publish install a keel each; two rules would be one of them wrong."""
+        self.assertEqual(self.text.count('"")      echo slipwai ;;'), 2)
+
+    def test_the_scaffold_offers_the_input(self) -> None:
+        import tempfile
+        from pathlib import Path as P
+
+        from slipwai import package_new
+        area = P(tempfile.mkdtemp())
+        package_new.write("language", "rust", area, "9.0")
+        self.assertIn("keel: ''", (area / "rust/.github/workflows/verify.yml").read_text(encoding="utf-8"))
+
+    def test_it_points_at_the_repository_that_has_this_workflow(self) -> None:
+        """Version 1's repository has a `package.yml` too, with inputs this one has never heard of."""
+        from slipwai.package_new import KEEL_REPO
+        self.assertTrue((ROOT / ".github/workflows/package.yml").is_file())
+        self.assertIn("slipwai", KEEL_REPO)

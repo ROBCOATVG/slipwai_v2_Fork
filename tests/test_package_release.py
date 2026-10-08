@@ -156,7 +156,7 @@ class ScaffoldShipsTest(unittest.TestCase):
             with self.subTest(kind=kind):
                 package_new.write(kind, key, self.area, CORE)
                 workflow = (self.area / key / ".github/workflows/verify.yml").read_text(encoding="utf-8")
-                self.assertIn("slipwai/.github/workflows/package.yml", workflow)
+                self.assertIn("/.github/workflows/package.yml", workflow)
                 self.assertIn(f"kind: {kind}", workflow)
                 self.assertIn("slipwai package register", (self.area / key / "Makefile").read_text("utf-8"))
 
