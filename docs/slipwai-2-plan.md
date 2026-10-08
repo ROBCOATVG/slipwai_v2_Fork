@@ -1332,7 +1332,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 106 of 138 slices done** — phase 1 6/6, phase 2 9/9, phase 3 19/22, phase 4 7/7, phase 5 29/29, phase 6 11/13, phase 7 15/16, phase 8 5/8, phase 9 5/8, phase 10 0/6, phase 11 0/5, phase 12 0/4, phase 13 0/5. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 106 of 143 slices done** — phase 1 6/6, phase 2 9/9, phase 3 19/22, phase 4 7/7, phase 5 29/29, phase 6 11/13, phase 7 15/17, phase 8 5/8, phase 9 5/8, phase 10 0/6, phase 11 0/5, phase 12 0/4, phase 13 0/5, phase 14 0/4. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1673,7 +1673,8 @@ Depends on: phase 4. Runs beside phase 7.
 | 7.4b | A stream's own log, read from the board: `slipwai fleet <stream>` in the terminal and a drawer under each row on the bridge, each line said rather than printed | new | S | The question the board provokes — what has this one been doing — is answered without opening a `.jsonl` | done |
 | 7.4c | The run drawn on the event model: the browsable page and the bridge colour each slice by **two** bands — what `model.yaml` intends, and what the logs say happened — folded at render time and written back nowhere. Never into `model.drawio`, which is committed | new | M | A slice badged `implemented` whose log holds nothing is visible on the page as the drift it is, and a mark being set lights the slices it clears | done |
 | 7.7a | `/cruise` casts off: `scripts/agents/fleet.py` starts the harbourmaster and one captain per fairway under the telegraph's `boilers`, and exits. `make cruise`, `cruise-status` and `cruise-stop` point at it | new | S | Typing `/cruise` leaves nothing holding the state of the run | done |
-| 7.7b | Delete the runner: `cruise.py`'s loop, its seat commands re-pointed at the logs, and its harness-hook verbs (`guard`, `compacting`, `resume`, `stopping`) moved to where the captain owns them — the same knot as 6.1c, untied by the second closed set (6.1d) | new | L | No runner left in the toolkit, and the greenfield of phase 7 has run two captains on two machines start to finish |  |
+| 7.7b | The harness's own moments become points of the two closed sets, fired from one script the captain owns (`scripts/agents/session.py`): `guard` and `stopping` are the `before-write` and `before-stop` guards, `compacting` and `resume` are the `before-compact` and `after-compact` hooks, and the keel writes point names into `.claude/settings.json` and `registry.json`'s projections rather than one script's verbs. Both sets widened for shape rather than for need — `before-command`, `before-fetch` and `after-merge` — so that a want of a different *shape* is not a keel change | new | M | A settings row naming a verb the script has not got fails a gate by name; the control-file refusal and the compaction protocol are the keel's on every harness that has such an event, not Claude Code's |  |
+| 7.7d | Delete the runner: `cruise.py`'s loop, its stream, its pid and checkpoint files and its seat commands, with `watch`, `tell` and `told` rewritten against the deck logs. What is left of the file is the run's settings reader, the shape `drive.py` already has for `/drive` | new | L | No runner left in the toolkit, and the greenfield of phase 7 has run two captains on two machines start to finish |  |
 | 7.7c | The captain dispatches the real `/drive`: `registry.json`'s `headless.command` for the installed harness, filled with the ladder's own prompt, instead of falling back to `scripts/agents/drive.py` — which is the *settings reader* and prints two lines and exits 0. `SLIPWAI_DRIVE` stays the override. A harness whose `headless` is null is named and the fairway parks rather than being dispatched at something that is not the ladder | new (section 14, link 2) | M | A captain on a project initialised for any harness with a verified `headless` row runs the ladder; one whose harness has none says so by name instead of parking on a missing `mark-set` | done |
 | 7.8 | The captain requires the ladder's completion lines: a slice is through its gate when the log holds every mark the chart's `sets` names and a `demo`, all written during this turn. A sent-back demo is a retry in the same turn, bounded by `attempts`, then a park naming the verdict and the count. `verdict` becomes a closed set; `check-chart` requires `sets` and `steers_by` explicitly once `story-split.md` exists, so an empty list is an answer and an absent key is not | new (section 14) | M | The run that started this — `/drive` printing a help message, exiting 0 and writing nothing — parks instead of reporting a slice through its gate; a slice that sets no mark still passes on its `demo` | done |
 | 7.9 | The harbourmaster performs the merge: it takes the request in order, one at a time, rebases in a scratch worktree of its own, runs the project's `make verify` there, pushes, and writes `merged` with the commit. A conflict is `git rebase --abort` and `refused` naming the paths, and the captain resolves in its own berth bounded by `attempts`; a red gate is `refused` with the failing check. The berth is never written by two processes and stays allocated until `merged` | new (section 14) | L | `merged` stops reading 0 on the board: a slice accepted at its demo reaches trunk with no person in the path, and a conflict comes back as two named paths rather than a wedged worktree | done |
@@ -1819,6 +1820,36 @@ phases 10 to 12 are still changing.
 | 9.7 | **What is new since version 1**, a page of its own linked from the README's first screen: the things a version 1 user has to know, and nothing else. Languages and the clouds are packages and the keel ships none; the chandlery and who you install from; the chart and the mark, and the claim that a sibling is cleared by a mark being *set*; captains and the harbourmaster in place of the runner; status folded from append-only logs and stored nowhere; the telegraph as one lever; the fleet board and the bridge; the two-gate split; `slipwai adopt` and `slipwai migrate`, with what migrating costs and what it cannot undo. Written from `CHANGELOG.md` and the five pages rather than beside them, and short enough to read in one sitting | new (owner, 2026-10-08) | M | A version 1 user reads one page and can name every change that affects them, what each is for, and the one command that moves their project; every claim on it links to the page that shows it working, and no change on it is one the changelog does not carry |  |
 | 9.4b | `/drive` bare is the documented default: `commands/drive.md` says what each of its four forms narrows, and the guide leads with the bare form rather than with a slice id. `make test-docs` holds a `key=value` a page shows after a `/command` to that command's own `argument-hint` | new | S | Every example of `/drive` on a page is one `commands/drive.md` takes, and a page that invents an argument fails the gate by name | done |
 | 9.5 | The five maintainer skills in `.claude/skills/`, rewritten for version 2's shape: `add-language`, `add-framework` and `add-extension` as prose around the four `slipwai package` verbs and the two package shapes; `add-target` for the skiff and the liner; `add-backing-service` for a catalogue that no longer holds backends | new | L | A contributor who has not seen this repository publishes a package by following one skill; no skill names a step a verb already does; none describes a file version 2 does not have | done |
+
+### Phase 14. `slipwai` on its own opens the board, and the board can start a project
+
+Asked 2026-10-08. `slipwai` typed with no arguments prints a usage message, which is the right answer for a
+tool somebody already knows and the wrong one for everything this keel has been adding. There is a fleet
+board (`slipwai fleet`) and a bridge (`slipwai bridge`) and neither is what a person reaches first, because
+reaching them means knowing they exist. The verb that needs no argument should be the one that shows you
+where you are.
+
+And the two things a person does *before* there is anything to watch — generating a project and adopting an
+existing one — are the two the board cannot do. So somebody who opens the board on a machine with no
+project sees an empty board and a sentence telling them to go back to the terminal, which is the moment the
+tool was supposed to stop being a terminal.
+
+This is last, and after phase 12, for one reason: **what the board can start has to be settled before the
+board offers to start it.** Phase 13's quickstarts are what generation becomes for the person this helps,
+and 12.4 decides which install route is supported. A board that offered generation before those two landed
+would be a fourth place the answer is written down.
+
+| Slice | What | From | Size | Done when | Status |
+|---|---|---|---|---|---|
+| 14.1 | `slipwai` with no arguments opens the fleet board, and `slipwai --help` is what prints the verbs. In a directory that is not a project it opens the board anyway, empty, with what it *can* do from there; `--no-browser` and a non-interactive stdin fall back to today's usage message, because a tool run from a script has nobody to show a page to | new (owner, 2026-10-08) | S | A person who has installed slipwai and knows nothing else types `slipwai` and sees either their fleet or the two things they can start; every existing verb is reachable exactly as it is today |  |
+| 14.2 | Generation from the board: the interview of 3.x as a page, asking the same questions in the same order from the same catalogue, and offering phase 13's quickstarts first the way 13.2 has the terminal interview offer them. One interview, two faces — the questions, their order and their refusals are read from the catalogue, never written twice | new (owner) | L | A project generated from the board is byte-identical to the same answers given in the terminal, held by a gate that drives both and diffs the trees |  |
+| 14.3 | Adoption from the board: `slipwai adopt` on a directory the person picks, showing what it found and what it would write *before* it writes anything — which the terminal verb does by printing and the board can do far better, since adoption's whole risk is a file changed in a repository somebody already has | new (owner) | M | A person adopts an existing repository without typing a path, and nothing is written until they have seen the list of what would be |  |
+| 14.4 | The board is one page whatever started it: the fleet, the bridge, generation and adoption are tabs of the same server rather than three commands that each open something. `slipwai fleet` and `slipwai bridge` stay as the deep links they already are | new | M | There is one server, one port and one page; the three verbs open it at three places and none of them starts a second one |  |
+
+Depends on: phase 12 (12.2's MCP server is the same read side this page needs, and 12.4 settles the install
+route), phase 13 (14.2 offers quickstarts, so they have to exist), and the bridge and fleet board of phase
+5, which are what the page is already made of. **Not a rewrite of the interview**: 14.2 is a second face on
+the questions `catalog.json` already declares, and the gate that proves it is the two trees being identical.
 
 ### Order, and what runs in parallel
 
@@ -2680,20 +2711,34 @@ the runner is not a better runner, it is **no runner** — the state is in the l
 and nothing a person types stays in the loop, so nothing a person types can be the thing that died at
 iteration two.
 
-**7.7b — and deleting the old one.** Three things are still in `cruise.py` and they are not the same kind
-of thing. Its **loop** is dead the moment 7.7a lands and is a deletion. Its **seat commands** —
-`watch`, `tell` — read the runner's own log and have to read the deck logs instead, which is a rewrite of
-about four hundred lines. Its **harness-hook verbs** — `guard`, `compacting`, `resume`, `stopping` — are
-called from the rows `agent_settings.py` writes into `.claude/settings.json`, and they are the control-file
-guard and the compaction protocol, which now belong to the captain. That last part is the same knot as
-6.1c: a keel writing harness hook rows that name one script, where the right shape is a point an extension
-or a captain attaches to and one of those points is a guard that may refuse. **It untied with the same
-decision** — the second closed set, 2026-10-08 — which is why the two are one slice's worth of work and not
-two. `guard` and `stopping` become guards the captain owns; `compacting` and `resume` are hooks.
+**7.7b and 7.7d — and deleting the old one.** Three things are still in `cruise.py` and they are not the
+same kind of thing, which is why they are now two slices rather than one.
 
-Done when no runner is left in the toolkit and the greenfield of phase 7 — a small product with two bounded
-contexts, generated with the 2.0.0 keel — has run two captains on two machines from start to finish. That
-last half is a person's: it is the first real run.
+Its **harness-hook verbs** — `guard`, `compacting`, `resume`, `stopping` — are called from the rows
+`agent_settings.py` writes into `.claude/settings.json`, and they are the control-file guard and the
+compaction protocol, which now belong to the captain. That is the same knot as 6.1c: a keel writing harness
+hook rows that name one script, where the right shape is a point an extension or a captain attaches to and
+one of those points is a guard that may refuse. **It untied with the second closed set** (6.1d,
+2026-10-08), and 7.7b is that untying. `guard` and `stopping` became the `before-write` and `before-stop`
+guards; `compacting` and `resume` became the `before-compact` and `after-compact` hooks; and
+`scripts/agents/session.py` is the one place a harness's moments now arrive, running the keel's own answer
+and then whatever an extension declared there.
+
+**Both sets were widened for shape at the same time, on the owner's instruction** — *add sensible extension
+points even if not yet needed, otherwise we need to update the keel to add anything of diff shape.* The set
+being closed is what makes widening it a keel change, so the four guards and three points added are the
+shapes the originals left out rather than guesses at what somebody will want: a path (`before-write`), a
+command (`before-command`), a URL (`before-fetch`), the end of a session (`before-stop`), the far side of a
+merge (`after-merge`) and the two sides of compaction. The rule held while widening them was that **a point
+is only added if something fires it** — a point nothing fires is the silent failure this whole design is
+written against — which is why `before-command`, `before-fetch` and `after-merge` have rows and callers and
+not just rows in a table.
+
+What is left is 7.7d. Its **loop** is dead the moment 7.7a lands and is a deletion. Its **seat commands** —
+`watch`, `tell`, `told` — read the runner's own log and have to read the deck logs instead, which is a
+rewrite of about four hundred lines. Done when no runner is left in the toolkit and the greenfield of phase
+7 — a small product with two bounded contexts, generated with the 2.0.0 keel — has run two captains on two
+machines from start to finish. That last half is a person's: it is the first real run.
 
 ### Phase 10. The clouds as packages
 

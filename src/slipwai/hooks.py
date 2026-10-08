@@ -61,6 +61,16 @@ POINTS: tuple[Point, ...] = (
           ("slice", "fairway", "lines"), "nothing"),
     Point("before-merge", "on the rebased branch, before the full gate", ("slice", "fairway", "diff"),
           "nothing"),
+    # And the three below on 2026-10-08, with 7.7b. `before-merge` had no partner, so an extension with
+    # something to do once a slice is actually on trunk — re-index it, publish it, tell something — had to
+    # guess from a gate that passed, which is not the same event. The compaction pair were verbs inside the
+    # runner: the keel wrote a harness hook row naming one script, so they worked on Claude Code and
+    # nowhere else, which is the shape this file exists to replace.
+    Point("after-merge", "after the slice is on trunk and pushed", ("slice", "fairway", "commit"), "nothing"),
+    Point("before-compact", "a delegate's context is about to be compacted",
+          ("stage", "slice", "fairway"), "`cruise.py compacting`"),
+    Point("after-compact", "a delegate's session has resumed from a compacted context",
+          ("stage", "slice", "fairway"), "`cruise.py resume`"),
 )
 NAMES = tuple(point.name for point in POINTS)
 

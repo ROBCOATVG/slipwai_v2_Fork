@@ -479,11 +479,15 @@ def materialize_json(path: Path, content: dict[str, object]) -> None:
 
 
 def hook_file(harness: dict[str, object]) -> tuple[Path, dict[str, object]] | None:
-    """The hook file this harness reads `scripts/agents/cruise.py stopping` from, and its whole content: the
-    registry's `hooks.projection` says where, how an entry is spelled and which event runs which verb, and the
-    project's own keys in that file — a person's other hooks, other settings — are carried over untouched.
+    """The hook file this harness reads `scripts/agents/session.py before-stop` from, and its whole content:
+    the registry's `hooks.projection` says where, how an entry is spelled and which event runs which verb, and
+    the project's own keys in that file — a person's other hooks, other settings — are carried over untouched.
     None where the registry records no projection: the harness has no such hook, the factory writes the file
-    elsewhere (Claude Code's settings), or the file's shape was not read."""
+    elsewhere (Claude Code's settings), or the file's shape was not read.
+
+    The verbs are the closed sets' point names, so this file and `agent_settings.py` write the same words into
+    two harnesses' formats. Before 7.7b they named `cruise.py`'s verbs, which is what made the control-file
+    refusal and the compaction protocol one harness's behaviour rather than the keel's."""
     hooks = harness.get("hooks")
     projection = hooks.get("projection") if isinstance(hooks, dict) else None
     if not isinstance(projection, dict):
@@ -494,12 +498,12 @@ def hook_file(harness: dict[str, object]) -> tuple[Path, dict[str, object]] | No
     # silently rather than holding the turn. Claude Code's are written from `$CLAUDE_PROJECT_DIR`; a harness has
     # no such variable in common, and Git does, so the command asks it. Spliced into the registry's JSON entry
     # already escaped, since the quotes it carries would otherwise end the string they are put into.
-    script = f'cd "$(git rev-parse --show-toplevel)" && python3 {PREFIX}scripts/agents/cruise.py'
+    script = f'cd "$(git rev-parse --show-toplevel)" && python3 {PREFIX}scripts/agents/session.py'
     events: dict[str, object] = {}
     for verb, event in dict(projection["events"]).items():  # type: ignore[call-overload]
         command = json.dumps(f"{script} {verb}")[1:-1]
         entry = json.loads(json.dumps(projection["entry"]).replace("{command}", command))
-        if verb == "stopping":
+        if verb == "before-stop":
             entry.update(dict(projection.get("stopEntry") or {}))  # type: ignore[call-overload]
         events[str(event)] = [entry]
     present: dict[str, object] = {}
@@ -721,8 +725,8 @@ def check_headless_and_hooks(registry: list[dict[str, object]]) -> None:
                 if field not in projection:
                     FINDINGS.append(f"registry.json: `{key}`'s hooks projection says no {field}")
             events = projection.get("events")
-            if not isinstance(events, dict) or "stopping" not in events:
-                FINDINGS.append(f"registry.json: `{key}`'s hooks projection runs no `stopping`")
+            if not isinstance(events, dict) or "before-stop" not in events:
+                FINDINGS.append(f"registry.json: `{key}`'s hooks projection runs no `before-stop`")
             if "{command}" not in json.dumps(projection.get("entry")):
                 FINDINGS.append(f"registry.json: `{key}`'s hooks entry has no {{command}} placeholder")
         else:

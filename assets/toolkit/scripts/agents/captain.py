@@ -261,12 +261,30 @@ def drive_command(slice_id: str, fairway: str) -> tuple[list[str], dict[str, str
     """
     named = os.environ.get("SLIPWAI_DRIVE")
     if named:
-        return [*named.split(), slice_id, fairway], dict(os.environ), f"SLIPWAI_DRIVE: {named}"
+        return [*named.split(), slice_id, fairway], {**os.environ, **naming(slice_id, fairway)}, \
+            f"SLIPWAI_DRIVE: {named}"
     chosen, said = harness.choose()
     template, _ = harness.template(chosen)
     prompt = harness.prompt_for(chosen, "drive", DRIVE_COMMAND, f"{slice_id} fairway={fairway}")
     line = template.replace("{prompt}", shlex.quote(prompt)) + harness.model_flags(chosen, drive_model())
-    return shlex.split(line), harness.child_environment(chosen), said
+    return shlex.split(line), {**harness.child_environment(chosen), **naming(slice_id, fairway)}, said
+
+
+def naming(slice_id: str, fairway: str) -> dict[str, str]:
+    """What the session is told about itself, for `scripts/agents/session.py` to read at the harness's own
+    moments — the guards it may be refused at and the hooks it fires.
+
+    A session carries no argument into a hook: a hook is a command the harness runs, and the only thing it
+    and the session have in common is the environment. So the four facts `session.py` needs are put there,
+    and the *absence* of `SLIPWAI_FAIRWAY` is what tells a person's own `/drive` from one the captain
+    dispatched — which is the difference between a control-file edit being refused and being allowed.
+
+    `SLIPWAI_SINCE` is the instant the session opened. `before-stop` holds a turn that has written no deck
+    log line, and "no line" has to mean *none since this session began*: a fairway with a hundred lines
+    behind it would otherwise satisfy the test for ever.
+    """
+    return {"SLIPWAI_FAIRWAY": fairway, "SLIPWAI_SLICE": slice_id, "SLIPWAI_STAGE": "drive",
+            "SLIPWAI_SINCE": logs.now()}
 
 
 def drive_model() -> str | None:

@@ -210,8 +210,17 @@ order, so that a hook behaves the same with a person present as it does under a 
 | `after-stage` | After each rung, with the same |
 | `boundary` | At each stage boundary, after the inbox is read |
 | `before-merge` | Once, on the rebased branch, before the full gate of the **{rung_titles()["merge"]}** rung |
+| `after-merge` | Once, after the slice is on trunk and pushed, with the commit |
+| `before-compact` | Whenever this session's context is compacted, mid-rung |
+| `after-compact` | When it resumes from a compacted context |
 
 `slipwai hooks` lists what is attached to what, in that order. A hook that fails is reported and is never
 fatal to the rung: the rung completes, and the failure is a line naming the extension, the point and the
 last thing the hook printed. Nothing in this ladder depends on a hook running at all.
+
+**Guards are the other set, and they are not the same thing.** A guard fires before a single tool call —
+a search, a write, a shell command, a fetch — and may *refuse* it, which a hook can never do. A refused
+call is not a failed rung: the reason comes back as the tool's result and the next thing is tried. Two of
+them are not tool calls at all: `session` fires as a delegate opens and `before-stop` as one tries to end.
+`scripts/agents/session.py` is where the harness's own moments arrive and where both sets are fired from.
 """

@@ -12,19 +12,21 @@ from ..targets import managed
 from .compose import composed
 
 
-def compaction_hooks(layout: Layout) -> dict[str, list[dict[str, object]]]:
-    """What Claude Code runs around compaction and at the end of a turn, so a `/cruise` iteration resumes
-    from its checkpoint and cannot end anywhere but on one of its four last lines — and around a search and a
-    delegate, so the code index is asked before the source is grepped for a symbol and is current after.
+def harness_hooks(layout: Layout) -> dict[str, list[dict[str, object]]]:
+    """Claude Code's own moments, each pointed at the one script that answers them: `session.py`.
 
-    `SessionStart` with the `compact` matcher runs when the session continues after compaction and its
-    stdout is added to the context; `PreCompact` runs just before. `Stop` runs when the model tries to end
-    its turn, and a hook there can refuse: `stopping` does, in a session the runner started, while a
-    checkpoint says an iteration is in flight and the turn's last line is not an end the contract knows —
-    the one control a command file's prose is not. All three call the cruise script, which does nothing
-    unless a runner's iteration is in flight, so a plain `/drive` session, and a typed `/cruise` (which
-    starts the runner and ends), never see them. The other harnesses' equivalents, where one exists, are the
-    registry's `compaction` and `hooks` rows, and `scripts/agents/project.py` writes those hook files.
+    Every row here is a *point of a closed set* — `guards.py`'s or `hooks.py`'s — and not a behaviour of its
+    own. That is the whole of what changed in 7.7b. These rows used to name `cruise.py <verb>`, so the
+    control-file refusal and the compaction protocol were things the keel wrote into one harness's settings
+    file: they worked on Claude Code and silently nowhere else, which is the failure the two closed sets
+    exist to end. `session.py` runs the keel's own answer and then whatever an extension declared at that
+    point, so an extension says `before-write` once and gets it wherever a harness has such an event.
+
+    `PreToolUse` runs before a tool call and a command exiting 2 refuses it, the stderr becoming the result
+    the model reads. `Stop` runs when the model tries to end its turn and can refuse that too. `PreCompact`
+    runs just before compaction, and `SessionStart` with the `compact` matcher when the session continues
+    after it, its stdout added to the context. The other harnesses' equivalents, where one exists, are the
+    registry's `hooks` rows, and `scripts/agents/project.py` writes those hook files from the same verbs.
     """
     # `$CLAUDE_PROJECT_DIR` because a hook runs with whatever directory the session happens to be in, and
     # these paths are relative to the repository root. A session opened in a subdirectory — or one whose
@@ -32,26 +34,36 @@ def compaction_hooks(layout: Layout) -> dict[str, list[dict[str, object]]]:
     # there, and the hook failed silently rather than doing its job. The scripts already find the root from
     # their own location; it was only the command that launches them that assumed one.
     here = "$CLAUDE_PROJECT_DIR/"
-    script = here + layout.under("scripts/agents/cruise.py")
+    script = here + layout.under("scripts/agents/session.py")
     index = here + layout.under("scripts/agents/code_index.py")
     return {
-        "PreCompact": [{"hooks": [{"type": "command", "command": f"python3 {script} compacting"}]}],
-        "SessionStart": [{"matcher": "compact", "hooks": [{"type": "command", "command": f"python3 {script} resume"}]},
-                         # A person's `/drive` has no runner in front of it, so the index is made sound and current
-                         # when the session opens, the step the runner takes before every iteration. A rebuild is
-                         # as long as a first index, hence the timeout; it says something only when it acted.
+        "PreCompact": [{"hooks": [{"type": "command", "command": f"python3 {script} before-compact"}]}],
+        "SessionStart": [{"matcher": "compact",
+                          "hooks": [{"type": "command", "command": f"python3 {script} after-compact"}]},
+                         # A person's `/drive` has no captain in front of it, so the index is made sound and
+                         # current when the session opens, the step the captain takes before every stage. A
+                         # rebuild is as long as a first index, hence the timeout; it says something only when
+                         # it acted.
                          {"matcher": "startup", "hooks": [{"type": "command", "command": f"python3 {index} session",
-                                                           "timeout": 900}]}],
-        "Stop": [{"hooks": [{"type": "command", "command": f"python3 {script} stopping"}]}],
-        # The editing tools, in a session the runner started: an edit to a gate or a control of the run —
-        # `scripts/`, the Makefile, `tools/`, CI, this file — is refused before it lands; the runner compares the
-        # controls after every iteration for what the shell wrote (`docs/cruise.md`, *When it is blocked*).
+                                                           "timeout": 900},
+                                                          {"type": "command", "command": f"python3 {script} session"}]}],
+        "Stop": [{"hooks": [{"type": "command", "command": f"python3 {script} before-stop"}]}],
+        # One row per shape a tool call comes in, because a guard is handed a path, a command or a URL and the
+        # three are not the same question. In a session the captain dispatched, an edit or a shell write to a
+        # gate or a control of the run — `scripts/`, the Makefile, `tools/`, CI, this file, the two registries —
+        # is refused before it lands; in every session, whatever an extension declared at that point runs.
         "PreToolUse": [{"matcher": "Edit|Write|MultiEdit|NotebookEdit",
-                        "hooks": [{"type": "command", "command": f"python3 {script} guard"}]},
+                        "hooks": [{"type": "command", "command": f"python3 {script} before-write"}]},
+                       {"matcher": "Bash",
+                        "hooks": [{"type": "command", "command": f"python3 {script} before-command"}]},
+                       {"matcher": "WebFetch|WebSearch",
+                        "hooks": [{"type": "command", "command": f"python3 {script} before-fetch"}]},
+                       {"matcher": "Grep|Glob",
+                        "hooks": [{"type": "command", "command": f"python3 {script} before-search"}]},
                        # The code index asked first: a search of the source for a symbol, from a session or a
                        # delegate (the event carries `agent_id`) that has not asked the index yet, is refused with
                        # the command that answers it. Inert without `.codegraph/`, and in every session, not only
-                       # the runner's, because the rule is the project's and not the run's.
+                       # the captain's, because the rule is the project's and not the run's.
                        {"matcher": "Grep|Bash|mcp__codegraph__.*",
                         "hooks": [{"type": "command", "command": f"python3 {index} guard"}]}],
         # A delegate came back having edited what it edited, and CodeGraph's own watcher is off wherever it decides
@@ -188,4 +200,4 @@ def claude_settings(apps: list[App], target: str = "none", layout: Layout = AT_R
                                        + [f"mcp__{server}__*" for server in EXTENSION_MCP_SERVERS],
                                        "deny": [f"Bash({command})" for command in DENIED_PERMISSIONS]},
                        "enabledMcpjsonServers": EXTENSION_MCP_SERVERS,
-                       "hooks": compaction_hooks(layout)}, indent=2) + "\n"
+                       "hooks": harness_hooks(layout)}, indent=2) + "\n"

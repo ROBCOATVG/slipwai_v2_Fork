@@ -492,9 +492,9 @@
             "command": "{command}"
           },
           "events": {
-            "stopping": "stop",
+            "before-stop": "stop",
             "responded": "afterAgentResponse",
-            "compacting": "preCompact"
+            "before-compact": "preCompact"
           },
           "stopEntry": {
             "loop_limit": null
@@ -698,7 +698,7 @@
             "name": "cruise"
           },
           "events": {
-            "stopping": "AfterAgent"
+            "before-stop": "AfterAgent"
           },
           "stopEntry": {},
           "how": "`AfterAgent` carries the final text as `prompt_response` and takes `decision: \"block\"` (an alias of `deny`) with `reason`, which becomes the next prompt; the hook prints only the JSON object. Merged into the project's settings under `hooks`, the rest of the file left as it was."

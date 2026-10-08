@@ -89,7 +89,11 @@ def elect(keys: list[str]) -> int:
 REFUSING = {
     "session": "stop a delegate's session before its first tool call",
     "before-search": "stop a search of the tree and tell the agent what to ask instead",
+    "before-write": "stop a file being written and tell the agent why",
+    "before-command": "stop a shell command running and tell the agent why",
+    "before-fetch": "stop a URL being read and tell the agent where to look instead",
     "after-delegate": "reject a delegate's answer and have it asked again",
+    "before-stop": "stop a session ending, and carry the turn on with the reason",
 }
 
 

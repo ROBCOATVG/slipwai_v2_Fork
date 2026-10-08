@@ -25,11 +25,27 @@ RUNNER = TOOLKIT_ROOT / "scripts/extensions/guards.py"
 
 
 class SetTest(unittest.TestCase):
-    def test_the_three_are_the_set_and_a_fourth_is_refused(self) -> None:
-        self.assertEqual(guards.NAMES, ("session", "before-search", "after-delegate"))
+    def test_the_seven_are_the_set_and_an_eighth_is_refused(self) -> None:
+        self.assertEqual(guards.NAMES, ("session", "before-search", "before-write", "before-command",
+                                        "before-fetch", "after-delegate", "before-stop"))
         with self.assertRaises(KeyError) as refused:
             guards.guard("before-merge")
         self.assertIn("is not a guard the keel fires", str(refused.exception))
+
+    def test_every_shape_a_tool_call_comes_in_has_a_point(self) -> None:
+        """The four added on 2026-10-08 are shapes, not guesses: a path, a command, a URL and the end of a
+        session. A guard that wanted one of these before had to be a `before-search` pretending, or a
+        harness's own hook — which is how version 1's control-file refusal came to work on one harness.
+
+        What a guard is handed is the test of whether a shape is really its own. A path is not a query and a
+        host is not a path, so the three cannot be folded into one point without the point handing over a
+        bag of maybes.
+        """
+        given = {one.name: set(one.given) for one in guards.GUARDS}
+        self.assertIn("path", given["before-write"])
+        self.assertIn("command", given["before-command"])
+        self.assertIn("url", given["before-fetch"])
+        self.assertNotIn("tool", given["before-stop"])
 
     def test_a_hook_point_is_not_a_guard_and_a_guard_is_not_a_hook_point(self) -> None:
         """Two sets, not one widened. A name in both would be a point whose fatality depended on which

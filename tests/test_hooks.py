@@ -25,6 +25,22 @@ class PointTest(unittest.TestCase):
             with self.subTest(point=name):
                 self.assertEqual(hooks.point(name).was, "nothing")
 
+    def test_the_compaction_pair_name_the_runner_verbs_they_replace(self) -> None:
+        """`before-compact` and `after-compact` are not new behaviour: they are `cruise.py compacting` and
+        `cruise.py resume`, which the keel wrote straight into `.claude/settings.json` and which therefore
+        existed on one harness. A point says where it came from so that reading the set tells you what was
+        moved and what was invented."""
+        self.assertIn("cruise.py", hooks.point("before-compact").was)
+        self.assertIn("cruise.py", hooks.point("after-compact").was)
+        self.assertEqual(hooks.point("after-merge").was, "nothing")
+
+    def test_before_merge_has_a_partner_now(self) -> None:
+        """A gate that passed on a rebased branch is not the same event as a slice being on trunk — the
+        merge can still be refused after it. An extension with something to do once the commit exists had
+        no point to say so at, and `before-merge` was the nearest wrong answer."""
+        self.assertIn("after-merge", hooks.NAMES)
+        self.assertIn("commit", hooks.point("after-merge").given)
+
     def test_every_point_says_when_it_fires_and_what_it_hands_over(self) -> None:
         for declared in hooks.POINTS:
             with self.subTest(point=declared.name):
@@ -35,7 +51,7 @@ class PointTest(unittest.TestCase):
         """An extension declaring one would have its hook silently never run, which is the failure that is
         hardest to notice: installed, valid, and nothing happens, for ever."""
         with self.assertRaises(KeyError) as refused:
-            hooks.point("after-merge")
+            hooks.point("before-search")
         self.assertIn("it does not add one", str(refused.exception))
         self.assertIn("before-merge", str(refused.exception))
 

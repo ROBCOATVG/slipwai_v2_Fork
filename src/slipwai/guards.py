@@ -1,4 +1,4 @@
-"""The second closed set: the moments an extension may *refuse* something, and the three of them.
+"""The second closed set: the moments an extension may *refuse* something, and the seven of them.
 
 `hooks.py` is the first set, and its second rule is the reason this file exists: **a hook is never fatal to
 the rung.** It is reported and the rung completes, because an extension that could fail a stage is an
@@ -27,6 +27,26 @@ declares it once instead of once per harness.
 things a person asked for, so election names the guards an extension declares and takes the person's word
 once. An extension that declares a guard nobody agreed to fires none — `.slipwai/guards.json` is written
 from the agreement, not from the manifest, and like `.slipwai/hooks.json` it is a controlled file.
+
+**Why there are seven and not three.** The set is closed, so widening it is a keel change, and a keel change
+to add a point is the cost this file exists to avoid paying twice. The three it opened with were the three
+`codegraph` needed. The four added on 2026-10-08 are the *shapes* the three leave out, and each was added
+with something firing it rather than on the chance it would be wanted:
+
+- `before-write` is a path about to be written. The captain's own control-file refusal lives here — a gate
+  or a Makefile is not edited by an iteration — and it was a verb inside the runner before this, which is
+  why it worked on one harness.
+- `before-command` is a shell command about to run. It is the same refusal as `before-write` through the
+  door `before-write` cannot see: `make verify` rewritten by a `sed` is rewritten all the same.
+- `before-fetch` is a URL about to be read. Egress is its own shape — what a guard is handed is a host, not
+  a path — and nothing else on this list can hold an opinion about it.
+- `before-stop` is a session about to end. Refusing it carries the turn on, which is the cheap recovery for
+  a delegate that stopped without finishing; the captain's gate is the dear one, and parks.
+
+Three shapes are deliberately *not* here. There is no point around a rung — that is `hooks.py`, and a guard
+there would make every extension able to end a stage. There is no point that can change what a tool call
+does, only whether it happens: a guard that could rewrite the call would be a second author of the diff.
+And there is no point after a write, because a refusal after the fact is a report, which is a hook.
 """
 from __future__ import annotations
 
@@ -54,7 +74,8 @@ class Guard:
     refusing: str
 
 
-#: In firing order. `session` is first because it is the only one that is not about a single tool call.
+#: In the order a session meets them: `session` opens it, `before-stop` is the last thing it asks, and the
+#: five between are the tool calls. `session` and `before-stop` are the two that are not about one call.
 GUARDS: tuple[Guard, ...] = (
     Guard("session", "a delegate's session opens, before its first tool call",
           ("stage", "slice", "fairway", "berth"),
@@ -62,9 +83,21 @@ GUARDS: tuple[Guard, ...] = (
     Guard("before-search", "a delegate is about to search the tree — grep, find, a file read by glob",
           ("stage", "slice", "fairway", "query", "tool"),
           "that search does not run, and the agent is told what to ask instead"),
+    Guard("before-write", "a delegate is about to write or edit a file",
+          ("stage", "slice", "fairway", "path", "tool"),
+          "that file is not written, and the agent is told why and writes something else"),
+    Guard("before-command", "a delegate is about to run a shell command",
+          ("stage", "slice", "fairway", "command", "tool"),
+          "that command does not run, and the agent is told why"),
+    Guard("before-fetch", "a delegate is about to read a URL",
+          ("stage", "slice", "fairway", "url", "host", "tool"),
+          "that fetch does not happen, and the agent is told where to look instead"),
     Guard("after-delegate", "a delegate has answered, before its answer is used",
           ("stage", "slice", "fairway", "tool"),
           "the answer is not used, and the agent is told why and asked again"),
+    Guard("before-stop", "a delegate's session is about to end",
+          ("stage", "slice", "fairway", "berth"),
+          "the session does not end: the reason goes back as the next turn, and the delegate carries on"),
 )
 NAMES = tuple(guard.name for guard in GUARDS)
 

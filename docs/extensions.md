@@ -84,6 +84,9 @@ promise nobody made. `slipwai hooks` prints the set with what is attached to eac
 | `after-stage` | after each rung of the ladder | `stage`, `slice`, `fairway`, `berth` |
 | `boundary` | every captain boundary, after the inbox is read | `slice`, `fairway`, `lines` |
 | `before-merge` | on the rebased branch, before the full gate | `slice`, `fairway`, `diff` |
+| `after-merge` | after the slice is on trunk and pushed | `slice`, `fairway`, `commit` |
+| `before-compact` | a delegate's context is about to be compacted | `stage`, `slice`, `fairway` |
+| `after-compact` | a delegate's session has resumed from a compacted context | `stage`, `slice`, `fairway` |
 
 Declared short — `"hooks": {"init": "init.py"}` — or long, with `run`, `stages` and `budget`:
 
@@ -109,6 +112,54 @@ Three rules keep a hook from becoming a second control plane:
   extensions, and an iteration that edits it is refused like one that edits a gate — so a run cannot
   register a hook on itself.
 
+## The guards
+
+A guard is the second closed set, and it exists because of the rule above: **a hook is never fatal to the
+rung.** That rule left one thing unbuildable. An extension that wants to say *don't grep for that, ask the
+index* is not reporting after the fact; it is answering a tool call that has not happened yet. Widening
+`hooks` to allow a refusal would have made every hook able to fail a rung, which is the control plane the
+rule is there to prevent. So a guard is its own kind, with three differences and they are the whole design:
+
+1. **A guard fires before a tool call, not around a rung.** What it can stop is that one call.
+2. **A guard may refuse, by exiting 2.** Everything it printed goes back to the agent, which then does
+   something else — usually what the guard suggested. Every other exit code is a hook's behaviour:
+   reported, and the call goes ahead.
+3. **The rung completes either way.** A refused tool call is not a failed stage. No guard can end one.
+
+| Guard | Fires | Given | Refusing it |
+|---|---|---|---|
+| `session` | a delegate's session opens, before its first tool call | `stage`, `slice`, `fairway`, `berth` | the session does not start |
+| `before-search` | a delegate is about to search the tree | `stage`, `slice`, `fairway`, `query`, `tool` | the search does not run, and the agent is told what to ask instead |
+| `before-write` | a delegate is about to write or edit a file | `stage`, `slice`, `fairway`, `path`, `tool` | the file is not written |
+| `before-command` | a delegate is about to run a shell command | `stage`, `slice`, `fairway`, `command`, `tool` | the command does not run |
+| `before-fetch` | a delegate is about to read a URL | `stage`, `slice`, `fairway`, `url`, `host`, `tool` | the fetch does not happen |
+| `after-delegate` | a delegate has answered, before its answer is used | `stage`, `slice`, `fairway`, `tool` | the answer is not used, and the agent is asked again |
+| `before-stop` | a delegate's session is about to end | `stage`, `slice`, `fairway`, `berth` | the session does not end: the reason becomes the next turn |
+
+Declared exactly as a hook is, under `guards` rather than `hooks`, and with a 5s default budget rather than
+30s — a tool call somebody is waiting on cannot wait half a minute.
+
+```json
+{
+  "guards": {
+    "before-search": {"run": "guards/ask-the-index.py", "budget": "3s"}
+  }
+}
+```
+
+**A guard is agreed to, not installed.** A hook runs wherever an extension is elected; a guard also refuses
+things a person asked for, so `./init` asks once — naming what each guard could stop, in plain words — and
+writes `.slipwai/guards.json` from the answer rather than from the manifests. It asks over the terminal, so
+a scripted or CI `./init` is never asked and agrees to nothing: silence is *no*, which is the only safe
+direction for a question about refusing somebody's tool calls. An extension declaring a guard nobody agreed
+to fires none, and `python3 scripts/extensions/guards.py --elect <keys>` is how that is changed later.
+
+**Where they fire from.** `scripts/agents/session.py` is the one place a harness's own moments arrive — its
+pre-tool event, its stop event, its compaction events — and it runs the keel's answer and then the
+extensions'. That is why an extension declares `before-write` once instead of learning each of thirty-six
+harnesses' spellings, and why the keel's own control-file refusal is a guard like any other rather than a
+row it writes into one harness's settings file.
+
 ## Where the files land
 
 Every file of the package but `extension.json` is written into a generated project at
@@ -132,6 +183,7 @@ slipwai extension check <dir>              # just the manifest, and the six it i
 slipwai extension install <key>            # into the package directory
 slipwai extension list                     # what is installed, and what each attaches to
 slipwai hooks                              # every point, and what is on it
+python3 scripts/extensions/guards.py --elect <keys>   # in a project: who may refuse a tool call
 ```
 
 The scaffold ships a `Makefile` with `check`, `release` and `register` and a CI workflow that calls the
