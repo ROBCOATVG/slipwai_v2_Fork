@@ -117,7 +117,16 @@ class MatrixCase(unittest.TestCase):
         with images.Registry() as registry:
             for image in self.plan.images:
                 with self.subTest(backend=image.row.backend):
-                    needed = self.image_tools[image.tool]
+                    # A tool this table has no row for is a package naming its own image builder, which it
+                    # may: `image_builder`'s `tool` is the package's word and `NEEDS` is the keel's list of
+                    # what each of the ones it knows is called on a PATH. Said and skipped, never a
+                    # `KeyError` out of a matrix run — which is what the language template got, because the
+                    # toy's builder is an inert placeholder called `toy`.
+                    needed = self.image_tools.get(image.tool)
+                    if needed is None:
+                        self.skipTest(f"{image.row.backend}'s image builder is `{image.tool}`, and the "
+                                      f"matrix has no binary name for it: add one to "
+                                      f"`slipwai.matrix.images.NEEDS`, or set `image_tools` on this case")
                     if shutil.which(needed) is None:
                         self.skipTest(f"{needed} is needed for the {image.row.backend} image; the factory's CI "
                                       "installs it")

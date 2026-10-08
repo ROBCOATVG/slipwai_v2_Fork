@@ -89,6 +89,35 @@ class RowsTest(unittest.TestCase):
         rows.covered(CATALOG)
 
 
+class ImageToolTest(unittest.TestCase):
+    """A tool the matrix has no binary name for is said and skipped, never a `KeyError`.
+
+    `image_builder`'s `tool` is the package's own word — the language template's inert placeholder calls
+    its builder `toy` — and `NEEDS` is the keel's list of what each one it knows is called on a PATH. The
+    lookup was a subscript, so the template's first matrix run ended in `KeyError: 'toy'` rather than in a
+    sentence anybody could act on.
+    """
+
+    def tool_lookup(self, tool: str) -> str | None:
+        from slipwai.matrix.case import MatrixCase
+        return MatrixCase.image_tools.get(tool)
+
+    def test_the_tools_the_matrix_knows_are_named(self) -> None:
+        from slipwai.matrix import images
+        self.assertEqual(set(images.NEEDS), {"pack", "ko", ""})
+
+    def test_a_tool_it_does_not_know_reads_as_absent_rather_than_raising(self) -> None:
+        self.assertIsNone(self.tool_lookup("toy"))
+
+    def test_the_case_reads_the_table_without_subscripting_it(self) -> None:
+        """Read as source: the lookup runs only inside a real matrix run, which needs Docker and minutes.
+        What is held here is that it cannot raise."""
+        from pathlib import Path as P
+        source = (P(__file__).resolve().parents[1] / "src/slipwai/matrix/case.py").read_text(encoding="utf-8")
+        self.assertIn("self.image_tools.get(image.tool)", source)
+        self.assertNotIn("self.image_tools[image.tool]", source)
+
+
 class RunTest(unittest.TestCase):
     """A package is named by its directory name in the package directory, and by nothing else."""
 
