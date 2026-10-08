@@ -1,5 +1,5 @@
 /**
- * How a customer signs in to this browser app.
+ * How an external user signs in to this browser app.
  *
  * Keycloak's `customers` realm is the identity provider. The app sends the browser there to log in and
  * gets tokens back — the Authorization Code flow with PKCE, which is the one the OAuth security BCP
@@ -19,7 +19,7 @@
  * ── Where the tokens live ─────────────────────────────────────────────────────────────────────────────
  * `sessionStorage`, stated explicitly below even though it is the library's default, because it is a
  * decision: tokens survive a reload and are gone when the tab closes, and no other tab or a later visit
- * sees them. `localStorage` would keep a customer signed in across visits at the cost of tokens that
+ * sees them. `localStorage` would keep an external user signed in across visits at the cost of tokens that
  * outlive the tab. Either way the browser holds the tokens, and any script running on this origin can read
  * them. The alternative that keeps tokens out of the browser altogether is a backend-for-frontend that
  * holds them server-side and gives the browser only a session cookie — `skills/bff-entry-points/SKILL.md`

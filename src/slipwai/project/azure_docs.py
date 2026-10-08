@@ -22,16 +22,16 @@ def deployment_diagram(project_name: str, apps: list[App]) -> str:
     """`docs/deployment.md`: what this project's `infra/` provisions, drawn, and how a commit reaches it.
 
     Drawn from the same answers the stacks read — which services exist, whether there is a site, which of
-    them has a database, staff identity, the product's users — so `add-service` and `add-frontend`
+    them has a database, internal identity, external identity — so `add-service` and `add-frontend`
     regenerate it with everything else and it shows this project, not the target in general. The lines are
     the ones `main.tf`, `postgres.tf`, the Entra files and `frontend.tf` actually create.
     """
     services = services_of(apps)
     web = web_apps(apps)
     database = any(provisioned(s, "event-store", "azure") == "flexible-server" for s in services)
-    staff = any(provisioned(s, "auth", "azure") == "entra" for s in services)
+    internal = any(provisioned(s, "auth", "azure") == "entra" for s in services)
     auth0 = any(provisioned(s, axis, "azure") == "auth0" for s in services for axis in ("auth", "users"))
-    customers = any(provisioned(s, "users", "azure") == "auth0" for s in services)
+    external = any(provisioned(s, "users", "azure") == "auth0" for s in services)
     migrating = [s for s in services if s.selection.migrating_feature is not None]
     # Migrated by a one-off job before the release rolls, as against a framework migrating as it starts.
     as_job = [s for s in migrating if {"command", "image"} & set(migrations_in_production(s.backend))]
@@ -57,11 +57,11 @@ def deployment_diagram(project_name: str, apps: list[App]) -> str:
         ]
     if database:
         lines += ['        pg[("PostgreSQL Flexible Server 17, B_Standard_B1ms")]']
-    if database or staff:
+    if database or internal:
         lines += ['        vault["Key Vault"]']
     lines += ["    end"]
-    if staff:
-        lines += ['    staff["Entra ID: the workforce tenant"]']
+    if internal:
+        lines += ['    internal["Entra ID: the workforce tenant"]']
     # Outside the subgraph on purpose: an Auth0 tenant is not in this subscription, and the drawing should
     # not suggest the deploy identity reaches it.
     if auth0:
@@ -73,12 +73,12 @@ def deployment_diagram(project_name: str, apps: list[App]) -> str:
         if provisioned(s, "event-store", "azure") == "flexible-server":
             lines += [f'    app_{n} -->|"DATABASE_URL, TLS"| pg', f"    app_{n} -.-> vault"]
         if provisioned(s, "auth", "azure") == "entra":
-            lines += [f'    app_{n} -.->|"OIDC"| staff']
+            lines += [f'    app_{n} -.->|"OIDC"| internal']
         if provisioned(s, "auth", "azure") == "auth0":
             lines += [f'    app_{n} -.->|"OIDC"| auth0']
         if provisioned(s, "users", "azure") == "auth0":
             lines += [f'    app_{n} -.->|"tokens"| auth0']
-    if customers and web:
+    if external and web:
         lines += ['    swa -.->|"PKCE login"| auth0']
     runs = "\n".join(lines)
 
@@ -135,7 +135,7 @@ revision — the new one starts beside the one serving, takes no requests until 
 and then takes all of them at once. `kept_revisions` decides whether the release before goes on running: one
 in production, so a rollback is a change of traffic weight, and none in staging.{site_note}
 
-| Service | Backend | Image | Port | Store | Staff identity | Users |
+| Service | Backend | Image | Port | Store | Internal identity | External identity |
 |---|---|---|---|---|---|---|
 {table}
 
@@ -156,9 +156,9 @@ def production_adr(project_name: str, apps: list[App]) -> str:
     services = services_of(apps)
     web = web_apps(apps)
     database = any(provisioned(s, "event-store", "azure") == "flexible-server" for s in services)
-    staff = any(provisioned(s, "auth", "azure") == "entra" for s in services)
-    auth0_staff = any(provisioned(s, "auth", "azure") == "auth0" for s in services)
-    auth0_customers = any(provisioned(s, "users", "azure") == "auth0" for s in services)
+    internal = any(provisioned(s, "auth", "azure") == "entra" for s in services)
+    auth0_internal = any(provisioned(s, "auth", "azure") == "auth0" for s in services)
+    auth0_external = any(provisioned(s, "users", "azure") == "auth0" for s in services)
     builders = "; ".join(
         dict.fromkeys(
             f"`{s.backend}` with {image_builder(s.backend)['tool'] or 'its framework build'}" for s in services
@@ -194,12 +194,12 @@ def production_adr(project_name: str, apps: list[App]) -> str:
     if database:
         rows.append(("Database", "Azure Database for PostgreSQL Flexible Server 17, `B_Standard_B1ms`, one per environment, shared by every service on the Postgres store. `DATABASE_URL` generated into Key Vault and referenced as a container secret. Its smallest disk is 32 GB where RDS's is 20, which is most of why the database is the one line that costs more here than there."))
         rows.append(("Database TLS", "Encrypted, not verified. The server half is the product's own: `require_secure_transport` is on by default and `minimum_tls_version` is stated explicitly beside it, so no connection to this database is ever plaintext. The client half is `PGSSLMODE` in the app and in the migrate job, and its value is per driver because the drivers genuinely differ: `no-verify` for TypeScript, whose `pg` reads the variable with its own vocabulary where `require` means *verify*; `require` for Python and Go, where libpq's `require` already means encrypt-without-verifying; and nothing at all for Quarkus and Spring Boot, because pgjdbc does not read `PGSSLMODE` and its own default, `prefer`, already negotiates TLS. **The TypeScript value is inherited from the AWS table rather than measured here, and that is worth knowing**: RDS forced `no-verify` because its certificate chains to a private Amazon root Node does not bundle, while this server's chains to roots Node does — so `require`, and real verification, may work. One run of node-postgres against a Flexible Server settles it; until somebody has done it the table says what is known to work rather than what ought to. Nothing goes in `DATABASE_URL`: one libpq-style string is shared by every backend, an `sslmode` in it means a different thing to each of their drivers, and for `pg` it also overrides `PGSSLMODE`."))
-    if staff:
-        rows.append(("Staff identity", "An Entra ID app registration in the subscription's own workforce tenant, the three groups the local realm has, and a confidential client whose secret lives in Key Vault. Keycloak stays the local stand-in; `OIDC_GROUPS_CLAIM` is `groups` in both, which is one fewer difference than Cognito leaves. The flow itself is unwritten, as locally."))
-    if auth0_staff:
-        rows.append(("Staff identity", "Auth0 — an application in an Auth0 tenant, a database connection staff sign in against with sign-up off, the three roles, and a post-login action putting them in a namespaced claim. The client secret lives in Key Vault. Keycloak stays the local stand-in; `OIDC_GROUPS_CLAIM` names the claim. **Created with the tenant's own credential, not the subscription's** — the deploy identity has no authority in an Auth0 tenant, so `infra/service/auth0.tf` is applied with a machine-to-machine application's credentials, which `make bootstrap` asks for and stores on the forge. The tenant and that one application are made by a person before the first apply; everything else is made on every apply."))
-    if auth0_customers:
-        rows.append(("The product's users", "Auth0 — a second database connection with self-registration and password reset, an API whose identifier is the audience, and a public PKCE client for the browser app, which is built once per environment because Vite bakes the issuer into the bundle. **Staff and customers share one issuer here**, unlike every other answer on this axis: they are two connections in one tenant, so what tells their tokens apart is `aud` — the staff client id on an ID token, this API's identifier on a customer's access token — and the audience check the adapters already call mandatory is the one doing the work. Auth0 was chosen over an Entra External ID tenant because that tenant has no resource in azurerm and its sign-up flows none in azuread, so the sign-up this axis promises could not be declared at all."))
+    if internal:
+        rows.append(("Internal identity", "An Entra ID app registration in the subscription's own workforce tenant, the three groups the local realm has, and a confidential client whose secret lives in Key Vault. Keycloak stays the local stand-in; `OIDC_GROUPS_CLAIM` is `groups` in both, which is one fewer difference than Cognito leaves. The flow itself is unwritten, as locally."))
+    if auth0_internal:
+        rows.append(("Internal identity", "Auth0 — an application in an Auth0 tenant, a database connection internal users sign in against with sign-up off, the three roles, and a post-login action putting them in a namespaced claim. The client secret lives in Key Vault. Keycloak stays the local stand-in; `OIDC_GROUPS_CLAIM` names the claim. **Created with the tenant's own credential, not the subscription's** — the deploy identity has no authority in an Auth0 tenant, so `infra/service/auth0.tf` is applied with a machine-to-machine application's credentials, which `make bootstrap` asks for and stores on the forge. The tenant and that one application are made by a person before the first apply; everything else is made on every apply."))
+    if auth0_external:
+        rows.append(("External identity", "Auth0 — a second database connection with self-registration and password reset, an API whose identifier is the audience, and a public PKCE client for the browser app, which is built once per environment because Vite bakes the issuer into the bundle. **Internal and external share one issuer here**, unlike every other answer on this axis: they are two connections in one tenant, so what tells their tokens apart is `aud` — the internal client id on an ID token, this API's identifier on a external user's access token — and the audience check the adapters already call mandatory is the one doing the work. Auth0 was chosen over an Entra External ID tenant because that tenant has no resource in azurerm and its sign-up flows none in azuread, so the sign-up this axis promises could not be declared at all."))
     if web:
         rows.append(("Browser app", "Azure Static Web Apps (Standard), with the api service linked as its API backend. The site is served from the product's own content store rather than from a bucket behind a CDN, so unlike the AWS shape there is no second, publicly reachable origin to keep private: there is nothing else to reach. `/api` is proxied to the same path on the container app by the product's own rule — no CORS, no routing rule for this stack to write — and a linked service is given an identity provider that rejects anything not proxied by the site, so it has no public address of its own. That is stricter than a load balancer in front of it and it is a real difference: `urls` does not carry that service. Hashed assets are uploaded immutable, `index.html` last with `no-store` as the release pointer. Azure Front Door is the documented upgrade for a WAF, custom domains and multi-region; it costs about four times as much and, below its Premium tier, cannot reach a private storage origin at all, which is why it is not the default."))
     rows.append(("Network", "The Container Apps environment's own, with no virtual network of this project's: the apps reach the database over its public endpoint with a firewall rule admitting Azure services, and the environment's ingress is what faces the internet. A VNet-integrated environment with a private endpoint on the database is a change to `main.tf` and `postgres.tf`, and the first thing to do when this project holds anything that matters."))

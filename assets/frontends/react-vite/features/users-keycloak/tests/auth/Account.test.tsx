@@ -36,7 +36,7 @@ const claims = {
   iat: 1_000_000_000,
 };
 
-function customer(profile: { name?: string; email?: string }) {
+function externalUser(profile: { name?: string; email?: string }) {
   return new User({
     access_token: 'opaque',
     token_type: 'Bearer',
@@ -44,7 +44,7 @@ function customer(profile: { name?: string; email?: string }) {
   });
 }
 
-const ada = customer({ name: 'Ada Lovelace', email: 'ada@example.com' });
+const ada = externalUser({ name: 'Ada Lovelace', email: 'ada@example.com' });
 
 describe('Account', () => {
   it('offers to sign in when nobody is signed in', async () => {
@@ -71,7 +71,7 @@ describe('Account', () => {
   it('falls back to the email when the realm sent no name', () => {
     const { auth } = signedInAs({
       isAuthenticated: true,
-      user: customer({ email: 'ada@example.com' }),
+      user: externalUser({ email: 'ada@example.com' }),
     });
     render(<AccountView auth={auth} />);
 

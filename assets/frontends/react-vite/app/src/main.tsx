@@ -35,8 +35,8 @@ if (root === null) {
 const wrappers: Record<string, (tree: ReactNode) => ReactNode> = {
   strictMode: (tree) => <StrictMode>{tree}</StrictMode>,
   // backing-service:users-keycloak:begin
-  // The customer login, so every screen below it can ask who is signed in.
-  customerLogin: (tree) => <UsersProvider>{tree}</UsersProvider>,
+  // The external login, so every screen below it can ask who is signed in.
+  externalLogin: (tree) => <UsersProvider>{tree}</UsersProvider>,
   // backing-service:users-keycloak:end
   router: (tree) => <BrowserRouter>{tree}</BrowserRouter>,
 };

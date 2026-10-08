@@ -2,8 +2,8 @@
 
 One `keycloak` service in `docker-compose.yml` imports every realm file under `docker/keycloak/realms/` at
 start-up, so selecting Keycloak for either identity question gives a working issuer with no manual console
-steps. A realm is one answer to one question — the staff realm and the customers realm are kept apart on
-purpose, the way a real deployment keeps its workforce directory apart from its customer accounts — and
+steps. A realm is one answer to one question — the internal realm and the external one are kept apart on
+purpose, the way a real deployment keeps its workforce directory apart from its public accounts — and
 dropping an answer (`./init --auth none`, `./init --users none`) deletes its realm file and nothing else here.
 
 **There are no comments in the realm files because Keycloak refuses them.** Import parses into
@@ -14,7 +14,7 @@ Every value below matches one in `.env.example`, because the point is that the t
 editing either. `KEYCLOAK_PORT` is the container's host port; each issuer is `/realms/<realm>` on it.
 
 <!-- backing-service:keycloak:begin -->
-## `realms/app.json` — staff
+## `realms/app.json` — internal identity
 
 | In the realm | Matching env key | |
 |---|---|---|
@@ -28,7 +28,7 @@ memberships exist in Keycloak and never appear in the token, so the adapter's gr
 sees nobody in any group. `full.path` is `false` so the claim reads `app-admin` rather than `/app-admin`,
 matching the env values.
 
-Self-registration is off: staff accounts are created by an administrator, which is the shape of a back
+Self-registration is off: internal accounts are created by an administrator, which is the shape of a back
 office. A user `staff` / `staff` is in `app-admin`, so there is something to log in as.
 
 The adapter itself is a placeholder where nothing owns startup — see the warning at the top of
@@ -39,7 +39,7 @@ The **client secret is in `realms/app.json`**, which is in version control. It i
 secret, and nothing like it belongs in a real environment.
 <!-- backing-service:keycloak:end -->
 <!-- backing-service:users-keycloak:begin -->
-## `realms/customers.json` — the product's users
+## `realms/customers.json` — external identity
 
 | In the realm | Matching env key | |
 |---|---|---|
@@ -48,13 +48,13 @@ secret, and nothing like it belongs in a real environment.
 | client `api` | `USERS_OIDC_AUDIENCE` | bearer-only: the service, which never logs anyone in and only validates tokens |
 | redirect `http://localhost:5173/*`, origin `http://localhost:5173` | the first browser app's dev server | a second browser app needs its own redirect URI added here |
 
-What differs from the staff realm is what makes it a customer realm: **self-registration is on**, an
-account's username is its email address, **password reset is on**, and there are no groups — a customer is
+What differs from the internal realm is what makes it an external one: **self-registration is on**, an
+account's username is its email address, **password reset is on**, and there are no groups — an external user is
 `sub` plus a verified email, and what an account may do is decided per account in a use case, not by a role.
 Email verification is off because there is no mail server locally; turn it on (`verifyEmail`) in the same
 change that configures SMTP for the realm, and a real deployment does both.
 
-The `api-audience` mapper on the `web` client is the counterpart of the staff realm's `groups` mapper: it puts
+The `api-audience` mapper on the `web` client is the counterpart of the internal realm's `groups` mapper: it puts
 `api` into the `aud` of every access token the browser obtains, which is what lets the service insist on an
 audience rather than accept any token this realm ever issued.
 
@@ -62,8 +62,8 @@ A user `customer@example.invalid` / `customer` exists with a verified email, so 
 as before anyone registers. Sign in through the browser app (`make dev-web`), which owns the login flow — see
 `apps/web/src/auth/users.tsx`.
 
-The two realms share one Keycloak, so a staff token is a valid JWT whose issuer differs from a customer's by
-one path segment. The customer adapter in each service refuses any issuer but its own for exactly that
+The two realms share one Keycloak, so an internal token is a valid JWT whose issuer differs from an external one's by
+one path segment. The external adapter in each service refuses any issuer but its own for exactly that
 reason; do not weaken that check to "any realm on this host".
 <!-- backing-service:users-keycloak:end -->
 

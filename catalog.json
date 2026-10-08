@@ -206,8 +206,8 @@
       "inferred": true
     },
     "auth": {
-      "prompt": "Staff authentication",
-      "description": "Who authenticates staff. Every provider on this axis is an OIDC issuer and OIDC is what the adapters speak, so the protocol is the one thing every answer has in common — which is why the axis is named for the role and not for it",
+      "prompt": "Internal authentication",
+      "description": "Who authenticates the people who run the product — staff, operators, support. Every provider on this axis is an OIDC issuer and OIDC is what the adapters speak, so the protocol is the one thing every answer has in common — which is why the axis is named for the role and not for it",
       "profiles": [
         "standard",
         "event-modelling"
@@ -222,7 +222,7 @@
           "containers": [],
           "migrations": false,
           "integration-suite": false,
-          "label": "None — no staff identity yet",
+          "label": "None — no internal identity yet",
           "features": [],
           "backends": [],
           "targets": [
@@ -260,7 +260,7 @@
           ],
           "migrations": false,
           "integration-suite": false,
-          "label": "Cognito — a user pool with the staff groups, a hosted login and a confidential client, provisioned in AWS; Keycloak runs locally as the stand-in, with the same groups and OIDC_* keys (the flow itself is NOT implemented)",
+          "label": "Cognito — a user pool with the internal groups, a hosted login and a confidential client, provisioned in AWS; Keycloak runs locally as the stand-in, with the same groups and OIDC_* keys (the flow itself is NOT implemented)",
           "features": [
             "keycloak"
           ],
@@ -281,7 +281,7 @@
           ],
           "migrations": false,
           "integration-suite": false,
-          "label": "Entra ID — an app registration with the staff groups and a confidential client, provisioned in the subscription's own workforce tenant; Keycloak runs locally as the stand-in, with the same groups and OIDC_* keys (the flow itself is NOT implemented)",
+          "label": "Entra ID — an app registration with the internal groups and a confidential client, provisioned in the subscription's own workforce tenant; Keycloak runs locally as the stand-in, with the same groups and OIDC_* keys (the flow itself is NOT implemented)",
           "features": [
             "keycloak"
           ],
@@ -302,7 +302,7 @@
           ],
           "migrations": false,
           "integration-suite": false,
-          "label": "Auth0 — an application, an API and the staff roles, provisioned through Auth0's own Management API rather than by the cloud, with a post-login action putting the roles in a namespaced claim; Keycloak runs locally as the stand-in, with the same groups and OIDC_* keys (the flow itself is NOT implemented)",
+          "label": "Auth0 — an application, an API and the internal roles, provisioned through Auth0's own Management API rather than by the cloud, with a post-login action putting the roles in a namespaced claim; Keycloak runs locally as the stand-in, with the same groups and OIDC_* keys (the flow itself is NOT implemented)",
           "features": [
             "keycloak"
           ],
@@ -322,8 +322,8 @@
       "always": []
     },
     "users": {
-      "prompt": "Customer authentication",
-      "description": "Who authenticates the product's own users — accounts anyone on the internet can create, with sign-up, verification, password reset and a login the browser app owns. Never the staff directory: a separate realm or tenant, even on the same vendor. Every answer is an OIDC issuer, so a service validates a customer's token the way it validates a staff one, against a different issuer",
+      "prompt": "External authentication",
+      "description": "Who authenticates the people the product is for — accounts anyone on the internet can create, with sign-up, verification, password reset and a login the browser app owns. Never the internal directory: a separate realm or tenant, even on the same vendor. Every answer is an OIDC issuer, so a service validates an external token the way it validates an internal one, against a different issuer",
       "profiles": [
         "standard",
         "event-modelling"
@@ -338,7 +338,7 @@
           "containers": [],
           "migrations": false,
           "integration-suite": false,
-          "label": "None — no customer accounts yet",
+          "label": "None — no external accounts yet",
           "features": [],
           "backends": [],
           "targets": [
@@ -357,7 +357,7 @@
           ],
           "migrations": false,
           "integration-suite": false,
-          "label": "Keycloak — a customers realm beside the staff realm in the same container, self-registration and password reset on, a public PKCE client for the browser app; the browser login is real, and a service's token validation is the framework's where one owns startup and NOT implemented where none does",
+          "label": "Keycloak — an external realm beside the internal one in the same container, self-registration and password reset on, a public PKCE client for the browser app; the browser login is real, and a service's token validation is the framework's where one owns startup and NOT implemented where none does",
           "features": [
             "users-keycloak"
           ],
@@ -376,7 +376,7 @@
           ],
           "migrations": false,
           "integration-suite": false,
-          "label": "Cognito — a second user pool for the product's users with self-registration and a public PKCE client, provisioned in AWS; Keycloak's customers realm runs locally as the stand-in, and the browser login is real",
+          "label": "Cognito — a second user pool for external users with self-registration and a public PKCE client, provisioned in AWS; Keycloak's external realm runs locally as the stand-in, and the browser login is real",
           "features": [
             "users-keycloak"
           ],
@@ -397,7 +397,7 @@
           ],
           "migrations": false,
           "integration-suite": false,
-          "label": "Auth0 — a database connection with self-registration and password reset, and a public PKCE client for the browser app, provisioned through Auth0's own Management API rather than by the cloud; Keycloak's customers realm is the local stand-in, and the browser login is real",
+          "label": "Auth0 — a database connection with self-registration and password reset, and a public PKCE client for the browser app, provisioned through Auth0's own Management API rather than by the cloud; Keycloak's external realm is the local stand-in, and the browser login is real",
           "features": [
             "users-keycloak"
           ],

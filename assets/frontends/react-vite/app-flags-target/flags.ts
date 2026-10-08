@@ -23,7 +23,7 @@
  * `flagEnabled` is `true` only for the exact value `'on'`, the spelling the service answers with. A key
  * nothing set, a value this does not understand, a request that failed, a service that has not been asked
  * yet: all off. That is the direction that hides a feature rather than half-revealing one — a screen
- * inviting a customer to do something the API will refuse.
+ * inviting a person to do something the API will refuse.
  *
  * Failing closed is what makes the fetch safe to lose. `loadFlags` never rejects; a service that answers
  * badly leaves every flag off, and the app renders as it does with nothing released.

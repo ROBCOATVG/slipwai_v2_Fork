@@ -11,8 +11,8 @@ Every question is asked as an **axis** — the role being filled — rather than
     scripts/backing-services.py --list
     scripts/backing-services.py --event-store memory     # drop the real store, keep the in-memory one
     scripts/backing-services.py --http none              # drop the inbound HTTP transport
-    scripts/backing-services.py --auth none              # drop the staff realm and its adapter
-    scripts/backing-services.py --users none             # drop the customers realm, the browser login and its adapter
+    scripts/backing-services.py --auth none              # drop the internal realm and its adapter
+    scripts/backing-services.py --users none             # drop the external realm, the browser login and its adapter
 
 An axis offers only what is still on disk. A project generated with SQLite can drop to memory but cannot
 become a Postgres project: pruning only ever subtracts, and the factory already cut the branch it was not
@@ -23,7 +23,7 @@ Naming a selection is a one-way prune: it deletes files and strips the markers. 
 
 Regions inside a shared file are delimited by `backing-service:<feature>:begin` / `:end` marker comments
 rather than parsed out of each host language. A region two features both need — the one Keycloak container
-that serves the staff realm and the customers realm — names both, `backing-service:keycloak|users-keycloak`,
+that serves the internal realm and the external one — names both, `backing-service:keycloak|users-keycloak`,
 and stays while either remains. That is not laziness: pruning Compose YAML by indentation
 looks easy and is not — a two-space key means different things in different sections, `  postgres-data:`
 under `volumes:` looks exactly like `  postgres:` under `services:`, and treating it as a service leaves
@@ -144,7 +144,7 @@ AXES: dict[str, dict] = {
         },
     },
     "auth": {
-        "prompt": "Staff authentication",
+        "prompt": "Internal authentication",
         "options": {
             "cognito": {
                 "capabilities": ("auth-cognito",),
@@ -174,7 +174,7 @@ AXES: dict[str, dict] = {
                 # the Keycloak stand-in — realm, container, group mapping — and `infra/` is where the app
                 # registration is. Dropping the answer drops both, which is why the two share a feature.
                 "note": (
-                    "Scaffolded: the Entra ID app registration, the staff groups and a confidential client in "
+                    "Scaffolded: the Entra ID app registration, the internal groups and a confidential client in "
                     "infra/service, and Keycloak locally with the same groups. The protocol flow is the "
                     "ecosystem's maintained client where the backend has one and deliberately unwritten where "
                     "it does not — read the auth adapter's own note, and load the secure-oauth-oidc skill before "
@@ -186,7 +186,7 @@ AXES: dict[str, dict] = {
                 "capabilities": ("auth-auth0",),
                 "features": ("keycloak",),
                 "targets": ("aws", "azure"),
-                "label": "Auth0 — an application and the staff roles provisioned through Auth0's own "
+                "label": "Auth0 — an application and the internal roles provisioned through Auth0's own "
                          "Management API, from either cloud; Keycloak is the local stand-in, same groups "
                          "and OIDC_* keys",
                 # The same files as Keycloak's, for the reason the two rows above share them: what an
@@ -194,7 +194,7 @@ AXES: dict[str, dict] = {
                 # tenant's own objects are. Unlike those two, they are not created by the cloud
                 # credential — `infra/service/auth0.tf` says what that costs.
                 "note": (
-                    "Scaffolded: the Auth0 application, the API that names the audience, the staff roles and "
+                    "Scaffolded: the Auth0 application, the API that names the audience, the internal roles and "
                     "the post-login action that puts them in the token, in infra/service, and Keycloak locally "
                     "with the same groups. The protocol flow is the ecosystem's maintained client where the "
                     "backend has one and deliberately unwritten where it does not — read the auth adapter's own "
@@ -224,7 +224,7 @@ AXES: dict[str, dict] = {
                 "capabilities": (),
                 "features": (),
                 "targets": ("none", "existing", "aws", "azure"),
-                "label": "None — no staff identity yet",
+                "label": "None — no internal identity yet",
                 "note": (
                     "No identity provider, so anything you build has no authentication. Keep authorisation "
                     "decisions in use cases anyway, so wiring a provider later is a change of adapter and "
@@ -234,18 +234,18 @@ AXES: dict[str, dict] = {
         },
     },
     "users": {
-        "prompt": "Customer authentication",
+        "prompt": "External authentication",
         "options": {
             "cognito": {
                 "capabilities": ("users-cognito",),
                 "features": ("users-keycloak",),
                 "targets": ("aws",),
                 "label": "Cognito — a second user pool for the product's users, provisioned in AWS; Keycloak's "
-                         "customers realm is the local stand-in",
+                         "external realm is the local stand-in",
                 "note": (
                     "Scaffolded: a user pool with self-registration and a public PKCE client in infra/service, "
-                    "the customers realm in Keycloak locally, the browser app's login through a maintained "
-                    "client, and the customer adapter in each service. Token validation is the framework's where "
+                    "the external realm in Keycloak locally, the browser app's login through a maintained "
+                    "client, and the external adapter in each service. Token validation is the framework's where "
                     "one owns startup and deliberately unwritten where none does. Cognito access tokens carry the "
                     "client id in `client_id` rather than `aud`; read the users adapter's note before trusting "
                     "an audience check written against Keycloak."
@@ -257,11 +257,11 @@ AXES: dict[str, dict] = {
                 "targets": ("aws", "azure"),
                 "label": "Auth0 — a database connection with self-registration and a public PKCE client, "
                          "provisioned through Auth0's own Management API, from either cloud; Keycloak's "
-                         "customers realm is the local stand-in",
+                         "external realm is the local stand-in",
                 "note": (
                     "Scaffolded: an Auth0 database connection with self-registration and password reset, the "
-                    "API that names the audience and a public PKCE client in infra/service, the customers realm "
-                    "in Keycloak locally, the browser app's login through a maintained client, and the customer "
+                    "API that names the audience and a public PKCE client in infra/service, the external realm "
+                    "in Keycloak locally, the browser app's login through a maintained client, and the external "
                     "adapter in each service. Token validation is the framework's where one owns startup and "
                     "deliberately unwritten where none does. An Auth0 access token carries the API identifier in "
                     "`aud`, exactly as Keycloak's does, so an audience check written against the stand-in is "
@@ -272,12 +272,12 @@ AXES: dict[str, dict] = {
                 "capabilities": ("users-keycloak",),
                 "features": ("users-keycloak",),
                 "targets": ("none", "existing"),
-                "label": "Keycloak — a customers realm beside the staff one, the browser login and the customer "
+                "label": "Keycloak — an external realm beside the internal one, the browser login and the external "
                          "adapter scaffolded",
                 "note": (
                     "Scaffolded: a second realm in the same Keycloak, with self-registration, password reset "
                     "and a public PKCE client; the browser app's login, session and renewal through a "
-                    "maintained client; and the customer adapter in each service. Token validation is the "
+                    "maintained client; and the external adapter in each service. Token validation is the "
                     "framework's where one owns startup and deliberately unwritten where none does — read the "
                     "users adapter's own note, and load the secure-oauth-oidc skill before writing any of it "
                     "yourself."
@@ -287,9 +287,9 @@ AXES: dict[str, dict] = {
                 "capabilities": (),
                 "features": (),
                 "targets": ("none", "existing", "aws", "azure"),
-                "label": "None — no customer accounts yet",
+                "label": "None — no external accounts yet",
                 "note": (
-                    "Nobody outside the organisation can sign in, so nothing you build has a customer. Keep "
+                    "Nobody outside the organisation can sign in, so nothing you build has an external user. Keep "
                     "per-account authorisation in use cases anyway, so wiring a provider later is a change of "
                     "adapter and nothing more."
                 ),
@@ -318,8 +318,8 @@ REQUIRES_BECAUSE: dict[str, str] = {
         "provider whose adapter has no transport leaves configuration the project reads and cannot use."
     ),
     "users": (
-        "A customer signs in from the browser and then presents the token to the service over HTTP, so a "
-        "customer adapter with no transport has nothing to validate and configuration nothing reads."
+        "An external user signs in from the browser and then presents the token to the service over HTTP, "
+        "so an external adapter with no transport has nothing to validate and configuration nothing reads."
     ),
 }
 
@@ -346,7 +346,7 @@ MARKED_FILES: tuple[str, ...] = (
     "infra/service/rds.tf",
     "infra/service/cognito_staff.tf",
     "infra/service/cognito_customers.tf",
-    # The one output both clouds assemble from whichever customer-identity answer was given, so the merge
+    # The one output both clouds assemble from whichever external-identity answer was given, so the merge
     # has a region per contributor and an answer taken away takes its line with it.
     "infra/service/outputs.tf",
     # The same, for the other cloud. A file listed here that is missing is skipped, so one list serves
@@ -365,7 +365,7 @@ MARKED_FILES: tuple[str, ...] = (
 # Relative to a browser app, and applied to every one `project.json` lists. In a list of its own rather than
 # a service's because a browser app is the same whatever its service is written in. Its
 # dev-server proxy is marked with the transport it forwards to, so dropping the transport drops it, and
-# its entry point wraps the app in the customer login when the project has one.
+# its entry point wraps the app in the external login when the project has one.
 # `src/App.tsx` carries the route that shows this project's own API answering, marked with the transport
 # it calls — a project with no transport has no API to show.
 MARKED_FILES_PER_WEB_APP: tuple[str, ...] = (
@@ -394,7 +394,7 @@ SHARED_FILES: dict[str, tuple[str, ...]] = {
 }
 
 # Files that exist in a browser app only because a feature was selected, relative to the app and applied
-# to every browser app `project.json` lists — the customer login lands in every one, because the pruner
+# to every browser app `project.json` lists — the external login lands in every one, because the pruner
 # decides per project and a browser app whose service cannot validate the token would still carry a login
 # that leads nowhere.
 #

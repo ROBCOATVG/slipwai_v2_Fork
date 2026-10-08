@@ -99,9 +99,9 @@ else it lands in `verify`, where it will fail on a machine with no Docker.
 IDENTITY_DEFAULT = {
     "keycloak": """**The OIDC flow itself is not implemented** — read the warning at the top of the auth
 adapter first.""",
-    "users-keycloak": """**The service does not validate a customer's token yet** — read the warning at the top of
+    "users-keycloak": """**The service does not validate an external token yet** — read the warning at the top of
 the users adapter first. What is written is the part this project owns: `customerFromClaims`, which refuses
-any issuer but the customers realm's and any unverified email.""",
+any issuer but the external realm's and any unverified email.""",
 }
 
 
@@ -115,7 +115,7 @@ def still_owed(backend: str, identity: str) -> str:
 IDENTITY_README = {
     "keycloak": """
 <!-- backing-service:keycloak:begin -->
-### Keycloak — staff identity
+### Keycloak — internal identity
 
 Keycloak imports `docker/keycloak/realms/app.json` at start-up, so the issuer at
 `http://localhost:8081/realms/app` works with no console steps. `docker/keycloak/README.md` explains every
@@ -136,7 +136,7 @@ USERS_README = {
 The same Keycloak imports `docker/keycloak/realms/customers.json`: a second realm, `customers`, at
 `http://localhost:8081/realms/customers`, with self-registration and password reset on and a public PKCE client
 for the browser app. The login lives in `apps/web` (`src/auth/users.tsx`, react-oidc-context over
-oidc-client-ts): sign in, session, silent renewal and sign out are real, and a signed-in customer's access
+oidc-client-ts): sign in, session, silent renewal and sign out are real, and a signed-in external user's access
 token carries `api` as its audience for the service. A user `customer@example.invalid` / `customer` exists
 before anyone registers. __OUTSTANDING__
 <!-- backing-service:users-keycloak:end -->

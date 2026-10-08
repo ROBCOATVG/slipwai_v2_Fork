@@ -191,7 +191,7 @@ class ReplayTest(FactoryTestCase):
             recorded = json.loads((offered / "project.json").read_text())["deployables"]["service"]
             self.assertEqual(recorded["selection"]["auth"], "none")
             self.assertNotIn("auth-keycloak", recorded["capabilities"])
-            self.assertIn("Staff authentication: `none`", (offered / "README.md").read_text())
+            self.assertIn("Internal authentication: `none`", (offered / "README.md").read_text())
             # Nothing containerised is left, so the surface that starts containers goes — and the pruned
             # project still had it, which is what the merge is for.
             self.assertIn("services-up", (repo / "Makefile").read_text())

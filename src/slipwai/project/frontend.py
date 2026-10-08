@@ -18,13 +18,13 @@ from .shared_packages import WORKSPACE, workspace_manifest, workspace_scripts
 
 # What a feature adds to every browser app, keyed by feature: a directory under
 # `assets/frontends/react-vite/` laid out like the app, copied in whole. The browser-app counterpart of
-# a backend's `write_side_files`, and the reason the customer login needs no branch — a second provider is a row here. Kept
+# a backend's `write_side_files`, and the reason the external login needs no branch — a second provider is a row here. Kept
 # in step with `OWNED_FILES_PER_WEB_APP` in assets/backing-services/prune.py, which removes them again.
 WEB_FEATURE_FILES: dict[str, str] = {
     "users-keycloak": "react-vite/features/users-keycloak",
 }
 
-# What a feature adds to a *browser app's* manifest — the customer login's OIDC client. Keyed by feature, and kept in
+# What a feature adds to a *browser app's* manifest — the external login's OIDC client. Keyed by feature, and kept in
 # step with `WEB_PACKAGE_EDITS` in assets/backing-services/prune.py the same way. A browser app gets a feature's
 # dependencies when any service in the project has the feature, because that is when the pruner would keep them.
 WEB_PACKAGE_ADDITIONS: dict[str, dict[str, str]] = {
@@ -58,7 +58,7 @@ def web_files(project_name: str, web: App, apps: list[App], target: str) -> dict
     The skeleton is written for the first browser app on 5173 talking to a service on 3000; a later one is
     given its own dev-server port and the address of the service it proxies to, and the proxy sits in that
     service's transport's marked region. Every other marked region is a feature some service has — the
-    customer login — and the files a feature adds arrive with it.
+    external login — and the files a feature adds arrive with it.
 
     The regions are cut here as well as by the project-wide prune that follows, with the same `keep`, because
     that prune does not run for a project with nothing prunable — and a web app whose service has no transport

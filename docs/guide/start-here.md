@@ -97,11 +97,11 @@ Event store:
   postgres — Postgres — append-only table, unique (stream, version) as the concurrency control
 Choose (memory/postgres) [postgres]: memory
 
-Staff authentication:
+Internal authentication:
   …
 Choose (none/keycloak) [none]:
 
-Customer authentication:
+External authentication:
   …
 Choose (none/keycloak) [none]:
 

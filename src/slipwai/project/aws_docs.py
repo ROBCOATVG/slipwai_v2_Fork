@@ -25,17 +25,17 @@ def deployment_diagram(project_name: str, apps: list[App]) -> str:
     """`docs/deployment.md`: what this project's `infra/` provisions, drawn, and how a commit reaches it.
 
     Drawn from the same answers the stacks read — which services exist, whether there is a site, which of
-    them has a database, staff identity, the product's users — so `add-service` and `add-frontend`
+    them has a database, internal identity, external identity — so `add-service` and `add-frontend`
     regenerate it with everything else and it shows this project, not the target in general. The lines
     are the ones `ingress.tf`, `main.tf`, `rds.tf`, the Cognito files and `frontend.tf` actually create.
     """
     services = services_of(apps)
     web = web_apps(apps)
     rds = any(provisioned(s, "event-store", "aws") == "rds" for s in services)
-    staff = any(provisioned(s, "auth", "aws") == "cognito" for s in services)
-    customers = any(provisioned(s, "users", "aws") == "cognito" for s in services)
+    internal = any(provisioned(s, "auth", "aws") == "cognito" for s in services)
+    external = any(provisioned(s, "users", "aws") == "cognito" for s in services)
     auth0 = any(provisioned(s, axis, "aws") == "auth0" for s in services for axis in ("auth", "users"))
-    auth0_customers = any(provisioned(s, "users", "aws") == "auth0" for s in services)
+    auth0_external = any(provisioned(s, "users", "aws") == "auth0" for s in services)
     migrating = [s for s in services if s.selection.migrating_feature is not None]
     # Migrated by a one-off task before the release rolls, as against a framework migrating as it starts.
     as_task = [s for s in migrating if {"command", "image"} & set(migrations_in_production(s.backend))]
@@ -57,13 +57,13 @@ def deployment_diagram(project_name: str, apps: list[App]) -> str:
         ]
     if rds:
         lines += ['        rds[("RDS Postgres 17, db.t4g.micro")]']
-    if rds or staff:
+    if rds or internal:
         lines += ['        secrets["Secrets Manager"]']
     lines += ["    end"]
-    if staff:
-        lines += ['    staff["Cognito: staff user pool"]']
-    if customers:
-        lines += ["    customers[\"Cognito: the product's users\"]"]
+    if internal:
+        lines += ['    internal["Cognito: the internal user pool"]']
+    if external:
+        lines += ["    external[\"Cognito: the external user pool\"]"]
     # Outside the subgraph on purpose: an Auth0 tenant is not in this account, and the drawing should not
     # suggest the deploy role reaches it.
     if auth0:
@@ -76,16 +76,16 @@ def deployment_diagram(project_name: str, apps: list[App]) -> str:
         if provisioned(s, "event-store", "aws") == "rds":
             lines += [f'    tasks_{n} -->|"DATABASE_URL, TLS"| rds', f"    tasks_{n} -.-> secrets"]
         if provisioned(s, "auth", "aws") == "cognito":
-            lines += [f'    tasks_{n} -.->|"OIDC"| staff']
+            lines += [f'    tasks_{n} -.->|"OIDC"| internal']
         if provisioned(s, "users", "aws") == "cognito":
-            lines += [f'    tasks_{n} -.->|"tokens"| customers']
+            lines += [f'    tasks_{n} -.->|"tokens"| external']
         if provisioned(s, "auth", "aws") == "auth0":
             lines += [f'    tasks_{n} -.->|"OIDC"| auth0']
         if provisioned(s, "users", "aws") == "auth0":
             lines += [f'    tasks_{n} -.->|"tokens"| auth0']
-    if customers and web:
-        lines += ['    cf_web -.->|"PKCE login"| customers']
-    if auth0_customers and web:
+    if external and web:
+        lines += ['    cf_web -.->|"PKCE login"| external']
+    if auth0_external and web:
         lines += ['    cf_web -.->|"PKCE login"| auth0']
     runs = "\n".join(lines)
 
@@ -130,7 +130,7 @@ HTTPS address `make url` prints. Blue/green is ECS's own: a release's tasks regi
 that has no traffic, pass their health checks there, take all of it at once, and the previous release stays
 up for the bake time, so a rollback in that window is the listener rule pointing back.
 
-| Service | Backend | Image | Port | Store | Staff identity | Users |
+| Service | Backend | Image | Port | Store | Internal identity | External identity |
 |---|---|---|---|---|---|---|
 {table}
 
@@ -152,10 +152,10 @@ def production_adr(project_name: str, apps: list[App]) -> str:
     web = web_apps(apps)
     stores = {s.name: provisioned(s, "event-store", "aws") for s in services}
     rds = any(store == "rds" for store in stores.values())
-    staff = any(provisioned(s, "auth", "aws") == "cognito" for s in services)
-    customers = any(provisioned(s, "users", "aws") == "cognito" for s in services)
-    auth0_staff = any(provisioned(s, "auth", "aws") == "auth0" for s in services)
-    auth0_customers = any(provisioned(s, "users", "aws") == "auth0" for s in services)
+    internal = any(provisioned(s, "auth", "aws") == "cognito" for s in services)
+    external = any(provisioned(s, "users", "aws") == "cognito" for s in services)
+    auth0_internal = any(provisioned(s, "auth", "aws") == "auth0" for s in services)
+    auth0_external = any(provisioned(s, "users", "aws") == "auth0" for s in services)
     builders = "; ".join(
         dict.fromkeys(
             f"`{s.backend}` with {image_builder(s.backend)['tool'] or 'its framework build'}" for s in services
@@ -188,14 +188,14 @@ def production_adr(project_name: str, apps: list[App]) -> str:
     if rds:
         rows.append(("Database", "RDS Postgres 17, `db.t4g.micro`, single-AZ, one per environment, shared by every service on the Postgres store. `DATABASE_URL` generated into Secrets Manager and injected as a container secret. Aurora Serverless v2 is the documented swap, not the default: its 15–30 s resume from zero is wrong for production."))
         rows.append(("Database TLS", "Encrypted, not verified. The server half is `rds.force_ssl = 1`, stated in an explicit parameter group (`rds.tf`) rather than inherited from `default.postgres17`, so no connection to this database is ever plaintext. The client half is `PGSSLMODE` in both task definitions' environment, and its value is per driver because the drivers genuinely differ: `no-verify` for TypeScript, whose `pg` reads the variable with its own vocabulary where `require` would mean *verify* against a CA store Amazon's private RDS root CA is not in; `require` for Python and Go, where libpq's `require` already means encrypt-without-verifying; and nothing at all for Quarkus and Spring Boot, because pgjdbc does not read `PGSSLMODE` (the string is absent from the driver jar) and its own default, `prefer`, already negotiates TLS without verifying — which the parameter group above turns from a preference into a guarantee. Nothing goes in `DATABASE_URL`: one libpq-style string is shared by every backend, an `sslmode` in it means a different thing to each of their drivers, and for `pg` it also overrides `PGSSLMODE`. Two follow-ups, both deliberate: stating the posture on the client for the Java backends needs a JDBC datasource property rather than an environment variable, and verifying the server certificate — `verify-full` with `sslrootcert` — needs Amazon's RDS root CA inside every image, by a path that differs per image builder while the secret is shared by all of them. Amend this row when either is taken on."))
-    if staff:
-        rows.append(("Staff identity", "A Cognito user pool (Essentials tier), the three groups the local realm has, a hosted login and a confidential client whose secret lives in Secrets Manager. Keycloak stays the local stand-in; `OIDC_GROUPS_CLAIM` is `cognito:groups` here and `groups` there. The flow itself is unwritten, as locally."))
-    if customers:
-        rows.append(("The product's users", "A second Cognito user pool with self-registration and a public PKCE client for the browser app, which is built once per environment because Vite bakes the issuer into the bundle. Cognito access tokens carry the client id in `client_id`, not `aud`."))
-    if auth0_staff:
-        rows.append(("Staff identity", "Auth0 — an application in an Auth0 tenant, a database connection staff sign in against with sign-up off, the three roles, and a post-login action putting them in a namespaced claim. The client secret lives in Secrets Manager. Keycloak stays the local stand-in; `OIDC_GROUPS_CLAIM` names the claim. Created with the tenant's own credential, not AWS's — the tenant and one machine-to-machine application are made by a person before the first apply, and everything else on every apply."))
-    if auth0_customers:
-        rows.append(("The product's users", "Auth0 — a second database connection with self-registration and password reset, an API whose identifier is the audience, and a public PKCE client for the browser app, which is built once per environment because Vite bakes the issuer into the bundle. Staff and customers share one issuer here, unlike every other answer on this axis, so `aud` is what tells their tokens apart and the check is not optional."))
+    if internal:
+        rows.append(("Internal identity", "A Cognito user pool (Essentials tier), the three groups the local realm has, a hosted login and a confidential client whose secret lives in Secrets Manager. Keycloak stays the local stand-in; `OIDC_GROUPS_CLAIM` is `cognito:groups` here and `groups` there. The flow itself is unwritten, as locally."))
+    if external:
+        rows.append(("External identity", "A second Cognito user pool with self-registration and a public PKCE client for the browser app, which is built once per environment because Vite bakes the issuer into the bundle. Cognito access tokens carry the client id in `client_id`, not `aud`."))
+    if auth0_internal:
+        rows.append(("Internal identity", "Auth0 — an application in an Auth0 tenant, a database connection internal users sign in against with sign-up off, the three roles, and a post-login action putting them in a namespaced claim. The client secret lives in Secrets Manager. Keycloak stays the local stand-in; `OIDC_GROUPS_CLAIM` names the claim. Created with the tenant's own credential, not AWS's — the tenant and one machine-to-machine application are made by a person before the first apply, and everything else on every apply."))
+    if auth0_external:
+        rows.append(("External identity", "Auth0 — a second database connection with self-registration and password reset, an API whose identifier is the audience, and a public PKCE client for the browser app, which is built once per environment because Vite bakes the issuer into the bundle. Internal and external share one issuer here, unlike every other answer on this axis, so `aud` is what tells their tokens apart and the check is not optional."))
     if web:
         rows.append(("Browser app", "S3 behind CloudFront, one distribution with two origins: the bucket by default, the service for `/api/*`. Same origin, so the bundle calls `/api` relatively. Hashed assets are uploaded immutable, `index.html` last with `no-store` as the release pointer."))
     rows.append(("Network", "The account's default VPC and its public subnets; the tasks' own security group, admitted by the database. A dedicated VPC is a change to `network.tf` and the subnet group."))

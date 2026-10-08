@@ -97,13 +97,13 @@ IDENTITY_GUIDANCE = {
 # project may have either realm without the other.
 USERS_GUIDANCE = {
     "users-keycloak": """<!-- backing-service:users-keycloak:begin -->
-- Customers sign in from the browser app, which owns the login: `apps/web/src/auth/` uses react-oidc-context
+- External users sign in from the browser app, which owns the login: `apps/web/src/auth/` uses react-oidc-context
   over oidc-client-ts for the authorization-code flow with PKCE, the session and silent renewal. Do not add a
   second login path in a service, and never hand-roll any of that — load `skills/secure-oauth-oidc/SKILL.md`
   before touching it.
-- A service accepts a customer only from the customers realm. The users adapter refuses any other issuer,
-  because the staff realm lives in the same Keycloak and a staff token is a valid JWT that differs by one path
-  segment; keep that check exact. A customer is `sub` plus a verified email — what an account may do is a
+- A service accepts an external user only from the external realm. The users adapter refuses any other issuer,
+  because the internal realm lives in the same Keycloak and an internal token is a valid JWT that differs by one path
+  segment; keep that check exact. An external user is `sub` plus a verified email — what an account may do is a
   use-case decision about ownership, not a role in an adapter.
 <!-- backing-service:users-keycloak:end -->
 """,

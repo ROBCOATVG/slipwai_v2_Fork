@@ -47,7 +47,7 @@ __APP_SERVICES__
   # backing-service:postgres:end
 
   # backing-service:keycloak|users-keycloak:begin
-  # Present when Keycloak answers either identity question — staff (`--auth`), the product's users
+  # Present when Keycloak answers either identity question — internal (`--auth`), external
   # (`--users`), or both — and shared between them: one container, one realm per answer, so the marker names
   # both features and the block stays while either does. Development mode with an in-memory store and every
   # realm under `docker/keycloak/realms/` imported at start-up, so it is reproducible and disposable rather
@@ -55,8 +55,8 @@ __APP_SERVICES__
   # this service into a real environment: `start-dev` disables HTTPS and the bootstrap admin below is a
   # published credential.
   #
-  # Each realm's names match the values in `.env.example` — `OIDC_*` for the staff realm `app`, `USERS_OIDC_*`
-  # and `VITE_USERS_*` for the customers realm — so `http://localhost:${KEYCLOAK_PORT}/realms/<realm>` resolves
+  # Each realm's names match the values in `.env.example` — `OIDC_*` for the internal realm `app`, `USERS_OIDC_*`
+  # and `VITE_USERS_*` for the external realm `customers` — so `http://localhost:${KEYCLOAK_PORT}/realms/<realm>` resolves
   # without further setup.
   keycloak:
     image: quay.io/keycloak/keycloak:26.7

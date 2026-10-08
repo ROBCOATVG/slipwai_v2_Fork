@@ -1,7 +1,8 @@
 """What an axis is, and what the catalog has to say about one before anything reads it.
 
 An **axis** is one infrastructure role asked as one question — where events live, what accepts inbound HTTP,
-who authenticates staff, who authenticates the product's users. `validate_axes` is the whole of what
+who authenticates the people who run the product, who authenticates the people it is for. `validate_axes`
+is the whole of what
 `catalog.json` promises about them: the set is fixed, every option says which backends and targets it is
 implemented for and which feature owns its files, and a default never resolves to nothing for a backend that
 could have been given something. It lives beside `catalog.py` rather than inside it because the axis rules
@@ -20,11 +21,11 @@ def validate_axes(catalog: dict) -> None:
     """Each axis is one question with one answer, and the gates are data rather than scattered conditionals.
 
     An axis names the *role* being filled — where events are stored, what accepts inbound HTTP, who
-    authenticates staff, who authenticates the product's users — never a product, and never a protocol: every
+    authenticates internally, who authenticates externally — never a product, and never a protocol: every
     `auth` answer is an OIDC issuer, which is exactly why that axis is not called `oidc`. Naming the role is
     what lets `postgres` and `keycloak` stop being alternatives on one menu: they answer unrelated questions,
     so they are asked separately and answered independently. It is also why Keycloak answers two axes: who
-    authenticates staff and who authenticates customers are different questions with the same kind of answer.
+    authenticates internally and who authenticates externally are different questions with the same kind of answer.
 
     Every option declares which backends it is implemented for, which targets it is offered under (see
     `targets.py`), which containers it needs, which marker

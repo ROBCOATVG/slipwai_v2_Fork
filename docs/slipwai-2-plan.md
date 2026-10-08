@@ -1683,15 +1683,20 @@ Depends on: 5.13 and 5.14. 7.1 first, then 7.2, then the rest in any order. **7.
 
 ### Phase 10. The clouds as packages, before the first 2.x release
 
-The last place the keel names a product. Scoped from the measurement in theme A: 47 asset files, 612K,
+The last place the keel names a product. It is also the last place that says **staff** and **customers**:
+the two identity axes were renamed to *internal* and *external* on 2026-10-08, everywhere they are words,
+and the two stacks were left alone on purpose. A terraform resource address is not a word — renaming
+`aws_cognito_user_pool.staff` to `.internal` without a `moved` block is a destroy and a create, which is
+every account in that pool gone on the next apply. So the stacks are renamed where they are rewritten
+anyway, with the `moved` blocks that make it safe, in 10.3 and 10.4. Scoped from the measurement in theme A: 47 asset files, 612K,
 and 29 modules naming a cloud in 112 places.
 
 | Slice | What | From | Size | Done when | Status |
 |---|---|---|---|---|---|
 | 10.1 | The target protocol: a `TARGET` object, `target.json`, `kind: target` through the chandlery and the four `slipwai package` verbs, and a conformance profile of its own | new | L | A target package is made by `slipwai package new --kind target` and passes `check` |  |
 | 10.2 | The import surface widened to what a target package reads, held in both directions as the language surface is | new | M | `check-structure` reads a target package and refuses an import off the list |  |
-| 10.3 | `aws` out of the keel: its assets, scripts, docs page, preflight tools, image builder, and both shapes | upstream | L | The keel's `make verify` passes with no cloud installed, and a project generates on AWS with the package installed |  |
-| 10.4 | `azure` out, the same way | upstream | L | Neither cloud is named anywhere in `src/slipwai/` |  |
+| 10.3 | `aws` out of the keel: its assets, scripts, docs page, preflight tools, image builder, and both shapes. **The identity rename lands here too** (2026-10-08): `staff` → `internal` and `customers` → `external` through the stack's resource addresses, variables and outputs, each with a `moved` block, because renaming a terraform address without one destroys the user pool it names and every account in it | upstream | L | The keel's `make verify` passes with no cloud installed, a project generates on AWS with the package installed, and `tofu plan` on a stack applied before the rename shows no destroy |  |
+| 10.4 | `azure` out, the same way, with the same rename and the same `moved` blocks | upstream | L | Neither cloud is named anywhere in `src/slipwai/`, and an applied Entra stack replans clean |  |
 | 10.5 | The twenty-three passing mentions: defaults, examples and prose that name a cloud | new | M | `grep -ri aws src/slipwai` finds nothing but a comment about there being nothing |  |
 | 10.6 | `check-structure` refuses a keel module naming a target package, as it already refuses a language one | new | S | The rule is a gate and not a habit |  |
 
