@@ -10,7 +10,13 @@ import sys
 import importlib
 from pathlib import Path
 
-import rung
+# `rung` is this script's own sibling, and a bare import of it only resolves when this directory is on the
+# path. That is true when the script is run directly, which is how `make check-model` runs it, and false
+# when another gate loads it by path to read the model with the same loader — which `check-slice-scope.py`
+# does, and which is where this was found. So put the directory there first, whoever is importing.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import rung  # noqa: E402 - the line above is what makes this resolve from anywhere
 
 
 def project_root(script: Path, depth: int) -> Path:
