@@ -64,9 +64,9 @@ ready: rule 6 says run them concurrently, and that holds in every form but the l
 Read artifacts from disk rather than conversation memory and walk this ladder from the top. The entry stage
 is the first one whose artifact is missing, empty, or still a placeholder — **including the stages upstream
 of the slice loop**. State the entry stage and the evidence that selected it before changing anything, then
-run that stage and every stage after it. Never rerun a completed stage merely to check. Where `.codegraph/` is in
-the tree, a caller or blast-radius question is one index call — `scripts/codegraph callers <symbol>`, or
-`codegraph_explore` — and not a text search; grep is for words in documents.
+run that stage and every stage after it. Never rerun a completed stage merely to check. Where this project has
+adopted a code index, a caller or blast-radius question is one call to it, by a route its block in `AGENTS.md`
+names, and not a text search; grep is for words in documents.
 
 **The checkout goes stale the way conversation memory does, so check the branch before the artifacts.**
 Every signal the ladder reads — a slice's `status`, whether `examples.md` or `tasks.md` exists, the slice
@@ -99,15 +99,15 @@ task — one rule of the example map with its examples, where the map numbers it
 relevant tests in the same file or area, commit that increment locally, and keep
 task checkboxes truthful. A local commit is not a push: it does not run the full gate and it does not start
 CI. Do not push increment commits until the hand's verdict on this slice's examples is green. Before an increment that changes a
-shared function, ask `codegraph_explore` what calls it and what the change reaches — loaded by name where the
-harness defers it — and name those callers in the delegate's manifest; a project without `.codegraph/` answers
-with a text search and says so.
+shared function, ask this project's code index what calls it and what the change reaches — by the route its
+block in `AGENTS.md` names, loaded by name where the harness defers a tool — and name those callers in the
+delegate's manifest; a project that has adopted none answers with a text search and says so.
 
 When the tasks are done, converge, then have the hand walk this slice's examples from the unpushed slice
 branch and record its verdict. **Nobody is stopped here.** A person's demo is per capability and runs when
 the capability's last slice has merged, which is usually several slices later; this rung proves the path
 works, and the person is shown the whole thing rather than its instalments. After a green verdict — and only
-then — a project that has adopted CodeGraph runs `codegraph sync`, then the full
+then — a project that has adopted a code index brings it up to the tree, then the full
 `make verify`, then the first push of those increment commits (and the merge that lands them on trunk).
 That push is the integration boundary. A claim of `slice/<id>` at the start of the slice may still push a
 lock ref from `main`; that is not the implementation.

@@ -141,9 +141,9 @@ The task, its contract and the files you may read and write are in the brief; no
 repository is yours to edit, including `tasks.md` — report which task you finished and the session that
 delegated you ticks the checkbox, because concurrent siblings would otherwise all write that one file.
 
-**Ask the index before you touch a shared symbol.** Where the tree has `.codegraph/`, `scripts/codegraph callers
-<symbol>` and `scripts/codegraph impact <symbol>` answer *what calls this* and *what does a change here reach*, and
-name the route in your report.
+**Ask the index before you touch a shared symbol.** Where this project has adopted a code index, its block in
+`AGENTS.md` names the routes that answer *what calls this* and *what does a change here reach*. Ask one of them,
+and name the route in your report.
 
 **RED is observed before the code that satisfies it exists, and the report says so.** A failure reconstructed
 afterwards — implement, undo the implementation to watch the test fail, restore — proves the test fails without
@@ -297,13 +297,12 @@ long-lived processes alone, never sending a state-changing request to a running 
 branches, commits, tags, remotes or credentials. This file is the standing part of your brief and that page
 is the standing part of this file; the per-call brief adds only the task, its contract and the file manifest.
 
-Where the tree has `.codegraph/`, a question about a symbol — what calls it, where it is used, what a change
-would break — goes to the index first: `scripts/codegraph callers <symbol>`, `scripts/codegraph impact <symbol>`
-or `scripts/codegraph explore <names or a question>` through the shell, which works in every session, or
-`codegraph_explore` where your tools list it. Name the route that answered. Text search is for words in documents
-— `spec.md`, `decisions.md`, the PRD, `model.yaml`, a test's string — and finding a file by name is a `find`, not a
-question for the index. In Claude Code a hook refuses a symbol search of the source until you have asked the
-index, and a `/cruise` run's log counts which delegate asked it.
+Where this project has adopted a code index, a question about a symbol — what calls it, where it is used, what
+a change would break — goes to the index first, by whichever route its own block in `AGENTS.md` names: a command
+through the shell, which works in every session, or a tool where yours lists it. Name the route that answered.
+Text search is for words in documents — `spec.md`, `decisions.md`, the PRD, `model.yaml`, a test's string — and
+finding a file by name is a `find`, not a question for the index. An index that ships a guard refuses a symbol
+search of the source until you have asked it, and a run's log counts which delegate did.
 
 `writes: {agent.writes}` and `commands: {agent.commands}` above are the scope, and the projection of this file
 into your harness enforces as much of it as that harness can express — the stamp on the projection says what

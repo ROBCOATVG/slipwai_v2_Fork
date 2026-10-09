@@ -193,8 +193,8 @@ def structure_page(found: Structure, adoption: Adoption, layout: Layout) -> str:
     )
     return f"""# Architecture view
 
-Written by `slipwai adopt` ({VERSION}) from the tree, its Git history and — where `.codegraph/` holds an index —
-CodeGraph's graph; `/survey` rewrites it. Nothing here is inferred: a file is an entry point because a manifest or
+Written by `slipwai adopt` ({VERSION}) from the tree, its Git history and — where this project has adopted a
+code index — that index's graph; `/survey` rewrites it. Nothing here is inferred: a file is an entry point because a manifest or
 its own name says so, a hotspot because commits touched it, a dependency because the graph holds the edge.
 
 {sections}

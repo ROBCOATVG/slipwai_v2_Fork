@@ -223,11 +223,11 @@ PRODUCTION_GUIDANCE = {
 # written — so the text has to be identical for every project and true whether or not one was adopted.
 #
 # It exists because the pointer an extension writes for itself could not do this job alone. `./init` can only
-# *append* to `AGENTS.md`, so `codegraph`'s own block lands after the last generated section — a footnote
+# *append* to `AGENTS.md`, so an index extension's own block lands after the last generated section — a footnote
 # below the closing line — and it was the single place in a generated project that mentioned the index at
 # all. Meanwhile the two skills that ask for exactly the operation an index performs said nothing about how
 # to perform it, and a specific instruction inside the skill being followed beats standing advice read once
-# at the start. Naming those two here is the bridge, which is also why `tests/test_code_index.py` holds them
+# at the start. Naming those two here is the bridge, which is why an index extension's own suite holds them
 # to still saying what this claims they say.
 CODE_INDEX = """
 ## Finding your way around this codebase
@@ -238,11 +238,11 @@ following the call path, not by reading one file. Two skills in `skills/` ask fo
 every caller and reachability path before removing a branch — and neither is satisfied by a text search,
 which finds the spellings you thought to try and is silent about the rest.
 
-If this file carries an extension block for a code index — `./init --extension codegraph` projects one,
-naming `.codegraph/`, `codegraph_explore` over MCP, and the `codegraph` CLI — that index is what answers
-those questions, and asking it is the first move rather than the fallback. Each session follows the
-block's MCP, installed-CLI, then `npx` order for itself. A fresh delegate does not inherit the parent's MCP
-connection, but where it has the CLI on `PATH` it can query the same project index.
+If this file carries an extension block for a code index — one is elected at `./init`, and the block it
+projects names where the index lives and the routes that reach it — that index is what answers those
+questions, and asking it is the first move rather than the fallback. Each session follows the block's own
+order of routes for itself. A fresh delegate does not inherit the parent's MCP connection, but where it has
+the block's shell route it can query the same project index.
 
 A block is not a promise that the index is reachable or current. The database travels with the checkout
 and the tooling that serves it does not, and it is only maintained while a client is attached to it — so

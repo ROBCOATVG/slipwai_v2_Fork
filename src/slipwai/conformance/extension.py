@@ -64,10 +64,12 @@ def scratch(root: Path, key: str, package: Path) -> Path:
     """A project the way `./init` would leave one before the extension runs: the files, and a person's words.
 
     The toolkit's whole `scripts/` tree goes in with it. None of it is the package's, but an entry point is
-    entitled to import it — `extensions/guidance.py` is how an extension records its election and writes each
-    harness's MCP file, and `agents/code_index.py` is where the pinned release of a tool is named — and a
-    scratch project without it fails every obligation at the import line, which is a fact about the scratch
-    project and not about the extension.
+    entitled to import it — `extensions/guidance.py` is how an extension records its election and writes
+    each harness's MCP file — and a scratch project without it fails every obligation at the import line,
+    which is a fact about the scratch project and not about the extension. What the toolkit does *not*
+    carry is anything belonging to one extension: since slice 6.1c a tool's own pinned release, its CLI
+    wrapper and its guard live in its package, so an entry point that imported one of those from here was
+    importing a file the keel stopped shipping.
     """
     project = root / "project"
     place = project / "scripts/extensions" / key

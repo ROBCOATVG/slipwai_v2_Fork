@@ -77,8 +77,17 @@ class PermissionsTest(unittest.TestCase):
         denied = {str(rule) for rule in agent_settings.DENIED_PERMISSIONS}
         self.assertEqual(allowed & denied, set())
 
-    def test_the_mcp_servers_an_extension_brings_are_named_and_not_guessed(self) -> None:
-        self.assertEqual(agent_settings.EXTENSION_MCP_SERVERS, ["codegraph"])
+    def test_the_keel_names_no_extension_in_a_projects_settings(self) -> None:
+        """Slice 6.1c's line. Which extensions a project has is decided at `./init`, inside the project,
+        after this file was written — so a keel that named one wrote a permission, an MCP server and two
+        hook rows for a tool every project carried whether or not it had elected anything. An extension
+        that installs a server writes its own entry now."""
+        written = agent_settings.claude_settings([])
+        self.assertNotIn("codegraph", written)
+        self.assertNotIn("mcp__", written)
+        self.assertNotIn("enabledMcpjsonServers", written)
+        for rule in agent_settings.TOOLKIT_PERMISSIONS:
+            self.assertFalse(str(rule).startswith("scripts/"), rule)
 
 
 if __name__ == "__main__":  # pragma: no cover

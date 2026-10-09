@@ -35,18 +35,16 @@ def harness_hooks(layout: Layout) -> dict[str, list[dict[str, object]]]:
     # their own location; it was only the command that launches them that assumed one.
     here = "$CLAUDE_PROJECT_DIR/"
     script = here + layout.under("scripts/agents/session.py")
-    index = here + layout.under("scripts/agents/code_index.py")
     return {
         "PreCompact": [{"hooks": [{"type": "command", "command": f"python3 {script} before-compact"}]}],
         "SessionStart": [{"matcher": "compact",
                           "hooks": [{"type": "command", "command": f"python3 {script} after-compact"}]},
-                         # A person's `/drive` has no captain in front of it, so the index is made sound and
-                         # current when the session opens, the step the captain takes before every stage. A
-                         # rebuild is as long as a first index, hence the timeout; it says something only when
-                         # it acted.
-                         {"matcher": "startup", "hooks": [{"type": "command", "command": f"python3 {index} session",
-                                                           "timeout": 900},
-                                                          {"type": "command", "command": f"python3 {script} session"}]}],
+                         # A person's `/drive` has no captain in front of it, so whatever an extension does at
+                         # the start of a session — an index made sound and current, the step a captain takes
+                         # before every stage — happens here. The budget is long because a rebuild can be as
+                         # long as a first index, and the guards registry's own budget bounds each one.
+                         {"matcher": "startup", "hooks": [{"type": "command", "command": f"python3 {script} session",
+                                                           "timeout": 900}]}],
         "Stop": [{"hooks": [{"type": "command", "command": f"python3 {script} before-stop"}]}],
         # One row per shape a tool call comes in, because a guard is handed a path, a command or a URL and the
         # three are not the same question. In a session the captain dispatched, an edit or a shell write to a
@@ -58,21 +56,18 @@ def harness_hooks(layout: Layout) -> dict[str, list[dict[str, object]]]:
                         "hooks": [{"type": "command", "command": f"python3 {script} before-command"}]},
                        {"matcher": "WebFetch|WebSearch",
                         "hooks": [{"type": "command", "command": f"python3 {script} before-fetch"}]},
-                       {"matcher": "Grep|Glob",
-                        "hooks": [{"type": "command", "command": f"python3 {script} before-search"}]},
-                       # The code index asked first: a search of the source for a symbol, from a session or a
-                       # delegate (the event carries `agent_id`) that has not asked the index yet, is refused with
-                       # the command that answers it. Inert without `.codegraph/`, and in every session, not only
-                       # the captain's, because the rule is the project's and not the run's.
-                       {"matcher": "Grep|Bash|mcp__codegraph__.*",
-                        "hooks": [{"type": "command", "command": f"python3 {index} guard"}]}],
+                       # `Bash` as well as the search tools, because a `grep` or an `rg` through the shell is
+                       # the same search by another door — and an extension that wants to say *don't grep for
+                       # that, ask the index* has to see both. It runs in every session, not only the
+                       # captain's, because a guard is the project's rule and not the run's.
+                       {"matcher": "Grep|Glob|Bash",
+                        "hooks": [{"type": "command", "command": f"python3 {script} before-search"}]}],
         # The one guard that fires after a tool call rather than before it: a delegate has answered and its
         # answer has not been used yet, so an extension may still refuse it and have the agent ask again. A
         # delegate also came back having edited whatever it edited, which is why an index syncs here rather
         # than being trusted to have followed.
         "PostToolUse": [{"matcher": "Agent|Task",
-                         "hooks": [{"type": "command", "command": f"python3 {script} after-delegate"},
-                                   {"type": "command", "command": f"python3 {index} sync"}]}],
+                         "hooks": [{"type": "command", "command": f"python3 {script} after-delegate"}]}],
     }
 
 
@@ -88,7 +83,6 @@ def harness_hooks(layout: Layout) -> dict[str, list[dict[str, object]]]:
 # `git push *` itself has to stay, because the ladder's own push after a rebase is the lease-guarded one,
 # `git push --force-with-lease=refs/heads/slice/<id>: origin HEAD:...`, which a narrower prefix could not name.
 TOOLKIT_PERMISSIONS = [
-    "scripts/codegraph *",
     "git status",
     "git status *",
     "git rev-parse *",
@@ -115,14 +109,6 @@ TOOLKIT_PERMISSIONS = [
 # Denied whatever the allow rules say: a deny rule wins, and a prefix rule cannot say "but not this". A rule is
 # a prefix, so these catch the flag where it is written first — `git push --force origin main` — and leave the
 # lease-guarded form alone; a `--force` written after the remote is beyond what a prefix can see.
-# The MCP servers a project's extensions install, reached through the committed `.mcp.json` the extension writes
-# (`scripts/extensions/codegraph/init.py`): named here so a person's session in this project loads that file's
-# server without a first-use approval and calls its tools without a prompt. Unconditional, like the extension's
-# `.gitignore` line — inert until the file exists, and adopting the extension later needs no second edit here. A
-# headless `/cruise` iteration cannot rely on this file, which an untrusted workspace ignores, so the registry's
-# row passes the same file and allow rule on the command line. `scripts/agents/project.py` carries the same list
-# for the delegates' tool grants.
-EXTENSION_MCP_SERVERS = ["codegraph"]
 DENIED_PERMISSIONS = [
     "git push --force",
     "git push --force *",
@@ -199,8 +185,9 @@ def claude_settings(apps: list[App], target: str = "none", layout: Layout = AT_R
         # `make rollback` are deliberately absent: they change an environment, and that is a prompt worth
         # answering every time.
         allowed += ["make build", "make build *", "make smoke-image", "make smoke-image *", "tofu fmt *", "tofu validate"]
-    return json.dumps({"permissions": {"allow": [f"Bash({command})" for command in allowed]
-                                       + [f"mcp__{server}__*" for server in EXTENSION_MCP_SERVERS],
+    # No extension is named here. An extension that installs an MCP server writes its own entry into the
+    # committed `.mcp.json` and into this file, because the keel does not know which extensions a project
+    # will elect — the election happens inside the project, at `./init`, after this file was written.
+    return json.dumps({"permissions": {"allow": [f"Bash({command})" for command in allowed],
                                        "deny": [f"Bash({command})" for command in DENIED_PERMISSIONS]},
-                       "enabledMcpjsonServers": EXTENSION_MCP_SERVERS,
                        "hooks": harness_hooks(layout)}, indent=2) + "\n"

@@ -128,9 +128,9 @@ be a second writer in a tree one of them holds.
 **In a session a captain dispatched**, this is a stage of the ladder. The captain says which in the
 environment — the stream, the slice and the instant the session opened — so read the owner brief
 (`{OWNER_BRIEF}`), every standing entry in `{DECISIONS}`, and that stream's own last lines
-(`python3 {INBOX_SCRIPT} <stream>`), and say the slice, the branch and its distance from trunk. Where
-`.codegraph/` is in the tree, a caller or blast-radius question is one call — `scripts/codegraph callers
-<symbol>`, or `codegraph_explore` — rather than a search. Open a `skipper`, `hand` or `bosun` benchmark entry
+(`python3 {INBOX_SCRIPT} <stream>`), and say the slice, the branch and its distance from trunk. Where this
+project has adopted a code index, a caller or blast-radius question is one call to it, by a route its block in
+`AGENTS.md` names, rather than a search. Open a `skipper`, `hand` or `bosun` benchmark entry
 around each delegation the way every stage is bracketed, and pass `driver=cruise` to every `end` this
 session closes.
 

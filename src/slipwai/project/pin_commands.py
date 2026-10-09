@@ -156,7 +156,7 @@ description appears, moves or goes.
 
 `{page}` was rewritten as the survey now stands, with the evidence for every line, and `{view}` — the
 architecture view: where anything starts, what depends on what, where change happens — from the tree, the Git
-history and CodeGraph's index where `.codegraph/` holds one.
+history and a code index's graph where this project has adopted one.
 {model}
 ## Then
 

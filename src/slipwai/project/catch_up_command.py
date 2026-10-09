@@ -12,20 +12,21 @@ from ..services import App
 from ..targets import managed
 from ..toolkit import example_of
 
-# Where a project's own code index announces itself, when it has one. `./init --extension codegraph` projects
-# a block to `AGENTS.md` and adds `.codegraph/` to `.gitignore`; nothing about this file knows whether that
+# Where a project's own code index announces itself, when it has one. An index extension elected at `./init`
+# projects a block to `AGENTS.md` and brings its own files; nothing about this file knows whether that
 # happened, because extensions are chosen at `./init` and this file is written before it — hence prose that
-# asks the agent to look rather than a paragraph the generator includes or omits.
+# asks the agent to look rather than a paragraph the generator includes or omits. The keel names no index
+# and ships none: what the block says is the extension's to write.
 INDEXED = """## Use the code index, if this project has one
 
 Every question in the step above is the same shape — *where else does this pattern appear, and what would
 change if I fixed it* — which is a blast-radius question, and grep is a poor instrument for one. If
-`AGENTS.md` carries an extension block for a code index (CodeGraph, `.codegraph/`, `codegraph_explore` over
-MCP or the `codegraph` CLI), that is what it is for: ask it for every caller of the symbol a gate named,
+`AGENTS.md` carries an extension block for a code index, that is what it is for: the block names the routes
+— a tool over MCP, a command through the shell — and you ask it for every caller of the symbol a gate named,
 every reference to the identifier the rule is about, and what depends on the file you are about to change.
 Ask it *before* grepping and before opening files one at a time, and answer from it in this session rather
-than assuming another session has or lacks the same route. A delegate checks its own MCP, CLI and `npx`
-routes and names which one answered.
+than assuming another session has or lacks the same route. A delegate checks which of the block's routes it
+has and names the one that answered.
 
 A project with no such block has no index and grep is the tool; say which one you used, so a review can
 tell a search that was exhaustive from one that was a guess."""

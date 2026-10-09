@@ -136,6 +136,27 @@ class ToolkitTest(unittest.TestCase):
         self.assertEqual(toolkit.skill_of("skills/tdd/SKILL.md"), "tdd")
         self.assertIsNone(toolkit.skill_of("scripts/verify"))
 
+    def test_the_toolkit_carries_nothing_belonging_to_one_extension(self) -> None:
+        """Slice 6.1c. The keel names no extension and ships none, so a project that elected nothing
+        carries no file that only an extension would use — and the two that slipped through did it by
+        being written before extensions were packages at all: a code index's pinned CLI wrapper and the
+        script that kept its database. They live in that index's own package now.
+
+        The rule is read off the names rather than the contents, because a name is what a person adding
+        a file chooses: a toolkit script named after a product is a product the keel has taken sides on.
+        """
+        shipped = [path for path in asset_tree(TOOLKIT_ROOT) if path.startswith("scripts/")]
+        self.assertTrue(shipped, "no toolkit scripts were read; the check proved nothing")
+        named = sorted(
+            path for path in shipped
+            # `scripts/extensions/` is where an elected extension's own files land inside a project, so a
+            # path under it is the only one entitled to carry a product's name — and nothing is there in
+            # the keel's own tree, which this also holds.
+            if not path.startswith("scripts/extensions/")
+            and any(word in path.lower() for word in ("codegraph", "code_index", "uipro", "ux-gates"))
+        )
+        self.assertEqual(named, [], "the toolkit ships a file belonging to one extension")
+
 
 class HarnessTest(unittest.TestCase):
     def test_the_registry_is_read_from_the_toolkit_and_names_the_harnesses(self) -> None:

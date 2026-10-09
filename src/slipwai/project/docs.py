@@ -102,10 +102,10 @@ adversarial, mutation, model, benchmark and dependency-audit targets. Mutation a
 explicit end-of-phase/CI operations, not hidden costs in every local increment.
 
 `make check-extensions` fires each elected extension's own gate, the code index's among them, and a project that elected none finds nothing to run — the keel names no extension and a project that
-has not: it fails when `.codegraph/` no longer describes the tracked source — files it has never seen, or
-files that changed after it read them. CodeGraph indexes only while a client is attached to its daemon, so a
-checkout opened where that tooling is missing keeps a database nothing updates, and a stale index answers
-*nothing calls that* in the same words an accurate one uses. The failure says how to catch it up.
+has not: it fails when the index no longer describes the tracked source — files it has never seen, or
+files that changed after it read them. An index is usually kept current by tooling a checkout may not have,
+so one opened without it keeps a database nothing updates, and a stale index answers *nothing calls that* in
+the same words an accurate one uses. The failure says how to catch it up.
 {style_gate}{production_gate}
 `make check-constitution` is the one gate that reads a document rather than code, and it waits for the
 document: `./init` installs the constitution *template*, and while that file is still the untouched template

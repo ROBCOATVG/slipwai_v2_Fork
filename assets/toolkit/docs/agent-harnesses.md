@@ -31,7 +31,7 @@ own `speckit-*` skills land in the same directory, hashed in `.specify/integrati
 Here **context means the repository instruction file**, not the host session's conversation. Projection
 does not carry the parent's messages, tool results or accumulated prompt into a delegate. A sub-agent still
 starts with its focused stage brief and the repository instructions; where those instructions name an
-optional tool such as CodeGraph, it checks whether that tool is available in its own session.
+optional tool an extension brought, it checks whether that tool is available in its own session.
 
 | `contextMode` | Harnesses | What the projector does |
 |---|---|---|
@@ -45,8 +45,8 @@ Delete the region and `make agents` puts it back around what you wrote.
 
 A `copy` harness already has Spec Kit's baseline project context. Copying `AGENTS.md` whole would duplicate
 that context and charge every session for it twice, so the later pass carries only optional, marker-fenced
-extension guidance. That is enough for every delegate to learn, for example, that CodeGraph should be used
-when available in its own session. `make agents` refreshes the extension source first, then this copy.
+extension guidance. That is enough for every delegate to learn, for example, that this project's code
+index should be used when available in its own session. `make agents` refreshes the extension source first, then this copy.
 
 A `copy` harness whose context file does not exist is left alone rather than reported: `specify init` owns
 that file's format, frontmatter and all, and inventing one would mean guessing at a shape this repository
@@ -88,8 +88,8 @@ carry the whole shell. The other four reach the session's servers whatever the f
 Codex inherit them, Cursor inherits every tool, opencode's `permission` map is a denylist — and on Claude Code
 an MCP tool arrives *deferred*, a bare name the delegate has to load through the harness's own tool-search step
 before it can call it — unless the server's `.mcp.json` entry carries `alwaysLoad: true`, which the registry's
-`projectMcp.serverFields` has the CodeGraph extension write, so its tool is loaded at session start. Every
-harness also has `scripts/codegraph`, the pinned CLI, through the shell. `registry.json` records all of that under `agentFile.mcp`, with the source and the date
+`projectMcp.serverFields` has an extension write, so its tool is loaded at session start. Every harness
+also has whatever shell route that extension's own block names. `registry.json` records all of that under `agentFile.mcp`, with the source and the date
 it was read, and every projection's stamp carries it, so a route a harness withholds is one somebody can read.
 
 Because the model lives in these files on five of the six harnesses, `/model-delegation-settings` rewrites them as part of the
@@ -133,7 +133,7 @@ shape, and which flags a headless iteration needs for that file to be honoured i
 — `.mcp.json` and `--mcp-config` on Claude Code, `.codex/config.toml` and a one-run trust override on Codex,
 `.gemini/settings.json`, `.cursor/mcp.json` and `opencode.json` read by their harnesses as they are — each from
 the harness's own documentation on the date the row names, or null with a `projectMcpReason`. An extension that
-installs an MCP server (`./init --extension codegraph`) names it in every installed harness's file through
+installs an MCP server (elected at `./init --extension <key>`) names it in every installed harness's file through
 `scripts/extensions/guidance.py`, so the connection travels with the checkout instead of living in one user's
 home; `scripts/agents/cruise.py` passes the flags when the file exists; and a harness with a null row reaches
 the same tool through its CLI from the shell, which is the route `AGENTS.md`'s block names last.

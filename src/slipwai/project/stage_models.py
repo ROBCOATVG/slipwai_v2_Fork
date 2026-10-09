@@ -225,12 +225,12 @@ and the conservative reading is the expensive one. The page each type is written
 delegation is held to: reference it, restate none of it (`AGENTS.md`, *Delegated agents*).
 
 **A delegate does not inherit this session's code-index connection, and needs none.** Where `AGENTS.md`
-carries the CodeGraph extension block, three of the types above — `drive-converge`, `drive-gaps` and
+carries a code index's extension block, three of the types above — `drive-converge`, `drive-gaps` and
 `drive-adversary` — are exploration-heavy, and *what does this code not yet do* is a blast-radius question the
-index answers. Delegate them as the table says: every delegate's shell has `scripts/codegraph`, the pinned CLI
-through `npx`, and on Claude Code the server's tool is loaded at the delegate's start, so its brief's first
-route to the index is one it has. It names the route that answered, and falls back to text search only when
-`scripts/codegraph` says there is no route. Never pass the parent conversation merely to carry the connection.
+index answers. Delegate them as the table says: a delegate reaches the index by the routes that block names,
+which are the shell's and the harness's rather than this session's, so its brief's first route is one it has.
+It names the route that answered, and falls back to text search only when the index says there is none. Never
+pass the parent conversation merely to carry the connection.
 
 Delegate both when the line names another model and when the same strong model can run in a fresh context.
 On a harness whose agent file names a model (`scripts/agents/registry.json`, `agentFile`) the type already

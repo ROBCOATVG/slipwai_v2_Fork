@@ -283,7 +283,12 @@ def before_fetch() -> int:
 
 
 def before_search() -> int:
-    """The tree is about to be searched. The keel holds no opinion; `codegraph` is why this point exists."""
+    """The tree is about to be searched. The keel holds no opinion; a code index is why this point exists.
+
+    A shell command reaches here as well as the search tools, because a `grep` or an `rg` typed into Bash is
+    the same search by another door, and a guard that saw only the search tools would be a rule with a gap
+    in it the size of the shell.
+    """
     given = event().get("tool_input")
     given = given if isinstance(given, dict) else {}
     query = str(given.get("pattern") or given.get("query") or given.get("command") or "")

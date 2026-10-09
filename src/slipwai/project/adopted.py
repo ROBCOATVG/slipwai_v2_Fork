@@ -171,8 +171,9 @@ has a target of its own. {ci_paragraph(adoption, layout)}
 1. `./{where(layout)}init` — first, as in any project the factory made. It installs Spec Kit and asks which
    coding agent to project the skills and commands into (`./{where(layout)}init --integration claude` names it
    outright; `python3 {where(layout)}scripts/agents/project.py --list` shows every agent it knows).
-   `./{where(layout)}init --extension codegraph` indexes the code, which is what makes a legacy codebase safe
-   for an agent to work in; the two flags go together in one run.
+   Electing a code-index extension in the same run — `./{where(layout)}init --extension <key>`, and
+   `./{where(layout)}init --help` lists what this copy offers — indexes the code, which is what makes a legacy
+   codebase safe for an agent to work in; the two flags go together in one run.
 2. `/ground`, in the agent — the question set the tree could not answer: one row of
    `{where(layout)}docs/convergence.md` at a time, the evidence and the rungs shown first, each answer written
    with `confirmed` provenance; then `/survey` so the pages and the strategy recommendation follow. What

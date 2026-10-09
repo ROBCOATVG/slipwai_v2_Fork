@@ -82,17 +82,31 @@ TASK_COMMAND = "tasks-command"
 # A type that declares no stage takes no stage's model: `drive-slice` runs a whole slice and chooses a model
 # per stage inside itself, so resolving one here would pick a model for the lot.
 NO_STAGE = "none"
-# The MCP servers this repository's own extensions install, spelled as the harnesses below name a server's
+# The MCP servers this repository's own extensions installed, spelled as the harnesses below name a server's
 # whole tool surface. A `tools` list is the whole grant on Gemini and Copilot, so a read-only type that lists
-# only built-ins is one that cannot reach the code index `./init --extension codegraph` just installed — the
-# route drops with no error to read, which is the failure the extension's own guidance exists to prevent.
-# Granting them back costs nothing that was being held: both lists already carry the whole shell, so an MCP
-# tool adds no write surface `writes: none` was withholding. Gemini has a wildcard for every connected
-# server; Copilot has none, so its servers are named, and an unrecognized name there is ignored rather than
-# an error (docs.github.com custom-agents-configuration, Tools) — which is what makes naming one a
-# repository has not configured safe. `codegraph` is the server key CodeGraph's own installer writes
-# (`installer/targets/*.js` in the v1.6.0 bundle, read 2026-09-17); see registry.json's `agentFile.mcp`.
-EXTENSION_MCP_SERVERS = ("codegraph",)
+# only built-ins is one that cannot reach a server an extension just installed — the route drops with no
+# error to read, which is the failure an extension's own guidance exists to prevent. Granting them back
+# costs nothing that was being held: both lists already carry the whole shell, so an MCP tool adds no write
+# surface `writes: none` was withholding. Gemini has a wildcard for every connected server; Copilot has
+# none, so its servers are named, and an unrecognized name there is ignored rather than an error
+# (docs.github.com custom-agents-configuration, Tools) — which is what makes naming one a repository has
+# not configured safe.
+#
+# Read from the committed project MCP file rather than from a list here, because the keel names no
+# extension: which servers this project has is decided at `./init`, inside the project, after every file
+# here was written, and an extension that installs a server writes it into that file (`scripts/extensions/
+# guidance.py`, `write_project_mcp`). A project that elected none has no file and no names.
+PROJECT_MCP = ROOT / ".mcp.json"
+
+
+def extension_mcp_servers() -> tuple[str, ...]:
+    """Every server the committed project MCP file names, in its own order; none where there is no file."""
+    try:
+        document = json.loads(PROJECT_MCP.read_text(encoding="utf-8"))
+    except (OSError, ValueError, UnicodeDecodeError):
+        return ()
+    servers = document.get("mcpServers") if isinstance(document, dict) else None
+    return tuple(name for name in servers if isinstance(name, str)) if isinstance(servers, dict) else ()
 # Gemini CLI names every built-in tool, and a list is the only way to withhold one, so a read-only type gets
 # every tool but the two that edit — `write_file` and `replace` (gemini-cli docs/tools/, read 2026-09-15) —
 # plus `mcp_*`, every tool from every connected MCP server (docs/core/subagents.md, Tool wildcards,
@@ -102,8 +116,7 @@ GEMINI_READING_TOOLS = ("list_directory", "read_file", "glob", "grep_search", "r
 # Copilot's aliases, minus `edit` — and minus `agent`, since a delegate of one stage does not spawn another
 # (docs.github.com custom-agents-configuration, Tool aliases, read 2026-09-15) — plus one entry per server
 # above, because this harness has no wildcard for every MCP server at once.
-COPILOT_READING_TOOLS = ("execute", "read", "search", "web", "todo",
-                         *(f"{server}/*" for server in EXTENSION_MCP_SERVERS))
+COPILOT_READING_TOOLS = ("execute", "read", "search", "web", "todo")
 
 
 def selected_integrations(arguments: list[str]) -> list[str]:
@@ -337,7 +350,8 @@ def rendered_agent(declared: dict[str, str], body: str, harness: dict[str, objec
         if key == "claude":
             entries.append(("disallowedTools", "Edit, Write, NotebookEdit"))
         elif key == "copilot":
-            entries.append(("tools", json.dumps(list(COPILOT_READING_TOOLS))))
+            entries.append(("tools", json.dumps([*COPILOT_READING_TOOLS,
+                                                 *(f"{server}/*" for server in extension_mcp_servers())])))
         elif key == "cursor-agent":
             entries.append(("readonly", "true"))
         elif key == "gemini":
@@ -383,8 +397,8 @@ def sync_context(harness: dict[str, object]) -> None:
 
     `canonical` reads AGENTS.md itself. An `import` harness includes the whole file through a pointer this
     script owns. A `copy` harness reads a context file Spec Kit wrote before extension hooks ran, so only
-    marker-fenced extension guidance is carried across afterwards. That keeps CodeGraph and every other
-    optional tool visible without appending a second copy of the baseline repository context.
+    marker-fenced extension guidance is carried across afterwards. That keeps every optional tool an
+    extension brought visible without appending a second copy of the baseline repository context.
     """
     if not AGENTS.is_file():
         return

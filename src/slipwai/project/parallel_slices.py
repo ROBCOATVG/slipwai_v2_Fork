@@ -143,7 +143,7 @@ before the fan-out or between merges. The canonical slot at the feature root is 
 **Demo on the slice branch, then verify, then push.** As delegates report converged, demo each slice from
 its unpushed worktree in split order — never from `main`, never by pushing increment commits first. A
 claim may already have pushed a lock ref from `main`; leave the increment commits local until the actor
-accepts. After acceptance: `codegraph sync` if the project has adopted a code index, `{layout.make} verify`
+accepts. After acceptance: bring the code index up to the tree if the project has adopted one, `{layout.make} verify`
 green, then push the slice's commits and merge into `main` in split order — never in finishing order.
 That is the first implementation push, and it is what starts CI. The composition root and the cumulative
 artifacts are where two merges meet, and split order is what makes those resolutions predictable;
