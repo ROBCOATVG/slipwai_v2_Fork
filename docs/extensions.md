@@ -41,6 +41,8 @@ toolkit runs it.
 | `publisher` | no | Who published it, which the chandlery's index shows. |
 | `tags` | no | What `slipwai search` matches against. |
 | `hooks` | no | The points it attaches to — below. |
+| `guards` | no | What it may refuse, and in whose words — below. |
+| `tools` | no | The tool names a headless session must be allowed to call to reach it — below. |
 
 `key` and `name` are separate because they are different things, and this is the one way an extension's
 manifest differs from a language's, where the name is both. The catalogue entry a project gets carries
@@ -172,11 +174,42 @@ extensions'. That is why an extension declares `before-write` once instead of le
 harnesses' spellings, and why the keel's own control-file refusal is a guard like any other rather than a
 row it writes into one harness's settings file.
 
+## The tools
+
+A hook is something the extension runs and a guard is something it may refuse. The third thing is neither:
+a tool *the agent* calls that belongs to the extension — `codegraph`'s MCP server, read as
+`mcp__codegraph__*` — and a headless session started under an allow-list that does not name it cannot reach
+the extension at all.
+
+```json
+{
+  "tools": ["mcp__codegraph__*"]
+}
+```
+
+A list of strings, in the order the extension wrote them, and nothing is validated against a harness: a
+pattern is a string in the harness's own spelling, and a keel that checked them would be a keel that has to
+be released before an extension can use a tool it invented.
+
+**Why this is a declaration and not a row in the registry.** It was a row in the registry.
+`scripts/agents/registry.json` is the keel's catalogue of coding agents and it travels into every generated
+project, so `mcp__codegraph__*` sitting in Claude Code's headless allow-list was handed to every project
+whether it had elected the index or not — and a reader finding it there had every reason to think the keel
+brought the index. A harness row says where an elected extension's names go, with a `{tools}` placeholder
+inside the allow-list it already has; a row without one is left exactly as recorded, rather than handed a
+flag nobody has checked it accepts. `tests/test_extension_reach.py` holds the registry to carrying no
+extension's name in any value a session runs under.
+
+The keel still *reads* what an extension built — `slipwai survey` opens `.codegraph/codegraph.db` if it is
+there, the way it reads `.git` — and still names the product where it is naming that file's format or
+quoting dated evidence about it. What it does not do is carry a live configuration value belonging to one.
+
 ## Where the files land
 
 Every file of the package but `extension.json` is written into a generated project at
 `scripts/extensions/<key>/`, with `scripts/extensions/available.json` beside them carrying each offered
-extension's hooks. The manifest is not copied: a project is not where one is read, and shipping it there
+extension's hooks, `available-guards.json` carrying what each may refuse, and `available-tools.json`
+carrying the names each needs allowed. The manifest is not copied: a project is not where one is read, and shipping it there
 would ship a decoy that nothing reads and everybody edits.
 
 The project gets the files at **generation**, not at election, because the menu `./init` shows is built from

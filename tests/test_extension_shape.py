@@ -14,6 +14,7 @@ import unittest
 import checkout_packages  # noqa: F401
 
 from slipwai import extension_shape as shape
+from slipwai import extension_tools as tools
 
 WHOLE = {"key": "codegraph", "name": "CodeGraph", "description": "A code index for agents",
          "kind": "extension", "core": ">=9.0,<10"}
@@ -103,3 +104,37 @@ class KeyTest(unittest.TestCase):
         entry = shape.catalogue_entry({**WHOLE, "key": "uipro", "name": "UI/UX Pro Max"})
         self.assertEqual(entry["name"], "UI/UX Pro Max")
         self.assertNotIn("key", entry)
+
+
+class ToolsTest(unittest.TestCase):
+    """`tools`: the names an extension needs a headless session allowed to call.
+
+    6.1c's half of the manifest. The keel's harness registry carried `mcp__codegraph__*` in Claude Code's
+    allow-list, so every generated project was handed one extension's tool name whether it had elected that
+    extension or not — and a project that elected none still shipped a file naming one. The fact belongs to
+    whoever brings the tool, and this is where they declare it.
+    """
+
+    def test_an_extension_may_declare_none(self) -> None:
+        shape.validate(WHOLE)
+        self.assertEqual(tools.declared(WHOLE), ())
+
+    def test_a_declared_list_is_read_in_the_order_it_was_written(self) -> None:
+        """Order is the extension's: a broad pattern written after a narrow one meant something by it."""
+        manifest = {**WHOLE, "tools": ["mcp__pro__*", "Bash(pro:*)"]}
+        shape.validate(manifest)
+        self.assertEqual(tools.declared(manifest), ("mcp__pro__*", "Bash(pro:*)"))
+
+    def test_a_tool_that_is_not_a_string_is_refused_by_what_the_field_is(self) -> None:
+        with self.assertRaises(ValueError) as refused:
+            shape.validate({**WHOLE, "tools": ["fine", 7]})
+        self.assertIn("list of tool names", str(refused.exception))
+
+    def test_an_empty_name_is_refused_rather_than_allowed_as_nothing(self) -> None:
+        """An empty pattern in an allow-list is a flag with a stray comma in it, which a harness reads as
+        its own business and this keel would never hear about again."""
+        with self.assertRaises(ValueError):
+            shape.validate({**WHOLE, "tools": ["  "]})
+
+    def test_tools_is_a_field_the_keel_reads_rather_than_an_unknown_one(self) -> None:
+        self.assertIn("tools", shape.OPTIONAL)

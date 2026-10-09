@@ -48,6 +48,11 @@ def project_root(script: Path, depth: int) -> Path:
 
 ROOT = project_root(Path(__file__).resolve(), 2)
 INTEGRATION = ROOT / ".specify/integration.json"
+#: What `scripts/extensions/hooks.py --elect` wrote: the extensions this project elected, and the tool names
+#: they need a session allowed to call. Read here rather than carried in `registry.json` because the tool
+#: belongs to whoever brings it — the registry is the keel's catalogue of coding agents, and a tool name in
+#: it is handed to every project whether it elected that extension or not (6.1c).
+ELECTED = ROOT / ".slipwai/hooks.json"
 #: The environment a harness session started from inside another's must not inherit: the parent's own
 #: identity, or the child reads the parent's transcript as its own and refuses to start as a nested copy.
 PARENT_SESSION_VARIABLES = ("CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT")
@@ -120,11 +125,31 @@ def choose() -> tuple[dict[str, Any], str]:
                     f"(scripts/agents/registry.json, `headless`)")
 
 
+def elected_tools(separator: str = ",") -> str:
+    """The tool names this project's elected extensions declared, as one allow-list fragment.
+
+    Empty — not the separator, not a stray comma — where nothing was elected or the election has not been
+    run, which is the common case and the one a plain generated project is in. The leading separator is
+    part of the fragment so that a row can write `'Bash,Skill{tools}'` and read correctly either way.
+    """
+    try:
+        record = json.loads(ELECTED.read_text(encoding="utf-8"))
+    except (OSError, ValueError, UnicodeDecodeError):
+        return ""
+    names = [name for name in record.get("tools", []) if isinstance(name, str) and name.strip()]
+    return "".join(f"{separator}{name.strip()}" for name in names)
+
+
 def template(harness: dict[str, Any], sandbox: bool = False) -> tuple[str, str]:
     """The shell template a session runs, and the sentence saying which permissions it runs under."""
     headless = headless_row(harness)
     assert headless is not None
-    permissions = headless.get("sandboxPermissions" if sandbox else "permissions", "")
+    permissions = str(headless.get("sandboxPermissions" if sandbox else "permissions", ""))
+    # `{tools}` is where an elected extension's tool names join this harness's allow-list, in the spelling
+    # the row around it already uses. A row with no placeholder gets nothing added: a harness whose allow
+    # list this project has not been taught to extend is left exactly as the registry records it, rather
+    # than handed a flag nobody checked it accepts.
+    permissions = permissions.replace("{tools}", elected_tools())
     why = ("--sandbox: every permission check is bypassed, which is only for a container with nothing to lose"
            if sandbox else
            "edits are accepted and every other permission is the harness's own to grant or refuse; pass "

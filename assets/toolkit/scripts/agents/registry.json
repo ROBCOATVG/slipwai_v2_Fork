@@ -33,7 +33,7 @@
         "why": "the output schema of a Stop hook was not verified"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -58,7 +58,7 @@
       "headlessReason": "Alquimia AI is an enterprise agent platform (Runtime, Studio, InsightHub; event-driven, Knative-based), not a terminal coding agent: its documentation repository README and the Alquimia-ai GitHub organisation show no CLI coding agent, and docs.alquimia.ai returned HTTP 403. Read 2026-09-22.",
       "hooks": null,
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -93,7 +93,7 @@
         "why": "continuation is a plugin under `.amp/plugins/`, not a command hook"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -128,7 +128,7 @@
         "why": "no way for a hook's output to continue the agent was verified"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -153,7 +153,7 @@
       "headlessReason": "Not verified from an official page: bob.ibm.com (including /docs/shell/getting-started/start-bobshell-non-interactive) and www.ibm.com returned HTTP 403 on 2026-09-22, and the npm package @ibm/bob@0.0.2 is a placeholder with no README or binary. Search snippets suggest `bob -p \"...\"`, `--yolo` and `--accept-license`, unseen on a fetched page.",
       "hooks": null,
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -179,9 +179,9 @@
       "headless": {
         "how": "`claude -p <prompt>` prints the response and exits; `--output-format stream-json --verbose` writes one JSON line per event — the assistant's text and tool calls, each tool's result, a delegate's own with `parent_tool_use_id` set, and one `result` at the end carrying the final text and every permission the session was refused — which the runner renders into its feed and reads the last line from; `--permission-mode` picks how tool calls are approved in a session nobody is watching; `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0` keeps a print session waiting for its background delegates, which it otherwise terminates after 600s — mid-slice, with the story delegate still running; under `acceptEdits` alone a print session is refused every command its allowlist does not name — and the project's `.claude/settings.json` allow rules are ignored until the workspace is trusted (`projects[<path>].hasTrustDialogAccepted` in ~/.claude.json), a prefix rule never admits a compound command (`make verify; echo done` is \"shell syntax that cannot be statically analyzed\"), and a print session has nobody to ask — so the runner passes `--allowedTools` naming everything the ladder reaches for: `Bash`, the shell wholesale, while the settings file's `deny` rules still win over it, trusted or not; `Skill` and `Agent`, the project's commands and delegates, which a print session ran under `acceptEdits` alone; `WebFetch` and `WebSearch`, which it refused, and an unattended stage reading documentation has nobody to ask; and `mcp__codegraph__*`, the code index's tools, refused without the rule even with the server connected. `projectMcp` is the project's own MCP file, passed with `--mcp-config` when it exists, because a print session in an untrusted workspace ignores the project's settings and would otherwise fall back to text search without saying; `-p /cruise` resolves the project's slash command, which is how every run so far was driven `worktreeFlags` is passed on every iteration with `{parent}` as the directory the checkout sits in: under `acceptEdits` a print session is refused a Write or Edit outside its working directory, and the ladder's concurrent slices work in worktrees beside the checkout (`git worktree add ../<project>-<id>`), so without `--add-dir` every slice delegate on that route was refused its first edit. `modelFlag` puts the session on the model `.specify/cruise.json` names (`model`): an alias — fable, opus, sonnet — or a model's full name; without it the account's default runs, which under `/drive` a person would have chosen when they opened the session.",
         "command": "claude -p {prompt} --output-format stream-json --verbose {permissions}",
-        "permissions": "--permission-mode acceptEdits --allowedTools 'Bash,Skill,Agent,WebFetch,WebSearch,mcp__codegraph__*'",
+        "permissions": "--permission-mode acceptEdits --allowedTools 'Bash,Skill,Agent,WebFetch,WebSearch{tools}'",
         "sandboxPermissions": "--dangerously-skip-permissions",
-        "source": "the installed Claude Code 2.1.278's --help (-p/--print, --output-format, --permission-mode with acceptEdits and bypassPermissions, --dangerously-skip-permissions), read 2026-09-22; the stream-json event shapes from the stream 2.1.280 wrote for a tool call and a delegate, read 2026-09-22; the wait ceiling and the trust rule from the messages the same build printed during a /cruise run, read 2026-09-22; `--allowedTools Bash` running a compound command while a settings `deny` rule still refused `git clean -n`, and the allow rules ignored in an untrusted workspace, from a 2.1.280 print session run with exactly those flags, read 2026-09-22; every tool family the ladder names — `Skill` on a project command, `Agent` on a project delegate whose Bash ran, `Write`, `WebFetch` and `WebSearch` — tried from one 2.1.280 print session in a generated project under `acceptEdits --allowedTools Bash`, with the two web tools the only refusals; and `--mcp-config .mcp.json` connecting the file's server, `codegraph_explore` answering with `mcp__codegraph__*` allowed and refused without it, from three such sessions, all read 2026-09-22; a Write to `../outside/` refused under `acceptEdits --allowedTools Bash` and accepted with `--add-dir <parent>` in the same untrusted checkout, from two 2.1.280 print sessions, read 2026-09-23; `--model <model>` (\"Model for the current session. Provide an alias for the latest model (e.g. 'fable', 'opus', or 'sonnet') or a model's full name\") from the installed 2.1.280's --help, read 2026-09-23",
+        "source": "the installed Claude Code 2.1.278's --help (-p/--print, --output-format, --permission-mode with acceptEdits and bypassPermissions, --dangerously-skip-permissions), read 2026-09-22; the stream-json event shapes from the stream 2.1.280 wrote for a tool call and a delegate, read 2026-09-22; the wait ceiling and the trust rule from the messages the same build printed during a /cruise run, read 2026-09-22; `--allowedTools Bash` running a compound command while a settings `deny` rule still refused `git clean -n`, and the allow rules ignored in an untrusted workspace, from a 2.1.280 print session run with exactly those flags, read 2026-09-22; every tool family the ladder names — `Skill` on a project command, `Agent` on a project delegate whose Bash ran, `Write`, `WebFetch` and `WebSearch` — tried from one 2.1.280 print session in a generated project under `acceptEdits --allowedTools Bash`, with the two web tools the only refusals; and `--mcp-config .mcp.json` connecting the file's server, `codegraph_explore` answering with `mcp__codegraph__*` allowed and refused without it, from three such sessions, all read 2026-09-22; a Write to `../outside/` refused under `acceptEdits --allowedTools Bash` and accepted with `--add-dir <parent>` in the same untrusted checkout, from two 2.1.280 print sessions, read 2026-09-23; `--model <model>` (\"Model for the current session. Provide an alias for the latest model (e.g. 'fable', 'opus', or 'sonnet') or a model's full name\") from the installed 2.1.280's --help, read 2026-09-23. `{tools}` is where an elected extension's tool names are substituted (`scripts/agents/harness.py`): the keel's registry no longer carries `mcp__codegraph__*` itself, because a tool name in this file is handed to every project whether it elected that extension or not (6.1c). The experiment above is unchanged and is why the placeholder is here.",
         "env": {
           "CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS": "0"
         },
@@ -274,7 +274,7 @@
         "why": "no way for a hook's output to continue the agent was verified"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -309,7 +309,7 @@
         "why": "its Stop hook is held with `{\"continue\": false, \"reason\"}`, the opposite of every other harness's spelling, and the entry shape was not read"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -424,7 +424,7 @@
         "why": "the entry shape of a `.github/hooks/*.json` file was not read, only the event and its output"
       },
       "projectMcp": null,
-      "projectMcpReason": "the Copilot CLI reads MCP servers from `~/.copilot/mcp-config.json` only: CodeGraph 1.6.0's installer target for it declines a project-local install (`supportsLocation('local')` is false, citing github/copilot-cli#2528), read 2026-09-22; the index is reached through the `codegraph` CLI or `npx` from the shell",
+      "projectMcpReason": "the Copilot CLI reads MCP servers from `~/.copilot/mcp-config.json` only: CodeGraph 1.6.0's installer target for it declines a project-local install (`supportsLocation('local')` is false, citing github/copilot-cli#2528), read 2026-09-22; the code index, where one is elected, is reached through its own CLI or `npx` from the shell",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -533,7 +533,7 @@
       "headlessReason": "Not verified: every official page returned HTTP 403 on 2026-09-22 (docs.devin.ai/cli, docs.devin.ai/cli/reference/commands, devin.ai/cli, cli.devin.ai), and no official source repository exists. Third-party snippets mention `devin -p \"<prompt>\" --permission-mode dangerous`, unseen on an official page.",
       "hooks": null,
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -568,7 +568,7 @@
         "why": "the entry shape inside `.factory/settings.json` was not read, and whether hooks fire under `droid exec` is not verified"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -594,7 +594,7 @@
       "headlessReason": "No CLI found: docs.firebender.com and firebender.com returned HTTP 403 on 2026-09-22; search results describe Firebender only as a coding agent plugin for Android Studio and JetBrains IDEs, with no terminal binary or headless mode.",
       "hooks": null,
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -629,7 +629,7 @@
         "why": "no way for a hook's output to continue the agent was verified"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -740,7 +740,7 @@
       "compaction": null,
       "hooks": null,
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -775,7 +775,7 @@
         "why": "reads `<project>/.claude/settings.json` and `<project>/.cursor/hooks.json`, both of which the factory writes, so nothing of its own is needed"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -812,7 +812,7 @@
         "why": "continuation is only at the verify gate (`pre_verify`), not at the end of a turn"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -837,7 +837,7 @@
       "headlessReason": "Not verified: jetbrains.com/help/junie and junie.jetbrains.com returned HTTP 403 on 2026-09-22, the GitHub README shows the `junie` binary in interactive use only, and the npm README is empty. JetBrains' own action.yml (JetBrains/junie-github-action on main) runs `junie --output-format=json --input-format=json --json-output-file=<file> --auth=<token> < input.json`, JSON in and out with an undocumented input schema; no plain-text prompt run or approval flag was seen.",
       "hooks": null,
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -872,7 +872,7 @@
         "why": "no way for a hook's output to continue the agent was verified"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -907,7 +907,7 @@
         "why": "hooks live in `~/.kimi-code/config.toml`, a person's file, not the project's"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -972,7 +972,7 @@
         "why": "hooks live in a settings.json the docs page for was unreachable; the shape is from source only"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -1007,7 +1007,7 @@
         "why": "no way for a hook's output to continue the agent was verified"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -1101,7 +1101,7 @@
         "why": "continuation is an extension written in TypeScript, not a command hook"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -1136,7 +1136,7 @@
         "why": "hooks live in a settings.json the docs page for was unreachable; the shape is from source only"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -1171,7 +1171,7 @@
         "why": "the entry shape inside `.qwen/settings.json` was not read, only the event and its output"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: QwenLM/qwen-code docs/tools/mcp-server.md returned HTTP 404, and a Gemini CLI fork reading `.qwen/settings.json` is a guess this column does not write; the index is reached through the `codegraph` CLI or `npx` from the shell",
+      "projectMcpReason": "not read 2026-09-22: QwenLM/qwen-code docs/tools/mcp-server.md returned HTTP 404, and a Gemini CLI fork reading `.qwen/settings.json` is a guess this column does not write; the code index, where one is elected, is reached through its own CLI or `npx` from the shell",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -1201,7 +1201,7 @@
       "compaction": null,
       "hooks": null,
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -1236,7 +1236,7 @@
         "why": "no way for a hook's output to continue the agent was verified"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -1271,7 +1271,7 @@
         "why": "no way for a hook's output to continue the agent was verified"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -1301,7 +1301,7 @@
         "why": "no way for a hook's output to continue the agent was verified"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -1336,7 +1336,7 @@
         "why": "`.vibe/hooks.toml` is TOML, which this factory writes nothing in, and `post_agent` caps retries at three"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -1361,7 +1361,7 @@
       "headlessReason": "ZCode (zcode.z.ai) is Z.ai's desktop coding agent; zcode.z.ai/en/docs/agents returned HTTP 403 on 2026-09-22 and no official CLI page was found. The CLIs found (kingsword09/zcode-cli, npm zcode-app-cli) say they are not affiliated with Z.ai.",
       "hooks": null,
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     },
@@ -1391,7 +1391,7 @@
         "why": "no way for a hook's output to continue the agent was verified"
       },
       "projectMcp": null,
-      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the index is reached through the `codegraph` CLI or `npx` from the shell, the route AGENTS.md's block names",
+      "projectMcpReason": "not read 2026-09-22: no documentation of a project-scoped MCP file was consulted for this harness; the code index, where one is elected, is reached through its own CLI or `npx` from the shell, the route the extension's AGENTS.md block names",
       "proven": false,
       "provenWhy": "no feature has been run end to end on it by a captain"
     }

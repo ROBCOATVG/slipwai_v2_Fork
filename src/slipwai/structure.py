@@ -1,13 +1,13 @@
-"""The architecture view of a repository the method was installed around: where anything starts, what the code is
-made of, what it declares it depends on, where change happens, and — where CodeGraph has indexed it — what
-depends on what.
+"""The architecture view of a repository the method was installed around: where anything starts, what the code is made
+of, what it declares it depends on, where change happens, and — where a code index covers it — what depends on what.
 
 Brownfield adoption. `survey.py` reads what a repository is delivered with; this reads what it is shaped like, for the
 two decisions that need the shape: which rung of the Structure axis the map can claim next, and where `/strangle` cuts.
 Everything is read, nothing inferred: a file is an entry point because a manifest or its own name says so, a hotspot
-because commits touched it, an edge because CodeGraph's index holds it. The graph is read from `.codegraph/codegraph.db`
-— the SQLite database `codegraph init` writes, whose `nodes`, `edges` and `files` tables are its `--json` output — and a
-tree with no index says so.
+because commits touched it, an edge because the code index holds it. The graph is read from `.codegraph/codegraph.db`,
+the SQLite database `codegraph init` writes, whose `nodes`, `edges` and `files` tables are its `--json` output; a tree
+with no index says so. That index is an extension's and this depends on no election, reading the file where there is one
+the way the survey reads `.git` — so the keel says *the code index*, naming the product only for the format (6.1c).
 """
 from __future__ import annotations
 
@@ -55,7 +55,7 @@ class Module:
 
 @dataclass(frozen=True)
 class Graph:
-    """What CodeGraph's index holds, or why nothing was read from it."""
+    """What the code index holds, or why nothing was read from it."""
 
     present: bool
     note: str
@@ -277,7 +277,7 @@ def history(root: Path, ignoring: str = "") -> tuple[list[list[str]], set[str], 
 
 
 def graph(root: Path) -> Graph:
-    """What CodeGraph's index says, read straight from its database, file by file."""
+    """What the code index says, read straight from the database it was written to, file by file."""
     database = root / GRAPH_DB
     if not database.is_file():
         return Graph(False, "not indexed: `./init --extension codegraph` builds the index, then `/survey` reads it")

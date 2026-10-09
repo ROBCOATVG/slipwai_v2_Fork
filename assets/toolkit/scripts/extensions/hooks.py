@@ -4,9 +4,11 @@
 Two jobs, one file, because they are two halves of one fact — which extensions this project elected and what
 each of them attached to.
 
-`--elect <key>...` writes `.slipwai/hooks.json` from `available.json`, which the generator wrote beside this
-script from the installed packages' manifests. `./init` calls it once, after the elected extensions have
-installed themselves. The registry is a controlled file: an iteration that edits it is refused like one that
+`--elect <key>...` writes `.slipwai/hooks.json` from `available.json` and `available-tools.json`, which the
+generator wrote beside this script from the installed packages' manifests. `./init` calls it once, after the
+elected extensions have installed themselves. The tool names go in the same file because they follow the
+election exactly: unlike a guard, which may refuse a tool call and so is agreed to separately, a tool is
+only ever something an extension already there needs the agent allowed to reach. The registry is a controlled file: an iteration that edits it is refused like one that
 edits a gate, so a run cannot register a hook on itself.
 
 `<point> [--key value ...]` runs whatever is attached to that point, in extension-name order, each with its
@@ -34,6 +36,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 AVAILABLE = HERE / "available.json"
+TOOLS = HERE / "available-tools.json"
 DEFAULT_BUDGET = "30s"
 
 
@@ -68,16 +71,27 @@ def read(path: Path) -> dict:
 
 
 def elect(keys: list[str]) -> int:
-    """Write `.slipwai/hooks.json` for the extensions `keys` names, by point, in firing order."""
-    available = read(AVAILABLE)
+    """Write `.slipwai/hooks.json` for the extensions `keys` names, by point, in firing order.
+
+    And the tool names those extensions need a headless session allowed to call, which `harness.py` reads
+    when it builds the command. Declared order is kept inside one extension and the extensions are taken in
+    name order, so the list is the same on two machines that elected the same set.
+    """
+    available, offered = read(AVAILABLE), read(TOOLS)
     points: dict[str, list[dict]] = {}
+    tools: list[str] = []
     for key in sorted(set(keys)):
         for name, body in sorted(available.get(key, {}).items()):
             points.setdefault(name, []).append({"extension": key, **body})
+        for name in offered.get(key, []):
+            if isinstance(name, str) and name.strip() and name not in tools:
+                tools.append(name.strip())
     REGISTRY.parent.mkdir(parents=True, exist_ok=True)
-    REGISTRY.write_text(json.dumps({"v": 1, "points": points}, indent=2) + "\n", encoding="utf-8")
+    body = json.dumps({"v": 1, "points": points, "tools": tools}, indent=2) + "\n"
+    REGISTRY.write_text(body, encoding="utf-8")
     attached = ", ".join(sorted(points)) or "no point"
-    print(f"hooks: {len(set(keys) & set(available))} extension(s) attached to {attached}")
+    allowed = f", {len(tools)} tool name(s) allowed" if tools else ""
+    print(f"hooks: {len(set(keys) & set(available))} extension(s) attached to {attached}{allowed}")
     return 0
 
 

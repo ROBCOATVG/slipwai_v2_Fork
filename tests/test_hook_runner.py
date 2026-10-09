@@ -23,6 +23,9 @@ AVAILABLE = {
     "picky": {"after-stage": {"run": "hook.py", "budget": "30s", "stages": ["implement"]}},
     "slow": {"boundary": {"run": "hook.py", "budget": "1s"}},
 }
+#: What each of them needs a headless session allowed to call. `slow` declares none, which is the common
+#: shape: most extensions run a hook and ask the agent for nothing.
+TOOLS = {"noisy": ["mcp__noisy__*"], "picky": ["mcp__picky__*", "Bash(picky:*)"], "slow": []}
 
 
 class RunnerTest(unittest.TestCase):
@@ -33,6 +36,7 @@ class RunnerTest(unittest.TestCase):
         self.scripts.mkdir(parents=True)
         (self.scripts / "hooks.py").write_text(RUNNER.read_text(encoding="utf-8"), encoding="utf-8")
         (self.scripts / "available.json").write_text(json.dumps(AVAILABLE), encoding="utf-8")
+        (self.scripts / "available-tools.json").write_text(json.dumps(TOOLS), encoding="utf-8")
 
     def extension(self, key: str, body: str) -> None:
         place = self.scripts / key
@@ -51,6 +55,25 @@ class RunnerTest(unittest.TestCase):
         points = self.registry()["points"]
         self.assertEqual([one["extension"] for one in points["after-stage"]], ["noisy"])
         self.assertNotIn("boundary", points)
+
+    def test_the_tools_written_are_the_elected_extensions_own(self) -> None:
+        """6.1c: the keel's harness registry carried one extension's MCP name and handed it to every
+        project. The name belongs to whoever brings the tool, so it arrives through the election."""
+        self.invoke("--elect", "noisy")
+        self.assertEqual(self.registry()["tools"], ["mcp__noisy__*"])
+
+    def test_an_extension_declaring_no_tool_adds_none(self) -> None:
+        self.invoke("--elect", "slow")
+        self.assertEqual(self.registry()["tools"], [])
+
+    def test_electing_nothing_leaves_no_tool_allowed(self) -> None:
+        """The plain generated project, which is the case the slice is named for."""
+        self.invoke("--elect")
+        self.assertEqual(self.registry()["tools"], [])
+
+    def test_two_extensions_keep_declared_order_within_each(self) -> None:
+        self.invoke("--elect", "picky", "noisy")
+        self.assertEqual(self.registry()["tools"], ["mcp__noisy__*", "mcp__picky__*", "Bash(picky:*)"])
 
     def test_electing_twice_writes_the_same_registry(self) -> None:
         self.invoke("--elect", "noisy", "picky")
