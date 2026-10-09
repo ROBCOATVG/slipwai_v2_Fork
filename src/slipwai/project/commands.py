@@ -23,6 +23,7 @@ from .mutation import mutation_command
 from .parallel_slices import concurrent_slices, done_marker, ready_set_selection
 from .whats_next import whats_next_command
 from .where_are_we import where_are_we_command
+from .write_model_prose import sourced_services, state_services
 
 
 def drive_command(
@@ -147,11 +148,20 @@ loop. Re-derive the entry stage from artifacts instead of assuming the loop resu
 {PUSH_CHECK if managed(CATALOG, target) else ""}"""
 
 
-def gaps_command(event: bool) -> str:
+def gaps_command(event: bool, apps: list[App]) -> str:
+    # One sentence covering both rungs rather than a branch, because the thing the pass compares is the
+    # same on either — the identity a write is made against — and only its name differs. A project with a
+    # service on each rung would otherwise carry two sentences telling the reader to do one thing twice.
+    identity = (
+        "the identity each write is made against — a stream's version on a service that keeps its events, "
+        "the row's on one that keeps current state"
+        if state_services(apps)
+        else "stream identity"
+    )
     extra = (
-        """
+        f"""
 
-Compare event names, schemas, stream identity, and model links with the implementation in the same pass."""
+Compare event names, schemas, {identity}, and model links with the implementation in the same pass."""
         if event
         else ""
     )
@@ -188,14 +198,22 @@ unbuilt tasks as gaps and buries the findings that actually need judgement.
 """
 
 
-def constitution_coverage_command(event: bool) -> str:
-    scope = (
-        """minimum CD, the practices this repository's skills teach, and — because `project.json` claims
-the event capabilities — the Event Modeling and event-sourcing obligations."""
-        if event
-        else """minimum CD and the practices this repository's skills teach. The event-sourcing obligations
+def constitution_coverage_command(event: bool, apps: list[App]) -> str:
+    # Three scopes, not two, because the capability stopped travelling with the profile: `event-sourcing`
+    # arrives with `write-model: events` on a service, so a modelled project every service of which keeps
+    # current state claims the modelling obligations and not the sourcing ones. Told otherwise, the reader
+    # drafts a principle mandating a log for services that have none and then cannot pass their own gate.
+    if not event:
+        scope = """minimum CD and the practices this repository's skills teach. The event-sourcing obligations
 are not asked of this profile, and `make check-speckit` rejects a constitution that mandates them anyway."""
-    )
+    elif sourced_services(apps):
+        scope = """minimum CD, the practices this repository's skills teach, and — because `project.json` claims
+the event capabilities — the Event Modeling and event-sourcing obligations."""
+    else:
+        scope = """minimum CD, the practices this repository's skills teach, and — because `project.json` claims
+the Event Modeling capability — the Event Modeling obligations. No deployable here records `eventSourced`,
+so the event-sourcing obligations are not asked of this project: every service keeps current state, and a
+principle mandating a log would be one no service could be held to."""
     return f"""---
 description: Check or print the principles this project's constitution must carry
 argument-hint: [--requirements] [requirement-key ...]
@@ -256,10 +274,10 @@ def command_files(
         "commands/cruise-watch.md": cruise_watch_command(layout),
         "commands/where-are-we.md": where_are_we_command(event, target),
         "commands/whats-next.md": whats_next_command(event),
-        "commands/gaps.md": gaps_command(event),
-        "commands/adversary.md": adversary_command(event),
+        "commands/gaps.md": gaps_command(event, apps),
+        "commands/adversary.md": adversary_command(event, apps),
         "commands/mutation.md": mutation_command(backends_of(apps)),
-        "commands/constitution-coverage.md": constitution_coverage_command(event),
+        "commands/constitution-coverage.md": constitution_coverage_command(event, apps),
         "commands/model-delegation-settings.md": model_delegation_settings_command(layout),
         "commands/drive-settings.md": drive_settings_command(layout),
         "commands/benchmark.md": benchmark_command(layout),

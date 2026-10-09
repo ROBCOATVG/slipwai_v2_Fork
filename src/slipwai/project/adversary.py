@@ -1,29 +1,48 @@
-"""`commands/adversary.md`: select and attack only the seams a slice widened."""
+"""`commands/adversary.md`: select and attack only the seams a slice widened.
+
+The trigger table is the whole of this page's selection rule, so what is *in* it has to be reachable on the
+services this project actually has. A row naming a stream identity on a project whose services keep current
+state is a row every slice marks `not present`, which teaches the reader to skim a table they are supposed
+to be answering honestly — so the rows follow each service's rung (plan 15.3).
+"""
 from __future__ import annotations
 
+from ..services import App
+from .write_model_prose import sourced_services, state_services
 
-def adversary_command(event: bool) -> str:
-    extra = (
-        """
+ROW = "widened / already covered / not present | diff path or prior log row |"
+
+
+def adversary_command(event: bool, apps: list[App]) -> str:
+    logged, stored = (sourced_services(apps), state_services(apps)) if event else ([], [])
+    extra = ""
+    if logged:
+        extra += """
 
 Replay, optimistic concurrency, stream identity, projection scoping, and schema evolution are in scope
 wherever the changed boundary can express them."""
-        if event
-        else ""
-    )
-    trigger_rows = """| driving adapter (HTTP route, CLI command, queue consumer) | widened / already covered / not present | diff path or prior log row |
-| driven adapter or the provider types behind one | widened / already covered / not present | diff path or prior log row |
-| authorisation decision (who can reach one that already exists) | widened / already covered / not present | diff path or prior log row |
-| concurrency, idempotency, ordering, retention, or time | widened / already covered / not present | diff path or prior log row |"""
-    if event:
-        trigger_rows += """
-| event schema, stream identity, or projection scope | widened / already covered / not present | diff path or prior log row |"""
+    if stored:
+        extra += """
+
+On a service that keeps current state, the same pass asks what a stale version lets through, whether a
+retried command raises its event twice, and what a reader sees between the write committing and the event
+being raised — the window a replay would not have left open."""
+    trigger_rows = f"""| driving adapter (HTTP route, CLI command, queue consumer) | {ROW}
+| driven adapter or the provider types behind one | {ROW}
+| authorisation decision (who can reach one that already exists) | {ROW}
+| concurrency, idempotency, ordering, retention, or time | {ROW}"""
+    if logged:
+        trigger_rows += f"\n| event schema, stream identity, or projection scope | {ROW}"
+    if stored:
+        trigger_rows += f"\n| event schema, or the version a state-stored write is saved at | {ROW}"
     surface = """- adds or changes a driving adapter — an HTTP route, a CLI command, a queue consumer
 - adds or changes a driven adapter, or the provider types behind one
 - adds an authorisation decision, or changes who can reach one that already exists
 - makes a claim about concurrency, idempotency, ordering, retention, or time"""
-    if event:
+    if logged:
         surface += "\n- changes an event schema, a stream identity, or what a projection is scoped to"
+    if stored:
+        surface += "\n- changes an event schema, or the version a state-stored write is saved at"
     return f"""---
 description: Attack the attack surface a slice changed, and record what was attacked
 argument-hint: [feature-or-diff] [--full]

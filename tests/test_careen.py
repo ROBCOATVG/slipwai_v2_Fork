@@ -16,6 +16,12 @@ import unittest
 import checkout_packages  # noqa: F401
 
 from slipwai.project import adversary, careen, mutation
+from slipwai.selection import Selection
+from slipwai.services import service_app
+
+# One event-sourced service, so the adversary page carries the rows the rung with the most of them has.
+# The page is read here for what it says about the bar and the careen, neither of which is per rung.
+SOURCED = [service_app("orders", "toy-plain", 3000, Selection({"write-model": "events"}), first=True)]
 
 
 def flat(text: str) -> str:
@@ -100,17 +106,17 @@ class AdversaryTest(unittest.TestCase):
     def test_the_pass_runs_once_with_a_bar_rather_than_until_it_converges(self) -> None:
         for event in (True, False):
             with self.subTest(event=event):
-                written = flat(adversary.adversary_command(event))
+                written = flat(adversary.adversary_command(event, SOURCED))
                 self.assertIn("One round, and a bar", written)
                 self.assertIn("21 rounds", written)
 
     def test_a_finding_below_the_bar_is_stowed_into_the_fairway_s_careen(self) -> None:
-        written = flat(adversary.adversary_command(True))
+        written = flat(adversary.adversary_command(True, SOURCED))
         self.assertIn("fairways/<name>/careen.md", written)
         self.assertIn("Work is never dropped", written)
 
     def test_stowed_is_a_state_a_finding_can_be_in(self) -> None:
-        self.assertIn("`stowed` into the fairway's careen", flat(adversary.adversary_command(True)))
+        self.assertIn("`stowed` into the fairway's careen", flat(adversary.adversary_command(True, SOURCED)))
 
 
 class MutationGateTest(unittest.TestCase):

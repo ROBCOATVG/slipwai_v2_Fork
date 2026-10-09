@@ -24,10 +24,26 @@ from ..services import (
     transports_of,
 )
 from ..toolkit import spoken_for
+from .metadata import sourced
 
-# What each store needs running, per feature. A store is one answer to one axis, so exactly one of
-# these is ever emitted — which is why the section is looked up by the feature that answered the axis
-# rather than tested for by name, and why a second container-backed store is a row here.
+# Said once and spliced into both rungs' Postgres sections, because expand-then-contract is a rule about
+# the schema and not about what the schema holds: a log's table and a state table are migrated the same way,
+# and two copies of this paragraph would be two chances to describe `make check-migrations` differently.
+EXPAND_THEN_CONTRACT = """A schema change is two migrations in two deployments: first the additive one (a new table, a nullable
+column, a column with a default), which the release already running can live with; then, once nothing
+reads or writes the old shape, the one that removes it. The second names the first in a comment line —
+`-- contract: 202609151030_orders_add_status` — and `make check-migrations` refuses a drop, rename, type change or
+new NOT NULL column that is unmarked, or whose expand arrives in the same change. Rolling back a release
+never rolls back the schema; this is what makes that safe. A new migration is named by a timestamp,
+`202609151030_orders_add_status.sql` (`date -u +%Y%m%d%H%M`), so two slices built at once never mint the same
+name; the shipped ones are numbered, and every stamp sorts after every number, so the order is lexical either way."""
+
+
+# What each store needs running, per feature, for a service whose truth is its log. A store is one answer to
+# one axis, so a project on one rung emits exactly one of these — which is why the section is looked up by
+# the feature that answered the axis rather than tested for by name, and why a second container-backed store
+# is a row here. A project with services on both rungs emits one section per rung, because the commands are
+# the same and what they prove is not.
 EVENT_STORE_README = {
     "postgres": """
 <!-- backing-service:postgres:begin -->
@@ -43,14 +59,7 @@ The in-memory and file-backed stores cannot race, so they cannot prove that two 
 same version produce exactly one winner. That proof lives in `make test-integration`, and it is the reason
 to choose Postgres. Demo on memory, ship on Postgres.
 
-A schema change is two migrations in two deployments: first the additive one (a new table, a nullable
-column, a column with a default), which the release already running can live with; then, once nothing
-reads or writes the old shape, the one that removes it. The second names the first in a comment line —
-`-- contract: 202609151030_orders_add_status` — and `make check-migrations` refuses a drop, rename, type change or
-new NOT NULL column that is unmarked, or whose expand arrives in the same change. Rolling back a release
-never rolls back the schema; this is what makes that safe. A new migration is named by a timestamp,
-`202609151030_orders_add_status.sql` (`date -u +%Y%m%d%H%M`), so two slices built at once never mint the same
-name; the shipped ones are numbered, and every stamp sorts after every number, so the order is lexical either way.
+__EXPAND_THEN_CONTRACT__
 <!-- backing-service:postgres:end -->
 """,
     "sqlite": """
@@ -64,6 +73,45 @@ event-store contract against it, so the guarantees it does hold are proved on ev
 What it does not hold: **SQLite serialises writers**, so it cannot prove concurrent behaviour — it never
 genuinely races. It proves durability and it proves the log refuses to be rewritten. If the
 never-write-the-same-version-twice guarantee matters to your product, move to Postgres and prove it there.
+<!-- backing-service:sqlite:end -->
+""",
+}
+
+
+# The same store, for a service that keeps current state: one row per thing it owns, with the version column
+# the use case saves against. Written out rather than parameterised off the table above, because almost
+# every sentence differs — what is migrated, what the integration suite races, and what the in-memory
+# adapter is unable to show — and a template with six holes in it is harder to read than two sections.
+STATE_STORE_README = {
+    "postgres": """
+<!-- backing-service:postgres:begin -->
+### Postgres — the state store
+
+```sh
+make services-up       # start Postgres and wait for it to accept connections
+make migrate           # apply the state-table migrations
+make test-integration  # the repository contract against real Postgres, plus a genuine race
+```
+
+The in-memory repository cannot race, so it cannot prove that two writers saving one row at the version
+they both read produce exactly one winner. That proof lives in `make test-integration`, and it is the
+reason to choose Postgres. Demo on memory, ship on Postgres.
+
+__EXPAND_THEN_CONTRACT__
+<!-- backing-service:postgres:end -->
+""",
+    "sqlite": """
+<!-- backing-service:sqlite:begin -->
+### SQLite — the state store
+
+One file holding the current state of everything the service owns, with nothing to start and nothing to
+migrate: the schema ships with the adapter, because an embedded database is created by the process that
+opens it. `make verify` runs the shared repository contract against it, so the guarantees it does hold are
+proved on every commit.
+
+What it does not hold: **SQLite serialises writers**, so it cannot prove concurrent behaviour — it never
+genuinely races. It proves durability, and it proves that a save at a version the row has already moved
+past is refused. If a real lost-update race matters to your product, move to Postgres and prove it there.
 <!-- backing-service:sqlite:end -->
 """,
 }
@@ -87,6 +135,32 @@ first. It runs the same event-store contract the infrastructure-free adapters pa
 only a real store can prove — that simultaneous appends at one version produce exactly one winner, and that
 the log refuses to be rewritten. A test that needs the database belongs in the integration suite; anywhere
 else it lands in `verify`, where it will fail on a machine with no Docker.
+<!-- backing-service:postgres:end -->
+""",
+}
+
+
+# The same question for a state-stored service: which of its store's guarantees the Docker-free gate can
+# actually prove. The answer differs by more than a noun — a repository has no append-only claim to make and
+# its race is over a row's version — and the point of this section is that a reader can tell which
+# concurrency claim they are allowed to believe.
+STATE_STORE_GATES = {
+    "sqlite": """
+<!-- backing-service:sqlite:begin -->
+The SQLite state store is inside that gate, not outside it: it needs no container, so `make verify` runs the
+full repository contract against real SQL, plus the thing only a file-backed store can prove — that the
+state survives the process. What it cannot prove is concurrency: SQLite serialises writers, so it never
+races, and no test on it may claim two writers met at one version.
+<!-- backing-service:sqlite:end -->
+""",
+    "postgres": """
+<!-- backing-service:postgres:begin -->
+The repository contract is proved the same way, in `make test-integration` against a real database: run
+`make services-up migrate` first. It runs what the infrastructure-free adapter already passes, and then the
+thing only a real store can prove — that two writers saving one row at the version they both read produce
+exactly one winner, and the loser is told rather than quietly overwriting. A test that needs the database
+belongs in the integration suite; anywhere else it lands in `verify`, where it will fail on a machine with
+no Docker.
 <!-- backing-service:postgres:end -->
 """,
 }
@@ -144,6 +218,24 @@ before anyone registers. __OUTSTANDING__
 }
 
 
+def stores_by_rung(services: list[App]) -> list[tuple[str, bool]]:
+    """Each store this project chose, paired with whether it is holding a log, in the services' order.
+
+    A pair rather than a feature, because the store and the rung are two separate answers and the prose
+    needs both: Postgres behind an event-sourced service and Postgres behind a state-stored one are the same
+    container, the same `make migrate` and two different guarantees. De-duplicated on the pair, so a project
+    with four services on two rungs still describes each of its two shapes once. The rung comes from
+    `sourced`, which is the one place that decides it.
+    """
+    return [
+        (store, logged)
+        for store, logged in dict.fromkeys(
+            (service.selection.feature_of("persistence"), sourced(service)) for service in services
+        )
+        if store is not None
+    ]
+
+
 def backing_services_readme(apps: list[App]) -> str:
     """The README section for whatever the services actually need running.
 
@@ -167,9 +259,9 @@ make services-up       # start the containers and wait for them to be healthy
 make services-down     # stop them, keeping any volume
 ```
 """)
-    for store in dict.fromkeys(s.selection.feature_of("persistence") for s in services):
-        if store is not None:
-            sections.append(EVENT_STORE_README[store])
+    for store, logged in stores_by_rung(services):
+        table = EVENT_STORE_README if logged else STATE_STORE_README
+        sections.append(table[store].replace("__EXPAND_THEN_CONTRACT__", EXPAND_THEN_CONTRACT))
     for axis, readme in (("auth", IDENTITY_README), ("users", USERS_README)):
         for identity in dict.fromkeys(s.selection.feature_of(axis) for s in services):
             if identity is None:
@@ -223,9 +315,8 @@ def backing_services_gates(apps: list[App]) -> str:
 `make verify` needs no Docker. Every port's contract runs against adapters that need no infrastructure, so
 the gate behaves the same on a laptop with nothing installed as it does in CI.
 """]
-    for store in dict.fromkeys(s.selection.feature_of("persistence") for s in services_of(apps)):
-        if store is not None:
-            sections.append(EVENT_STORE_GATES[store])
+    for store, logged in stores_by_rung(services_of(apps)):
+        sections.append((EVENT_STORE_GATES if logged else STATE_STORE_GATES)[store])
     for transport in transports_of(apps):
         sections.append(f"""
 <!-- backing-service:{transport}:begin -->

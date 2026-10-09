@@ -19,6 +19,7 @@ from .existing import production_included_line
 from .flags import FLAG_GATE_NOTE
 from .pins import pin_list
 from .skills_page import skills_page
+from .write_model_prose import sourced_services
 
 
 def documentation_files(
@@ -40,14 +41,20 @@ def documentation_files(
         for app in web
     )
     # Two well-wrapped sentences rather than a conditional spliced mid-sentence: this paragraph is
-    # generated for both profiles, and a branch inside a line wraps badly in whichever one loses.
-    coverage_scope = (
-        """`skills/` teach, and the Event Modeling and event-sourcing obligations. An unfilled
+    # generated for both profiles, and a branch inside a line wraps badly in whichever one loses. Three
+    # endings rather than two, and the same three `commands/constitution-coverage.md` carries, because the
+    # gate reads the capabilities and `event-sourcing` now arrives with a service's rung rather than with
+    # the profile: these two pages describing one gate differently is how a reader learns to trust neither.
+    if not event:
+        coverage_scope = """`skills/` teach. Nothing about event sourcing is asked of this profile. An unfilled
 `[PLACEHOLDER]` means drafted rather than ratified."""
-        if event
-        else """`skills/` teach. Nothing about event sourcing is asked of this profile. An unfilled
+    elif sourced_services(apps):
+        coverage_scope = """`skills/` teach, and the Event Modeling and event-sourcing obligations. An unfilled
 `[PLACEHOLDER]` means drafted rather than ratified."""
-    )
+    else:
+        coverage_scope = """`skills/` teach, and the Event Modeling obligations. No service here keeps a log, so the
+event-sourcing obligations are not asked of this project. An unfilled
+`[PLACEHOLDER]` means drafted rather than ratified."""
     command_list = "\n".join(f"- `/{name}` — `commands/{name}.md`" for name in command_names(event))
     production_included = production_included_line(target)
     production_gate = (
@@ -143,15 +150,35 @@ real boundaries, and add end-to-end tests only for paths whose integration risk 
 - `LICENSE`, `SECURITY.md` and a pull-request template. Two of them carry a placeholder on purpose — the
   licence is `All rights reserved` until whoever owns this code decides otherwise, and the security contact
   is the one thing only this project knows. The template names this project's own gates and nothing else
-{production_included}""" + ("- Event Modeling documents plus backend event-sourcing skills and contracts as one bundle\n" if event else "- No event model or event-sourcing layer\n"),
+{production_included}""" + included_model_line(event, apps),
         "docs/workflow.md": workflow_doc(event),
         "docs/evolving-the-project.md": evolving_page(),
     }
     # What this project's browser surface looks like and where that is decided; nothing at all without one.
     files.update(design_page(apps))
     if event and services:
-        files.update(event_documentation(project_name, services[0].backend, services[0].path))
+        files.update(event_documentation(project_name, services))
     return files
+
+
+def included_model_line(event: bool, apps: list[App]) -> str:
+    """What `docs/whats-included.md` says this project was given on the model and the write side.
+
+    One line, and it stopped being able to say *as one bundle* when phase 15 split the two: a modelled
+    project whose services all keep current state has every Event Modeling document and no event-sourcing
+    layer at all, which the old line described as both of those at once.
+    """
+    if not event:
+        return "- No event model or event-sourcing layer\n"
+    if sourced_services(apps):
+        return (
+            "- Event Modeling documents, plus the backend event-sourcing skills and contracts for the "
+            "services that keep their events\n"
+        )
+    return (
+        "- Event Modeling documents, and a write-model table per service "
+        "(`docs/event-modeling-to-code.md`); no service here keeps a log\n"
+    )
 
 
 def workflow_doc(event: bool) -> str:

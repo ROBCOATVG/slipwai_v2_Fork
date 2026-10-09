@@ -21,11 +21,33 @@ from .design_stage import PLAN_STYLING, with_design_rungs
 from .drive_adoption import adoption_ladder
 from .existing import release_stage
 from .stage_models import rung_titles
+from .write_model_prose import paths_of, state_services
 
 # Rungs that no stage of the model table names, because a project's own answers add them rather than the
 # ladder: two where there is a browser app to style, two where the method was installed around a repository
 # that already existed. They run on the stage above them, which is why they have no row of their own.
 ANSWER_RUNGS = ("Screen design", "Design review", "Ground", "Pin")
+
+
+def rung_of_the_slice(apps: list[App]) -> str:
+    """What naming the service also settles, where this project has a service that keeps current state.
+
+    Only then. In a project where every service keeps its events, `stream` means one thing and `guard` and
+    `folds` are always available, so the sentence would be a paragraph about a choice nobody here has — and
+    this rung is already the longest on the ladder. Where both rungs exist, choosing the service is choosing
+    which fields the slice may carry, and that is a consequence of a decision taken at this rung rather than
+    a gate failure to discover two rungs later.
+    """
+    stored = state_services(apps)
+    if not stored:
+        return ""
+    return f""" Naming the service also settles the slice's write model, which
+   `project.json` records as `eventSourced`: on a service that keeps its events, `stream` is the identity an
+   append is made at an expected version of and the slice may carry `guard` and `folds`; on one that keeps
+   current state — {paths_of(stored)} — `stream` is the row the write locks and its version, `guard` and
+   `folds` are refused, and no `liveBudget` is asked of a `live` read model, there being no log to query, to
+   fold or to bound. `docs/event-modeling-to-code.md` has the table each service's slices are written
+   against."""
 
 
 def drive_ladder(
@@ -72,6 +94,7 @@ def drive_ladder(
    the service, with the user, as `slipwai describe-service <name> --context <context>` (once per
    context; `--purpose` records what the service owns the same way), and place each slice with
    `context:`. One vocabulary is one context; say so and move on."""
+            + rung_of_the_slice(apps)
         )
     if not event:
         stages.append(

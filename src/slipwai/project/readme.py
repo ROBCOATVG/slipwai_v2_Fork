@@ -14,6 +14,7 @@ from .event_model import event_model_page_url
 from .existing import EXISTING_README
 from .rules import CLOUD
 from .target_docs import PREREQUISITES, WORDS
+from .write_model_prose import readme_write_model
 
 
 def readme(project_name: str, profile: str, apps: list[App], target: str = "none") -> str:
@@ -71,10 +72,7 @@ constitution that mandates event sourcing in this profile.
         text += f"""
 ## Event workflow
 
-Start with `docs/event-model/model.yaml`, name commands and events with domain experts, then implement the
-backend event contract and stream identity together in the service the slice belongs to. Event Modeling may
-cover the whole user journey, but event sourcing is a backend persistence choice. This profile deliberately
-cannot be generated with Event Modeling or event sourcing alone.
+{readme_write_model(apps)}
 
 ### One command runs the loop: `/drive`
 

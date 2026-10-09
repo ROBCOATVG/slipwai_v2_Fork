@@ -32,8 +32,13 @@ from slipwai.project import (
     parallel_slices,
     stage_models,
 )
+from slipwai.selection import Selection
+from slipwai.services import service_app
 
 ROOT = Path(__file__).resolve().parents[1]
+# One event-sourced service, for the pages that take a project's services in order to read a rung off them.
+# What is held here is what each page says on either rung, so the rung is only ever why it is non-empty.
+SOURCED = [service_app("orders", "toy-plain", 3000, Selection({"write-model": "events"}), first=True)]
 
 
 class DriveSettingsTest(unittest.TestCase):
@@ -82,7 +87,7 @@ class ProfileTest(unittest.TestCase, StagePagesTest):
         self.assertNotEqual(event, standard)
 
     def test_the_adversary_command_is_written_for_both_profiles(self) -> None:
-        event, standard = self.both(adversary.adversary_command)
+        event, standard = self.both(lambda event: adversary.adversary_command(event, SOURCED))
         for page in (event, standard):
             self.assertTrue(page.strip())
 

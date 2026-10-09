@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from ..catalog import CATALOG
 from ..npm_workspace import npm
-from ..registry import EVENT_STORE_DIRECTORY, SHARED_CODE, registry
+from ..registry import SHARED_CODE, registry
 from ..services import (
     App,
     containers_of,
@@ -20,6 +20,7 @@ from ..services import (
     web_apps,
 )
 from ..targets import managed
+from .backing_service_prose import stores_by_rung
 from .compose import composed
 from .existing import EXISTING_GUIDANCE
 from .flags import reader_calls, reader_paths
@@ -31,9 +32,11 @@ from .rules import (
     FLAG_GUIDANCE,
     IDENTITY_GUIDANCE,
     PRODUCTION_GUIDANCE,
+    STATE_STORE_GUIDANCE,
     USERS_GUIDANCE,
     frontend_contract,
 )
+from .write_model_prose import agents_write_model, architecture_write_model, store_port_rule
 
 
 def architecture(profile: str, apps: list[App]) -> str:
@@ -77,7 +80,7 @@ and framework that starts with a health capability only. Every service owes the 
   `mutation`): the root Makefile runs each recipe for every service, so there is one gate rather than one
   per service, and `make verify` is the same command however many there are;
 - two probes on its own port, both paths in `infra/service/project.auto.tfvars.json`: liveness, which says
-  only that the process is up, and readiness, which asks the event-store port a trivial question — so a
+  only that the process is up, and readiness, which asks the service's own store a trivial question — so a
   service whose store is unreachable stops being sent traffic, and it is what Compose, the load balancer and
   `make smoke` wait on;
 - the hexagonal layout — domain and application code free of adapters — which `make check-imports` enforces
@@ -171,27 +174,13 @@ frontend's API boundary, and navigational state in the URL. Share generated cont
 `add-frontend <name> [--api <service>]`, run from this directory.
 """
     if profile == "event-modelling":
-        web_boundary = (
-            f" {web_paths} may render commands and read models, but {'they are' if len(web) > 1 else 'it is'} "
-            f"not event-sourced and never read{'' if len(web) > 1 else 's'} the event store."
-            if web
-            else ""
-        )
-        base += f"""
-## Backend event bundle
-
-Event Modeling covers the end-to-end product journey; event sourcing is the executable persistence model
-for {f"`{services[0].path}`" if services else "the services"}. They are selected as one backend capability: event names, schemas, stream identity,
-optimistic concurrency, and the global model change together. Events are immutable facts; never invent or
-rename one merely to unblock implementation.{web_boundary}
-"""
+        base += architecture_write_model(apps)
     return base
 
 
 def agent_guidance(profile: str, apps: list[App], target: str = "none") -> str:
     services = services_of(apps)
     web = web_apps(apps)
-    service_globs = ", ".join(f"`{service.path}/**`" for service in services)
     ownership = "".join(
         f"- `{service.path}/**` is {'the' if len(services) == 1 else 'a'} `{service.backend}` backend service. "
         f"Use its native toolchain and keep domain/application code\n"
@@ -249,9 +238,7 @@ type: a brief adds only its task-specific contract and file manifest, and restat
     if web:
         guidance += frontend_contract(apps)
     if profile == "event-modelling":
-        guidance += f"""- Event sourcing applies only to {service_globs}. Event Modeling may describe the full user journey,
-  including UI frames, but the browser never owns streams, Deciders, replay, or event-store access.
-"""
+        guidance += agents_write_model(apps)
     if composed(apps):
         guidance += """- A green gate is not a demonstration. `make demo` starts the whole app in containers and prints its
   addresses, `make dev` runs it in the foreground, and `skills/run-the-app/SKILL.md` says what this project
@@ -264,18 +251,12 @@ type: a brief adds only its task-specific contract and file manifest, and restat
   `make test-integration` runs.
 """
     if has_feature(apps, "memory"):
-        adapters = ", ".join(
-            f"`{registry().answer(service.backend, EVENT_STORE_DIRECTORY)(service.path)}`"
-            for service in services
-            if service.selection.has("memory")
-        )
-        guidance += f"""- The event store is a driven port. Domain and application code name the port, never a database type,
-  and every adapter under {adapters} passes the same contract suite. Add a store
-  capability by extending that contract first, so the adapters cannot drift apart.
-"""
-    for store in dict.fromkeys(s.selection.feature_of("persistence") for s in services):
-        if store is not None:
-            guidance += EVENT_STORE_GUIDANCE[store]
+        guidance += store_port_rule(apps)
+    # Keyed by the store *and* the rung: the same Postgres proves a never-write-the-same-version-twice
+    # guarantee about a log in one service and a lost-update guarantee about a row in the next, and one
+    # paragraph claiming both is a paragraph whose concurrency test nobody can place.
+    for store, logged in stores_by_rung(services):
+        guidance += (EVENT_STORE_GUIDANCE if logged else STATE_STORE_GUIDANCE)[store]
     for transport in transports_of(apps):
         guidance += f"""<!-- backing-service:{transport}:begin -->
 - The HTTP adapter parses untrusted input into typed commands, calls a use case, and maps the outcome to a

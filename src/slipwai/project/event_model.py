@@ -10,7 +10,9 @@ import os
 from ..assets import TOOLKIT_ROOT
 from ..backends import NODE_MAJOR, PYTHON_VERSION
 from ..registry import EVENT_MODEL_PATHS, registry
-from .model_to_code import model_to_code
+from ..services import App
+from .metadata import sourced
+from .model_to_code import ServiceCode, model_to_code
 
 
 def event_model_page_url(project_name: str) -> str:
@@ -34,13 +36,16 @@ def event_model_page_url(project_name: str) -> str:
     return f"{base}/{owner}/{project_name}/"
 
 
-def event_documentation(project_name: str, backend: str, service: str = "apps/service") -> dict[str, str]:
-    """The two documents that connect the model to code, with paths into the first service.
+def event_documentation(project_name: str, services: list[App]) -> dict[str, str]:
+    """The two documents that connect the model to code, with this project's own paths in them.
 
-    One service's paths, because a document has to show one; `service` is the first service's directory, and
-    the text says that a slice belonging to another service lives under that service's directory instead.
+    `first-slice.md` shows one service's paths, because a page describing the files a slice touches has to
+    show a tree somebody can open, and the first service is the one a first slice lands in. The mapping
+    document shows every service, because its subject is the write model and that is per service: one table
+    would describe the first service's rung and silently hand it to the rest (phase 15.3).
     """
-    paths = registry().answer(backend, EVENT_MODEL_PATHS)(project_name, service)
+    first, *_ = services
+    paths = registry().answer(first.backend, EVENT_MODEL_PATHS)(project_name, first.path)
     first_slice = f"""# Writing the first slice
 
 Use `/drive` at any point. It derives the first incomplete stage from artifacts rather than conversation
@@ -51,9 +56,9 @@ drives one actor-visible path to its demo.
 
 ```text
 specs/<feature>/slices/<id>/examples.md   rules, examples, Given/When/Then
-docs/event-model/model.yaml               timeline, stream identity, event contract
+docs/event-model/model.yaml               timeline, {"stream identity" if sourced(first) else "the identity a write locks"}, event contract
 {paths['events']}   immutable event definitions
-{paths['domain']}   pure evolve/decide logic
+{paths['domain']}   {"pure evolve/decide logic" if sourced(first) else "pure decide logic over current state"}
 {paths['usecase']}   orchestration and ports
 {paths['test']}   observable behavior
 ```
@@ -80,7 +85,14 @@ concurrently, one delegate per slice on a `slice/<id>` branch in its own worktre
 held to the shared-surface rule by `make check-slice-scope` (`commands/drive.md`, *Running ready slices
 concurrently*); a harness that cannot delegate takes the earliest in split order and names the rest.
 """
-    mapping = model_to_code(backend, service, paths)
+    mapping = model_to_code([
+        ServiceCode(
+            service.path,
+            sourced(service),
+            registry().answer(service.backend, EVENT_MODEL_PATHS)(project_name, service.path),
+        )
+        for service in services
+    ])
     # The asset is the canonical template, with its guidance comments intact. The one generated change is
     # the page address: unlike a template, a generated project knows where its pages daemon will serve it.
     model = (TOOLKIT_ROOT / "docs/event-model/model.yaml").read_text(encoding="utf-8").replace(

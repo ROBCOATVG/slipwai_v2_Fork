@@ -82,6 +82,26 @@ EVENT_STORE_GUIDANCE = {
 """,
 }
 
+# The same store, on the other rung, keyed the same way. A state-stored service asks Postgres to hold one
+# current row per thing it owns with a version column on it, not an append-only log — so the guarantee worth
+# proving is that a save at a stale version loses, and the table above would send its author to write a race
+# over `(stream_id, version)` in a schema that has neither column.
+STATE_STORE_GUIDANCE = {
+    "sqlite": """<!-- backing-service:sqlite:begin -->
+- The SQLite repository adapter carries its own schema, so there is nothing to migrate and nothing to start.
+  It cannot prove concurrent behaviour — SQLite serialises writers — so do not write a test there claiming
+  two writers raced for one row's version. Durability is provable on it, and is proved.
+<!-- backing-service:sqlite:end -->
+""",
+    "postgres": """<!-- backing-service:postgres:begin -->
+- The Postgres repository adapter is where the no-lost-update guarantee is proved: a save carries the
+  version the state was read at, the UPDATE matches on it and bumps it, and the integration suite races two
+  writers at one version so that exactly one wins and the other is told. A concurrency claim asserted
+  anywhere else is not evidence.
+<!-- backing-service:postgres:end -->
+""",
+}
+
 # The rule each identity provider puts whoever works here under, keyed by the feature that answered `auth`.
 IDENTITY_GUIDANCE = {
     "keycloak": """<!-- backing-service:keycloak:begin -->

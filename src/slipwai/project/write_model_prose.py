@@ -1,0 +1,169 @@
+"""The paragraphs of the generated pages that change with the rung a service is on.
+
+A service's write model is how it decides and records a write: `events`, where the log is the truth and
+state is a fold of it, or `state`, where the service keeps current state and the events the model names are
+contracts raised after the write and never replayed. Phase 15 made that an axis answered per service, and
+`metadata.sourced` is the one place that reads it. This module is the other half of the same claim — what
+the pages then say — because until now they said it off the profile, which answers *is there a model?* and
+was being read as *is there a log?*. A product with one context that earned the log beside three that did
+not could not be generated, so no page ever had to describe one.
+
+Here rather than inline in each page for two reasons. The first is that the rung is a single claim — what a
+write locks, what it leaves behind, and whether any of it may be folded back — and every page that carries
+its own copy is a copy that can drift: the README would go on promising a replay long after `AGENTS.md` had
+stopped. The second is budget, which is the shape of the first: `guidance.py` sat three lines under
+check-structure's module budget and `readme.py` sat exactly on it, so a sentence that now has two endings
+had nowhere to grow in either of them.
+
+The section it writes into `docs/architecture.md` is called *The write model* and was called *Backend event
+bundle*, because the bundle is the thing phase 15 took apart: Event Modeling and event sourcing were
+selected together and the heading said so.
+
+Nothing here decides a rung. `sourced` does, and these functions ask it, so a service the keel did not make
+and a browser app are on the one side of every sentence below without this module knowing why.
+"""
+from __future__ import annotations
+
+from ..registry import EVENT_STORE_DIRECTORY, registry
+from ..services import App, services_of, web_apps
+from .metadata import sourced
+
+
+def sourced_services(apps: list[App]) -> list[App]:
+    """The generated services whose truth is their log."""
+    return [service for service in services_of(apps) if sourced(service)]
+
+
+def state_services(apps: list[App]) -> list[App]:
+    """The generated services that keep current state, which is every other one.
+
+    Not the complement of a feature test: a service that was never asked the axis reads `state` from the
+    axis's `absent`, so a standard-profile project's services land here without having answered anything.
+    """
+    return [service for service in services_of(apps) if not sourced(service)]
+
+
+def paths_of(services: list[App]) -> str:
+    """The services named as a reader would say them: `apps/orders` and `apps/billing`."""
+    quoted = [f"`{service.path}`" for service in services]
+    return quoted[0] if len(quoted) == 1 else ", ".join(quoted[:-1]) + f" and {quoted[-1]}"
+
+
+def architecture_write_model(apps: list[App]) -> str:
+    """`docs/architecture.md`'s section on what each service's write side is, by rung.
+
+    One bullet per rung rather than one per service: what is true of a state-stored service is true of every
+    state-stored service, and a reader with six services does not want the same paragraph six times. The
+    services are named in the bullet so that the page stays checkable against `project.json` — a reader who
+    cannot tell which half a service is in has been told nothing.
+    """
+    logged, stored = sourced_services(apps), state_services(apps)
+    if not logged and not stored:
+        return ""
+    bullets = ""
+    if logged:
+        bullets += f"""- {paths_of(logged)} keep{"s" if len(logged) == 1 else ""} the events: the log is the truth, current state is a
+  fold of it, and a slice's `stream` is the identity an append is made at an expected version of. Event
+  names, schemas, stream identity, optimistic concurrency and the global model change together.
+"""
+    if stored:
+        bullets += f"""- {paths_of(stored)} keep{"s" if len(stored) == 1 else ""} current state: a write loads the row it owns, decides, and saves at
+  the version it read, and the events the model names are raised by the use case once that write has
+  committed. They are contracts the rest of the product reads, not a history to replay — nothing folds them
+  back, and a slice this service owns may name no `guard` and no `folds`, there being no log to query or to
+  fold.
+"""
+    web = web_apps(apps)
+    boundary = (
+        f" {paths_of(web)} may render commands and read models, but {'they are' if len(web) > 1 else 'it is'} "
+        f"not event-sourced and never read{'' if len(web) > 1 else 's'} the event store."
+        if web and logged
+        else ""
+    )
+    return f"""
+## The write model
+
+Event Modeling covers the end-to-end product journey, and it covers it the same way whichever service a
+slice lands in. What differs per service is the write model — how a write is decided and what it leaves
+behind — which `project.json` records as `eventSourced` on each deployable:
+
+{bullets}
+Events are immutable facts on either rung; never invent or rename one merely to unblock implementation, and
+never raise one claiming something the service did not record at the time. The rung itself is the one answer
+about a service that cannot be walked back once it holds data: state can be turned into a log from the day
+somebody decides, but not backwards into history it never kept.{boundary}
+"""
+
+
+def agents_write_model(apps: list[App]) -> str:
+    """`AGENTS.md`'s ownership bullets for the rung, which say what may not be written where.
+
+    Phrased as what the code may not claim rather than as what the rung is, because this file is read by
+    whoever is about to write a file: *this service keeps current state* is a fact, and *a fold written here
+    is a claim about a log this service does not have* is the same fact at the moment it would be useful.
+    """
+    logged, stored = sourced_services(apps), state_services(apps)
+    bullets = ""
+    if logged:
+        bullets += f"""- Event sourcing applies to {paths_of(logged)} and to nothing else here. Event Modeling may describe the full
+  user journey, including UI frames, but the browser never owns streams, Deciders, replay, or event-store
+  access.
+"""
+    if stored:
+        bullets += f"""- {paths_of(stored)} keep{"s" if len(stored) == 1 else ""} current state, and the events of a slice it owns are files its use case raises
+  once the write has committed. Nothing reads them back: a fold, a replay or a tag query written there is a
+  claim about a log this service does not keep, and `make check-model` refuses the fields that would say so.
+"""
+    return bullets
+
+
+def store_port_rule(apps: list[App]) -> str:
+    """The driven-port bullet, named for what each rung's store is actually asked to hold.
+
+    Both rungs ship an in-memory adapter beside whichever store was chosen, and both hold every adapter to
+    one contract suite; what differs is which port it is a contract for. Saying *the event store is a driven
+    port* in a project that has no event store sends the reader looking for a directory nobody generated.
+    """
+    rules = ""
+    for name, services, port in (
+        ("event store", sourced_services(apps), "event-store"),
+        ("repository", state_services(apps), "repository"),
+    ):
+        holding = [service for service in services if service.selection.has("memory")]
+        if not holding:
+            continue
+        adapters = ", ".join(
+            f"`{registry().answer(service.backend, EVENT_STORE_DIRECTORY)(service.path)}`"
+            for service in holding
+        )
+        rules += f"""- The {name} is a driven port on {paths_of(holding)}. Domain and application code name the {port} port,
+  never a database type, and every adapter under {adapters} passes the same contract suite. Add a
+  capability to it by extending that contract first, so the adapters cannot drift apart.
+"""
+    return rules
+
+
+def readme_write_model(apps: list[App]) -> str:
+    """The README's opening paragraph of its event-workflow section.
+
+    The sentence this replaces — *this profile deliberately cannot be generated with Event Modeling or event
+    sourcing alone* — stopped being true the day `write-model` became an axis, and it was the sentence that
+    told a reader the two were one decision. What goes in its place has to leave them two.
+    """
+    logged, stored = sourced_services(apps), state_services(apps)
+    where = ""
+    if logged:
+        where += (
+            f"\n{paths_of(logged)} keep{'s' if len(logged) == 1 else ''} the events, so a slice's event contract and its"
+            "\nstream identity are written together."
+        )
+    if stored:
+        where += (
+            f"\n{paths_of(stored)} keep{'s' if len(stored) == 1 else ''} current state, and raise{'s' if len(stored) == 1 else ''}"
+            " a slice's events once its write has\ncommitted."
+        )
+    return f"""Start with `docs/event-model/model.yaml`, name commands and events with domain experts, then implement the
+slice in the service that owns it. Event Modeling is the same on every service here; the write model is not,
+and `project.json` records which rung each service is on.{where}
+`docs/event-modeling-to-code.md` carries the table for each, and that is the page to read before writing a
+slice in a service for the first time."""

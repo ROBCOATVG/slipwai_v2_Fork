@@ -25,6 +25,7 @@ import datetime
 from ..catalog import CATALOG
 from ..services import App, needs_environment, services_of
 from ..targets import managed
+from .write_model_prose import sourced_services, state_services
 
 # What a repository with no licence decision is, said rather than left to be inferred from a missing file.
 # Not a licence: a licence grants, and nothing here grants anything.
@@ -110,6 +111,15 @@ def pull_request_template(profile: str, apps: list[App], target: str) -> str:
             "committed canvas was regenerated with it — `make model-drawio`, which `make check-drawio` holds to "
             "(`docs/event-model/`)"
         )
+        # Only where both rungs are in the project. With one rung there is nothing to get wrong here —
+        # every slice in the repository answers the same way — and a tick nobody can fail is a tick the
+        # next reader learns to pass over on the way to the ones that matter.
+        if sourced_services(apps) and state_services(apps):
+            checks.append(
+                "an `evt` this slice adds is raised the way its service's rung says — appended to its stream "
+                "on a service that keeps its events, raised by the use case once the write commits on one "
+                "that keeps current state (`docs/event-modeling-to-code.md` has the table per service)"
+            )
     if any(service.selection.migrating_feature for service in services_of(apps)):
         checks.append(
             "a migration that contracts the schema names the earlier expand it completes — `make "
