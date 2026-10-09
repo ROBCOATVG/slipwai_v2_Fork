@@ -104,7 +104,7 @@ class DirectoryTest(unittest.TestCase):
 
     def test_without_the_variable_the_directory_is_under_home(self) -> None:
         with environment(SLIPWAI_LANGUAGES=None, home=str(Path("/tmp/h"))):
-            self.assertEqual(directory(), Path("/tmp/h") / ".slipwai/languages")
+            self.assertEqual(directory(), Path("/tmp/h") / ".slipwai/packages")
 
     def test_a_directory_that_does_not_exist_holds_no_language_and_is_no_fault(self) -> None:
         with tempfile.TemporaryDirectory() as parent:

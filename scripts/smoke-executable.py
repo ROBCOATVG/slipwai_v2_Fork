@@ -14,11 +14,11 @@ ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_VERSION = (ROOT / "VERSION").read_text().strip()
 # The executable and the wheel carry no language: the `go` and `typescript` they generate below are the checkout's
 # pinned packages, which the subprocesses inherit through the variable, never the caller's home.
-os.environ["SLIPWAI_LANGUAGES"] = str(ROOT / "languages")
-for package in sorted((ROOT / "languages").glob("*")) if (ROOT / "languages").is_dir() else []:
+os.environ["SLIPWAI_LANGUAGES"] = str(ROOT / "packages")
+for package in sorted((ROOT / "packages").glob("*")) if (ROOT / "packages").is_dir() else []:
     if package.is_dir() and not package.name.startswith(".") and not any(package.iterdir()):
         # A clone that skipped the submodule would otherwise run against the languages built in and pass.
-        name = f"languages/{package.name}"
+        name = f"packages/{package.name}"
         raise SystemExit(f"{name} is not checked out: git submodule update --init {name}")
 
 

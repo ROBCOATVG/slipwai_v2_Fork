@@ -3,7 +3,7 @@
 A clone of a project made with `go` 1.4.0 is worked on by somebody whose slipwai may have no `go` at all — or no
 slipwai: `make verify` needs none, since a generated project's gate never runs the keel. So `./init`
 only *says* so, with the command that installs them, and never fails for it. It reads `generator.languages`
-(ADR 0005) with `python3`, and looks for each package where slipwai does, `${SLIPWAI_LANGUAGES:-~/.slipwai/languages}`.
+(ADR 0005) with `python3`, and looks for each package where slipwai does, `${SLIPWAI_LANGUAGES:-~/.slipwai/packages}`.
 It names bare `slipwai`: the clone has no factory checkout to point a path at. A 1.x project records nothing,
 an adopted one records `{}`, and a machine with no `python3` is told nothing here: nothing is guessed.
 """
@@ -23,7 +23,7 @@ except (OSError, ValueError, AttributeError):
 if not isinstance(recorded, dict):
     print("project.json's generator.languages is not a map of package names; nothing is checked.", file=sys.stderr)
     recorded = {}
-where = pathlib.Path(os.environ.get("SLIPWAI_LANGUAGES") or pathlib.Path.home() / ".slipwai/languages")
+where = pathlib.Path(os.environ.get("SLIPWAI_LANGUAGES") or pathlib.Path.home() / ".slipwai/packages")
 slug = re.compile(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*")
 named = [name for name in recorded if isinstance(name, str) and slug.fullmatch(name)]
 for name in recorded:

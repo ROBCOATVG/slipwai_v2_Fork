@@ -24,7 +24,7 @@ every backend answers it. `tests/test_registry.py` holds the member table below 
 `registry.py` never imports a language module statically. `registry` delegates by name, at call time, to
 `slipwai.loaded`, which builds the registry from two sources: the built-in package
 (`slipwai.project.languages`, its `LANGUAGES`) and every package in the language directory
-(`SLIPWAI_LANGUAGES`, default `~/.slipwai/languages`), read by the directory loader (FR-009) and imported
+(`SLIPWAI_LANGUAGES`, default `~/.slipwai/packages`), read by the directory loader (FR-009) and imported
 after the catalog is merged. That is the plugin direction: languages depend on the keel, and the keel discovers
 them. A built-in package's own `__init__` imports its modules statically, which is what the frozen
 executable's analysis follows; the executable keeps every the keel module through `collect_submodules`.

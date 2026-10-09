@@ -2,8 +2,15 @@
 
 A language is a directory: `language.json`, the fragment of the catalog it adds, and `slipwai_language_<name>/`,
 the Python that answers the backend protocol. `SLIPWAI_LANGUAGES` names the one directory the keel looks in and
-replaces the default, `~/.slipwai/languages`, whole; the same code runs in a checkout, the wheel and the
+replaces the default, `~/.slipwai/packages`, whole; the same code runs in a checkout, the wheel and the
 executable, and only what is in the directory differs.
+
+**The default used to be `languages/`, and an install made under that name is moved on the way past** — the
+directory holds extensions too, and one called `languages/` with `codegraph` in it is a small lie that costs
+an hour later (decided 2026-10-06, carried by 8.3). It is one rename, made the first time anything asks
+where packages are, because every verb asks: a move that waited for `upgrade` would leave every other
+command finding nothing on a machine nobody had upgraded. The variable keeps its name, being one that is
+already set in somebody's CI.
 
 Two phases, because a package's Python imports the keel modules that import the catalog, and the catalog is built
 from the fragments: `read` takes the fragments alone and refuses what they get wrong, and `import_package`
@@ -22,7 +29,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .assets import this_command
+from .assets import moved_home, this_command
 from .axes import under_current_names
 from .errors import blame, one_line
 from .language_shape import family_fault, name_fault, row_shape_fault
@@ -58,9 +65,10 @@ class Package:
 
 
 def directory() -> Path:
-    """The one directory the keel looks in: the variable if set, otherwise `~/.slipwai/languages`."""
+    """The one directory the keel looks in: the variable if set, otherwise `~/.slipwai/packages`."""
     named = os.environ.get(VARIABLE)
-    return Path(named) if named else Path.home() / ".slipwai/languages"
+    return Path(named) if named else moved_home(Path.home() / ".slipwai")
+
 
 
 def module_name(name: str) -> str:

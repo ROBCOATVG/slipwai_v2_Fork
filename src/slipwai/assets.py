@@ -6,6 +6,7 @@ into it.
 """
 from __future__ import annotations
 
+import os
 import posixpath
 import shlex
 import shutil
@@ -48,9 +49,34 @@ TOOLKIT_ROOT = ROOT / "assets/toolkit"
 PROFILE_ROOT = ROOT / "assets/profiles"
 FRONTEND_ROOT = ROOT / "assets/frontends"
 BACKING_SERVICE_ROOT = ROOT / "assets/backing-services"
-# Where a package is installed to, whichever kind it is. Not `languages/`, as the experiment's was: a
-# directory of that name holding `codegraph` is a small lie that costs an hour later.
-PACKAGES = Path.home() / ".slipwai/packages"
+# Where this machine keeps what it has installed, and what a package directory is called inside it. Not
+# `languages/`, as the experiment's was: a directory of that name holding `codegraph` is a small lie that
+# costs an hour later (decided 2026-10-06, carried into the keel by slice 8.3).
+SLIPWAI = Path.home() / ".slipwai"
+PACKAGE_DIR, WAS_PACKAGE_DIR = "packages", "languages"
+PACKAGES = SLIPWAI / PACKAGE_DIR
+
+
+def moved_home(home: Path) -> Path:
+    """Where `home`'s packages are, moving an install made under the old name into the new one.
+
+    Three states and one rule each. Nothing under the old name: the new one, whether or not it exists yet —
+    an install writes it. Both: the new one, and the old left exactly as it is, because two directories is
+    somebody having done something deliberate and a keel that merged them would be guessing which copy they
+    meant. Only the old: one rename, and the new one if it worked.
+
+    A move that cannot be made is not a failure. Cross-device, read-only, a file in the way: the old
+    directory is returned and the packages load from where they are, the next command tries again, and
+    `slipwai language list` prints the path it actually used.
+    """
+    packages, before = home / PACKAGE_DIR, home / WAS_PACKAGE_DIR
+    if packages.is_dir() or not before.is_dir():
+        return packages
+    try:
+        os.rename(before, packages)
+    except OSError:
+        return before
+    return packages
 # What only a repository the method was installed around takes: the ratchet (brownfield adoption).
 ADOPTION_ROOT = ROOT / "assets/adoption"
 

@@ -17,11 +17,11 @@ import tempfile
 from pathlib import Path
 
 FACTORY = Path(__file__).resolve().parents[1]
-os.environ["SLIPWAI_LANGUAGES"] = str(FACTORY / "languages")  # the pinned checkout, never the caller's home
-for package in sorted((FACTORY / "languages").glob("*")) if (FACTORY / "languages").is_dir() else []:
+os.environ["SLIPWAI_LANGUAGES"] = str(FACTORY / "packages")  # the pinned checkout, never the caller's home
+for package in sorted((FACTORY / "packages").glob("*")) if (FACTORY / "packages").is_dir() else []:
     if package.is_dir() and not package.name.startswith(".") and not any(package.iterdir()):
         # A clone that skipped the submodule would otherwise write starters for the languages built in and pass.
-        name = f"languages/{package.name}"
+        name = f"packages/{package.name}"
         raise SystemExit(f"{name} is not checked out: git submodule update --init {name}")
 sys.path.insert(0, str(FACTORY / "src"))
 

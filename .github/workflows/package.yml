@@ -148,7 +148,7 @@ jobs:
           slipwai install $beside || slipwai install "${{ inputs.package }}" $beside
           for sibling in $beside; do
             rm -rf "$PWD/$sibling"
-            cp -R "$HOME/.slipwai/languages/$sibling" "$PWD/$sibling"
+            cp -R "$HOME/.slipwai/packages/$sibling" "$PWD/$sibling"
           done
 
       # One suite per kind. A language's asks the package questions and checks the answers; an extension's
