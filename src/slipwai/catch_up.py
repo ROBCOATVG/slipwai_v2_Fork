@@ -44,6 +44,10 @@ CHANGELOG = ROOT / "CHANGELOG.md"
 ENTRY = re.compile(r"(?m)^## (\d+\.\d+\.\d+)(?: — (MAJOR|MINOR|PATCH))?$")
 # An entry opens with its claim in bold — one sentence saying what changed for whoever runs this.
 HEADLINE = re.compile(r"\*\*(.+?)\*\*", re.DOTALL)
+# The one bold run that is never a claim: the marker `OWED` reads the catch-up paragraph by. Without this,
+# a fragment whose author left the claim unbolded has `Catch-up:` read as its claim — which printed as
+# `- **Catch-up:** ...` in a list whose whole purpose is to name which change is asking.
+MARKER = re.compile(r"^Catch-up\b", re.IGNORECASE)
 # The paragraph written for a repository that already exists, up to the blank line that ends it.
 OWED = re.compile(r"(?m)^\*\*Catch-up[^*]*\*\*[ \t]*(.*?)(?=\n\n|\Z)", re.DOTALL)
 
@@ -69,9 +73,22 @@ def collapse(text: str) -> str:
     return " ".join(text.split())
 
 
+def claim_of(body: str) -> str | None:
+    """An entry's or a fragment's claim: its first bold run that is not the catch-up marker, or None."""
+    for found in HEADLINE.finditer(body):
+        said = collapse(found.group(1))
+        if not MARKER.match(said):
+            return said
+    return None
+
+
 # What each entry is read as: its number, its level, its claim, and the paragraph it wrote for a repository that
-# already existed — None where its author wrote none.
+# already existed — None where its author wrote none. Either text may be several lines: a release still in
+# flight is a set of fragments, and `in_flight` renders each of them as a line of its own.
 Entry = tuple[str, str | None, str, str | None]
+# How a fragment that left one half of itself out is named in the list, rather than being left out of it.
+NO_CLAIM = "(a fragment that states no headline)"
+NO_NOTE = "— its author wrote no catch-up paragraph, so what it costs a repository already built is unrecorded."
 # The first entry, which nothing preceded: the lower bound when a manifest recorded no version at all.
 FIRST = "1.0.0"
 
@@ -85,28 +102,53 @@ class Moved(NamedTuple):
     root: Path
 
 
+def fragment_notes(found: list[changelog.Fragment]) -> list[tuple[str | None, str | None]]:
+    """Each fragment's claim and its catch-up paragraph, **paired**, in the order the fragments are read.
+
+    Paired because they are only useful together. A release in flight is a set of fragments, each written
+    by whoever made that one change, and the two halves of a fragment answer different questions: the
+    claim says what changed, the catch-up paragraph says what it costs a repository that already exists.
+    Read apart and concatenated, forty catch-up paragraphs in a row have nothing saying which change each
+    belongs to — which is what a migration onto 2.0.0 printed, and nobody could act on it.
+    """
+    read: list[tuple[str | None, str | None]] = []
+    for _path, _level, body in found:
+        note = OWED.search(body)
+        read.append((claim_of(body), collapse(note.group(1)) if note else None))
+    return read
+
+
+def claimed(notes: list[tuple[str | None, str | None]]) -> str:
+    """What the release being written changes: one line per fragment, in the order they are read."""
+    lines = [f"- {claim}" for claim, _owed in notes if claim]
+    return "\n".join(lines) or "(the fragments for this version state no headline)"
+
+
+def owes(notes: list[tuple[str | None, str | None]]) -> str | None:
+    """What it asks of a repository already built: one line per fragment, each naming its own change.
+
+    Every fragment gets a line, including one whose author wrote no catch-up paragraph — said as that,
+    because printing it as "asks nothing" would be a promise this module cannot make. None only where
+    there are no fragments at all.
+    """
+    lines = [f"- **{claim or NO_CLAIM}** {owed or NO_NOTE}" for claim, owed in notes]
+    return "\n".join(lines) or None
+
+
 def in_flight(root: Path = ROOT, version: str = VERSION) -> list[Entry]:
     """The entry for the release being written, read off `changelog.d/` — empty where there is none.
 
     A project migrating onto `1.15.0.dev7` is owed whatever the fragments already ask of it, and until the
-    release is cut they are the only place that is written. Every fragment contributes: its claim and its
-    catch-up paragraph are read the same way an assembled entry's are, and joined, because the entry is the
-    fragments and a project owes all of it rather than the first of it.
+    release is cut they are the only place that is written. Every fragment contributes, because the entry
+    is the fragments and a project owes all of it rather than the first of it — as a line each, with its
+    own claim in front of it, which is what makes "all of it" a list somebody can work through.
     """
     release = base(version)
     found = changelog.fragments(root, tolerant=True)
     if release is None or not found or any(number == release for number, *_rest in released(root / CHANGELOG.name)):
         return []
-    claims = [HEADLINE.search(body) for _path, _level, body in found]
-    notes = [OWED.search(body) for _path, _level, body in found]
-    headlines = [collapse(claim.group(1)) for claim in claims if claim]
-    owed = [collapse(note.group(1)) for note in notes if note]
-    return [(
-        release,
-        changelog.level(found),
-        " ".join(headlines) or "(the fragments for this version state no headline)",
-        " ".join(owed) or None,
-    )]
+    notes = fragment_notes(found)
+    return [(release, changelog.level(found), claimed(notes), owes(notes))]
 
 
 def entries(root: Path = ROOT, version: str = VERSION) -> list[Entry]:
@@ -125,12 +167,11 @@ def released(changelog_file: Path = CHANGELOG) -> list[Entry]:
     for index, match in enumerate(found):
         end = found[index + 1].start() if index + 1 < len(found) else len(text)
         body = text[match.end() : end].strip()
-        headline = HEADLINE.search(body)
         note = OWED.search(body)
         read.append((
             match.group(1),
             match.group(2),
-            collapse(headline.group(1)) if headline else "(this entry states no headline)",
+            claim_of(body) or "(this entry states no headline)",
             collapse(note.group(1)) if note else None,
         ))
     return read
@@ -255,11 +296,19 @@ def notes(name: str, was: str | None, now: str = VERSION, languages: list[Moved]
 
 
 def listing(listed: list[Entry]) -> list[str]:
-    """Each entry as the notes print it: its number and level, its claim, and what it owes."""
+    """Each entry as the notes print it: its number and level, its claim, and what it owes.
+
+    A released entry's two halves are each one paragraph, written by whoever cut the release, and are
+    printed as they were written. A release still in flight has a line per fragment (`in_flight`), and a
+    list does not start on the same line as the words introducing it — so `**Owes:**` stands alone
+    wherever what follows it is more than one line.
+    """
     lines: list[str] = []
     for number, level, headline, owed in listed:
+        said = "nothing recorded for a repository that already existed." if owed is None else owed
+        apart = "\n" in said
         lines += ["", f"### {number}{f' — {level}' if level else ''}", "", headline, "",
-                  f"**Owes:** {owed}" if owed else "**Owes:** nothing recorded for a repository that already existed."]
+                  *(["**Owes:**", "", said] if apart else [f"**Owes:** {said}"])]
     return lines
 
 
