@@ -36,9 +36,14 @@ class FrontendTest(FactoryTestCase):
                     self.assertEqual(
                         metadata["deployables"]["service"].get("framework"), framework_of(language)
                     )
+                    # The rung, not the profile. These two happen to agree here because nothing asked for
+                    # a rung and `event-modelling` defaults to `events` while `standard` is never offered
+                    # the axis at all — but what `eventSourced` records is the service's write model, and
+                    # reading it off the profile is the welding phase 15 took apart.
+                    selection = metadata["deployables"]["service"].get("selection", {})
                     self.assertEqual(
                         metadata["deployables"]["service"]["eventSourced"],
-                        profile == "event-modelling",
+                        selection.get("write-model", "state") == "events",
                     )
                     self.assertEqual(
                         {key: metadata["deployables"]["web"][key] for key in ("language", "framework", "eventSourced")},
@@ -53,9 +58,9 @@ class FrontendTest(FactoryTestCase):
                     self.assertTrue((repo / "package-lock.json").is_file())
                     self.assertIn("apps/web",
                         json.loads((repo / "package.json").read_text(encoding="utf-8"))["workspaces"])
-                    if profile == "event-modelling":
+                    if metadata["deployables"]["service"]["eventSourced"]:
                         self.assertIn(
-                            "Event sourcing applies only to `apps/service/**`",
+                            "Event sourcing applies to `apps/service` and to nothing else here",
                             (repo / "AGENTS.md").read_text(encoding="utf-8"),
                         )
                         self.assertIn(

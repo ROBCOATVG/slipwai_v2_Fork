@@ -77,8 +77,36 @@ class FragmentTest(unittest.TestCase):
             "defaults": {"event-store": "postgres"},
         }}}
         row = self.read_one(written)["backends"]["bad"]
-        self.assertEqual(row["options"], {"persistence": ["memory", "postgres"], "http": ["none"]})
+        self.assertEqual(
+            row["options"],
+            {"persistence": ["memory", "postgres"], "http": ["none"], "write-model": ["events"]},
+        )
         self.assertEqual(row["defaults"], {"persistence": "postgres"})
+
+    def test_a_backend_from_before_the_rung_was_an_axis_is_read_onto_the_rung_it_was_built_for(self) -> None:
+        """The rename alone would have changed the answer, not just its spelling.
+
+        `write-model` has `state` as its `absent`, and an axis no loaded backend answers falls to its
+        absent. So a package that knew only `event-store` would generate state-stored services while
+        shipping nothing but event-store adapters — and the rung is the one answer the keel says cannot be
+        walked back once a service holds data.
+        """
+        written = {**FRAGMENT, "backends": {"bad": {
+            "label": "Bad", "targets": ["none"],
+            "options": {"event-store": ["postgres"], "http": ["none"]},
+        }}}
+        self.assertEqual(self.read_one(written)["backends"]["bad"]["options"]["write-model"], ["events"])
+
+    def test_a_backend_that_already_answers_the_rung_keeps_both_of_its_answers(self) -> None:
+        """Only a package old enough to spell `event-store` is read forward; one rebuilt on the protocol
+        that has the rung declares both rows itself, and nothing here narrows it to one."""
+        written = {**FRAGMENT, "backends": {"bad": {
+            "label": "Bad", "targets": ["none"],
+            "options": {"event-store": ["postgres"], "write-model": ["events", "state"], "http": ["none"]},
+        }}}
+        self.assertEqual(
+            self.read_one(written)["backends"]["bad"]["options"]["write-model"], ["events", "state"]
+        )
 
     def test_an_option_the_package_declares_under_the_old_name_moves_too(self) -> None:
         written = {**FRAGMENT, "axes": {"event-store": {"duck": {"label": "Duck"}}}}

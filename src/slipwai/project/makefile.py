@@ -76,7 +76,7 @@ def install_step(service: App, tooling: dict) -> tuple[str, str]:
 
 def migrate_targets(services: list[App], apps: list[App]) -> str:
     """`migrate`, named for the role the migrating feature answers rather than for the product — "the
-    event-store migrations" stays true of whichever store was chosen, and of the next one.
+    migrations" stays true of whichever store was chosen, of whichever rung it keeps, and of the next one.
 
     One target for one service; with several, one per migrating service inside its own store's marked
     region, and an unmarked aggregate that names them all — `$(MIGRATE_TARGETS)` is built inside the

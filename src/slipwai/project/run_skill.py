@@ -4,6 +4,7 @@ from __future__ import annotations
 from ..layout import AT_ROOT, Layout
 from ..probes import HEALTH_PATH, health_body, ready_path
 from ..services import App, first_transport, services_of, web_apps, wrapped_of
+from .write_model_prose import run_seed
 
 # Where an adopted repository writes how each application is run, once somebody has proved it. The repository's
 # own file — never in `.written`, never rewritten by `/survey` or `slipwai migrate` — because the first real
@@ -87,11 +88,6 @@ def run_skill(project_name: str, apps: list[App], layout: Layout = AT_ROOT) -> s
     # The services that can be started: the ones with a transport. A service without one has no entry
     # point yet and is not in this skill's tables, so its presence never promises a demo it cannot give.
     services = [service for service in services_of(apps) if service.transport is not None]
-    stores = list(
-        dict.fromkeys(
-            s.selection.option("persistence") for s in services_of(apps) if "persistence" in s.selection.axes
-        )
-    )
     several = len(services) > 1
     if not services_of(apps) and not web:
         return adopted_run_skill(project_name, apps, layout)
@@ -150,27 +146,9 @@ description: How to run and demonstrate {project_name}. Use when asked to run, s
     # leaving it running points at a real command. The no-transport-no-web case returned above.
     first_command = f"make {first.dev_target}" if first and transport is not None else f"make {browsers[0].dev_target}"
 
-    seeds = {
-        "postgres": """This project's event store is Postgres, which needs its container running and its migrations
-applied before it can hold anything:
-
-```sh
-make services-up   # starts Postgres, waits for it to accept connections
-make migrate       # applies the event-store migrations
-```
-
-`make demo` starts Postgres too, but it does **not** migrate — that is a write to a database and stays an
-explicit act. Run `make migrate` once after the first `make demo`, and again whenever a migration is added.""",
-        "sqlite": """This project's event store is a SQLite file, created by the process that opens it, so
-there is nothing to start and nothing to migrate. The log is at `EVENT_STORE_PATH` (see `.env.example`) and
-is git-ignored: deleting it deletes the entire truth of the system, which on a demo is usually what you
-want between runs.""",
-        "memory": """This project's event store is in memory, so every restart is a fresh world. Nothing to
-start, nothing to migrate, and nothing to clean up — but also nothing to come back to: seed whatever the
-demo needs through the app itself, in front of whoever is watching if the seeding is part of the story.""",
-    }
-    # One paragraph per distinct store the services use; two services on the same store say it once.
-    seed = "\n\n".join(seeds[store] for store in stores if store in seeds)
+    # What has to be running and what has to be migrated before a demo, per store and per rung: a service
+    # that keeps current state has no log to lose, so it is not told it is about to lose one.
+    seed = run_seed(apps)
 
     proxy_check = f"""
 The dev server forwards `/api/*` to the service with the prefix intact, so a slice's route is the same path
@@ -206,8 +184,9 @@ you start — the targets above set each service's own port as the default.
         else f"`{services[0].path}`" if services else "the service"
     )
     # Two lines where the two probes are two paths, one where the backend's framework serves a readiness
-    # endpoint of its own and this project points `/health` at it. `/ready` asks the event-store port a
-    # trivial question, so it is the line that says whether the store is reachable from here.
+    # endpoint of its own and this project points `/health` at it. `/ready` asks the service's store port
+    # a trivial question — the event store on one rung and the repository on the other — so it is the
+    # line that says whether the store is reachable from here.
     probes = ""
     for service in services:
         probes += (
@@ -217,7 +196,7 @@ you start — the targets above set each service's own port as the default.
         if ready_path(service.backend) != HEALTH_PATH:
             probes += (
                 f'curl -s http://localhost:{service.port}{ready_path(service.backend)}      '
-                f'# {{"status":"ready"}} — readiness, which asks the event store\n'
+                f'# {{"status":"ready"}} — readiness, which asks the store\n'
             )
     serves = f"""## What it serves right now
 

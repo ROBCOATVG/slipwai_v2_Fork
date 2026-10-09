@@ -23,7 +23,7 @@ SERVICE_VARIABLES = {
 DATABASE_URL ?= postgres://app:app@localhost:5433/app
 export DATABASE_URL
 
-# With Postgres, integration means the event-store contract against a real database, and `ci` applies the
+# With Postgres, integration means the store's contract suite against a real database, and `ci` applies the
 # migrations before running it.""",
 }
 

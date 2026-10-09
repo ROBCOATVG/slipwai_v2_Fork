@@ -11,7 +11,7 @@
 #
 # The regions between `backing-service:<feature>:begin` and `:end` belong to one answer to one axis,
 # exactly as they do in docker-compose.yml: `scripts/backing-services.py` removes a region with the answer
-# that owns it, so `./init --event-store memory` takes the database's wiring out of here as well as the
+# that owns it, so `./init --persistence memory` takes the database's wiring out of here as well as the
 # database out of postgres.tf.
 
 locals {

@@ -183,7 +183,7 @@
           "containers": [],
           "migrations": false,
           "integration-suite": false,
-          "label": "SQLite — a real append-only log in one file, no container. Serialised writes, so it cannot prove concurrent behaviour",
+          "label": "SQLite — a real store in one file, no container — an append-only log on the `events` rung, state tables on `state`. Serialised writes, so it cannot prove concurrent behaviour",
           "features": [
             "sqlite"
           ],
@@ -202,7 +202,7 @@
           ],
           "migrations": true,
           "integration-suite": true,
-          "label": "Postgres — append-only table, unique (stream, version) as the concurrency control",
+          "label": "Postgres — the concurrency control the rung names: unique (stream, version) on an append-only table where the write model is `events`, a version column checked on save where it is `state`",
           "features": [
             "postgres"
           ],

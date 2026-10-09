@@ -17,6 +17,7 @@ from typing import Any
 
 from .assets import PRUNER
 from .features import known_features, validate_traits
+from .rungs import EVENTS, WRITE_MODEL
 from .targets import validate_axis_targets
 
 # An axis this keel has renamed, and the name it had. One table, read in three places: a `project.json`
@@ -51,6 +52,14 @@ def under_current_names(fragment: dict[str, Any]) -> dict[str, Any]:
         for key in ("options", "defaults"):
             if key in row:
                 row[key] = named_axes(row[key])
+        # A package that declared `event-store` was written when the store was the only place events could
+        # live, so every project it generated was event-sourced. Renaming the axis alone would leave it
+        # answering no `write-model` at all, and an axis no backend answers falls to its `absent` — which is
+        # `state`. The package would not drop off the menu; it would quietly change the rung of every
+        # project generated with it, which is the one answer this keel says cannot be walked back. So it is
+        # read as answering the rung it was built for, and only that rung: the state-stored rows are what a
+        # package adds when it is rebuilt on the protocol that has them.
+        row.setdefault("options", {}).setdefault(WRITE_MODEL, [EVENTS])
     return read
 
 

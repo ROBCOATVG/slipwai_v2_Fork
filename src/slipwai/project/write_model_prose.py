@@ -167,3 +167,63 @@ slice in the service that owns it. Event Modeling is the same on every service h
 and `project.json` records which rung each service is on.{where}
 `docs/event-modeling-to-code.md` carries the table for each, and that is the page to read before writing a
 slice in a service for the first time."""
+
+
+#: What `/run`'s *Seed it* section says about each store, by the rung the service keeping it is on. Keyed
+#: `(store, sourced)` because both halves change the paragraph: the store decides whether anything has to be
+#: started or migrated, and the rung decides what the thing being started actually holds. The pair is the
+#: key rather than two nested tables because there is no sentence here that is true of a store on both rungs
+#: — "deleting it deletes the entire truth of the system" is the log's claim, and on a state-stored service
+#: it would be describing a row nobody promised was the truth of anything.
+RUN_SEEDS = {
+    ("postgres", True): """This project's event store is Postgres, which needs its container running and its migrations
+applied before it can hold anything:""",
+    ("postgres", False): """This project keeps its state in Postgres, which needs its container running and its
+migrations applied before it can hold anything:""",
+    ("sqlite", True): """This project's event store is a SQLite file, created by the process that opens it, so
+there is nothing to start and nothing to migrate. The log is at `EVENT_STORE_PATH` (see `.env.example`) and
+is git-ignored: deleting it deletes the entire truth of the system, which on a demo is usually what you
+want between runs.""",
+    ("sqlite", False): """This project keeps its state in a SQLite file, created by the process that opens it, so
+there is nothing to start and nothing to migrate. The file is at `EVENT_STORE_PATH` (see `.env.example`) and
+is git-ignored: deleting it puts the service back to an empty world, which on a demo is usually what you
+want between runs.""",
+    ("memory", True): """This project's event store is in memory, so every restart is a fresh world. Nothing to
+start, nothing to migrate, and nothing to clean up — but also nothing to come back to: seed whatever the
+demo needs through the app itself, in front of whoever is watching if the seeding is part of the story.""",
+    ("memory", False): """This project keeps its state in memory, so every restart is a fresh world. Nothing to
+start, nothing to migrate, and nothing to clean up — but also nothing to come back to: seed whatever the
+demo needs through the app itself, in front of whoever is watching if the seeding is part of the story.""",
+}
+
+#: The shell block the two Postgres paragraphs share, and the sentence after it. `make migrate` applies
+#: whichever migrations the rung put there — the log's table on `events`, the versioned state table on
+#: `state` — so the commands are the same and only the word for what they fill changes.
+POSTGRES_STEPS = """
+```sh
+make services-up   # starts Postgres, waits for it to accept connections
+make migrate       # applies the migrations
+```
+
+`make demo` starts Postgres too, but it does **not** migrate — that is a write to a database and stays an
+explicit act. Run `make migrate` once after the first `make demo`, and again whenever a migration is added."""
+
+
+def run_seed(apps: list[App]) -> str:
+    """`/run`'s *Seed it* paragraphs: one per distinct store-and-rung the generated services use.
+
+    Two services on one store and one rung say it once, which is the rule this had before the rung existed.
+    Two services on one store and *different* rungs say it twice, because they are two different things to
+    start: one of them is a log whose deletion loses the truth, and the other is a table whose deletion
+    loses this week.
+    """
+    seen = [
+        (service.selection.option("persistence"), sourced(service))
+        for service in services_of(apps)
+        if "persistence" in service.selection.axes
+    ]
+    return "\n\n".join(
+        RUN_SEEDS[key] + (POSTGRES_STEPS if key[0] == "postgres" else "")
+        for key in dict.fromkeys(seen)
+        if key in RUN_SEEDS
+    )

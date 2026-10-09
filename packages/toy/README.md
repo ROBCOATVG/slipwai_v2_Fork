@@ -23,7 +23,7 @@ and renames nothing here (*Adding a framework*, below).
 | `assets/languages/toy/app/` | The files a service's directory starts with |
 | `assets/languages/toy/flags/` | The feature-flag reader a service gets under a target that deploys |
 | `assets/languages/toy/examples/<skill>/<id>.md` | One snippet per `{{example: <skill>/<id>}}` marker in slipwai's skills |
-| `assets/backing-services/toy/` | What each event-store answer adds to a service (`write_side_files`, `read_side_files`) |
+| `assets/backing-services/toy/` | What each `persistence` answer adds to a service, per rung (`write_side_files`, `read_side_files`) |
 | `tests/test_conformance.py` | The conformance suite, as a `unittest` case over this package |
 
 What every member means and the shape its answer takes is slipwai's backend-protocol contract, and how a package sits on

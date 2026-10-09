@@ -60,7 +60,7 @@ version 1, it uses version 1's own names and says so.
 | **Bridge** | One product's own dashboard, as distinct from the fleet board, which is the harbour's view of the agents. The bridge shows where the product is (slipway, sea trials, in service), the release mode, how far along each fairway is, which flags are hoisted and where, what is deployed to each environment, what is waiting on a person, and what the product has cost so far. `slipwai bridge` prints it. The harbourmaster renders it to the project's Pages site next to the event model | `/where-are-we`, the demo stop's progress board, the event-model page |
 | **Drive, cruise** | `/drive` is the main mode: a person is present, the whole fleet fans out across fairways, and every product question, park and demo comes back to that person through the inbox. `/cruise` is the same fleet with nobody at the keyboard: the skipper answers the questions and the hand runs the demos. Nothing else differs | Same words, but in version 1 only `/cruise` fanned out across a product |
 | **The ladder** | The ordered stages of `/drive`. Section 5 draws it | Same word |
-| **Rung** | How much of its past one service keeps, named for the step of the constitution's ladder it stands on: an outcome returned, in-process events, an outbox, or a durable log of everything that happened, which is event sourcing. A rung is per service, is answered on the `write-model` axis (`events` or `state`) beside the `persistence` axis that names the store, is recorded in `project.json`, and is the one answer about a service that cannot be walked back once it holds data. Event Modeling is the same on every rung; what changes is the write model. Phase 15 | The `event-modelling` profile, which bundled the log with the model |
+| **Rung** | How much of its past one service keeps, named for the step of the constitution's ladder it stands on: an outcome returned, in-process events, an outbox, or a durable log of everything that happened, which is event sourcing. A rung is per service, is answered on the `write-model` axis (`events` or `state`) beside the `persistence` axis that names the store, is recorded in `project.json`, and is the one answer about a service that cannot be walked back once it holds data. Event Modeling is the same on every rung; what changes is the write model. The convergence map (section 4) counts rungs too, on a different ladder — where an *adopted repository* stands on each axis of the keel's own shape — and the two never meet: no persistence row is added to that map, because a map row would say every service should climb to the log. Phase 15 | The `event-modelling` profile, which bundled the log with the model |
 
 **Facing a person, every one of these words is paired with the ordinary one.** The vocabulary is the
 method's, not the reader's. A stop, a command, a refusal or a page that asks a person something names the
@@ -389,8 +389,8 @@ all, and the submodule the experiment could not load without a token is gone rat
    The `add-language`, `add-framework` and `add-extension` skills become the prose around these four commands, which is slice 9.5. In version 1 they are 1,368 lines in `.claude/skills/` describing a manual procedure — fork the template, fill in `language.json` by hand, wire the matrix, remember the release — and almost every line of that is a verb's job now.
 
 **The keel declares the question; a package declares its own answers.** An axis is the keel's: there are
-four, and a package adds none. An *answer* depends on what it is. `event-store: postgres` is
-infrastructure — Postgres is Postgres whichever language talks to it, and the keel ships the Compose
+five since phase 15 split the rung off the profile, and a package adds none. An *answer* depends on what it
+is. `persistence: postgres` is infrastructure — Postgres is Postgres whichever language talks to it, and the keel ships the Compose
 service, the SQL and the Keycloak realm for the ones like it. `http: fastapi` is not infrastructure; it
 is a Python library, and a keel that declared it would be a keel a new language has to be edited into.
 
@@ -415,8 +415,11 @@ first application is a service, so it was never "whether?" either. Version 2 mar
 it is not asked, and the answer is the backend's own default. `none` stays an option, because a backend
 may offer no transport and an adopted repository may report having none — it stops being a choice and
 becomes a state. Decided 2026-10-06. Only `http` is inferred; an axis earns it by having one answer
-once something already decided is known, and the event store does not: Postgres and SQLite are
-different products, not two spellings of one backend's framework.
+once something already decided is known, and neither per-service axis does: Postgres and SQLite are
+different products rather than two spellings of one backend's framework, and `write-model` is a product
+decision a backend has no standing to make — a language that can do both rungs is not thereby told which
+one this service is on. `write-model` is the one axis `./init` may not answer down either, for the reason
+section 1 gives: it is the answer that cannot be walked back.
 
 **A cloud is a package too.** Decided 2026-10-06, and it is the same rule the languages and the axis
 options are already held to: the keel asks where a project goes to production; *AWS* and *Azure* are
@@ -753,7 +756,10 @@ Three rules hold the bridge to the same standard as the fleet board.
   products. The bridge never shows another product. An organisation that wants both opens both.
 
 For an adopted repository, the bridge gains one instrument: the convergence map, with each axis at its current
-rung and the rung the strategy aims at.
+rung and the rung the strategy aims at. Its ladders are the keel's own shape — how it is built, tested,
+released, laid out — and the write model is not among them: that rung is a product decision per service,
+`project.json` is already its record, and a row on this map would be telling every service to climb to the
+log (15.9).
 
 A mockup of the bridge and the fleet board, with example data for a product called Ledger, is at
 `docs/mockups/ledger-bridge.html`. Open it in a browser. A published copy is at
@@ -939,6 +945,16 @@ field.
 
 ![The event-modelling loop](images/loop-event-modelling.svg)
 
+**The figure is the same on both rungs, and that is the claim phase 15 is making.** A service on
+`write-model: state` runs this loop unchanged: the same nine steps, the same chart, the same split into
+slices, the same stamp. `chart.py` renders fairways from `context` and `service`, marks from `evt` frames
+and steers-by from `reads`, and reads none of `stream`, `guard`, `folds` or `materialisation` — so the
+division of work does not know which rung a service is on, and a figure that drew the rung would be drawing
+something the loop cannot see. Where the rung does land is inside *Implement*, one beat down: what the
+service's write side is made of, and which two fields of a slice `check-model` refuses. The *ladder* the
+figure names is the delivery loop's stages, not the constitution's rungs — one word, two ladders, and
+neither of them changes here.
+
 ### The standard profile
 
 The loop is the same, but three of its inputs do not exist in version 1 and must be built. Contexts are recorded
@@ -951,7 +967,9 @@ contract. The scope gate finds no model, so it holds no context boundary at all.
 ### The hop between fairways
 
 This figure shows why neither fairway waits for the other. The slice that steers by a mark gets clearance when
-the slice that sets the mark is planned, not when it is merged. The setting captain writes `mark-set` to its
+the slice that sets the mark is planned, not when it is merged. The hop is the same whichever rung the
+setting service is on — a mark is a typed event either way — with one refusal held back for 15.13: a
+cross-service `reads` whose producer keeps current state and has no outbox is a mark nobody can consume. The setting captain writes `mark-set` to its
 deck log; the harbourmaster copies the line into the harbour log; the other captain reads it there. The steering slice seeds its tests from the
 schema. On the standard profile, the same hop carries a route, a schema or a port instead of an event.
 

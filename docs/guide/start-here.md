@@ -70,10 +70,11 @@ Create a new product monorepo. Press Enter to accept a shown default.
 Project name: bookings
 
 Delivery foundation:
-  event-modelling — Event Modeling — everything above, plus events as the source of truth, built one
-    stamped slice at a time. Cost per slice stays flat as the system grows…
-  standard — Standard — walking skeleton, executable test and the CD gate, over state-stored
-    persistence. The cheaper start and the irreversible one…
+  event-modelling — Event Modeling — everything above, plus the workflow modelled before it is built
+    and delivered one stamped slice at a time, every event a named business fact. Where truth lives is a
+    separate question, asked per service…
+  standard — Standard — the walking skeleton, the executable test and the CD gate, and no model of the
+    workflow behind them. Features are specified one at a time and a service keeps current state…
 Use Event Modeling? [Y/n]:
 
 Production target:
@@ -90,11 +91,20 @@ Bounded contexts bookings holds, comma-separated [bookings]: booking, availabili
 Frontend (none/react-vite) [react-vite]:
 Browser app name [web]:
 
-Event store:
-  Where events live. Every answer is an append-only log behind one port…
+Write model:
+  How a service decides and records a write — which is to say where this product keeps its truth…
+
+  events — Event-sourced — the log is the truth and state is a fold of it. Rung 4…
+  state — State-stored — the service keeps current state, and its events are the model's contracts,
+    raised after each write and never replayed. Rung 2…
+Choose (events/state) [events]:
+
+Persistence:
+  How this service keeps its data. Every answer is one store behind one port…
 
   memory — In-memory — zero infrastructure, loses all truth on restart…
-  postgres — Postgres — append-only table, unique (stream, version) as the concurrency control
+  postgres — Postgres — the concurrency control the rung names: unique (stream, version) on an
+    append-only table where the write model is `events`, a version column checked on save where it is…
 Choose (memory/postgres) [postgres]: memory
 
 Internal authentication:
@@ -110,16 +120,26 @@ created: /Users/you/code/bookings
 ```
 
 A question with nothing to explain is the one-line form — `Language (typescript) [typescript]:`. One where
-the answers need describing prints them first and then asks, which is why `Event store` and the two
-authentication questions look different. In a terminal all of them are a list you move through with the
-arrow keys; the typed form above is what you get in a pipe, a script, or a terminal that cannot be put into
-raw mode.
+the answers need describing prints them first and then asks, which is why `Write model`, `Persistence` and
+the two authentication questions look different. In a terminal all of them are a list you move through with
+the arrow keys; the typed form above is what you get in a pipe, a script, or a terminal that cannot be put
+into raw mode.
 
-**The first question is the one that matters, and it is the only one that is hard to undo.** An event log
-folds down into tables whenever you decide it should, so a project can stop being event-sourced. State
-cannot be turned back into history it never recorded, so "start standard and adopt events later where a
-subdomain earns it" is an option that mostly does not exist. Every other answer here is a directory you
-can regenerate, a service you can add, or an axis you can converge later.
+**Two of these questions are different in kind, and only one of them is hard to undo.** `Use Event
+Modeling?` decides whether the workflow is drawn before it is built — whether there is a model at all. It is
+worth answering yes to on nearly anything a team will keep working on, including a product whose services
+store current state, and you can start modelling later: a model is a design practice, not a storage format.
+`Write model` is the storage decision, it is asked per service, and **it is the one that cannot be walked
+back.** An event log folds down into tables whenever you decide it should, so a service can stop being
+event-sourced; state cannot be turned back into history it never recorded, so "start on `state` and adopt
+events later where a subdomain earns it" is an option that mostly does not exist. Every other answer here is
+a directory you can regenerate, a service you can add, or an axis you can converge later.
+
+The two were one question until phase 15: choosing Event Modeling chose the log with it, so a product that
+wanted the model over services keeping current state could not be generated, and neither could one with a
+context that earned the log beside three that did not. They are two answers now, and `project.json` records
+the second per deployable. `slipwai add-service --write-model state` is how a later service answers
+differently from the first; left out, it takes the first service's answer.
 
 Everything you were asked is written down in `project.json`, and nothing else keeps a second copy of it:
 the Makefile, `docker-compose.yml`, the CI workflow and the gate scripts all read that one file.

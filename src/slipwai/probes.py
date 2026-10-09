@@ -8,7 +8,8 @@ purpose: a liveness probe that goes red because a database is unreachable gets t
 turning somebody else's outage into a crash loop of this project's.
 
 **Readiness** — `ready_path`, per backend — is "send me traffic". It runs a trivial query through the
-event-store port, so a service whose store has gone away is taken out of the pool rather than left serving
+store port — the event store on the `events` rung, the repository on `state` — so a service whose store has
+gone away is taken out of the pool rather than left serving
 failures. Everything that gates traffic waits on this one: the Compose healthcheck, the ALB target group,
 the Container Apps readiness probe, and `make smoke` against a deployed environment.
 

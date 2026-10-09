@@ -28,6 +28,7 @@ from slipwai.project.guidance import agent_guidance, architecture
 from slipwai.project.ladder import drive_ladder
 from slipwai.project.readme import readme
 from slipwai.project.repository import pull_request_template
+from slipwai.project.run_skill import run_skill
 from slipwai.selection import Selection
 from slipwai.services import App, service_app
 
@@ -190,6 +191,67 @@ class BackingServiceProseTest(unittest.TestCase):
         self.assertIn("### Postgres — the state store", page)
         self.assertIn("event-store contract", gates)
         self.assertIn("repository contract is proved", gates)
+
+
+class RunSkillTest(unittest.TestCase):
+    """`skills/run/SKILL.md`: what has to be started and migrated before a demo, per store *and* per rung.
+
+    The paragraph this holds was keyed on the store alone, so a state-stored Postgres service was told its
+    event store needed migrating and a state-stored SQLite one was told that deleting the file deletes the
+    entire truth of the system. Both sentences are the log's, and this is the page read at the moment
+    somebody is about to run a demo in front of other people — the worst moment to find out that the
+    machinery described is not the machinery there.
+    """
+
+    #: The two rungs with a transport beside them: `run_skill` has a separate page for a project with no
+    #: entry point at all, and that page is not what this suite is about.
+    SERVING = {
+        rung: Selection({"write-model": rung, "persistence": "postgres", "http": "toy-serve"})
+        for rung in ("events", "state")
+    }
+
+    def skill(self, apps: list[App]) -> str:
+        return run_skill("shop", apps)
+
+    def serving(self, *rungs: str) -> list[App]:
+        return [
+            service_app(name, TOY, 3000 + index, self.SERVING[rung], first=index == 0)
+            for index, (name, rung) in enumerate(zip(("orders", "billing"), rungs, strict=False))
+        ]
+
+    def test_a_state_stored_project_is_not_told_it_has_an_event_store(self) -> None:
+        page = self.skill(self.serving("state"))
+        self.assertIn("This project keeps its state in Postgres", page)
+        self.assertNotIn("event store", page)
+
+    def test_an_event_sourced_project_keeps_the_paragraph_it_had(self) -> None:
+        page = self.skill(self.serving("events"))
+        self.assertIn("This project's event store is Postgres", page)
+        self.assertIn("make migrate", page)
+
+    def test_two_services_on_one_store_and_one_rung_say_it_once(self) -> None:
+        """The rule this had before the rung existed, which the rung must not cost."""
+        both = self.serving("events", "events")
+        self.assertEqual(self.skill(both).count("This project's event store is Postgres"), 1)
+
+    def test_two_services_on_one_store_and_two_rungs_say_it_twice(self) -> None:
+        """One Postgres container, two things inside it, and only one of them is a log."""
+        page = self.skill(self.serving("events", "state"))
+        self.assertIn("This project's event store is Postgres", page)
+        self.assertIn("This project keeps its state in Postgres", page)
+
+    def test_the_migrate_line_names_no_rung_because_it_applies_to_either(self) -> None:
+        """`make migrate` is one target applying whichever migrations the rung put there, so the comment
+        beside it must not claim the log's."""
+        for apps in (self.serving("state"), self.serving("events"), self.serving("events", "state")):
+            with self.subTest(apps=[app.name for app in apps]):
+                self.assertNotIn("applies the event-store migrations", self.skill(apps))
+
+    def test_a_state_stored_sqlite_file_is_not_called_the_truth_of_the_system(self) -> None:
+        sqlite = Selection({"write-model": "state", "persistence": "sqlite", "http": "toy-serve"})
+        page = self.skill([service_app("billing", TOY, 3000, sqlite, first=True)])
+        self.assertIn("This project keeps its state in a SQLite file", page)
+        self.assertNotIn("deletes the entire truth of the system", page)
 
 
 if __name__ == "__main__":  # pragma: no cover

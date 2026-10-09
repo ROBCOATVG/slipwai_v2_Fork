@@ -67,7 +67,7 @@ def known_features(catalog: dict) -> set[str]:
 def axis_of(catalog: dict, feature: str) -> str:
     """The axis whose answer owns this feature — the *role* it fills, for prose that has to name the role.
 
-    "Apply the event-store migrations" is a true sentence about whichever store was chosen, and stays true
+    "Apply the persistence migrations" is a true sentence about whichever store was chosen, and stays true
     for the next one; "apply the Postgres migrations" is a sentence that has to be rewritten.
     """
     for axis, spec in catalog["axes"].items():
