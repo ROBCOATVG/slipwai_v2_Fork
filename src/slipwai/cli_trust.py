@@ -10,7 +10,7 @@ import argparse
 
 from .assets import this_command
 from .errors import GenerationError, refuse
-from .trust import SAID, accept, forget, path, publishers
+from .trust import KEY, SAID, accept, forget, path, publishers
 
 VERBS = ("list", "add", "remove")
 
@@ -24,6 +24,10 @@ def listing() -> list[str]:
     width = max(len(name) for name in found)
     lines = [f"  {name:<{width}}  {body.get('how', 'confirmed')}"
              + (f", {body['when']}" if body.get("when") else "")
+             # A key is what makes a private channel's releases verifiable here rather than merely signed,
+             # so a listing that did not say which publishers have one would not answer the question the
+             # listing is read for.
+             + (f", key {body[KEY][:12]}…" if body.get(KEY) else "")
              for name, body in sorted(found.items())]
     return ["publishers this machine installs from", *lines, f"  {path()}"]
 
@@ -37,6 +41,10 @@ def trust_main(argv: list[str]) -> None:
                "are: " + "; ".join(f"{name} ({said})" for name, said in SAID.items()) + ".")
     parser.add_argument("verb", choices=VERBS, nargs="?", default="list")
     parser.add_argument("publisher", nargs="?", help="who, for add and remove")
+    parser.add_argument("--key", default="", metavar="<base64>",
+                        help="`add` only: their Ed25519 public key, as `slipwai package key` printed it. "
+                             "A private channel's releases are verified against it here; the public "
+                             "channel's carry a Sigstore bundle and need none")
     parsed = parser.parse_args(argv)
     try:
         if parsed.verb == "list":
@@ -45,7 +53,11 @@ def trust_main(argv: list[str]) -> None:
         if not parsed.publisher:
             raise GenerationError(f"`{prog} {parsed.verb} <publisher>` takes the publisher's name, as "
                                   f"`{this_command()} show <package>` prints it")
-        place = accept(parsed.publisher, "added") if parsed.verb == "add" else forget(parsed.publisher)
+        if parsed.verb == "remove" and parsed.key:
+            raise GenerationError(f"`{prog} remove` takes no key: removing a publisher takes their key "
+                                  f"with them. `{prog} add {parsed.publisher} --key <base64>` replaces one")
+        place = (accept(parsed.publisher, "added", parsed.key) if parsed.verb == "add"
+                 else forget(parsed.publisher))
         print(f"{parsed.publisher} {'accepted' if parsed.verb == 'add' else 'removed'}; {place}")
     except GenerationError as error:
         refuse(prog, error)

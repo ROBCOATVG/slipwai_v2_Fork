@@ -6,6 +6,7 @@ broke rather than that something did.
 """
 from __future__ import annotations
 
+import base64
 import json
 import os
 import tempfile
@@ -15,7 +16,7 @@ from unittest import mock
 
 import checkout_packages  # noqa: F401
 
-from slipwai import package_new, package_release
+from slipwai import ed25519, package_new, package_release, trust
 from slipwai.errors import GenerationError
 from slipwai.index_schema import CHANDLERY
 from slipwai.language_index import READ, read_index
@@ -65,6 +66,67 @@ class EntryTest(unittest.TestCase):
         with self.assertRaises(GenerationError) as refused:
             package_release.kind_of(self.area / "nothing")
         self.assertIn("extension.json", str(refused.exception))
+
+
+class SigningTest(unittest.TestCase):
+    """A private channel's releases, signed with the key its organisation holds.
+
+    The join between the two halves of 6.5b: what `package release --key` writes into the entry is what a
+    client reads back out and checks. The end-to-end path — signed here, verified over there — is what the
+    slice's done-when asks for, so it is one test and not two halves that could drift.
+    """
+
+    def setUp(self) -> None:
+        self.area = Path(tempfile.mkdtemp())
+        self.home = Path(tempfile.mkdtemp())
+        self.patch = mock.patch.dict(os.environ, {"SLIPWAI_HOME": str(self.home)})
+        self.patch.start()
+        self.addCleanup(self.patch.stop)
+        self.secret = bytes(range(32))
+        self.key = self.area / "the-org.key"
+        self.key.write_text(base64.b64encode(self.secret).decode("ascii") + "\n", encoding="utf-8")
+
+    def test_an_unsigned_release_says_so_rather_than_carrying_an_empty_field(self) -> None:
+        _, _, entry = package_release.release(packaged(self.area), self.area / "dist")
+        self.assertNotIn("signature", entry)
+
+    def test_a_release_signed_by_its_publisher_installs_as_verified(self) -> None:
+        archive, _, entry = package_release.release(packaged(self.area), self.area / "dist", "the-org",
+                                                    key=self.key)
+        self.assertTrue(entry["signature"].startswith(trust.ED25519))
+        trust.accept("the-org", "added",
+                     base64.b64encode(ed25519.public_key(self.secret)).decode("ascii"))
+        self.assertEqual(trust.state_of("the-org", entry["signature"], archive.read_bytes()),
+                         trust.VERIFIED)
+
+    def test_a_release_whose_bytes_changed_after_signing_is_refused_naming_both(self) -> None:
+        archive, _, entry = package_release.release(packaged(self.area), self.area / "dist", "the-org",
+                                                    key=self.key)
+        trust.accept("the-org", "added",
+                     base64.b64encode(ed25519.public_key(self.secret)).decode("ascii"))
+        served = archive.read_bytes() + b"\x00"
+        with self.assertRaises(GenerationError) as refused:
+            trust.state_of("the-org", entry["signature"], served, "the-org-channel")
+        self.assertIn("the-org", str(refused.exception))
+        self.assertIn("the-org-channel", str(refused.exception))
+
+    def test_the_raw_thirty_two_bytes_are_a_key_file_too(self) -> None:
+        """A secret store hands back whatever was put in it, and a runner writes that to a file."""
+        raw = self.area / "raw.key"
+        raw.write_bytes(self.secret)
+        self.assertEqual(package_release.signing_key(raw), self.secret)
+
+    def test_a_key_file_that_is_not_a_key_is_refused_with_the_command_that_writes_one(self) -> None:
+        wrong = self.area / "wrong.key"
+        wrong.write_text("hunter2\n", encoding="utf-8")
+        with self.assertRaises(GenerationError) as refused:
+            package_release.signing_key(wrong)
+        self.assertIn("package key", str(refused.exception))
+
+    def test_a_key_file_that_is_not_there_names_itself(self) -> None:
+        with self.assertRaises(GenerationError) as refused:
+            package_release.signing_key(self.area / "absent.key")
+        self.assertIn("absent.key", str(refused.exception))
 
 
 class ChannelTest(unittest.TestCase):

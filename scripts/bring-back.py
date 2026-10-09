@@ -66,7 +66,7 @@ OWN = {"catalog_checks", "catalog_options", "cli_offered", "cli_search",
        "project.wiring", "project.berth_commands", "extension_shape", "extension_directory",
        "extension_install", "package_new", "package_templates", "package_release",
        "package_version", "cli_extension", "cli_package",
-       "conformance.extension", "index_schema", "trust", "cli_trust",
+       "conformance.extension", "index_schema", "trust", "cli_trust", "ed25519",
        "channel", "channel_new", "channel_page", "cli_channel", "telegraph", "cli_telegraph", "fleet", "cli_fleet",
        "bridge", "bridge_page", "cli_bridge", "whats_new", "deck", "brand"}
 # Present, but in a version 2 shape that is not the experiment's yet: `cli` answers `--version` and will

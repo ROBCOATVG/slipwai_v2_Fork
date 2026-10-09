@@ -47,8 +47,11 @@ KEEL = ROOT / "src/slipwai"
 TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
     # Where the keel's own material is, how a refusal is raised, how a version string reads, what the entry
     # for the release in flight is made of, and what a project's name becomes in each ecosystem's namespace.
+    # `ed25519` is here and imports nothing: it is arithmetic over one curve, the standard library's own
+    # SHA-512 and no opinion about packages — which is what makes it testable against the RFC's vectors
+    # alone (slice 6.5b).
     ("foundation", ("assets", "errors", "versions", "changelog", "whats_new", "naming", "logs",
-                    "brand")),
+                    "brand", "ed25519")),
     # What a caller may ask for, what an option declares about the feature it owns, what an optional
     # dev-tooling hook is, where a project goes to production, what differs per package and where each
     # backend answers its probes. The registry and the loader land here in phase 2.

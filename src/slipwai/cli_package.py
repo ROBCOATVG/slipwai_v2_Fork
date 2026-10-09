@@ -15,8 +15,11 @@ the public one is the commit a pull request carries (6.6).
 from __future__ import annotations
 
 import argparse
+import base64
+import secrets
 from pathlib import Path
 
+from . import ed25519
 from .assets import this_command
 from .catalog import CORE
 from .errors import GenerationError, refuse
@@ -61,21 +64,52 @@ def cut_release(parsed: argparse.Namespace) -> None:
           f"-m '{root.name} {version}' && git push --follow-tags")
 
 
+def write_key(parsed: argparse.Namespace) -> None:
+    """Make a publisher's Ed25519 key pair: the secret to a file, the public one to the screen.
+
+    The secret never goes to the screen, because a key printed into a terminal is a key in a scrollback
+    buffer and in whatever logged the session. The public one does, because the next thing a publisher
+    does with it is paste it into the message that tells people what to trust.
+    """
+    into = Path(parsed.out).expanduser() / f"{parsed.name}.key"
+    if into.exists():
+        raise GenerationError(f"{into} is already there, and overwriting a signing key would make every "
+                              f"release signed with the old one unverifiable. Move it aside first")
+    secret = secrets.token_bytes(ed25519.KEY_BYTES)
+    into.parent.mkdir(parents=True, exist_ok=True)
+    into.write_text(base64.b64encode(secret).decode("ascii") + "\n", encoding="utf-8")
+    into.chmod(0o600)
+    public = base64.b64encode(ed25519.public_key(secret)).decode("ascii")
+    print(f"{parsed.name}'s signing key:")
+    print(f"  secret        {into} (0600, never commit it; put it in the secret store CI reads)")
+    print(f"  public        {public}")
+    print(f"  sign with     {this_command()} package release <directory> --key {into}")
+    print(f"  they trust it {this_command()} trust add {parsed.name} --key {public}")
+
+
 def release_package(parsed: argparse.Namespace) -> None:
     root = Path(parsed.name).expanduser()
     archive, entry_file, entry = release(root, Path(parsed.out).expanduser(), parsed.publisher,
-                                        parsed.file_url)
+                                        parsed.file_url, key_path(parsed))
     print(f"{entry['kind']} {root.name} {entry['version']}")
     print(f"  file          {archive}")
     print(f"  sha256        {entry['sha256']}")
     print(f"  entry         {entry_file}")
+    print(f"  signature     {entry.get('signature', '') and 'ed25519' or 'none (--key signs it)'}")
     print(f"  register it   {this_command()} package register {root} --channel <a channel checkout>")
+
+
+def key_path(parsed: argparse.Namespace) -> Path | None:
+    """The signing key named on the command line, or None. Never guessed at: an unsigned release is an
+    honest state, and a keel that went looking for a key would sign with whichever one it found."""
+    return Path(parsed.key).expanduser() if parsed.key else None
 
 
 def register_package(parsed: argparse.Namespace) -> None:
     root = Path(parsed.name).expanduser()
     channel = Path(parsed.channel).expanduser()
-    archive, entry_file, index = register(root, channel, parsed.publisher, parsed.file_url)
+    archive, entry_file, index = register(root, channel, parsed.publisher, parsed.file_url,
+                                          key_path(parsed))
     print(f"registered in {channel}:")
     print(f"  file          {archive.relative_to(channel) if archive else parsed.file_url}")
     print(f"  entry         {entry_file.relative_to(channel)}")
@@ -103,6 +137,10 @@ def package_main(argv: list[str]) -> None:
                              "what the fragments claim")
     parser.add_argument("--publisher", default="", metavar="<identity>",
                         help="who published it, as the index records it and `slipwai show` prints it")
+    parser.add_argument("--key", default="", metavar="<file>",
+                        help="`release` and `register`: the Ed25519 secret key to sign with, as `package "
+                             "key` writes it. A private channel's releases are signed this way; the public "
+                             "channel's are signed keyless from CI")
     parser.add_argument("--file-url", default="", metavar="<url>",
                         help="where the release file is, where that is not beside the index — the asset on "
                              "the tag that built it, usually. The channel then holds the entry alone")
@@ -110,6 +148,8 @@ def package_main(argv: list[str]) -> None:
     try:
         if parsed.verb == "new":
             new_package(parsed)
+        elif parsed.verb == "key":
+            write_key(parsed)
         elif parsed.verb == "check":
             raise SystemExit(check_package(Path(parsed.name).expanduser()))
         elif parsed.verb == "version":

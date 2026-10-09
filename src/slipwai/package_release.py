@@ -28,14 +28,19 @@ GitHub already hosts the same bytes for nothing.
 """
 from __future__ import annotations
 
+import base64
+import binascii
 import hashlib
 import json
 import tempfile
 from pathlib import Path
 
+from . import ed25519
+from .assets import this_command
 from .errors import GenerationError
 from .index_schema import BLOCK, EXTENSION, LANGUAGE
 from .language_release import ReleaseError, pack, read_package
+from .trust import ED25519
 
 #: Where a channel keeps one file per release, and the document built from them.
 ENTRIES = "entries"
@@ -72,7 +77,46 @@ def kind_of(root: Path) -> str:
     raise GenerationError(f"{root} holds neither a language.json nor an extension.json, so it is no package")
 
 
-def entry_for(root: Path, archive: Path, publisher: str = "", file_url: str = "") -> dict:
+def signing_key(path: Path) -> bytes:
+    """A publisher's Ed25519 seed, read from a file. Base64 on one line, or the raw thirty-two bytes.
+
+    Two spellings because a key is made in two places: `package key` writes the base64 a person can paste
+    into a secret store, and a CI runner writing a secret to a file gets whatever that store hands back.
+    Nothing else is accepted — a passphrase-wrapped key would be a key format this keel has to understand,
+    and the thing to hold a key in is the secret store, not a file on a runner.
+    """
+    try:
+        raw = path.read_bytes()
+    except OSError as error:
+        raise GenerationError(f"{path} cannot be read ({error}), and it is the key this release is signed "
+                              f"with") from None
+    if len(raw) == ed25519.KEY_BYTES:
+        return raw
+    try:
+        decoded = base64.b64decode(raw.strip(), validate=True)
+    except (binascii.Error, ValueError):
+        decoded = b""
+    if len(decoded) != ed25519.KEY_BYTES:
+        raise GenerationError(f"{path} is not an Ed25519 secret key: {ed25519.KEY_BYTES} bytes, raw or "
+                              f"base64, as `{this_command()} package key` writes it")
+    return decoded
+
+
+def signature_for(archive: Path, key: Path | None) -> str:
+    """The `signature` field for a release signed with this key, or `''` where there is none to sign with.
+
+    Over the release file's bytes, which is what a client has when it asks: the index's digest proves the
+    bytes are the bytes listed, and this proves the publisher put them there. Prefixed `ed25519:` so a
+    reader knows what it is holding without being told which channel it came from (`trust.py`).
+    """
+    if key is None:
+        return ""
+    raw = ed25519.sign(signing_key(key), archive.read_bytes())
+    return ED25519 + base64.b64encode(raw).decode("ascii")
+
+
+def entry_for(root: Path, archive: Path, publisher: str = "", file_url: str = "",
+              signature: str = "") -> dict:
     """The index entry for a built release: where the file is, what is in it, and who says so.
 
     `file_url` is where the bytes actually are, where that is not beside the index — the release asset on
@@ -95,6 +139,8 @@ def entry_for(root: Path, archive: Path, publisher: str = "", file_url: str = ""
     }
     if publisher:
         entry["publisher"] = publisher
+    if signature:
+        entry["signature"] = signature
     for field in ("description", "tags"):
         if manifest.get(field):
             entry[field] = manifest[field]
@@ -109,13 +155,20 @@ def written_entry(name: str, entry: dict, into: Path) -> Path:
     return path
 
 
-def release(root: Path, out: Path, publisher: str = "", file_url: str = "") -> tuple[Path, Path, dict]:
-    """Build the release file and its entry under `out`. (file, entry file, entry). Writes nowhere else."""
+def release(root: Path, out: Path, publisher: str = "", file_url: str = "",
+            key: Path | None = None) -> tuple[Path, Path, dict]:
+    """Build the release file and its entry under `out`. (file, entry file, entry). Writes nowhere else.
+
+    `key` signs it, which is what a private channel's releases carry. The public channel's are signed
+    keyless from CI instead and the bundle arrives in the entry the workflow writes; signing is never done
+    at install time and never on behalf of somebody who did not ask for it, so no key means no signature
+    and an entry that honestly says it has none.
+    """
     try:
         archive = pack(root, out)
     except ReleaseError as error:
         raise GenerationError(str(error)) from None
-    entry = entry_for(root, archive, publisher, file_url)
+    entry = entry_for(root, archive, publisher, file_url, signature_for(archive, key))
     return archive, written_entry(read_package(root).name, entry, out / ENTRIES), entry
 
 
@@ -164,7 +217,7 @@ def rebuild(channel: Path, name: str = "", base: str = "") -> Path:
 
 
 def register(root: Path, channel: Path, publisher: str = "",
-             file_url: str = "") -> tuple[Path | None, Path, Path]:
+             file_url: str = "", key: Path | None = None) -> tuple[Path | None, Path, Path]:
     """Build a release of `root` and add it to `channel`. (file or None, entry file, index).
 
     With `file_url` the tarball is built into a temporary place and only its digest is kept: the channel
@@ -183,7 +236,7 @@ def register(root: Path, channel: Path, publisher: str = "",
             archive = pack(root, Path(elsewhere) if file_url else serving)
         except ReleaseError as error:
             raise GenerationError(str(error)) from None
-        entry = entry_for(root, archive, publisher, file_url)
+        entry = entry_for(root, archive, publisher, file_url, signature_for(archive, key))
         kept = None if file_url else archive
     standing = channel / ENTRIES / f"{name}-{entry['version']}.json"
     if standing.is_file():

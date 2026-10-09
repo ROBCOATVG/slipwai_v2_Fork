@@ -5,6 +5,7 @@ person has agreed to.
 """
 from __future__ import annotations
 
+import base64
 import json
 import os
 import tempfile
@@ -14,7 +15,7 @@ from unittest import mock
 
 import checkout_packages  # noqa: F401
 
-from slipwai import trust
+from slipwai import ed25519, trust
 from slipwai.errors import GenerationError
 
 
@@ -72,7 +73,11 @@ class StateTest(unittest.TestCase):
         self.assertEqual(trust.state_of("stranger", "c2ln"), trust.UNTRUSTED)
 
     def test_a_signature_this_copy_cannot_check_is_unverified_and_not_verified(self) -> None:
-        """The one thing a signature must never be used to say is "signed" about one nobody looked at."""
+        """The one thing a signature must never be used to say is "signed" about one nobody looked at.
+
+        `c2ln` is read as a Sigstore bundle, because it does not say `ed25519:` — and without the
+        `slipwai[verify]` extra there is nothing here that can check one.
+        """
         self.assertEqual(trust.state_of("ROBCOATVG", "c2ln", b"bytes"), trust.UNVERIFIED)
 
     def test_a_signature_that_is_checked_and_matches_is_verified(self) -> None:
@@ -85,9 +90,70 @@ class StateTest(unittest.TestCase):
             trust.state_of("ROBCOATVG", "c2ln", b"bytes")
         self.assertIn("does not match", str(refused.exception))
 
+    def test_the_refusal_names_the_channel_as_well_as_the_publisher(self) -> None:
+        """Two different things to go and look at: a publisher whose key has moved on, and a channel
+        serving a file that is not the one the publisher signed."""
+        with mock.patch.object(trust, "check_signature", return_value=False), \
+                self.assertRaises(GenerationError) as refused:
+            trust.state_of("ROBCOATVG", "c2ln", b"bytes", "the-org-channel")
+        self.assertIn("ROBCOATVG", str(refused.exception))
+        self.assertIn("the-org-channel", str(refused.exception))
+
     def test_the_four_states_each_have_a_phrase_so_every_command_says_them_alike(self) -> None:
         self.assertEqual(sorted(trust.SAID),
                          sorted([trust.VERIFIED, trust.UNVERIFIED, trust.UNSIGNED, trust.UNTRUSTED]))
+
+
+class Ed25519Test(unittest.TestCase):
+    """The private channel's half, end to end: a key in the store, a signature over the bytes.
+
+    What is proved here is the join rather than the arithmetic — `test_ed25519.py` holds that against RFC
+    8032. This is the three ways the join can be missing: no key, the wrong key, and the right key over
+    bytes somebody changed afterwards.
+    """
+
+    def setUp(self) -> None:
+        self.home = Path(tempfile.mkdtemp())
+        self.patch = mock.patch.dict(os.environ, {"SLIPWAI_HOME": str(self.home)})
+        self.patch.start()
+        self.addCleanup(self.patch.stop)
+        self.secret = bytes(range(32))
+        self.public = base64.b64encode(ed25519.public_key(self.secret)).decode("ascii")
+        self.data = b"a release file, as the channel served it"
+        self.signature = trust.ED25519 + base64.b64encode(
+            ed25519.sign(self.secret, self.data)).decode("ascii")
+
+    def test_a_release_signed_by_its_publisher_is_verified(self) -> None:
+        trust.accept("the-org", "added", self.public)
+        self.assertEqual(trust.state_of("the-org", self.signature, self.data), trust.VERIFIED)
+
+    def test_the_same_release_with_a_byte_changed_is_refused(self) -> None:
+        trust.accept("the-org", "added", self.public)
+        with self.assertRaises(GenerationError) as refused:
+            trust.state_of("the-org", self.signature, self.data + b"!", "the-org-channel")
+        self.assertIn("does not match", str(refused.exception))
+        self.assertIn("the-org", str(refused.exception))
+
+    def test_a_publisher_this_machine_holds_no_key_for_is_unverified_and_not_refused(self) -> None:
+        """`None` is not `False`. A machine that cannot check is not a machine that has caught someone."""
+        trust.accept("the-org", "added")
+        self.assertEqual(trust.state_of("the-org", self.signature, self.data), trust.UNVERIFIED)
+
+    def test_another_publishers_key_does_not_verify_this_signature(self) -> None:
+        trust.accept("the-org", "added", base64.b64encode(ed25519.public_key(bytes(range(1, 33)))).decode())
+        with self.assertRaises(GenerationError):
+            trust.state_of("the-org", self.signature, self.data)
+
+    def test_a_signature_that_is_not_base64_is_unverified_rather_than_a_crash(self) -> None:
+        trust.accept("the-org", "added", self.public)
+        self.assertEqual(trust.state_of("the-org", trust.ED25519 + "not base64!", self.data),
+                         trust.UNVERIFIED)
+
+    def test_a_key_that_is_not_a_key_is_refused_when_it_is_written_rather_than_when_it_is_read(self) -> None:
+        """So the person who typed it finds out, instead of every later install saying `unverified`."""
+        with self.assertRaises(GenerationError) as refused:
+            trust.accept("the-org", "added", "bm90IGEga2V5")
+        self.assertIn("not an Ed25519 public key", str(refused.exception))
 
 
 class AdmittedTest(unittest.TestCase):

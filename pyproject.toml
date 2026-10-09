@@ -24,6 +24,15 @@ license-files = ["LICENSE", "NOTICE"]
 authors = [{ name = "Volaris Group" }]
 dependencies = []
 
+# The one extra, and what it buys. A Sigstore bundle is X.509 and ECDSA, and the standard library has
+# neither — so the public channel's keyless signatures are verified through the real library or not at
+# all, and a keel without it says `unverified` rather than pretending (plan 6.5, decided 2026-10-08). A
+# private channel needs none of this: its releases are Ed25519, which `slipwai/ed25519.py` verifies on
+# every machine. Nothing in the keel imports `sigstore` at module scope, so an install without the extra
+# is an install that works.
+[project.optional-dependencies]
+verify = ["sigstore>=3.6.1,<4"]
+
 [project.urls]
 Homepage = "https://github.com/ROBCOATVG/slipwai"
 Repository = "https://git.treyco.dev/ROBCOATVG/slipwai"
@@ -94,3 +103,11 @@ mypy_path = "src"
 check_untyped_defs = true
 warn_unused_ignores = true
 warn_redundant_casts = true
+
+# The one optional import. `slipwai[verify]` pulls `sigstore` and `trust.py` imports it inside the function
+# that uses it, so a keel without the extra runs — which is the whole point of its being an extra. The gate
+# installs no optional dependency, so without this mypy reports a missing stub for a module it is not
+# supposed to find.
+[[tool.mypy.overrides]]
+module = ["sigstore.*"]
+ignore_missing_imports = true

@@ -86,10 +86,13 @@ def from_index(name: str, area: Path, accept_publisher: bool = False) -> Path:
                               f"`{this_command()} search --kind extension` lists what it does")
     # The publisher before the bytes: somebody who has not accepted this publisher is asked before anything
     # is fetched, not after. `download` then refuses a file that is not the one the index listed.
+    where = release.channel or found.name
     admitted(name, release.publisher, release.signature, confirm=accept_publisher)
     data = download(found, release)
-    CAME_FROM[name] = (f"{release.channel or found.name} {release.version}, "
-                       f"{SAID[state_of(release.publisher, release.signature, data)]}")
+    # The bytes, now there are some: the publisher check above is about who, and this is about whether the
+    # file the channel served is the one they signed. A mismatch raises here rather than being recorded.
+    CAME_FROM[name] = (f"{where} {release.version}, "
+                       f"{SAID[state_of(release.publisher, release.signature, data, where)]}")
     archive = area / "release.tar.gz"
     archive.write_bytes(data)
     unpacked = area / "unpacked"

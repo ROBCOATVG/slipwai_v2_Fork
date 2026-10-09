@@ -42,7 +42,7 @@ from .package_templates import (
 KEEL_REPO = "ROBCOATVG/slipwai_v2_Fork"
 KINDS = ("extension", "language")
 #: The publisher's verbs, in the order they are used.
-VERBS = ("new", "check", "version", "release", "register")
+VERBS = ("new", "check", "version", "release", "register", "key")
 #: What a scaffolded manifest declares it needs: this keel's schema, and everything up to the next major.
 def core_range(schema: str) -> str:
     major = schema.split(".")[0]
