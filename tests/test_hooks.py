@@ -77,8 +77,21 @@ class DeclarationTest(unittest.TestCase):
         with self.assertRaises(KeyError):
             hooks.declared({"hooks": {"whenever": "x.py"}})
 
-    def test_a_manifest_with_no_hooks_block_declares_none(self) -> None:
-        self.assertEqual(hooks.declared({"name": "codegraph"}), {})
+    def test_a_manifest_with_no_hooks_block_still_declares_the_two_with_defaults(self) -> None:
+        """Every extension installs and every extension tells the agent it is there, so those two points
+        need no manifest line — which is what 6.1e replaced the convention with. A manifest naming neither
+        is attached to both, through the registry, running the one file an extension is guaranteed to have."""
+        self.assertEqual(
+            hooks.declared({"name": "codegraph"}),
+            {"init": {"run": "init.py", "budget": hooks.DEFAULT_BUDGET},
+             "project": {"run": "init.py", "budget": hooks.DEFAULT_BUDGET}},
+        )
+
+    def test_a_manifest_naming_its_own_script_at_either_is_obeyed(self) -> None:
+        """The whole of what was wrong before: a declaration that was read and then ignored."""
+        declared = hooks.declared({"hooks": {"project": "hooks/reproject.py"}})
+        self.assertEqual(declared["project"]["run"], "hooks/reproject.py")
+        self.assertEqual(declared["init"]["run"], "init.py")
 
 
 class RegistryTest(unittest.TestCase):

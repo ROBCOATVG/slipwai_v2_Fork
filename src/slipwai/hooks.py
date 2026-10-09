@@ -35,6 +35,20 @@ REGISTRY = ".slipwai/hooks.json"
 BLOCK = "hooks"
 #: How long one hook may take before it is ended, where its declaration does not say.
 DEFAULT_BUDGET = "30s"
+#: The two points whose script every extension has anyway, so the manifest need not say it.
+#:
+#: These were run by *convention* until slice 6.1e: `./init --extension` executed a file called `init.py`
+#: and `make agents` imported it and called a function called `project_guidance()`, so an extension that
+#: declared a different script at either point was ignored — the convention-not-declaration failure this
+#: module opens by describing, with the keel's own name on it. A default declaration closes it without
+#: making every manifest repeat what every extension already does: the point is fired through the registry
+#: like the other eight, and an extension that wants another script says so and is obeyed.
+#:
+#: Both default to the entry point because that is the one file an extension is guaranteed to have. What
+#: tells the two apart is `SLIPWAI_POINT`, which the firing script sets: at `init` an entry point installs
+#: whatever it installs and projects its block; at `project` it projects and installs nothing, because a
+#: re-projection happens on every `make agents` and is not an election.
+DEFAULTS = {"init": "init.py", "project": "init.py"}
 
 
 @dataclass(frozen=True)
@@ -94,10 +108,14 @@ def declared(manifest: dict) -> dict[str, dict]:
 
     The short form is a path, because most hooks are "run this here" and a manifest that made every one of
     them a four-key object would be mostly punctuation.
+
+    `DEFAULTS` are filled in last, so a manifest that names its own script at either is obeyed and one that
+    names neither still has both fired through the registry. Every extension is therefore attached to at
+    least two points, which is what it means for an extension to exist at all: something that installs, and
+    something that tells the agent it is there.
     """
-    block = manifest.get(BLOCK)
-    if not isinstance(block, dict):
-        return {}
+    written = manifest.get(BLOCK)
+    block: dict = written if isinstance(written, dict) else {}
     found: dict[str, dict] = {}
     for name, body in block.items():
         point(name)
@@ -108,6 +126,8 @@ def declared(manifest: dict) -> dict[str, dict]:
         else:
             raise ValueError(f"the `{name}` hook names no script to run. A hook is a path, or an object "
                              f"with `run` and optionally `stages` and `budget`")
+    for name, script in DEFAULTS.items():
+        found.setdefault(name, {"run": script, "budget": DEFAULT_BUDGET})
     return found
 
 

@@ -12,9 +12,15 @@ ENTRY_POINT = '''#!/usr/bin/env python3
 This runs inside a generated or adopted project, which has no slipwai to import — the standard library only,
 like every other script under `scripts/`. It is held to the six obligations, and each one below is marked
 where it is met so that a change can see what it is breaking.
+
+It answers two points of the keel's closed set, because `extension.json` declares it at both: `init`, the
+election, and `project`, every re-projection — `make agents`, `slipwai migrate`, `./init --integration`.
+`SLIPWAI_POINT` says which, and at `project` nothing is installed: a re-projection happens often and is not
+an election. Declare another script at either point and it is fired instead of this one.
 """
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -73,6 +79,9 @@ def project_guidance() -> None:
 
 
 def main() -> int:
+    if os.environ.get("SLIPWAI_POINT") == "project":
+        project_guidance()  # a re-projection, not an election: install nothing
+        return 0
     if not install_tool():
         return 0  # obligation 2: not fatal to the rest of `./init`
     project_guidance()

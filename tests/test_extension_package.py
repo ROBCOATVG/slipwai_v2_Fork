@@ -41,7 +41,9 @@ class ReadTest(unittest.TestCase):
         self.assertEqual(refusals, [])
         self.assertEqual([one.name for one in found], ["thing"])
         self.assertEqual(found[0].entry, {"name": "A Thing", "description": "What it is for"})
-        self.assertEqual(sorted(found[0].hooks), ["init"])
+        # Both default declarations, filled in by `hooks.DEFAULTS`: a manifest naming only `init` is
+        # attached to `project` too, because every extension re-projects its block.
+        self.assertEqual(sorted(found[0].hooks), ["init", "project"])
 
     def test_a_language_directory_is_skipped_rather_than_refused(self) -> None:
         """The two halves walk one directory. "Has no extension.json" about a language is noise."""

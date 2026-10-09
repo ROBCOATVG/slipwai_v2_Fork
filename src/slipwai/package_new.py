@@ -78,7 +78,9 @@ def extension_files(name: str, schema: str) -> dict[str, str]:
                        f"is for — the menu is the only place most people read about it.",
         "kind": "extension",
         "core": core_range(schema),
-        "hooks": {"init": "init.py"},
+        # Both points this entry point answers, written out rather than left to `hooks.DEFAULTS`: a
+        # publisher reading their own manifest should see what their script is attached to.
+        "hooks": {"init": "init.py", "project": "init.py"},
     }
     obligations = "\n".join(f"{index}. **{said[0].upper()}{said[1:]}** — `{key}`."
                             for index, (key, said) in enumerate(OBLIGATIONS, start=1))

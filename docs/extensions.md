@@ -98,7 +98,19 @@ Declared short — `"hooks": {"init": "init.py"}` — or long, with `run`, `stag
 }
 ```
 
-What is given arrives in the environment as `SLIPWAI_STAGE`, `SLIPWAI_SLICE` and so on.
+What is given arrives in the environment as `SLIPWAI_STAGE`, `SLIPWAI_SLICE` and so on, with
+`SLIPWAI_POINT` naming the point itself.
+
+**`init` and `project` have a default declaration, and it is the entry point.** A manifest that names
+neither is attached to both and `init.py` is fired at each, because every extension installs something and
+every extension tells the agent it is there — so the two points that are true of all of them cost no
+manifest line. Name another script at either and that one is fired instead. `SLIPWAI_POINT` is how one
+script answers both: at `init` it installs and projects, and at `project` it projects and installs nothing,
+a re-projection happening on every `make agents` and not being an election.
+
+This was a *convention* until slice 6.1e — `./init` ran a file called `init.py`, and `make agents` imported
+it and called a function called `project_guidance()` — so an extension that declared a different script at
+either point was read, ignored, and silently never run. The registry is the only firing path now.
 
 Three rules keep a hook from becoming a second control plane:
 

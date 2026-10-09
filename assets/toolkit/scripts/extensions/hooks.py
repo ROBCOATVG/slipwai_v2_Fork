@@ -109,7 +109,11 @@ def fire(point: str, given: dict[str, str], fatal: bool = False) -> int:
             print(f"hook {key} {point}: {path} is not in this project", file=sys.stderr)
             failed += 1
             continue
-        environment = {**os.environ, **{f"SLIPWAI_{name.upper()}": value for name, value in given.items()}}
+        # `SLIPWAI_POINT` is how one script answers two points: an extension's entry point is the default
+        # declaration for both `init` and `project`, and at `project` it re-projects its block and installs
+        # nothing, because a re-projection happens on every `make agents` and is not an election.
+        environment = {**os.environ, "SLIPWAI_POINT": point,
+                       **{f"SLIPWAI_{name.upper()}": value for name, value in given.items()}}
         try:
             run = subprocess.run([sys.executable, str(path)], capture_output=True, text=True, cwd=ROOT,
                                  timeout=seconds(body.get("budget", DEFAULT_BUDGET)), env=environment)

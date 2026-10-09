@@ -1,9 +1,20 @@
 #!/usr/bin/env python3
-"""Re-project elected extension guidance without rerunning extension setup."""
+"""Re-project elected extension guidance without rerunning extension setup.
+
+The projection itself is the `project` point of `hooks.py`'s closed set, fired through the registry like
+every other point — which is what slice 6.1e closed. Until then this script imported each extension's
+`init.py` and called a function called `project_guidance()` by name, so an extension that declared a
+different script at that point was ignored: installed, valid, and silently never run.
+
+What is still read from the module is `GUIDANCE`, and that is *data* rather than a point — the canonical
+text of the block, which `--check` compares against what is in `AGENTS.md`. A drift check has to know what
+the block should say, and a subprocess that writes it cannot answer that question.
+"""
 from __future__ import annotations
 
 import argparse
 import importlib.util
+import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -12,6 +23,7 @@ sys.dont_write_bytecode = True
 from guidance import ROOT, adopted_extensions, canonical_block, installed_block
 
 HERE = Path(__file__).resolve().parent
+HOOKS = HERE / "hooks.py"
 
 
 def extension_module(key: str) -> ModuleType:
@@ -26,24 +38,34 @@ def extension_module(key: str) -> ModuleType:
     return module
 
 
+def fire_project() -> list[str]:
+    """The `project` point, through the registry. Never fatal, as a hook never is: `hooks.py` exits 0
+    whatever a hook did, and what a failure produces is a `hook` line on stderr naming the extension."""
+    try:
+        subprocess.run([sys.executable, str(HOOKS), "project"], cwd=ROOT, check=False)
+    except OSError as error:
+        return [f"the project point could not be fired ({type(error).__name__})"]
+    return []
+
+
 def project(check: bool) -> list[str]:
     findings: list[str] = []
     try:
         adopted = adopted_extensions(persist_legacy=not check)
     except (OSError, ValueError) as error:
         return [str(error)]
+    if not check:
+        return fire_project()
     for key in adopted:
         try:
-            module = extension_module(key)
-            canonical = canonical_block(key, module.GUIDANCE)
-            if check:
-                if installed_block(key) != canonical:
-                    findings.append(
-                        f"AGENTS.md: the {key} extension block has drifted; run `make agents` "
-                        "or `slipwai migrate`"
-                    )
-            else:
-                module.project_guidance()
+            # `GUIDANCE` is the block's canonical text, read as data: the drift check has to know what the
+            # block should say, which is not something the point that writes it can be asked.
+            canonical = canonical_block(key, extension_module(key).GUIDANCE)
+            if installed_block(key) != canonical:
+                findings.append(
+                    f"AGENTS.md: the {key} extension block has drifted; run `make agents` "
+                    "or `slipwai migrate`"
+                )
         except (AttributeError, OSError, ValueError) as error:
             findings.append(str(error))
     return findings

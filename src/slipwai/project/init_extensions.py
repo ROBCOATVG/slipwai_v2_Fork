@@ -40,13 +40,16 @@ fi
 """
 
 
-# One extension's `init.py` at a time, in the order given — Python throughout, like every other toolkit
-# script under `scripts/`, and safe to rely on here because agent projection just above already required
-# python3. Never fatal to the rest of `./init`: Spec Kit and the agent projection are already in place by
-# here, so an extension whose own tool is missing or whose setup fails gets a message, not a failed
-# bootstrap. `scripts/extensions/<key>/init.py` is expected to be idempotent and non-fatal itself (see
-# docs/extensions.md); this loop only handles a key nothing shipped. The registry of what was elected is
-# written after them, from `available.json`, so a point knows what to fire before the first rung runs.
+# The `init` point, fired through the registry like every other point — which is what slice 6.1e closed.
+# Until then this loop ran a file called `init.py` by name, so an extension that declared a different script
+# at that point was ignored: installed, valid, and silently never run, which is the convention-not-
+# declaration failure `hooks.py` opens by describing. The registry is written first now, from
+# `available.json`, and `hooks.py init` fires whatever each elected extension declared there — `init.py` by
+# default, because that is the one file an extension is guaranteed to have (`hooks.DEFAULTS`).
+#
+# Never fatal to the rest of `./init`: Spec Kit and the agent projection are already in place by here, and
+# `hooks.py` exits 0 whatever a hook did, reporting a failure as a `hook` line naming the extension and the
+# last thing it printed. A key nothing shipped is one of those lines rather than a stopped bootstrap.
 # `SLIPWAI_INTEGRATION` carries the harness chosen on this run to a hook that adds to `skills/` and has to
 # re-project it: Spec Kit records the integration for later runs, but a hook running inside the same
 # `./init` cannot rely on that record being there yet.
@@ -62,16 +65,9 @@ fi
 # is installed but never queried. `--context` carries only the marker-fenced regions across — and writes the
 # `@AGENTS.md` include an `import` harness reads the whole file through — as non-fatal as the hooks above.
 RUN_EXTENSIONS = """
-for extension in $selected_extensions; do
-  script="scripts/extensions/$extension/init.py"
-  if [ -f "$script" ]; then
-    SLIPWAI_INTEGRATION="$selected_integration" python3 "$script" || printf '%s\n' "$extension extension setup did not finish; see $script." >&2
-  else
-    printf '%s\n' "Unknown extension \\"$extension\\" (no $script in this project)." >&2
-  fi
-done
 if [ -n "$selected_extensions" ]; then
   python3 scripts/extensions/hooks.py --elect $selected_extensions || printf '%s\n' 'The hook registry was not written; `python3 scripts/extensions/hooks.py --elect <keys>` writes it.' >&2
+  SLIPWAI_INTEGRATION="$selected_integration" python3 scripts/extensions/hooks.py init || printf '%s\n' 'Extension setup did not finish; `python3 scripts/extensions/hooks.py init` retries it.' >&2
   python3 scripts/extensions/guards.py --offer $selected_extensions || printf '%s\n' 'The guard registry was not written; nothing may refuse a tool call until `python3 scripts/extensions/guards.py --elect <keys>` says so.' >&2
   if [ -n "$selected_integration" ]; then
     python3 scripts/agents/project.py --context "$selected_integration" || printf '%s\n' 'The extension pointers did not reach the agent context file; `make agents` retries it.' >&2

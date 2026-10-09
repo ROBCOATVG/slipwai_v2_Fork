@@ -103,24 +103,22 @@ class FiredTest(unittest.TestCase):
     `session.py` answered it on the post-tool event.
     """
 
-    #: The two points that are still run by *convention* rather than through the registry: an extension's
-    #: `init.py` is executed by name at `./init --extension`, and its `project_guidance()` by name at `make
-    #: agents`. Both therefore happen — but an extension that declared a different script at either point
-    #: would be ignored, which is the convention-not-declaration failure `hooks.py` opens by describing.
-    #: Closing it means deciding whether `init.py` becomes the point's default declaration, which is a change
-    #: to a closed set and is slice 6.1e rather than something to settle in a test.
-    BY_CONVENTION = {"init", "project"}
-
     def callers(self) -> str:
-        """Every toolkit script that could fire one, read as text. The calls are one-line `fire(...)`, verb
-        tables and Makefile targets, so what is held is that the name reaches something that runs."""
+        """Everything that could fire one, read as text. The calls are one-line `fire(...)`, verb tables,
+        Makefile targets and the shell `./init` is written from, so what is held is that the name reaches
+        something that runs.
+
+        `./init` is in here because the `init` point is fired from it and from nowhere else — it is the
+        election, and there is no rung and no `make` target around it.
+        """
         scripts = sorted(AGENTS.glob("*.py")) + sorted((AGENTS.parent / "extensions").glob("*.py"))
         from slipwai.project.agent_targets import agent_targets  # noqa: PLC0415
-        return "\n".join(path.read_text(encoding="utf-8") for path in scripts) + agent_targets()
+        from slipwai.project.init_extensions import RUN_EXTENSIONS  # noqa: PLC0415
+        return "\n".join(path.read_text(encoding="utf-8") for path in scripts) + agent_targets() + RUN_EXTENSIONS
 
     def test_every_hook_point_is_fired_by_something(self) -> None:
         text = self.callers()
-        for name in sorted(set(hooks.NAMES) - self.BY_CONVENTION):
+        for name in sorted(hooks.NAMES):
             with self.subTest(point=name):
                 self.assertIn(name, text,
                               f"`{name}` is a point the keel promises and nothing in the toolkit fires")
@@ -132,11 +130,16 @@ class FiredTest(unittest.TestCase):
                 self.assertIn(f'"{name}"', text,
                               f"`{name}` is a guard the keel promises and nothing in the toolkit fires")
 
-    def test_the_two_run_by_convention_are_named_and_no_others_are(self) -> None:
-        """The exemption is the finding, so it is held to its size. A third point added to this set would be
-        a third promise the keel makes and does not keep, and it would go in silently."""
-        self.assertEqual(self.BY_CONVENTION, {"init", "project"})
-        self.assertTrue(self.BY_CONVENTION.issubset(hooks.NAMES))
+    def test_nothing_is_run_by_convention_any_more(self) -> None:
+        """6.1e's own line. `init` and `project` used to be run by name — a file called `init.py`, a
+        function called `project_guidance()` — so an extension that declared another script at either was
+        ignored. They are default declarations now, which means the registry is the only firing path and
+        there is no exemption list for a later point to join quietly."""
+        self.assertEqual(set(hooks.DEFAULTS), {"init", "project"})
+        self.assertTrue(set(hooks.DEFAULTS).issubset(hooks.NAMES))
+        fired = (AGENTS.parent / "extensions/project.py").read_text(encoding="utf-8")
+        self.assertIn('"project"', fired, "the project point is not fired through hooks.py")
+        self.assertNotIn("module.project_guidance", fired, "the projection still calls a function by name")
 
 
 class RunTest(unittest.TestCase):
