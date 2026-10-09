@@ -106,7 +106,7 @@
   "axes": {
     "write-model": {
       "prompt": "Write model",
-      "description": "How a service decides and records a write \u2014 which is to say where this product keeps its truth. Both answers raise the same typed events the model names; what differs is whether the log is the truth or a consequence of it. Only one direction is cheap: a log folds down into tables whenever you decide it should, so a service can stop being event-sourced, but state cannot be turned back into history it never recorded. Asked per service, and the one answer about a service that cannot be walked back once it holds data",
+      "description": "How a service decides and records a write — which is to say where this product keeps its truth. **Event sourcing is this keel's recommendation and the default**: it is what makes a slice a slice, because the log is a contract every later slice can read without asking the service that wrote it, and it is what keeps a system changeable — a read model nobody thought of is a replay away, and the cost of a slice stays flat as the system grows. Answer `state` where a service has earned the exception: a small supporting domain, a context that is genuinely field updates, something whose past nobody will ever ask about. Both rungs raise the same typed events the model names; what differs is whether the log is the truth or a consequence of it. Only one direction is cheap — a log folds down into tables whenever you decide it should, but state cannot be turned back into history it never recorded — so the exception is the answer to be sure about, not the default. Asked per service, and the one answer about a service that cannot be walked back once it holds data",
       "profiles": [
         "event-modelling"
       ],
@@ -121,7 +121,7 @@
           "containers": [],
           "migrations": false,
           "integration-suite": false,
-          "label": "Event-sourced \u2014 the log is the truth and state is a fold of it. Rung 4: nothing is lost, a read model nobody thought of is a replay away, and the cost of a slice stays flat as the system grows. For a service that owns its truth, whose behaviour is business operations rather than field updates, and whose past is worth something",
+          "label": "Event-sourced — the log is the truth and state is a fold of it. **The recommended answer, and the default.** Rung 4: nothing is lost, a read model nobody thought of is a replay away, slices stay independent because the log is the contract between them, and the cost of a slice stays flat as the system grows. Take it for any service that owns its truth",
           "features": [],
           "backends": [],
           "targets": [
@@ -136,7 +136,7 @@
           "containers": [],
           "migrations": false,
           "integration-suite": false,
-          "label": "State-stored \u2014 the service keeps current state, and its events are the model's contracts, raised after each write and never replayed. Rung 2: the cheaper start, for a service that is not the owner of what it holds, or whose past nobody will ask about",
+          "label": "State-stored — the service keeps current state, and its events are the model's contracts, raised after each write and never replayed. Rung 2, and **the exception rather than the starting point**: for a small supporting domain, a context that honestly is field updates, or a service whose past nobody will ask about. Cheaper to start and the one choice here that cannot be undone",
           "features": [],
           "backends": [],
           "targets": [

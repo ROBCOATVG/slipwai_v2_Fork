@@ -16,7 +16,7 @@ metadata:
   author: slipwai
   context: [event-model]
   phase: understand
-capabilities: event-modelling, event-sourcing
+capabilities: event-modelling
 ---
 
 # The global event model

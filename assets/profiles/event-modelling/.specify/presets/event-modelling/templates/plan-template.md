@@ -75,7 +75,14 @@ gravity — the one path where being wrong is expensive — and say how the desi
 
 **Primary Dependencies**: [each one earning its place]
 
-**Storage**: [event store product, and where read models live — per slice, the `materialisation` its model.yaml entry declares: `live` (per-query fold, nothing stored, `liveBudget` naming its ceiling), `inline` (written in the append's transaction) or `async` (catch-up subscription plus checkpoint). `make check-model` requires the field before a slice with a read model can be planned, so this line and the model agree or the gate says so]
+**Write model**: [this service's rung, read from `eventSourced` in `project.json`: `events` — the log is
+the truth and state is a fold of it — or `state` — the service keeps current state and raises the model's
+events after each write. It decides which of the Foundational tasks apply, which fields `make check-model`
+requires of this slice (`guard` and `folds` are refused on `state`), and what T022–T027 build. Not a
+decision taken here: it was answered when the service was created, and it is the one that cannot be walked
+back]
+
+**Storage**: [the store product, and where read models live — per slice, the `materialisation` its model.yaml entry declares: `live` (per-query fold, nothing stored, `liveBudget` naming its ceiling), `inline` (written in the append's transaction) or `async` (catch-up subscription plus checkpoint). `make check-model` requires the field before a slice with a read model can be planned, so this line and the model agree or the gate says so]
 
 **Testing**: [runner, the levels of scope, how the boundary level is driven, and — where this slice adds
 a provider-facing adapter — what its stub is pinned to]
@@ -108,7 +115,7 @@ session that changes the design.*
 | V. ATDD from GWT | | [that every scenario enters through the **use case**, not a route; that the delivery adapter has its own parse/delegate/map test; **that each white box has a test per state at the UI level, because no level above it observes rendering**; that format validation is deliberately NOT a scenario; and any rule unreachable from the boundary that is therefore driven at the Decider level] |
 | V. One increment at a time | | [the ordered list of scenarios this slice will drive, and confirmation they will be taken **one RED-GREEN-REFACTOR cycle at a time** with only the quick tests in the same file or area between cycles, each cycle committed locally, and the first implementation push only after demo acceptance once `make verify` is green. A plan that schedules the slice's tests as one activity and its implementation as another fails this row] |
 | VI. Contract-bounded integrations | | [**"this slice adds no adapter to a third-party system"** if that is true, and move on. Otherwise: each driven adapter, where provider types stop, **the stub it is tested against and the recorded or published contract that stub is pinned to**, and the failure catalogue it maps — 4xx, credential rejection, rate limiting, 5xx, timeout, contract-violating response] |
-| VII. Observability & auditability | | [correlation propagation, what the event log records, and **what alerts** — a read model is not detection] |
+| VII. Observability & auditability | | [correlation propagation, what the log or the audit trail records by this service's rung, and **what alerts** — a read model is not detection] |
 | VIII. Versioning | | [event schema versioning from day one, and whether the deploy strategy demands forward compatibility as well as tolerant reading] |
 | IX. Security & privacy | | [what sensitive data never enters, and **the erasure mechanism, designed before the first personal-data event is persisted**] |
 
@@ -158,7 +165,7 @@ apps/service/src/
 │   └── projections/        # pure folds → read models
 ├── adapters/
 │   ├── driving/            # HTTP, CLI, queue consumers — parse and delegate
-│   └── driven/             # event store, providers, clock, ids — one folder each
+│   └── driven/             # the store (event store or repository, by the rung), providers, clock, ids
 ├── composition/            # the only place adapters meet ports
 └── migrations/
 

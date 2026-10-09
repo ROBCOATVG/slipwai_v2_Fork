@@ -1,7 +1,7 @@
 ---
 name: event-sourcing
 description: Event sourcing patterns for functional TypeScript — persist state as an append-only log of past events and rebuild it by folding them. Use when implementing a Decider write model, an event store, projections and read models, event versioning, or snapshots. Builds on the Decider from domain-driven-design and the ports/adapters from hexagonal-architecture.
-capabilities: event-modelling, event-sourcing
+capabilities: event-sourcing
 ---
 
 # Event Sourcing

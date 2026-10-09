@@ -577,19 +577,29 @@ EVENT = (
         ),
         needs=3,
         practice=("skills/event-sourcing/SKILL.md", "skills/functional/SKILL.md"),
-        statement="""### Event-Sourced Core with the Decider Pattern
+        statement="""### The Rung Is Recorded Per Service
 
-- Events are the source of truth: immutable, past-tense facts in business language, appended and never
-  updated or deleted. Corrections are new compensating events.
-- State is a left fold — `state = events.reduce(evolve, initialState)`. There is no stored current state
-  for the write model.
-- The Decider is pure: `decide(command, state)` returns accepted events **or** a rejection with a
-  business reason, never both and never partial; `evolve(state, event)` returns the next state. Both are
-  free of I/O, clocks, identifier generation, randomness, and framework imports.
-- Commands read user input and the event stream only. A read-model-to-command dependency MUST NOT exist.
-- Event sourcing is the top of the complexity ladder, not a default. A peripheral context with no
-  meaningful history MUST NOT be event-sourced merely for consistency, and the rung chosen is recorded
-  with its reason.""",
+- Event sourcing is the default and the recommendation: the log is a contract every later slice can
+  read without asking the service that wrote it, and a read model nobody thought of is a replay away.
+  A service that owns its truth MUST be event-sourced. Every service records its write model in
+  `project.json` as `eventSourced`. A small supporting domain, or a context that honestly is field
+  updates, MUST NOT be event-sourced merely for consistency — and choosing `state` for one is recorded
+  with its reason, because a rung nobody justified is the default. One project may hold both. It is
+  the one decision that cannot be walked back.
+- Event Modeling applies on every rung, and an event is a named business fact on both.
+- Where the rung is `events`: events are the source of truth — immutable, past-tense facts in business
+  language, appended and never updated or deleted, with corrections as new compensating events. State
+  is a left fold, `state = events.reduce(evolve, initialState)`, and there is no stored current state
+  for the write model. The Decider is pure: `decide(command, state)` returns accepted events **or** a
+  rejection with a business reason, never both and never partial; `evolve(state, event)` returns the
+  next state. Both are free of I/O, clocks, identifier generation, randomness, and framework imports.
+  Commands read user input and the event stream only.
+- Where the rung is `state`: the service keeps current state and raises the model's events after the
+  write has committed, never replaying them. A write loads the row it owns, decides over that state,
+  and saves at the version it read; `stream` names what one transaction locks. A slice on such a
+  service MUST NOT name `guard` or `folds`, which both need a log.
+- On both rungs a read-model-to-command dependency MUST NOT exist, and no event may claim history the
+  system did not record at the time.""",
     ),
     Requirement(
         key="stream-identity-and-concurrency",

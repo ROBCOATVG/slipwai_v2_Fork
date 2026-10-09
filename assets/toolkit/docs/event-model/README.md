@@ -274,6 +274,15 @@ deployable as `eventSourced`. On `events` the log is the truth and current state
 `state` the service keeps current state, and the events this model names are contracts raised by the use
 case after the write has committed — real events, never replayed.
 
+**`events` is the default, and the recommendation.** Two reasons, both about how the work goes rather
+than about storage. A slice is independently deliverable because the log is the contract between slices:
+a later slice reads an event without asking the service that wrote it and without the two being planned
+together. And the system stays changeable after the first design turns out to be wrong, because a read
+model nobody thought of is a replay away rather than a migration. `state` is the exception — a small
+supporting domain, a context that honestly is field updates, a service whose past nobody will ask about —
+and it is written down with its reason, because the asymmetry runs one way: a log folds down into tables
+whenever somebody decides, and state cannot be turned back into history it never recorded.
+
 **Event Modeling is the same on both.** The same nine steps, the same four patterns, the same chart, the
 same split into slices, the same stamp. `chart.py` renders fairways from `context` and `service`, marks
 from `evt` frames and steers-by from `reads`, and reads none of the fields below — so the division of work

@@ -20,7 +20,7 @@ metadata:
   phase: understand
   standalone: true
 effort: high
-capabilities: event-modelling, event-sourcing
+capabilities: event-modelling
 ---
 
 # Event Modeling
@@ -65,7 +65,37 @@ first. Phase 1 maps the territory; Phase 2 explores each region.
 **Phase 1 -- Domain Discovery.** Identify what the business does, who the
 actors are, what major processes exist, what external systems integrate, and
 which workflows to model. Ask these questions of the user; do not assume
-answers. Output: the actors and proposed slices recorded in `docs/event-model/model.yaml`.
+answers. Output: the actors and proposed slices recorded in `docs/event-model/model.yaml`,
+**and the role catalogue in `docs/event-model/actors.yaml`** — see below.
+
+**The role catalogue, written in Phase 1 and for every project.** Each human
+role and system actor, with what it does and — the part nothing else records —
+what it **cannot** do:
+
+```yaml
+version: 1
+actors:
+  - name: customer
+    kind: human
+    does: [places an order, cancels their own order before dispatch]
+    cannot: [sees another customer's orders, changes a price, cancels after dispatch]
+  - name: systems/cron
+    kind: system
+    does: [expires holds past their deadline]
+    cannot: [issues a refund — money leaving needs a person]
+```
+
+`cannot` earns the file. A slice's `actor` field says who acts; there is
+nowhere in the model to say who may not, and a negative permission is the
+first thing both a security pass and an access classification ask for. Write
+it as the business states it, not as the code enforces it: this is the
+statement the implementation is later checked against. A project adopted
+rather than generated derives the same file from its routes and its
+authorisation, with the file and line each row was read off.
+
+Keep it in step as the model grows — a new actor in a slice is a new row
+here, and a `cannot` nobody can name is a question for the expert, not a
+blank.
 
 **Phase 2 -- Workflow Design.** For each workflow, follow the 9-step
 process. You MUST follow `references/nine-steps.md` for the full methodology,
@@ -311,6 +341,8 @@ After completing event modeling work, verify:
 
 - [ ] `docs/event-model/model.yaml` names the actors, the external integrations,
       and the workflow to start with, and `make check-model` passes
+- [ ] `docs/event-model/actors.yaml` lists every actor the model names, each with
+      what it does and what it **cannot** do
 - [ ] Each designed workflow's slices are in that same model at `status: modelled`
       with all 9 steps completed
 - [ ] All events are past tense, business language, immutable facts

@@ -40,8 +40,9 @@ Rationale: [why this specific failure is unrecoverable rather than merely embarr
 
 - Public write endpoints MUST accept a caller-supplied idempotency key and MUST return the original
   result for a repeated key rather than performing the work again.
-- A command that needs to know whether something already happened MUST check the **event stream**, never
-  a read model. Read models are eventually consistent and MUST NOT guard a decision.
+- A command that needs to know whether something already happened MUST check the **write model** — the
+  event stream on an event-sourced service, the row or aggregate it owns on a state-stored one — never a
+  read model. Read models are eventually consistent and MUST NOT guard a decision.
 - Inbound webhooks and queue consumers MUST be treated as at-least-once and MUST deduplicate on the
   provider's event identifier.
 - A retry MUST NOT be able to duplicate a side effect. A test proving this MUST accompany each new write
@@ -50,7 +51,34 @@ Rationale: [why this specific failure is unrecoverable rather than merely embarr
 Rationale: at-least-once delivery includes "more than once" and "zero times". Idempotency is the only
 defence that survives contact with production.
 
-### III. Event-Sourced Core with the Decider Pattern
+### III. The Rung Is Recorded Per Service, and Event Sourcing Is the Default
+
+**Event sourcing is this project's default and its recommendation.** Not because it is the top of the
+complexity ladder, but because of what it buys the way we work: the log is a contract every later slice
+can read without asking the service that wrote it, which is what makes a slice independently deliverable;
+and a read model nobody thought of is a replay away, which is what keeps the system changeable after the
+first design is wrong. A service that owns its truth MUST be event-sourced.
+
+**The exception is real and is written down.** A small supporting domain, a context that honestly is
+field updates, a service whose past nobody will ask about: these MUST NOT be event-sourced merely for
+consistency, and choosing `state` for one is a decision recorded with its reason, in the plan or an ADR.
+A rung nobody justified is the default, and the default is `events`.
+
+**Where the rung is written.** Every service records its write model in `project.json` as `eventSourced`,
+answered on the `write-model` axis at `slipwai generate` or `slipwai add-service`. **One project may hold
+both**, which is the point of asking per service rather than per project: one context that earns the log
+beside three that do not is a normal shape, and the ladder (explicit returns → in-process events → outbox
+→ event sourcing) is how the reason is stated. It is also the one decision that cannot be walked back: a
+log folds down into tables whenever somebody decides, and state cannot be turned back into history it
+never recorded — which is the asymmetry that makes `events` the safe default and `state` the answer to be
+sure about.
+
+**Event Modeling applies on every rung.** The model, the four patterns, the slices, the chart and the
+stamp are the same whichever rung a service is on; `make check-model` reads the rung and holds each slice
+to its own service's write model. An event is a named business fact on both — a file under
+`src/domain/<context>/events/`, additive, never renamed once raised.
+
+**Where the rung is `events`:**
 
 - **Events are the source of truth**: immutable, past-tense facts in business language. Append-only.
 - **State is a left fold**: `state = events.reduce(evolve, initialState)`. No stored current state for
@@ -66,18 +94,30 @@ defence that survives contact with production.
   explicitly**, because it determines the concurrency ceiling.
 - **Read models are disposable derivations**, rebuildable from position zero. Snapshots are an
   optimisation, never truth.
+
+**Where the rung is `state`:**
+
+- **The service keeps current state**, and the events the model names are contracts raised by the use
+  case after the write has committed. They are never replayed, and nothing folds them back.
+- **The decision is still pure.** A write loads the row or aggregate it owns, decides over that state,
+  and saves at the version it read. The decide step is free of I/O for the same reason it is on the other
+  rung: it is the part a test can pin.
+- **`stream` names the row or aggregate one transaction locks**, with its version, and MUST be documented
+  explicitly — it is the concurrency ceiling here too.
+- **A slice on this service MUST NOT name `guard` or `folds`.** A tag query and a fold both need a log.
+  `make check-model` refuses both by name.
+- **No event may claim history the system did not record at the time.** An event raised from now on is a
+  true event; backfilling the past from timestamps is a reconstruction wearing a fact's clothes.
+
+**On both rungs:**
+
 - **Where each read model lives MUST be a written answer** — folded per query, written inline with the
-  append, or maintained by a catch-up subscription — for the same reason stream identity is written
-  down: it fixes what every query on that view costs. A per-query fold MUST carry the ceiling it holds
-  inside, and why that ceiling holds; an automation's todo list MUST be persisted, because losing it
-  loses work nothing else records.
+  write, or maintained by a catch-up subscription — for the same reason stream identity is written down:
+  it fixes what every query on that view costs. A per-query fold MUST carry the ceiling it holds inside,
+  and why that ceiling holds; an automation's todo list MUST be persisted, because losing it loses work
+  nothing else records.
 - **Every event MUST have a trigger** (command, automation, or translation) and **every read-model field
   MUST trace to a source event**.
-
-**Scope boundary.** Event sourcing is the top of the complexity ladder, not a default. Contexts whose
-history is genuinely part of the domain MUST be event-sourced; peripheral CRUD contexts with no
-meaningful history MUST NOT be, merely for consistency. The rung chosen (explicit returns → in-process
-events → outbox → event sourcing) is a plan-time decision recorded with its reason.
 
 ### IV. Hexagonal Architecture — Domain Isolated from Infrastructure
 

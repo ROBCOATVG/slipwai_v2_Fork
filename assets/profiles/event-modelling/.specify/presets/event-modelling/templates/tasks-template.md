@@ -72,13 +72,24 @@ work this slice pays for — not a reason to ship the slice without its screen.
 
 ### Ports, fakes, and stubs
 
+> **T017, T019 and T022–T027 are the event-sourced rung's.** Read this service's `eventSourced` in
+> `project.json` — it is the `write-model` axis answered when the service was created. Where it is
+> `true`, do them as written. Where it is `false` the service keeps current state, so there is no log to
+> append to, no `(stream, version)` constraint and nothing to replay: do the state-stored tasks beside
+> each instead, marked **(state)** below. Everything else in this phase is the same on both rungs. A
+> project with services on both rungs does this phase per service.
+
 - [ ] T017 `EventStore` port: `append`, `readStream`, `readAll`; expected version as `noStream | exactly`; **a version conflict returned as a value, not thrown**
+- [ ] T017 **(state)** `Repository` port for the aggregate this service owns: `load` returning the state and the version it was read at, and `save` taking that version back; **a version conflict returned as a value, not thrown**
 - [ ] T018 [P] `Clock` and `IdGenerator` ports
 - [ ] T019 [P] In-memory `EventStore` fake able to **force a conflict on demand**, so contention paths are deterministic
+- [ ] T019 **(state)** [P] In-memory `Repository` fake able to **force a conflict on demand**, for the same reason: a save at a stale version has to be reachable from a test
 - [ ] T020 [P] Advanceable `Clock` fake and deterministic `IdGenerator` fake
 - [ ] T021 [P] Stub harness for systems this codebase does not own: a provider served over loopback, the requests it received observable, a sequence of responses to drive retries, and a way to accept a request and never answer it so the **adapter's** timeout is what ends the test. Plus the pinning convention — every stub response validated against a recorded or published contract, recordings committed under `tests/stubs/contracts/`. **A fake implements our port; a stub impersonates their provider, and nothing we own says what it should return** (Principle VI). Skip only if no slice on the roadmap integrates with anything
 
-### Event store
+### The store — by this service's rung
+
+*Where `eventSourced` is `true`:*
 
 - [ ] T022 Migration: event log table with a **unique constraint on (stream, version)** — that constraint IS the optimistic concurrency control — and separate domain-time and storage-time columns
 - [ ] T023 Migration: enforce append-only at the database. **Revoking privileges is not sufficient if the application role owns the table** — an owner keeps its privileges. Use a statement-level trigger refusing UPDATE, DELETE, and TRUNCATE
@@ -86,9 +97,18 @@ work this slice pays for — not a reason to ship the slice without its screen.
 - [ ] T025 One shared `EventStore` contract suite, run against **both** the fake and the real adapter, so the fake cannot drift
 - [ ] T026 Concurrency test against the real store: N simultaneous writers to one stream, exactly one wins. Real store only — the fake cannot genuinely race
 
+*Where `eventSourced` is `false`:*
+
+- [ ] T022 **(state)** Migration: the state table for this aggregate, with a **`version` column** — the value `load` returns and `save` checks, which IS the optimistic concurrency control here
+- [ ] T023 **(state)** No append-only trigger: a state table is updated in place by design. Instead, the events this service raises go to an outbox table in the **same transaction** as the write, or they are lost on the one failure that matters
+- [ ] T024 **(state)** Repository adapter, translating a stale-version update affecting zero rows into a conflict result. The same connection rule applies: anything called from inside `save` reuses `save`'s connection
+- [ ] T025 **(state)** One shared `Repository` contract suite, run against **both** the fake and the real adapter, so the fake cannot drift
+- [ ] T026 **(state)** Concurrency test against the real store: N simultaneous writers to one row, exactly one wins. Real store only — the fake cannot genuinely race
+
 ### Projections and cross-cutting
 
 - [ ] T027 Projection runner: apply a pure fold, and **rebuild any projection from position zero**. Needed by the first slice whose `materialisation` is `inline` or `async`; a roadmap of nothing but `live` folds defers it, and says so in the plan's Stubs and Deferrals with what the first materialised view will cost to retrofit
+- [ ] T027 **(state)** No projection runner and no rebuild: there is no log to rebuild from. A read model on this service is a query over its own tables (`live`), written in the write's transaction (`inline`), or fed by the outbox of T023 (`async`)
 - [ ] T028 Structured logging with correlation-id propagation
 - [ ] T029 Application-layer authorisation policy, invoked by use cases and never by route handlers
 - [ ] T030 HTTP app factory with schema parsing that distinguishes **schema failure from business rejection**

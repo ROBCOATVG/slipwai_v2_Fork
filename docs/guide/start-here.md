@@ -92,11 +92,14 @@ Frontend (none/react-vite) [react-vite]:
 Browser app name [web]:
 
 Write model:
-  How a service decides and records a write — which is to say where this product keeps its truth…
+  How a service decides and records a write. Event sourcing is this keel's recommendation and the
+  default; answer `state` where a service has earned the exception…
 
-  events — Event-sourced — the log is the truth and state is a fold of it. Rung 4…
+  events — Event-sourced — the log is the truth and state is a fold of it. The recommended answer,
+    and the default. Rung 4…
   state — State-stored — the service keeps current state, and its events are the model's contracts,
-    raised after each write and never replayed. Rung 2…
+    raised after each write and never replayed. Rung 2, and the exception rather than the starting
+    point…
 Choose (events/state) [events]:
 
 Persistence:
@@ -134,6 +137,16 @@ back.** An event log folds down into tables whenever you decide it should, so a 
 event-sourced; state cannot be turned back into history it never recorded, so "start on `state` and adopt
 events later where a subdomain earns it" is an option that mostly does not exist. Every other answer here is
 a directory you can regenerate, a service you can add, or an axis you can converge later.
+
+**Press Enter on `Write model`.** Event sourcing is this keel's recommendation, and the default, for two
+reasons that are about how the work goes rather than about storage. A slice is independently deliverable
+because the log is the contract between slices: a later one reads an event without asking the service that
+wrote it, and without the two being planned together. And the system stays changeable after the first
+design turns out to be wrong, because a read model nobody thought of is a replay away rather than a
+migration. Answer `state` where the service has genuinely earned the exception — a small supporting
+domain, a context that honestly is field updates, something whose past nobody will ask about — and write
+down why, because the asymmetry runs the other way: you can always stop being event-sourced, and you
+cannot start having been.
 
 The two were one question until phase 15: choosing Event Modeling chose the log with it, so a product that
 wanted the model over services keeping current state could not be generated, and neither could one with a

@@ -1262,6 +1262,22 @@ The first attempt paid for these rules. They apply from phase 1, inside the fork
 
 ### Settled on 2026-10-09
 
+- **Event sourcing is the default and the recommendation; `state` is the exception, written down with its
+  reason.** The owner's call, and it corrects the framing phase 15 was written with. The reading behind the
+  phase — that event sourcing is a storage decision to be taken only where it is earned — is the field's,
+  and the phase exists because the catalogue could not express the exception at all. It does not follow
+  that the two rungs are equals at the prompt. They are not, and the reason is not storage: **the log is
+  the contract between slices**, so a later slice reads an event without asking the service that wrote it
+  and without the two being planned together, which is what makes a slice independently deliverable; and a
+  read model nobody thought of is a replay away rather than a migration, which is what keeps the system
+  changeable after the first design turns out to be wrong. Those are the two properties this whole method
+  is built on. So `--write-model events` stays the default answer and the catalogue says so in as many
+  words, the `event-modelling` constitution's Principle III reads *event sourcing is the default* rather
+  than *not a default*, and `state` is for a small supporting domain, a context that honestly is field
+  updates, or a service whose past nobody will ask about — recorded with its reason, because a rung nobody
+  justified is the default. The asymmetry is the backstop: a log folds down into tables whenever somebody
+  decides, and state cannot be turned back into history it never recorded. Phase 15, and 15.5 carries it
+  into the prompt, the constitution and the guide.
 - **A stage's name says its purpose and then the crew member who runs it, and only where it has a delegate.**
   The nautical rule of 2026-10-06 had not reached `/drive`'s ladder: ten of its twenty-one stages are sent to a
   fresh context with an enforced scope and eleven stay on the host, and nothing in a key said which — `writes`
@@ -1933,8 +1949,14 @@ cannot be generated either. The constitution already disagrees with the catalogu
 boundary says a peripheral context *must not* be event-sourced merely for consistency, and the plan
 template asks which rung a non-event-sourced context sits on. The tooling is what forbids the answer.
 
-**Event sourcing becomes an axis answer, not a profile.** The profile stays the question it really is —
-*is there a model?* — and the `event-store` axis stops being event-shaped. It is renamed **`persistence`**,
+**Event sourcing becomes an axis answer, not a profile — and stays the default answer.** Decided
+2026-10-09 (owner), and it is what separates this phase from the reading above: the catalogue could not
+express the exception, which is the fault; it does not follow that the two rungs meet a reader as equals.
+`events` is the recommendation and what Enter gives you, because the log is the contract between slices
+and a replay is what keeps a design reversible — the two properties the method is built on. `state` is for
+a small supporting domain or a context that honestly is field updates, recorded with its reason. The
+profile stays the question it really is — *is there a model?* — and the `event-store` axis stops being
+event-shaped. It is renamed **`persistence`**,
 asking *how does this service keep its data*, and its rows (`memory`, `sqlite`, `postgres`, their
 containers, migrations, prune rows and what each target provisions) are unchanged. Beside it a second
 per-service axis, **`write-model`**, asks the question the profile used to answer by accident: `events` —
