@@ -161,10 +161,16 @@ where the table is silent, the ladder's own rule stands.
 A product question is decided, never deferred, and every decision is written twice — into the artifact the
 stage owns, and as the next entry of `{DECISIONS}`, which is the only place a person can read every decision
 this run took. Read the standing entries before any decision, so a hundred answers stay consistent with each
-other. Under `decide: recommended-first`, decide here when the stage itself recommends an answer (the
-release-constraint stage says *recommend the answer with its reason rather than asking an open question*),
-when a standing entry already covers the question, or when the specification or the constitution answers it
-outright. Anything else is an **open question**: delegate it to one fresh `{SKIPPER}` delegate with the
+other — and read **what this project already does**, which is an authority the other three are not: a
+generated project ten slices in, and an adopted repository on its first day, both hold conventions no
+document of this method names. How this codebase already publishes, already links one handler to the next,
+already names a migration. A decision taken without them is how a codebase ends up with two ways of doing
+one thing, each defensible on its own. `docs/architecture.md` and the code itself are where they are
+written in a generated project; `structure.md` and the survey in an adopted one. **Why** says which of the
+four answered, or that none did. Under `decide: recommended-first`, decide here when the stage itself
+recommends an answer (the release-constraint stage says *recommend the answer with its reason rather than
+asking an open question*), when a standing entry already covers the question, when this project's own
+convention settles it, or when the specification or the constitution answers it outright. Anything else is an **open question**: delegate it to one fresh `{SKIPPER}` delegate with the
 question, the stage, the options and the recommendation in its brief — the spec, the constitution, the owner
 brief and the log are the standing part of its own brief — and **the number its entry will carry**. `D<n>` is
 allocated here, before dispatch: the next after the last entry in `{DECISIONS}`, one per delegate in dispatch

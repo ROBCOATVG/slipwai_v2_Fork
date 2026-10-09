@@ -35,7 +35,9 @@ DECISION_ENTRY = f"""## D<n> — <the question, in one line>
 - **Question:** <as the stage raised it>
 - **Options:** <each, marking the one the stage recommended>
 - **Decision:** <one>
-- **Why:** <in the actor's terms>
+- **Why:** <in the actor's terms> · **Read against:** <what already answered this — this project's own
+  convention and where it is written, the specification, the constitution, standing D<m> — or `the method's
+  default` where none of them did>
 - **Decided by:** host (stage recommendation) | host (standing decision D<m>) | {SKIPPER} (<model>) | {BOSUN} | human
 - **Confidence:** high | medium | low · **Would reverse if:** <the one condition>
 - **Written to:** <the artifact paths the answer went into>

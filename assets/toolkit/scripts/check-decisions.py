@@ -12,8 +12,12 @@ What is held, one finding per line (the adversary log's row per finished slice i
 an unwritten row is a pass that has to be run again, and until now nothing noticed one):
 
 - a decision entry is `## D<n> — <question>` followed by the fixed fields in order: **Stage** (with Slice, When,
-  Iteration), **Question**, **Options**, **Decision**, **Why**, **Decided by**, **Confidence** (with Would
-  reverse if), **Written to**, **Status**;
+  Iteration), **Question**, **Options**, **Decision**, **Why** (with Read against), **Decided by**, **Confidence**
+  (with Would reverse if), **Written to**, **Status**;
+- **Why** carries `Read against:` and something after it — which of the four authorities already answered the
+  question (this project's own convention, the specification, the constitution, a standing entry), or that none
+  did. A run that never consults what the codebase already does is how a project ends up with two ways of doing
+  one thing, and the only way to tell from the record is to make the record say;
 - entries are numbered contiguously from `D1`, in order;
 - **Decided by** is `host (stage recommendation)`, `host (standing decision D<m>)`, `sail-decide-skipper (<model>)`,
   `sail-unblock-bosun` — with or without its `(<model>)` — or `human`; **Status** is `standing`, `overridden by D<m>` or `overridden by human <date>`;
@@ -58,6 +62,10 @@ ADVERSARY_LOG = "adversary-log.md"
 DECISION_FIELDS = ("Stage", "Question", "Options", "Decision", "Why", "Decided by", "Confidence", "Written to",
                    "Status")
 DEMO_FIELDS = ("Started with", "Driven through", "Examples", "Evidence", "Feedback")
+# What `Why` has to name beside the reason: the authority the question was read against. Inside the one field
+# rather than a field of its own, so the shape above is the shape it has always been and a project's existing
+# entries stay the right length.
+READ_AGAINST = re.compile(r"\*\*Read against:\*\*\s*\S")
 VERDICTS = ("accepted", "behaviour", "implementation")
 # `D7` is version 1's, and a project that has them keeps them: renumbering a shipped id to a new scheme is
 # the cost this scheme exists to avoid, and every citation of one was correct when it was written. `D-ORD-07`
@@ -138,6 +146,10 @@ def check_decisions(path: Path) -> list[str]:
         listed = [label for label in fields if label in DECISION_FIELDS]
         if listed != list(DECISION_FIELDS):
             findings.append(f"{where}: D{number}'s fields are out of order; the shape is {', '.join(DECISION_FIELDS)}")
+        if not READ_AGAINST.search(fields["Why"]):
+            findings.append(f"{where}: D{number} `Why` names no **Read against:** — say which already answered "
+                            "this (this project's own convention, the specification, the constitution, a standing "
+                            "entry), or that none did")
         if not DECIDED_BY.match(fields["Decided by"]):
             findings.append(f"{where}: D{number} `Decided by` is {fields['Decided by']!r}; it is host (stage "
                             "recommendation), host (standing decision D<m>), sail-decide-skipper (<model>), sail-unblock-bosun "
