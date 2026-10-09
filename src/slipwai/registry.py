@@ -12,8 +12,7 @@ are fixed in `docs/backend-protocol.md`, and `tests/test_registry.py` holds that
 
 `registry()` is the built-once-per-process entry point. Its body reaches for `slipwai.loaded` by name at
 call time, not at import, which is what lets the catalogue import this module while the loader imports the
-catalogue. `loaded.py` itself arrives in slice 2.9; until it does, a caller passes a registry built with
-`load` rather than asking for the process's own.
+catalogue. The conformance suite builds its own with `load` instead, from one package and nothing else.
 """
 
 from __future__ import annotations
@@ -27,6 +26,7 @@ from typing import Any, Generic, Literal, TypeVar, cast
 
 from .assets import ROOT
 from .family_only import refusals as family_only
+from .renamed import MISSING, held
 
 T = TypeVar("T")
 
@@ -44,11 +44,13 @@ class Member(Generic[T]):
     required: bool
     kind: Any
     shape: str
+    was: Member[Any] | None = None
 
 
 # Declared, in the contract's order. A member is `required` only once every backend answers it; a new one
-# arrives optional and flips in the commit that deletes the table it replaced.
-M = Member  # every declaration below is one line, so the protocol reads as the contract's table does
+# arrives optional and flips in the commit that deletes the table it replaced. A renamed one carries `was`,
+# the member it replaced, whose answer is read for the window `docs/backend-protocol.md` names (`renamed`).
+M = Member  # a declaration is one line where it fits, so the protocol reads as the contract's table does
 SERVICE_FILES: Member[Any] = M("service_files", "backend", True, Callable, "(event, selection, target) -> files")
 NAME_SERVICE: Member[Any] = M("name_service", "backend", True, Callable, "(project, service, files) -> files")
 REPOSITORY_FILES: Member[Any] = M("repository_files", "backend", True, Callable, "once per family -> files")
@@ -59,7 +61,9 @@ FEATURE_TOOLING: Member[Any] = M("feature_tooling", "backend", True, dict, "feat
 EXECUTABLES: Member[Any] = M("executables", "backend", True, frozenset, "paths under APP")
 DEV_COMMAND: Member[Any] = M("dev_command", "backend", True, Callable, "(qualifier, path, verify) -> str")
 COMPOSE_CACHES: Member[Any] = M("compose_caches", "backend", True, tuple, "cache mounts")
-EVENT_STORE_DIRECTORY: Member[Any] = M("event_store_directory", "backend", True, Callable, "(path) -> str")
+EVENT_STORE_DIRECTORY: Member[Any] = M("event_store_directory", "backend", False, Callable, "(path) -> str")
+PERSISTENCE_DIRECTORY: Member[Any] = M("persistence_directory", "backend", True, Callable, "(path) -> str",
+                                       was=EVENT_STORE_DIRECTORY)
 NATIVE_COMMANDS: Member[Any] = M("native_commands", "backend", True, Callable, "(path, verify) -> dict")
 FORMATTER: Member[Any] = M("formatter", "family", True, (str, type(None)), "the format recipe line, or None")
 IMAGE_BUILDER: Member[Any] = M("image_builder", "backend", True, dict, "the entry as today, no descriptor")
@@ -94,8 +98,9 @@ PRUNE_ROWS: Member[Any] = M("prune_rows", "family", True, dict, "marked, owned, 
 
 PROTOCOL: tuple[Member[Any], ...] = (
     SERVICE_FILES, NAME_SERVICE, REPOSITORY_FILES, READY_PATH, HEALTH_BODY, TOOLING, FEATURE_TOOLING, EXECUTABLES,
-    DEV_COMMAND, COMPOSE_CACHES, EVENT_STORE_DIRECTORY, NATIVE_COMMANDS, FORMATTER, IMAGE_BUILDER,
-    MIGRATIONS_IN_PRODUCTION, POSTGRES_SSLMODE, SERVICE_DESCRIPTORS, CI_TOOLCHAIN_SETUP, WRITE_SIDE_FILES,
+    DEV_COMMAND, COMPOSE_CACHES, PERSISTENCE_DIRECTORY, EVENT_STORE_DIRECTORY, NATIVE_COMMANDS, FORMATTER,
+    IMAGE_BUILDER, MIGRATIONS_IN_PRODUCTION, POSTGRES_SSLMODE, SERVICE_DESCRIPTORS, CI_TOOLCHAIN_SETUP,
+    WRITE_SIDE_FILES,
     READ_SIDE_FILES, FLAG_READER, ENTRY_WIRING, FLAG_RESOURCE, ENTRY_STORE, SHARED_CODE, GITIGNORE, AGENT_PERMISSIONS,
     GATE_DESCRIPTION, EVENT_MODEL_PATHS, FAST_TARGETS, MUTATION_TOOL, MUTATION_NOTE, PRUNE_ROWS, PROCFILE, PIN_FILES,
     MAKEFILE_VARIABLES, RENOVATE_RULES, OPT_IN_FLAG_TRANSPORTS, IDENTITY_OUTSTANDING, MUTATION_SCOPING, NPM_WORKSPACE,
@@ -156,12 +161,12 @@ class Registry:
         return tuple(dict.fromkeys((self.root(key), *(() if backend is None else (self.root(backend.family),)))))
 
     def answer(self, key: str, member: Member[T]) -> T:
-        """The backend's own answer, else its family's. Presence is the test, so `None` is an answer."""
+        """The backend's own answer, else its family's, else the name it replaced; `None` is an answer."""
         backend = self.backends[key]
-        for holder in (backend, self.families.get(backend.family)):
-            if holder is not None and member in holder.answers:
-                return cast(T, holder.answers[member])
-        raise KeyError(f"backend {_n(key)} does not answer {_n(member.name)}")
+        found = held((backend, self.families.get(backend.family)), member)
+        if found is MISSING:
+            raise KeyError(f"backend {_n(key)} does not answer {_n(member.name)}")
+        return cast(T, found)
 
     def family_answer(self, name: str, member: Member[T]) -> T:
         """A family's own answer, for what is read per family rather than per backend (`pin_files`, `shared_code`)."""
@@ -170,10 +175,8 @@ class Registry:
     def answer_or(self, key: str, member: Member[T], default: T) -> T:
         """`answer`, or `default` where neither the backend nor its family answers: a member whose absence is one."""
         backend = self.backends[key]
-        for holder in (backend, self.families.get(backend.family)):
-            if holder is not None and member in holder.answers:
-                return cast(T, holder.answers[member])
-        return default
+        found = held((backend, self.families.get(backend.family)), member)
+        return default if found is MISSING else cast(T, found)
 
 
 def _n(name: object) -> str:
@@ -285,11 +288,8 @@ def load(languages: Sequence[Language], protocol: tuple[Member[Any], ...] = PROT
     for key, backend in backends.items():
         home = families.get(backend.family)
         for member in (m for m in protocol if m.required):
-            if member in backend.answers:
-                value = backend.answers[member]
-            elif home is not None and member in home.answers:
-                value = home.answers[member]
-            else:
+            value = held((backend, home), member)
+            if value is MISSING:
                 faults.append(f"backend {_n(key)} is missing {_n(member.name)}")
                 continue
             if not isinstance(value, member.kind):

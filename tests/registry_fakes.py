@@ -19,7 +19,6 @@ from slipwai.registry import (
     ENTRY_STORE,
     ENTRY_WIRING,
     EVENT_MODEL_PATHS,
-    EVENT_STORE_DIRECTORY,
     EXECUTABLES,
     FEATURE_TOOLING,
     FLAG_READER,
@@ -35,6 +34,7 @@ from slipwai.registry import (
     NAME_SERVICE,
     NATIVE_COMMANDS,
     OPT_IN_FLAG_TRANSPORTS,
+    PERSISTENCE_DIRECTORY,
     PIN_FILES,
     POSTGRES_SSLMODE,
     PROCFILE,
@@ -84,8 +84,8 @@ def no_setup(*_arguments: object) -> str:
 
 
 def event_model_paths(project_name: str, service: str) -> dict[str, str]:
-    """Stands in for `event_model_paths`: the four keys the documents read, under the service."""
-    return {key: f"{service}/{key}" for key in ("events", "domain", "usecase", "test")}
+    """Stands in for `event_model_paths`: the five keys the documents read, under the service."""
+    return {key: f"{service}/{key}" for key in ("events", "domain", "usecase", "test", "repository")}
 
 
 def rows(**overrides: object) -> dict[str, object]:
@@ -109,7 +109,7 @@ def required_answers(
         COMPOSE_CACHES: (),
         EXECUTABLES: frozenset(),
         DEV_COMMAND: no_files,
-        EVENT_STORE_DIRECTORY: no_files,
+        PERSISTENCE_DIRECTORY: no_files,
         NATIVE_COMMANDS: no_files,
         FORMATTER: None,
         # S03's members: a backend that builds no image, migrates nothing and sets no toolchain up.

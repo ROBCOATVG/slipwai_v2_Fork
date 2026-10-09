@@ -128,7 +128,7 @@ here in its own commit and says why.
 
 | Member | Level | Status | Replaces | Shape |
 |---|---|---|---|---|
-| `service_files` | backend | required | `BACKENDS` → module `service_files` | callable `(event: bool, selection: Selection, target: str) -> dict[str, str]`, paths relative to the service |
+| `service_files` | backend | required | `BACKENDS` → module `service_files` | callable `(event: bool, selection: Selection, target: str) -> dict[str, str]`, paths relative to the service. `event` is **deprecated**: it says the project is on the modelled profile, which was all a backend had to go on when Event Modeling and event sourcing were one answer. The write model is per service and is `selection.option("write-model")`. The signature does not change — the parameter is still passed, and still says what it always said |
 | `name_service` | backend | required | `BACKENDS` → module `name_service` | callable `(project_name: str, service: App, files: dict[str, str]) -> dict[str, str]` |
 | `repository_files` | backend | required | `BACKENDS` → module `repository_files` | callable `(project_name: str, files: dict[str, str], services: list[App], verify: str) -> dict[str, str]`; called once per family, on its first service's backend |
 | `ready_path` | backend | required | `READY_PATHS` (`probes.py`) | `str`: the path answering "send me traffic" |
@@ -138,7 +138,8 @@ here in its own commit and says why.
 | `executables` | backend | required | `BACKEND_EXECUTABLES`, `MAVEN_EXECUTABLES` (`backends.py`), read by `toolkit.executable_paths` | `frozenset[str]`: paths under `APP` |
 | `dev_command` | backend | required | `backends.dev_command`'s table | callable `(qualifier: str, path: str, verify: str) -> str` |
 | `compose_caches` | backend | required | `COMPOSE_CACHES`, `MAVEN_COMPOSE_CACHES` (`backends.py`) | `tuple[str, ...]` |
-| `event_store_directory` | backend | required | `backends.event_store_directory`'s table | callable `(path: str) -> str` |
+| `persistence_directory` | backend | required | `event_store_directory`, which it renames | callable `(path: str) -> str`: where one service's driven persistence adapters live, on either rung — the event store's on `events`, the repository's on `state`. Prose that points at them says which it means |
+| `event_store_directory` | backend | deprecated | the name `persistence_directory` replaces | the same callable. Answered by a package written before the rung was a question; read where `persistence_directory` is unanswered, until 2.1 deletes it (*Renamed members*) |
 | `native_commands` | backend | required | `native` (`project/native_commands.py`), with the Go constants it imports | callable `(path: str, verify: str) -> dict[str, str]`, keyed by exactly `native_commands.TARGETS` |
 | `formatter` | family | required | `FORMATTERS` (`project/native_commands.py`) | `str \| None`: the `format` recipe line; `None` where the family has none (Java today) |
 | `image_builder` | backend | required | `IMAGE_BUILDERS` (`images.py`) | `dict[str, Any]`, the entry as today without its `descriptor` key, which only pointed into `SERVICE_DESCRIPTORS`: `service_descriptors` names the file itself |
@@ -146,8 +147,8 @@ here in its own commit and says why.
 | `postgres_sslmode` | backend | required | the language's half of `POSTGRES_SSLMODE` (`images.py`) | `dict[str, str \| None]`, keyed by the managed-database kind the keel declares (`rds`, `flexible-server`); every kind answered, `None` written out |
 | `service_descriptors` | backend | required | `SERVICE_DESCRIPTORS` (`images.py`) | `dict[str, str]`: descriptor file → text; `{}` where none |
 | `ci_toolchain_setup` | family | required | `toolchain_setup`'s table (`project/ci_workflows.py`) | callable `(services: list[App]) -> str` |
-| `write_side_files` | backend | required | `WRITE_SIDE_FILES` (`project/service_layouts.py`) | `dict[str, dict[str, str]]`: feature → asset → path under the service |
-| `read_side_files` | backend | required | `READ_SIDE_FILES` (`project/read_side_layouts.py`) | the same shape; the keel still merges the two into what `backing_service_service_files` reads |
+| `write_side_files` | backend | required | `WRITE_SIDE_FILES` (`project/service_layouts.py`) | `dict[str, dict[str, str]]`: feature → path under the service → asset, which is what a service on the `events` rung is given. Beside the features, one `state` key holding the same shape again: what a service answered `write-model: state` is given instead — the repository port, its adapters per store, and the migration for a versioned state table. `state` is not a feature and is never read as one (`rungs.rung_rows`). A backend that declares no `state` block answers such a service with nothing, which `slipwai package check` names |
+| `read_side_files` | backend | required | `READ_SIDE_FILES` (`project/read_side_layouts.py`) | the same shape, `state` key included; the keel still merges the two into what `backing_service_service_files` reads |
 | `flag_reader` | backend | required | `FLAG_READERS` (`project/flags.py`) | `flags.FlagReader` |
 | `entry_wiring` | backend | required | `ENTRY_WIRING` (`project/flag_route.py`), keyed by HTTP option | `dict[str, EntryWiring]`: the HTTP options this backend answers → wiring; `{}` where none |
 | `flag_resource` | backend | required | `FLAG_RESOURCES` (`project/flag_route.py`), keyed by HTTP option | `dict[str, Resource]`, the same way |
@@ -156,7 +157,7 @@ here in its own commit and says why.
 | `gitignore` | backend | required | `per_backend` (`project/gitignore.py`) | `str`: lines ending in `\n` |
 | `agent_permissions` | backend | required | `per_backend` (`project/agent_settings.py`), `MAVEN_PERMISSIONS` | `list[str]` |
 | `gate_description` | backend | required | `gates` (`project/docs.py`) | `str` |
-| `event_model_paths` | backend | required | `paths` (`project/event_model.py`) | callable `(project_name: str, service: str) -> dict[str, str]`, keyed `events`, `domain`, `usecase`, `test` |
+| `event_model_paths` | backend | required | `paths` (`project/event_model.py`) | callable `(project_name: str, service: str) -> dict[str, str]`, keyed `events`, `domain`, `usecase`, `test` and `repository` — the port a service on the `state` rung loads and saves current state through, where an event-sourced one has the event-store port. Only the state-stored half of `docs/event-modeling-to-code.md` reads it; `event_model.code_paths` fills it from `domain` for one MINOR where a backend has not answered it, and `slipwai package check` names the gap |
 | `fast_targets` | backend | declared, **never required** | new in slice 5.7 | a `tuple` of names from `native_commands.TARGETS` that are fast enough to run on every RED-GREEN-REFACTOR increment. Absent means the default, `("test",)`: the native test suite alone, with integration, mutation, the image build and the audit left to `make verify` before the merge. A backend whose integration suite really is quick says so here rather than being told it is slow |
 | `mutation_tool` | backend | required | `tools` (`project/mutation.py`) | `str` |
 | `mutation_note` | backend | declared, **never required** | `MUTATION_NOTES` (`project/mutation.py`) | `str`; absence is the answer "nothing to say" (`docs/backend-obligations.md` §3), so
@@ -172,6 +173,24 @@ here in its own commit and says why.
 
 `backing_service_service_files` (`project/backing_services.py`, FR-002) is not a member. It is the keel's
 function over `write_side_files` and `read_side_files`, and
+
+## Renamed members
+
+A member's name is a language package's to answer, and a package is a repository of its own with a release
+of its own — so renaming one is a change every language has to make, and they will not all make it in the
+same week. A rename is therefore a MINOR with a window. The new member is declared and required; the old
+one stays in `PROTOCOL` as **deprecated**, carried as the new member's `was`; and an answer given under
+either name is read, the new one first (`src/slipwai/renamed.py`). A package that answers only the old name
+loads, generates and passes `slipwai package check` for the whole window. The MINOR that closes it deletes
+the old member, and the keel's *backend x is missing y* is then the only answer.
+
+| New name | The name it replaces | Opened | Closes |
+|---|---|---|---|
+| `persistence_directory` | `event_store_directory` | 2.0 | 2.1 |
+
+Renaming is not how a member's **shape** changes. A shape that cannot be kept is changed in this page in
+its own commit, with the reason (*The members*, above) — a name that means one thing to one language and
+another to the next is worse than either shape.
 
 ## Tables that are not members, and why
 

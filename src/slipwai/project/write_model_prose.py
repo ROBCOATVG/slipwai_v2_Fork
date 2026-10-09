@@ -24,7 +24,7 @@ and a browser app are on the one side of every sentence below without this modul
 """
 from __future__ import annotations
 
-from ..registry import EVENT_STORE_DIRECTORY, registry
+from ..registry import PERSISTENCE_DIRECTORY, registry
 from ..services import App, services_of, web_apps
 from .metadata import sourced
 
@@ -133,7 +133,7 @@ def store_port_rule(apps: list[App]) -> str:
         if not holding:
             continue
         adapters = ", ".join(
-            f"`{registry().answer(service.backend, EVENT_STORE_DIRECTORY)(service.path)}`"
+            f"`{registry().answer(service.backend, PERSISTENCE_DIRECTORY)(service.path)}`"
             for service in holding
         )
         rules += f"""- The {name} is a driven port on {paths_of(holding)}. Domain and application code name the {port} port,

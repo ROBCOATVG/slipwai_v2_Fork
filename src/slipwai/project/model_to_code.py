@@ -20,6 +20,10 @@ class ServiceCode:
 
     The rung arrives as the answer `metadata.sourced` already gave rather than as the axis's word, so this
     module has no second opinion about what `events` means and never has to be kept in step with one.
+
+    `paths` is the backend's `event_model_paths` with `repository` always in it (`event_model.code_paths`),
+    which only the state-stored section reads: on the other rung the store a write is appended to is the
+    event-store port, and that is named in the write-model table rather than here.
     """
 
     path: str
@@ -91,10 +95,10 @@ model names are contracts raised once a write has committed and never replayed.
 | `ui` | actor-facing surface plus driving adapter | application-specific surface under `{service.path}` |
 | `cmd` | typed intent and application use case | `{paths['usecase']}` |
 | `evt` | immutable, versioned fact, raised by the use case once the write has committed | `{paths['events']}` |
-| the decision | a load through the repository port, a pure decide over current state, and a save at the version that was read | `{paths['domain']}`, behind the repository port |
+| the decision | a load through the repository port, a pure decide over current state, and a save at the version that was read | `{paths['domain']}`, loading and saving through `{paths['repository']}` |
 | `rmo` | pure fold, plus the store its slice's `materialisation` names | application module, plus a driven adapter for anything but `live` |
 | `pcr` | processor that reads, decides, and issues a command | `{paths['usecase']}` |
-| `stream` | the row or aggregate one transaction locks, and the version it is saved at | domain identity plus the repository port |
+| `stream` | the row or aggregate one transaction locks, and the version it is saved at | domain identity plus `{paths['repository']}` |
 | `guard` | refused on this rung by name: a tag query reads a log, and this service keeps none | — |
 | `folds` | refused for the same reason — there is no history here to fold | — |
 | `evt`'s `attributes` | the payload's fields; the ones marked `identifies:` name what the fact is about | the event the use case raises |

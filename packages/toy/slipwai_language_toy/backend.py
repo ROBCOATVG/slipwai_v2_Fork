@@ -40,7 +40,13 @@ def placeholder(what: str) -> str:
 
 
 def service_files(event: bool, selection: Selection, target: str = "none") -> dict[str, str]:
-    """What this backend puts in a service's directory, keyed relative to it."""
+    """What this backend puts in a service's directory, keyed relative to it.
+
+    `event` says only that the project is on the modelled profile, and is deprecated: it was all a backend
+    had to go on when Event Modeling and event sourcing were one answer. The rung is per service and is
+    `selection.option("write-model")` — which `backing_service_service_files` reads below, so a backend
+    whose two rungs differ only in which files they are given never asks the question itself.
+    """
     files = asset_tree(ASSETS / "languages/toy/app")
     # What each answered axis adds, read from `write_side_files` and `read_side_files` by core.
     files.update(backing_service_service_files(selection, KEY))
@@ -77,8 +83,13 @@ def dev_command(qualifier: str, path: str, verify: str) -> str:
     return f"echo 'toy: a real language starts {path} here'"
 
 
-def event_store_directory(path: str) -> str:
-    """Where one service's driven adapters live, for prose that points at them."""
+def persistence_directory(path: str) -> str:
+    """Where one service's driven adapters live, for prose that points at them.
+
+    One answer for both rungs: the event store's adapters and the repository's land in the same directory
+    here, as they do in most layouts, and the prose that reads this says which of the two it is talking
+    about. The member was called `event_store_directory` until the rung became a question.
+    """
     return f"{path}/adapters/"
 
 
@@ -135,7 +146,7 @@ ANSWERS: dict[protocol.Member[Any], object] = {
     protocol.EXECUTABLES: frozenset(),
     protocol.DEV_COMMAND: dev_command,
     protocol.COMPOSE_CACHES: (),
-    protocol.EVENT_STORE_DIRECTORY: event_store_directory,
+    protocol.PERSISTENCE_DIRECTORY: persistence_directory,
     protocol.NATIVE_COMMANDS: native_commands,
     protocol.IMAGE_BUILDER: {"tool": "toy", "build": placeholder("build an image")},
     protocol.MIGRATIONS_IN_PRODUCTION: {"command": ["echo", "toy: a real language migrates here"]},
@@ -152,11 +163,16 @@ ANSWERS: dict[protocol.Member[Any], object] = {
     protocol.GITIGNORE: "",
     protocol.AGENT_PERMISSIONS: [],
     protocol.GATE_DESCRIPTION: "placeholders that echo what a real language's gate would run",
+    # `repository` is read only by a service on the state-stored rung: the port it loads and saves current
+    # state through, where an event-sourced service has the event-store port. Every language answers it,
+    # whichever rung its projects are generated on, because the rung is the project maker's answer and not
+    # the language's.
     protocol.EVENT_MODEL_PATHS: lambda project_name, service: {
         "events": f"{service}/domain/<context>/events.txt",
         "domain": f"{service}/domain/<context>/decider.txt",
         "usecase": f"{service}/application/<context>/usecase.txt",
         "test": f"{service}/domain/<context>/<slice>_test.txt",
+        "repository": f"{service}/application/<context>/repository.txt",
     },
     protocol.MUTATION_TOOL: "none (the toy language has no mutation tool)",
     protocol.PROCFILE: None,

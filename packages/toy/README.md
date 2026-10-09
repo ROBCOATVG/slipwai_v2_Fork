@@ -24,6 +24,7 @@ and renames nothing here (*Adding a framework*, below).
 | `assets/languages/toy/flags/` | The feature-flag reader a service gets under a target that deploys |
 | `assets/languages/toy/examples/<skill>/<id>.md` | One snippet per `{{example: <skill>/<id>}}` marker in slipwai's skills |
 | `assets/backing-services/toy/` | What each `persistence` answer adds to a service, per rung (`write_side_files`, `read_side_files`) |
+| the `state` block in both of those | What a service answered `write-model: state` is given instead: the repository port, its adapters per store, and the migration for a versioned state table |
 | `tests/test_conformance.py` | The conformance suite, as a `unittest` case over this package |
 
 What every member means and the shape its answer takes is slipwai's backend-protocol contract, and how a package sits on
@@ -61,6 +62,26 @@ repository, under `specs/001-slipwai-2-language-addons/contracts/` (`backend-pro
    answer, one at a time, and let the suite name what is still missing.
 4. Say what your package ships in a fragment under `changelog.d/`. `VERSION` stays `1.0.0.dev0` until the first
    release, which you cut by hand (*Cutting a release*, below).
+
+## Both rungs, because the project maker chooses one
+
+A project is asked, per service, whether its truth is its log (`write-model: events`, the default and
+slipwai's recommendation) or its current state (`state`). That is the project maker's answer and not the
+language's, so a language answers both: the feature rows at the top of `write_side_files` and
+`read_side_files` are what an event-sourced service is given, and the rows under their one `state` key are
+what a state-stored one is given instead — a repository port and its adapters where the first has an event
+store and its log. Both sides are keyed by the same features, because the rung does not settle which store
+was chosen; `persistence` already did.
+
+`event_model_paths` answers `repository` for the same reason: the page that says where a slice's code lands
+shows that port where the service keeps current state. A package that answers nothing for the rung is not
+refused — it generates a service with no persistence at all, which is why the suite generates on the rung
+rather than only reading what is declared, and names the gap per store:
+
+```text
+backend mylang-plain offers persistence postgres, and write_side_files answers nothing for it on the
+state rung: a service answered write-model state would get no store
+```
 
 ## Running the suite from this repository
 

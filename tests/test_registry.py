@@ -41,7 +41,7 @@ REQUIRED = {
     "compose_caches",
     "executables",
     "dev_command",
-    "event_store_directory",
+    "persistence_directory",
     "native_commands",
     "formatter",
 }

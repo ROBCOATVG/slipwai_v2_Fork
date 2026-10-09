@@ -26,7 +26,7 @@ from ..registry import FLAG_READER, registry
 from ..services import App, services_of
 from ..targets import managed
 
-# What prose calls a project's own package, the way a backend's `event_store_directory` answer spells it: the
+# What prose calls a project's own package, the way a backend's `persistence_directory` answer spells it: the
 # directory is named after the project, so a document cannot name it and stay true for every project.
 PACKAGE = "<package>"
 

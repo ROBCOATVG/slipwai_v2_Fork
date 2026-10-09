@@ -36,6 +36,20 @@ def event_model_page_url(project_name: str) -> str:
     return f"{base}/{owner}/{project_name}/"
 
 
+def code_paths(project_name: str, service: App) -> dict[str, str]:
+    """Where one service's code lands, as its backend answers it, with `repository` filled where it has not.
+
+    `repository` joined the four keys with the state-stored rung (15.6): the port a service that keeps
+    current state loads and saves through, where an event-sourced one has its event store. A backend
+    written before the rung was a question answers four, and this page is about where code goes rather than
+    about the protocol — so the port is shown with the decision it belongs to, which is where a language
+    that has not split it out keeps it, and `slipwai package check` is what tells that language to answer
+    the key. The fill is for one MINOR, and is never reached on the `events` rung: nothing there reads it.
+    """
+    paths = registry().answer(service.backend, EVENT_MODEL_PATHS)(project_name, service.path)
+    return {**paths, "repository": paths.get("repository", paths["domain"])}
+
+
 def event_documentation(project_name: str, services: list[App]) -> dict[str, str]:
     """The two documents that connect the model to code, with this project's own paths in them.
 
@@ -45,7 +59,12 @@ def event_documentation(project_name: str, services: list[App]) -> dict[str, str
     would describe the first service's rung and silently hand it to the rest (phase 15.3).
     """
     first, *_ = services
-    paths = registry().answer(first.backend, EVENT_MODEL_PATHS)(project_name, first.path)
+    paths = code_paths(project_name, first)
+    # The port is in the tree only on the rung that has one: on `events` the store a slice appends to is
+    # named in the write-model table, not here, and a line for it would be a file the first slice is told
+    # to open and will not find.
+    port = "" if sourced(first) else f"\n{paths['repository']}   the port current state is loaded and saved through"
+
     first_slice = f"""# Writing the first slice
 
 Use `/drive` at any point. It derives the first incomplete stage from artifacts rather than conversation
@@ -59,7 +78,7 @@ specs/<feature>/slices/<id>/examples.md   rules, examples, Given/When/Then
 docs/event-model/model.yaml               timeline, {"stream identity" if sourced(first) else "the identity a write locks"}, event contract
 {paths['events']}   immutable event definitions
 {paths['domain']}   {"pure evolve/decide logic" if sourced(first) else "pure decide logic over current state"}
-{paths['usecase']}   orchestration and ports
+{paths['usecase']}   orchestration and ports{port}
 {paths['test']}   observable behavior
 ```
 
@@ -86,11 +105,7 @@ held to the shared-surface rule by `make check-slice-scope` (`commands/drive.md`
 concurrently*); a harness that cannot delegate takes the earliest in split order and names the rest.
 """
     mapping = model_to_code([
-        ServiceCode(
-            service.path,
-            sourced(service),
-            registry().answer(service.backend, EVENT_MODEL_PATHS)(project_name, service.path),
-        )
+        ServiceCode(service.path, sourced(service), code_paths(project_name, service))
         for service in services
     ])
     # The asset is the canonical template, with its guidance comments intact. The one generated change is
