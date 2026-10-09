@@ -1389,7 +1389,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 113 of 165 slices done** — phase 1 6/6, phase 2 9/9, phase 3 19/22, phase 4 7/7, phase 5 29/29, phase 6 13/14, phase 7 16/17, phase 8 5/8, phase 9 5/8, phase 10 0/6, phase 11 0/5, phase 12 0/4, phase 13 0/5, phase 14 0/4, phase 15 4/13, phase 16 0/8. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 114 of 165 slices done** — phase 1 6/6, phase 2 9/9, phase 3 19/22, phase 4 7/7, phase 5 29/29, phase 6 14/14, phase 7 16/17, phase 8 5/8, phase 9 5/8, phase 10 0/6, phase 11 0/5, phase 12 0/4, phase 13 0/5, phase 14 0/4, phase 15 4/13, phase 16 0/8. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1701,7 +1701,7 @@ most worth running in two fairways themselves, once 5.3 exists.
 | 6.1b | The rest of the extension package shape: `extension.json`, `init.py`, the loader reading either manifest, the conformance profile for the six obligations, `slipwai hooks`, and `codegraph`, `uipro` and `ux-gates` moved out into their own repositories | new | L | `./init --extension codegraph` installs from a directory package, and a hook that fails is a `hook` line and never a failed stage | done |
 | 6.1d | The guard: a second closed set beside `hooks`, declared in `extension.json` under `guards`, fired by `scripts/extensions/guards.py`, and carrying a tool-call refusal back to the agent. `session`, `before-search`, `after-delegate`. Election names an extension's guards and takes the person's word once; `slipwai hooks` lists both sets and says which may refuse | new | M | A guard that exits 2 stops one tool call and the rung still completes; an extension that declares a guard nobody agreed to fires none | done |
 | 6.1e | **`init` and `project` become declarations like the other eight.** Both are still run by *convention* — an extension's `init.py` executed by name at `./init --extension`, its `project_guidance()` called by name at `make agents` — so an extension that declared a different script at either point is ignored, which is the convention-not-declaration failure `hooks.py` opens by describing. Decided 2026-10-09 (owner): `init.py` becomes the point's *default declaration* at both, so one path fires them and nothing runs twice, and an extension that names another script at either is obeyed. `SLIPWAI_POINT` is how one script answers two points — at `project` it re-projects and installs nothing — and `GUIDANCE` stays a module read for the drift check, which is data rather than a point | new (found by 7.7d's own gate, 2026-10-08) | S | Every point of both closed sets is fired through its registry, and `tests/test_session.py` holds it with no exemption list | done |
-| 6.1c | The keel stops shipping an extension's parts to every project: `scripts/codegraph` and `scripts/agents/code_index.py` move into the codegraph package, the harness hook rows that name them come from the extension rather than from `agent_settings.py`, and the keel's own prose says *the code index* where it said *CodeGraph*. What stays is what degrades on its own: `slipwai survey` reads `.codegraph/codegraph.db` if it is there, the way it reads `.git` | new | M | A project that elected no extension ships no file belonging to one, and its `AGENTS.md` names none; one that elected codegraph is unchanged |  |
+| 6.1c | The keel stops shipping an extension's parts to every project: `scripts/codegraph` and `scripts/agents/code_index.py` move into the codegraph package, the harness hook rows that name them come from the extension rather than from `agent_settings.py`, and the keel's own prose says *the code index* where it said *CodeGraph*. What stays is what degrades on its own: `slipwai survey` reads `.codegraph/codegraph.db` if it is there, the way it reads `.git` | new | M | A project that elected no extension ships no file belonging to one, and its `AGENTS.md` names none; one that elected codegraph is unchanged | done |
 | 6.2 | The index schema with publishers, checksums, the signature field, descriptions and tags; the public channel as a Pages site | cruise-2 + new | M | `slipwai search` and `slipwai install` read it for both kinds | done |
 | 6.3 | A private channel per organisation, `SLIPWAI_LANGUAGE_INDEX` generalised to `SLIPWAI_CHANDLERY` | cruise-2 | S | An organisation's index serves its own packages | done |
 | 6.4 | `slipwai package check / release / register`, branching on the kind answer, and `make release` in the template behind them. `package new` landed early, in 6.1b, because a publisher needed something to publish | new | M | One language package and one extension package, each made by `new` on an empty machine, pass `check`, release, and register into a local channel without a hand edit | done |
@@ -1761,11 +1761,22 @@ the merge back upstream, once the direction has been seen to be right.
 
 ### Phase 8. 2.0.0
 
+**The release is last, decided 2026-10-09 (owner).** It was written as the gate the later phases sat behind
+— 11 to 16 each say *after 2.0.0* in their own heading, and 10 says *before the first 2.x release* — on the
+reading that a version has to be cut before the work that follows it can be. That reading was about a
+release this fork does not cut: the version that counts is the one tagged after the merge back upstream
+(8.5), and nothing between here and there is waiting on a number. What a release cut in the middle buys is
+a line in the history; what it costs is a migration path from it, for every project generated against it,
+through every phase after it. So 2.0.0 is cut when the work is done rather than part way through it, and
+the headings that say *after 2.0.0* now mean *after the rest of the plan* — which is to say before this
+phase, not behind it. 8.1, 8.2, 8.4 and 8.7 are done and stay done: the machinery is built, and what moved
+is only when the number is written.
+
 | Slice | What | From | Size | Done when | Status |
 |---|---|---|---|---|---|
 | 8.1 | `AGENTS.md`'s versioning rules, `changelog.d/`, `make release`, `make changelog`, `requirements-publish.txt`, and `CHANGELOG.md` and `changelog.d/` back in `slipwai.spec`'s datas | upstream | M | The fork's own release machinery is green | done |
 | 8.2 | One 2.0.0 changelog entry written from the fork's history | new | M | Every user-visible change since 1.5.2 is in it, with its catch-up | done |
-| 8.3 | `migrate`: base from an installed 1.x, languages first, the rename table, in-flight work as data (section 6); the installed directory moved from `languages/` to `packages/` | upstream + cruise-2 + new | L | `make test-migration` green for every profile and backend and the adopted fixtures, and an install made under `languages/` is found, moved and loaded from `packages/` |  |
+| 8.3 | `migrate`: base from an installed 1.x, languages first, the rename table, in-flight work as data (section 6); the installed directory moved from `languages/` to `packages/`. **The fairway confirmation is `.slipwai/catch-up.md`'s first task, above the renames**, decided 2026-10-09 (owner): counted rather than described — *N fairways proposed, M slices in `unplaced`, nothing can be claimed until you confirm* — with the command that confirms and the command that re-charts. `/catch-up` refuses to report itself done while any fairway is still `proposed`, the shape `check-convergence` already has for a row the tree does not support, and a non-empty `unplaced` is the harder stop of the two: a proposed fairway is a reading the migration is fairly confident of, `unplaced` is the migration saying it could not read one at all. A project whose slices all landed in one context gets one fairway and finds the task already satisfied | upstream + cruise-2 + new | L | `make test-migration` green for every profile and backend and the adopted fixtures; an install made under `languages/` is found, moved and loaded from `packages/`; and a migrated project with two contexts and one unreadable slice has a catch-up page whose first task names both counts, with `/catch-up` red until they are confirmed |  |
 | 8.4 | The release backstop: one job that runs the matrix across the published packages against the keel about to ship, and the root matrix retired | cruise-2 + new | M | A keel release is refused when a published package fails against it; no per-commit job reads a package | done |
 | 8.4b | The chandlery has something in it: `ROBCOATVG/slipwai-index` created from `slipwai channel new`, the language packages released at 1.0.0 and registered, Pages on. Blocks 8.5 — a 2.0.0 whose `slipwai install go` finds nothing is a 2.0.0 whose headline feature does not work | new | M | A fresh `pip install slipwai` can `search`, `install` a language and `generate` with it | done |
 | 8.5 | `make release` to 2.0.0; the merge back to upstream; the Gitea decision. On the merge, `package_new.KEEL_REPO` and every published package's `uses:` move from the fork to `ROBCOATVG/slipwai`, and `SLIPWAI_KEEL` comes off the channel | new | M | `v2.0.0` tagged, published, and upstream `main` is version 2 |  |
@@ -2035,16 +2046,25 @@ event-sourced rung, and the state-stored rung is a reading of the same fields wi
 
 ```
 Phase 1 ──► 2 ──► 3 ──► 4 ──► Phase 6 ──┐
-   │                      │             ├──► Phase 10 ──► Phase 8 ──► 11 ──► 12 ──► Phase 9
-   └──► Phase 5 ──────────┴──► Phase 7 ─┘     the clouds     2.0.0        the docs, last
-        (toolkit, from 1.2)                   leave          (a dev version until the merge back)
+   │                      │             ├──► 10 ──► 11 ──► 12 ──► 13 ──► 14 ──► 15 ──► 16 ──► 9 ──► Phase 8
+   └──► Phase 5 ──────────┴──► Phase 7 ─┘   the                                             the     2.0.0,
+        (toolkit, from 1.2)                 clouds                                          docs    and the
+                                            leave                                                   merge back
 ```
 
 Phase 5 starts as soon as 1.2 is green and runs beside phases 2 to 4 on the toolkit assets, which do not import
 the scaffold; its slices from 5.3 on need a generated project, so they wait for 4.1. Phases 6 and 7 run beside
-each other. Nothing in phase 8 starts before phases 6 and 7 are done.
+each other. Nothing in phase 8 starts before every other phase is done.
 
-Two phases moved on 2026-10-08, in opposite directions.
+Three phases have moved. Two on 2026-10-08, in opposite directions; the release itself on 2026-10-09.
+
+**Phase 8 went last, and the *after 2.0.0* headings now mean before it.** The release was written as the
+gate 11 to 16 sat behind, on the reading that a version has to be cut before the work that follows it can
+be. That was about a release this fork does not cut: the version that counts is tagged after the merge back
+upstream, and nothing between here and there waits on a number. A release cut part way buys a line in the
+history and costs a migration path from it — for every project generated against it, through every phase
+after it. So the number is written when the work is done. Phase 8's machinery (8.1, 8.2, 8.4, 8.7) was
+built where it stood and stays built; what moved is when the tag is cut.
 
 **Phase 10 came forward, to before the release.** What put it after was an unproven package contract, and
 that was settled when the six language packages were rebuilt on it on 6 October. What is left of the
