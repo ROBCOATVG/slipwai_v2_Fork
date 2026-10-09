@@ -42,7 +42,7 @@ class TheKeelsOwnTest(unittest.TestCase):
 
     def test_the_keel_still_declares_the_infrastructure_answers(self) -> None:
         """Postgres is Postgres whoever talks to it, and the keel ships the files for it."""
-        self.assertEqual(set(KEEL["axes"]["event-store"]["options"]), {"memory", "sqlite", "postgres"})
+        self.assertEqual(set(KEEL["axes"]["persistence"]["options"]), {"memory", "sqlite", "postgres"})
         self.assertIn("keycloak", KEEL["axes"]["auth"]["options"])
 
     def test_the_keels_pruner_carries_no_framework_either(self) -> None:
@@ -84,7 +84,7 @@ class RefusalTest(unittest.TestCase):
 
     def test_an_option_the_keel_already_declares_is_refused(self) -> None:
         """The keel's are the ones every package was built against; a package may not redefine one."""
-        refused = self.refuse(package("a", {"event-store": {"postgres": option()}}))
+        refused = self.refuse(package("a", {"persistence": {"postgres": option()}}))
         self.assertIn("already declares", refused["a"])
 
     def test_an_axis_the_keel_does_not_have_is_refused(self) -> None:
@@ -109,7 +109,7 @@ class InferredTest(unittest.TestCase):
     def test_the_axes_that_are_real_choices_are_still_asked(self) -> None:
         """A reader still picks their event store: Postgres and SQLite are different products, not two
         spellings of one backend's framework."""
-        self.assertTrue(axis_applies("event-store", "event-modelling", "toy-plain", "none"))
+        self.assertTrue(axis_applies("persistence", "event-modelling", "toy-plain", "none"))
 
     def test_only_http_is_inferred(self) -> None:
         """Inferring an axis removes a question, so each one has to earn it separately."""

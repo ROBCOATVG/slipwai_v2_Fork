@@ -136,6 +136,18 @@ def axis_inferred(axis: str) -> bool:
     return bool(CATALOG["axes"][axis].get("inferred"))
 
 
+def axis_prunable(axis: str) -> bool:
+    """Whether a generated project's `./init` may answer this axis down later.
+
+    Every infrastructure axis may: a project that chose Postgres can drop to the in-memory adapter, and
+    pruning only ever subtracts. The rung cannot. `--write-model state` on a service that has been keeping
+    a log would not take an adapter away, it would declare that the history on disk is no longer the
+    truth — which is a migration somebody writes, not a flag. So the axis declares itself unprunable and
+    `./init` never offers it.
+    """
+    return CATALOG["axes"][axis].get("prunable", True) is not False
+
+
 def axis_required(axis: str, target: str) -> bool:
     """Whether this target refuses the axis's no-infrastructure answer — `aws` deploys an HTTP service."""
     return axis in required_axes(CATALOG, target)

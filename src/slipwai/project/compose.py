@@ -14,7 +14,7 @@ from ..tooling import for_app
 #
 # Written by the keel rather than put in a marked region, and the difference matters: this block already
 # sits inside the transport's region, the pruner refuses a nested marker, and an unmarked line would
-# survive `./init --event-store memory` naming a container the same prune had just deleted. So the removal
+# survive `./init --persistence memory` naming a container the same prune had just deleted. So the removal
 # is a row in `SERVICE_ENVIRONMENT` in assets/backing-services/prune.py instead — the mechanism a
 # language's `package_edits` already uses to take a dependency away with the answer that added it. The
 # factory's test suite asserts the two agree.

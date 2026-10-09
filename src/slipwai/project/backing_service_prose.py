@@ -12,7 +12,7 @@ branch.
 """
 from __future__ import annotations
 
-from ..catalog import CATALOG
+from ..catalog import CATALOG, axis_prunable
 from ..registry import IDENTITY_OUTSTANDING, registry
 from ..services import (
     App,
@@ -167,7 +167,7 @@ make services-up       # start the containers and wait for them to be healthy
 make services-down     # stop them, keeping any volume
 ```
 """)
-    for store in dict.fromkeys(s.selection.feature_of("event-store") for s in services):
+    for store in dict.fromkeys(s.selection.feature_of("persistence") for s in services):
         if store is not None:
             sections.append(EVENT_STORE_README[store])
     for axis, readme in (("auth", IDENTITY_README), ("users", USERS_README)):
@@ -190,7 +190,8 @@ make services-down     # stop them, keeping any volume
         flags = " ".join(
             f"--{axis} {CATALOG['axes'][axis]['absent']}"
             for axis in axes_of(apps)
-            if any(s.selection.option(axis) != CATALOG["axes"][axis]["absent"] for s in services)
+            if axis_prunable(axis)
+            and any(s.selection.option(axis) != CATALOG["axes"][axis]["absent"] for s in services)
         )
         sections.append(f"""
 ### Changing your mind
@@ -222,7 +223,7 @@ def backing_services_gates(apps: list[App]) -> str:
 `make verify` needs no Docker. Every port's contract runs against adapters that need no infrastructure, so
 the gate behaves the same on a laptop with nothing installed as it does in CI.
 """]
-    for store in dict.fromkeys(s.selection.feature_of("event-store") for s in services_of(apps)):
+    for store in dict.fromkeys(s.selection.feature_of("persistence") for s in services_of(apps)):
         if store is not None:
             sections.append(EVENT_STORE_GATES[store])
     for transport in transports_of(apps):

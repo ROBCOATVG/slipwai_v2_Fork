@@ -5,17 +5,22 @@ description: Add an answer to an axis — a second event store, another OIDC iss
 
 # Adding a backing service
 
-An **axis** is one infrastructure role asked as one question. There are four:
+An **axis** is one role asked as one question. There are five:
 
 | Axis | The question |
 | --- | --- |
-| `event-store` | Where events live |
+| `write-model` | How a service records a write — the rung, and not infrastructure at all |
+| `persistence` | How a service keeps its data |
 | `http` | What accepts inbound HTTP — inferred from the backend, never asked |
 | `auth` | Who authenticates staff |
 | `users` | Who authenticates the product's users |
 
 An option is an **answer to one of them**. You are adding an option, not an axis: the set of axes is fixed
 in `catalog.json`, and adding one is a change to what a project is, which is a plan conversation.
+
+Four of the five are infrastructure, and this skill is about those. `write-model` is the odd one: its
+answers own no files, need no container and provision nothing, because the rung is a reading of a
+service's write side rather than a thing to install. Nothing below applies to it.
 
 ## The axis names a role, never a product and never a protocol
 
@@ -24,7 +29,7 @@ because they answer unrelated questions. Every `auth` answer is an OIDC issuer, 
 axis is not called `oidc`: naming the protocol would have made a second OIDC issuer look like a different
 kind of thing.
 
-If your option does not answer one of the four questions above as a *role*, you have not got an option —
+If your option does not answer one of the infrastructure questions above as a *role*, you have not got an option —
 you have got something that wants its own axis, or that is not infrastructure.
 
 ## Four places it has to appear, and they are checked against each other

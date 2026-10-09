@@ -84,7 +84,7 @@ class MatrixCase(unittest.TestCase):
 
     def generate(self, name: str, profile: str, backend: str, frontend: str = "none", **answers: str) -> Path:
         """Generate a project the way a project maker would, into a directory removed when the test ends. Answers are
-        passed by name — `event_store="postgres"`, `target="aws"` — and any axis left unnamed keeps its default."""
+        passed by name — `persistence="postgres"`, `target="aws"` — and any axis left unnamed keeps its default."""
         return self.generated(Row(name, profile, backend, frontend,
                                   tuple((axis.replace("_", "-"), option) for axis, option in answers.items())))
 

@@ -33,7 +33,7 @@ class AzureStackTest(FactoryTestCase):
     ):
         return self.generate(
             directory, name, "event-modelling", backend, frontend, target="azure",
-            event_store=axes.pop("event_store", "postgres"), http=axis_default("http", backend, "azure"),
+            persistence=axes.pop("persistence", "postgres"), http=axis_default("http", backend, "azure"),
             **axes,
         )
 
@@ -138,14 +138,14 @@ class AzureStackTest(FactoryTestCase):
             self.skipTest("tofu is not installed; the factory's CI installs it")
         with tempfile.TemporaryDirectory() as directory:
             maximal = self.generate_azure(directory, "maximal", auth="entra")
-            minimal = self.generate_azure(directory, "minimal", "go", "none", event_store="memory")
+            minimal = self.generate_azure(directory, "minimal", "go", "none", persistence="memory")
             for repo in (maximal, minimal):
                 for stack in ("bootstrap", "service"):
                     with self.subTest(project=repo.name, stack=stack):
                         self.validate(repo / "infra" / stack)
-            # `./init --event-store memory --auth none`, then the stack is still one stack.
+            # `./init --persistence memory --auth none`, then the stack is still one stack.
             subprocess.run(
-                ["python3", "scripts/backing-services.py", "--event-store", "memory", "--auth", "none"],
+                ["python3", "scripts/backing-services.py", "--persistence", "memory", "--auth", "none"],
                 cwd=maximal, check=True, capture_output=True,
             )
             self.assertEqual((maximal / "infra/service/postgres.tf").read_text(encoding="utf-8"), "")

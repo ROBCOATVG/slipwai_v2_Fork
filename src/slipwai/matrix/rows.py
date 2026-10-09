@@ -97,9 +97,9 @@ def native_rows(catalog: Mapping[str, Any], backend: str) -> list[Row]:
     rows = [Row(f"verify-{profile}-{backend}-{frontend}", profile, backend, frontend)
             for profile, frontend in DIAGONALS]
     every = (("http", transport), ("auth", "keycloak"), ("users", "keycloak"))
-    rows += [Row(f"verify-{backend}-{store}", "event-modelling", backend, "none", (("event-store", store), *every))
+    rows += [Row(f"verify-{backend}-{store}", "event-modelling", backend, "none", (("persistence", store), *every))
              for store in STORES]
-    production = (("event-store", "postgres"), ("http", transport), ("auth", "cognito"), ("target", "aws"))
+    production = (("persistence", "postgres"), ("http", transport), ("auth", "cognito"), ("target", "aws"))
     rows.append(Row(f"verify-production-event-modelling-{backend}", "event-modelling", backend, "none", production))
     # Only the rows this backend can be generated with. The two diagonals name no answers and are always
     # plannable; the rest name stores, identity and a target, and a package that implements none of them —
@@ -111,4 +111,4 @@ def image_row(catalog: Mapping[str, Any], backend: str) -> Row:
     """The project whose production image `make build smoke-image` builds and starts for `backend`."""
     transport = catalog_axis_default(dict(catalog), "http", backend, "aws")
     return Row(f"built-{backend}", "event-modelling", backend, "none",
-               (("target", "aws"), ("event-store", "memory"), ("http", transport)))
+               (("target", "aws"), ("persistence", "memory"), ("http", transport)))

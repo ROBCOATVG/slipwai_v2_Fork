@@ -273,7 +273,7 @@ type: a brief adds only its task-specific contract and file manifest, and restat
   and every adapter under {adapters} passes the same contract suite. Add a store
   capability by extending that contract first, so the adapters cannot drift apart.
 """
-    for store in dict.fromkeys(s.selection.feature_of("event-store") for s in services):
+    for store in dict.fromkeys(s.selection.feature_of("persistence") for s in services):
         if store is not None:
             guidance += EVENT_STORE_GUIDANCE[store]
     for transport in transports_of(apps):

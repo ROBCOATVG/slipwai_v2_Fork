@@ -74,8 +74,8 @@ class InitScriptTest(unittest.TestCase):
         self.assertEqual(init_extensions._sh_single_quote("demo"), "'demo'")
 
     def test_the_argument_scan_names_every_axis_it_is_given(self) -> None:
-        written = init_script.argument_scan(["event-store", "http"], ["codegraph"])
-        for axis in ("event-store", "http"):
+        written = init_script.argument_scan(["persistence", "http"], ["codegraph"])
+        for axis in ("persistence", "http"):
             with self.subTest(axis=axis):
                 self.assertIn(f"--{axis}", written)
 

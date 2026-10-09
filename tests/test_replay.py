@@ -172,7 +172,7 @@ class ReplayTest(FactoryTestCase):
         """
         with tempfile.TemporaryDirectory() as directory:
             repo = self.generate(
-                directory, "settled", "event-modelling", "typescript", event_store="memory", http="fastify",
+                directory, "settled", "event-modelling", "typescript", persistence="memory", http="fastify",
                 auth="keycloak",
             )
             adapter = "apps/service/src/adapters/driving/http/auth/oidc-keycloak.ts"

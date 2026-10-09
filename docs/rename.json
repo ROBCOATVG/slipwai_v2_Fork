@@ -9,5 +9,12 @@
     "field": "a key in project.json",
     "skill": "a directory under assets/toolkit/skills"
   },
-  "renames": []
+  "renames": [
+    {
+      "kind": "field",
+      "from": "event-store",
+      "to": "persistence",
+      "slice": "15.1"
+    }
+  ]
 }

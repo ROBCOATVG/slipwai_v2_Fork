@@ -79,7 +79,7 @@ def production_environment(service: App, target: str) -> dict[str, str]:
     environment: dict[str, str] = {}
     if service.selection.migrating_feature is not None:
         environment.update(migrations_in_production(service.backend).get("environment", {}))
-    store = provisioned(service, "event-store", target)
+    store = provisioned(service, "persistence", target)
     sslmode = registry().answer(service.backend, POSTGRES_SSLMODE).get(store) if store else None
     if sslmode is not None:
         environment["PGSSLMODE"] = sslmode
@@ -99,7 +99,7 @@ def service_record(service: App, target: str) -> dict:
         # probe that fails it is a restart. A backend whose framework serves one readiness endpoint answers
         # both on one path, which is honest — it is the probe that framework maintains.
         "liveness_path": HEALTH_PATH,
-        "store": provisioned(service, "event-store", target),
+        "store": provisioned(service, "persistence", target),
         "auth": provisioned(service, "auth", target),
         "users": provisioned(service, "users", target),
         **migrations_of(service),

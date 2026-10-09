@@ -9,7 +9,7 @@ pruning would be a second set of bugs.
 Every question is asked as an **axis** — the role being filled — rather than as a product name:
 
     scripts/backing-services.py --list
-    scripts/backing-services.py --event-store memory     # drop the real store, keep the in-memory one
+    scripts/backing-services.py --persistence memory     # drop the real store, keep the in-memory one
     scripts/backing-services.py --http none              # drop the inbound HTTP transport
     scripts/backing-services.py --auth none              # drop the internal realm and its adapter
     scripts/backing-services.py --users none             # drop the external realm, the browser login and its adapter
@@ -90,8 +90,8 @@ ROWS: dict[str, dict] = {}
 AXIS_OPTIONS: dict[str, dict] = {}
 
 AXES: dict[str, dict] = {
-    "event-store": {
-        "prompt": "Event store",
+    "persistence": {
+        "prompt": "Persistence",
         "options": {
             "postgres": {
                 "capabilities": ("event-store-postgres",),
@@ -426,7 +426,7 @@ WEB_PACKAGE_EDITS: dict[str, tuple[str, ...]] = {
 #
 # A table rather than a marked region, and for a reason the file itself explains: the app's block already
 # sits inside its transport's region, a region inside it would be nested, and this script refuses a nested
-# marker. An unmarked line would survive `--event-store memory` naming a container the same prune had just
+# marker. An unmarked line would survive `--persistence memory` naming a container the same prune had just
 # deleted. So this is the same shape as a row's `package_edits` — what generation adds, a prune takes away —
 # and the factory's test suite asserts the two agree.
 SERVICE_ENVIRONMENT: dict[str, tuple[str, ...]] = {"postgres": ("DATABASE_URL",)}
@@ -633,7 +633,7 @@ def strip_markers(text: str, keep: set[str], settled: set[str]) -> str:
     A feature in `settled` has had its fate decided, so its surviving markers go too — a marker nothing
     will ever act on again is noise in a shipped project. Every other feature keeps its markers, which is
     what lets a later prune find it. `settled` is deliberately per-feature rather than one flag: answering
-    the auth question must not quietly settle the event-store question as well, or a project that ran
+    the auth question must not quietly settle the persistence question as well, or a project that ran
     `./init --auth none` could never afterwards drop Postgres.
 
     A shared marker is rewritten to name only the features still holding it open — a dropped or settled

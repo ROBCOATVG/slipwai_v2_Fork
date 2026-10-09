@@ -2,7 +2,7 @@
 
 `flag_route.py` does this for the flag source; this does it for the event store, and for the same reason.
 The HTTP adapter is the same file in every project on a transport — it declares the store structurally and
-registers `/ready` — so the *answer* to the event-store question can only arrive where the entry point is
+registers `/ready` — so the *answer* to the persistence question can only arrive where the entry point is
 written, which is here.
 
 Three rules shape every string a backend's `entry_store` answer holds, and they are written here because this is where a
@@ -11,7 +11,7 @@ reader arrives.
 **One store, opened once, by the entry point.** Nothing else in a generated service constructs one: a
 module-level store is a second composition root nobody can see, and two of them are two logs.
 
-**The answer sits in its own marked region.** `scripts/backing-services.py --event-store memory` deletes the
+**The answer sits in its own marked region.** `scripts/backing-services.py --persistence memory` deletes the
 chosen adapter, so an entry point that named it unconditionally would stop compiling. The shape is the one
 `assets/backing-services/prune.py` describes for an alternative: both states are valid at once — the region
 sets the store and the line after it falls back to the in-memory one, so removing the region leaves a
@@ -52,13 +52,13 @@ def wire_store(files: dict[str, str], selection: Selection, backend: str) -> dic
     wiring = cast(EntryStore | None, registry().answer(backend, ENTRY_STORE))
     if wiring is None or wiring.entry not in files:
         return files
-    # `has("memory")` is the question "was the event-store axis asked at all": the in-memory adapter
+    # `has("memory")` is the question "was the persistence axis asked at all": the in-memory adapter
     # arrives with every answer to it and with no other axis, so a project without it — every project on
     # the standard profile — is one with no store to open and no port to probe.
     stored = selection.has("memory")
-    store = selection.feature_of("event-store") if stored else None
+    store = selection.feature_of("persistence") if stored else None
     opened = wiring.open[store].rstrip("\n") + "\n" + wiring.gap if stored else ""
-    # `"none"` is a project with no event-store axis at all (the standard profile). The adapter
+    # `"none"` is a project with no persistence axis at all (the standard profile). The adapter
     # import of `buildApp` / `readiness` still has to land: emptying the placeholder drops the
     # line, and TypeScript keeps that import in this table rather than as a static line, so Biome
     # can sort it with the adapter imports when a store is present. Python names the same symbols

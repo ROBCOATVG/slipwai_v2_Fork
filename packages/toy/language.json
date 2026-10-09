@@ -11,7 +11,11 @@
         "none"
       ],
       "options": {
-        "event-store": [
+        "write-model": [
+          "events",
+          "state"
+        ],
+        "persistence": [
           "memory",
           "postgres"
         ],

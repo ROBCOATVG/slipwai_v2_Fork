@@ -131,7 +131,7 @@ def backing_service_service_files(selection: Selection, backend: str) -> dict[st
     """The service half of the selection, keyed relative to the service: the ports, every adapter behind
     them, the contract suites that run against all of them, and the migrations.
 
-    The in-memory adapter arrives with every event-store answer rather than only the bare one, on purpose:
+    The in-memory adapter arrives with every persistence answer rather than only the bare one, on purpose:
     it is what the shared contract runs against in `make verify`, and a fake with no real adapter to be
     checked against has nothing to keep it honest.
     """

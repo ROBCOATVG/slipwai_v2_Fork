@@ -95,7 +95,7 @@ def main() -> None:
                 "typescript",
                 "--frontend",
                 "none",
-                "--event-store",
+                "--persistence",
                 "postgres",
                 "--http",
                 "fastify",

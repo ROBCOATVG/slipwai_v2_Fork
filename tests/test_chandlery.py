@@ -44,12 +44,12 @@ INDEX = Index(
         # not a diff against the one before it.
         "python": [release("python", version, description="Python, with FastAPI or nothing",
                            backends={"python": {"label": "Python — uv, ruff",
-                                                "options": {"event-store": ["memory", "postgres"],
+                                                "options": {"persistence": ["memory", "postgres"],
                                                             "http": ["none", "fastapi"]},
                                                 "targets": ["none", "aws"]}})
                    for version in ("1.0.0", "1.1.0")],
         "go": [release("go", "2.0.0", description="Go — modules, gofmt",
-                       backends={"go": {"label": "Go", "options": {"event-store": ["memory"]}}})],
+                       backends={"go": {"label": "Go", "options": {"persistence": ["memory"]}}})],
         "java-spring": [release("java-spring", "1.0.0", family="java",
                                 backends={"java-spring": {"framework": "spring", "label": "Spring Web"}})],
         "codegraph": [release("codegraph", "1.0.0", kind="extension", description="A local code index")],
@@ -147,7 +147,7 @@ class ShowLinesTest(unittest.TestCase):
 
     def test_it_lists_each_backend_with_the_options_it_answers(self) -> None:
         said = "\n".join(show_lines(INDEX, [], "python"))
-        self.assertIn("event-store", said)
+        self.assertIn("persistence", said)
         self.assertIn("fastapi", said)
 
 

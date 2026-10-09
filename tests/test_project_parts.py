@@ -99,7 +99,7 @@ class ProvisioningTest(unittest.TestCase):
         """`None` is "nothing to do"; an empty string would be written into the stack as a blank."""
         app = App(name="service", path="apps/service", kind="service",
                   language="none", framework=None, port=8080)
-        self.assertIsNone(provisioning.provisioned(app, "event-store", "none"))
+        self.assertIsNone(provisioning.provisioned(app, "persistence", "none"))
 
 
 if __name__ == "__main__":  # pragma: no cover

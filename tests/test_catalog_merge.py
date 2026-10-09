@@ -40,7 +40,7 @@ def with_keel_rows(catalog: Mapping[str, Any], *rows: tuple[str, int]) -> dict[s
     for key, order in rows:
         built["backends"][key] = {"family": key, "label": f"{key} label",
                                   "targets": ["none", "existing"], "order": order}
-        built["axes"]["event-store"]["options"]["memory"]["backends"].append(key)
+        built["axes"]["persistence"]["options"]["memory"]["backends"].append(key)
         built["axes"]["http"]["options"]["none"]["backends"].append(key)
         built["default"]["http"][key] = "none"
     return built
@@ -54,7 +54,7 @@ def fragment(name: str = "bad", order: int = 50, **row: Any) -> dict[str, Any]:
     backend = {
         "label": f"{name} label",
         "targets": ["none", "existing"],
-        "options": {"event-store": ["memory"], "http": ["none"]},
+        "options": {"persistence": ["memory"], "http": ["none"]},
         **row,
     }
     return {"name": name, "core": ">=9.0,<10", "order": order, "family": name, "backends": {name: backend}}
@@ -92,11 +92,11 @@ class MergeOrderTest(unittest.TestCase):
         self.assertEqual(refused, {})
         expected = ["core-a", "zed", "core-b"]
         self.assertEqual(list(merged["backends"]), expected)
-        for axis in ("event-store", "http"):
+        for axis in ("persistence", "http"):
             for name, option in merged["axes"][axis]["options"].items():
                 self.assertEqual(option["backends"], [key for key in expected if key in option["backends"]], name)
-        self.assertIn("zed", merged["axes"]["event-store"]["options"]["memory"]["backends"])
-        self.assertNotIn("zed", merged["axes"]["event-store"]["options"]["postgres"]["backends"])
+        self.assertIn("zed", merged["axes"]["persistence"]["options"]["memory"]["backends"])
+        self.assertNotIn("zed", merged["axes"]["persistence"]["options"]["postgres"]["backends"])
         self.assertEqual(list(merged["default"]["http"]), expected)
         self.assertEqual(merged["default"]["http"]["zed"], "none")
 

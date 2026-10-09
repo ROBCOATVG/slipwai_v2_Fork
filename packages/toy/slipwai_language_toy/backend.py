@@ -7,7 +7,7 @@ placeholder files (the in-memory one the axis always ships, and Postgres), and n
 your language.
 
 The files the answers write are under `assets/` beside this package: `languages/toy/…` for the service skeleton, its
-flag reader and its example snippets, `backing-services/toy/…` for what each event-store answer adds.
+flag reader and its example snippets, `backing-services/toy/…` for what each persistence answer adds.
 """
 from __future__ import annotations
 
@@ -93,10 +93,10 @@ TOOLING: Tooling = {
 }
 
 # Feature → where it lands in the service → the asset, relative to `assets/backing-services/toy-plain/`, so `../toy/`
-# is the family's copy, which a framework beside this one reads too. The event-store axis always ships `memory` beside
+# is the family's copy, which a framework beside this one reads too. The persistence axis always ships `memory` beside
 # whichever store is chosen, so both sides answer it and every store offered; a real language adds a row per store,
 # transport and provider it offers. `postgres` is offered because an axis whose only answer is `memory` is never asked,
-# so a project would get no store files, and because core's event-store default is `postgres`, which every backend
+# so a project would get no store files, and because core's persistence default is `postgres`, which every backend
 # offering a second store must offer.
 WRITE_SIDE = {
     "memory": {"adapters/event_store_memory.txt": "../toy/event_store_memory.txt"},

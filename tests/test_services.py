@@ -31,7 +31,7 @@ from slipwai.services import (
 
 
 def selected(backend: str, **named: str) -> Selection:
-    """Axis answers by keyword — `event_store="sqlite"` — the way `FactoryTestCase.generate` takes them."""
+    """Axis answers by keyword — `persistence="sqlite"` — the way `FactoryTestCase.generate` takes them."""
     return resolve_selection(
         {axis.replace("_", "-"): answer for axis, answer in named.items()}, "event-modelling", backend, "none"
     )
@@ -233,8 +233,8 @@ class ServicesTest(FactoryTestCase):
         """A TypeScript service on Fastify and Postgres beside a Python one on FastAPI and SQLite: every
         project-wide file is the union of what the two say, and each service keeps its own answers."""
         files, apps = with_payments(
-            "typescript", "react-vite", second="python", second_axes={"event_store": "sqlite"},
-            event_store="postgres", http="fastify",
+            "typescript", "react-vite", second="python", second_axes={"persistence": "sqlite"},
+            persistence="postgres", http="fastify",
         )
         manifest = json.loads(files["project.json"])["deployables"]
         self.assertEqual(manifest["service"]["language"], "typescript")
@@ -290,8 +290,8 @@ class ServicesTest(FactoryTestCase):
         """`./init` after generation reaches a second service's adapters exactly as it reaches the first's,
         whatever language each is in."""
         apps = add_service(
-            default_apps("python", "none", selected("python", event_store="postgres", http="fastapi", auth="keycloak")),
-            "payments", "go", selected("go", event_store="postgres", http="net-http", auth="keycloak"),
+            default_apps("python", "none", selected("python", persistence="postgres", http="fastapi", auth="keycloak")),
+            "payments", "go", selected("go", persistence="postgres", http="net-http", auth="keycloak"),
         )
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory) / "pruned"
@@ -299,7 +299,7 @@ class ServicesTest(FactoryTestCase):
             self.assertTrue((repo / "apps/service/migrations/apply.py").is_file())
             self.assertTrue((repo / "apps/payments/cmd/migrate").is_dir())
             subprocess.run(
-                ["python3", "scripts/backing-services.py", "--event-store", "memory", "--auth", "none"],
+                ["python3", "scripts/backing-services.py", "--persistence", "memory", "--auth", "none"],
                 cwd=repo,
                 check=True,
                 stdout=subprocess.DEVNULL,
@@ -316,7 +316,7 @@ class ServicesTest(FactoryTestCase):
 
     def test_browser_apps_are_a_list_too(self) -> None:
         """A second browser app, proxying to a second service: every reader names both, on their own ports."""
-        first = selected("typescript", event_store="postgres", http="fastify")
+        first = selected("typescript", persistence="postgres", http="fastify")
         apps = add_service(default_apps("typescript", "react-vite", first), "payments", "typescript", first)
         apps = add_web(apps, "admin", "payments")
         files = project_files("two", "event-modelling", "none", apps)

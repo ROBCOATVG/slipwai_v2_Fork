@@ -89,7 +89,7 @@ def run_skill(project_name: str, apps: list[App], layout: Layout = AT_ROOT) -> s
     services = [service for service in services_of(apps) if service.transport is not None]
     stores = list(
         dict.fromkeys(
-            s.selection.option("event-store") for s in services_of(apps) if "event-store" in s.selection.axes
+            s.selection.option("persistence") for s in services_of(apps) if "persistence" in s.selection.axes
         )
     )
     several = len(services) > 1

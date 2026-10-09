@@ -125,7 +125,7 @@ class FrontendTest(FactoryTestCase):
         with tempfile.TemporaryDirectory() as directory:
             repo = self.generate(
                 directory, "frontend-basics", language="typescript", frontend="react-vite",
-                event_store="memory", http="none", auth="none",
+                persistence="memory", http="none", auth="none",
             )
             install = subprocess.run(
                 ["npm", "ci", "--no-audit", "--no-fund", "--loglevel=error"],

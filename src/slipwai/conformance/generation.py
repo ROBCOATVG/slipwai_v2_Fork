@@ -20,7 +20,7 @@ from ..project.flag_route import OPT_IN_TRANSPORT
 from ..registry import OPT_IN_FLAG_TRANSPORTS, POSTGRES_SSLMODE, READ_SIDE_FILES, WRITE_SIDE_FILES, Registry
 from . import child
 
-EVENT_STORE = "event-store"
+EVENT_STORE = "persistence"
 # How `slipwai` names the package a refusal is about: the finding names the backend already, so it is said once.
 REFUSED = re.compile(r"^slipwai: language \S+ \(.*?\): ")
 PROJECT = "conformance"

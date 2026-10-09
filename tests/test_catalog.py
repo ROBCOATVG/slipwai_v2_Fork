@@ -2,7 +2,7 @@
 
 `catalog.json` is the questions the keel asks. It carries no backend at all: a backend is a package's to
 declare, and a keel that named one would be a keel a new language has to be edited into. What it does
-carry — the four axes, the targets, the profiles, the frontends, the extensions — is held here against
+carry — the five axes, the targets, the profiles, the frontends, the extensions — is held here against
 three things at once: its own schema, the pruner that ships into every generated project, and the
 registry of whatever is loaded.
 
@@ -21,7 +21,7 @@ import checkout_packages  # noqa: F401
 from slipwai.assets import PRUNER, ROOT
 from slipwai.axes import validate_axes
 from slipwai.catalog import CATALOG, PACKAGES, SCHEMA_VERSION
-from slipwai.catalog_checks import validate_catalog
+from slipwai.catalog_checks import check_rung, validate_catalog
 from slipwai.errors import Refusal
 from slipwai.registry import load, registry
 from slipwai.targets import validate_targets
@@ -51,8 +51,27 @@ class ShippedCatalogTest(unittest.TestCase):
             validate_catalog(CATALOG, loaded=EMPTY)
         self.assertIn("no registry object", str(raised.exception))
 
-    def test_the_axes_are_the_four_the_keel_asks_about(self) -> None:
-        self.assertEqual(set(SHIPPED["axes"]), {"event-store", "http", "auth", "users"})
+    def test_the_axes_are_the_five_the_keel_asks_about(self) -> None:
+        self.assertEqual(
+            set(SHIPPED["axes"]), {"write-model", "persistence", "http", "auth", "users"}
+        )
+
+    def test_the_rung_is_an_axis_and_not_a_profile(self) -> None:
+        """Phase 15's whole point, in three assertions. Event sourcing is what `write-model: events`
+        gives a service; no profile hands it out, and a project may hold one service on each rung."""
+        rungs = SHIPPED["axes"]["write-model"]["options"]
+        self.assertEqual(list(rungs), ["events", "state"])
+        self.assertEqual(rungs["events"]["capabilities"], ["event-sourcing"])
+        self.assertEqual(rungs["state"]["capabilities"], [])
+        for name, profile in SHIPPED["profiles"].items():
+            self.assertNotIn("event-sourcing", profile["capabilities"], name)
+
+    def test_the_rung_is_the_one_answer_init_may_not_move(self) -> None:
+        """Every other axis can be answered down later; a rung cannot, so it is never a prune flag."""
+        self.assertIs(SHIPPED["axes"]["write-model"]["prunable"], False)
+        for axis, spec in SHIPPED["axes"].items():
+            if axis != "write-model":
+                self.assertNotIn("prunable", spec, axis)
 
     def test_the_schema_version_is_the_one_the_code_speaks(self) -> None:
         self.assertEqual(SHIPPED["schemaVersion"], SCHEMA_VERSION)
@@ -89,7 +108,7 @@ class MirrorTest(unittest.TestCase):
     def test_an_option_offered_somewhere_the_pruner_does_not_know_about_is_refused(self) -> None:
         """Drift in either direction is a project that prunes to something the catalogue did not promise."""
         drifted = copy.deepcopy(CATALOG)
-        axis = drifted["axes"]["event-store"]
+        axis = drifted["axes"]["persistence"]
         name = next(n for n in axis["options"] if n != axis["absent"])
         axis["options"][name]["targets"] = ["none"]
         with self.assertRaises(ValueError) as raised:
@@ -104,6 +123,41 @@ class MirrorTest(unittest.TestCase):
         with self.assertRaises(ValueError) as raised:
             validate_targets(drifted)
         self.assertIn("assets/targets/gcp", str(raised.exception))
+
+
+class RungTest(unittest.TestCase):
+    """The three rules that replaced the indivisible bundle, each refused by name.
+
+    The bundle welded Event Modeling to event sourcing in the profile, so a product that wanted the model
+    and not the log could not be generated. These hold the catalogue to the shape that replaced it: the
+    rung is an axis answer, per service, and the profile only says whether there is a model at all.
+    """
+
+    def refuse(self, catalog: dict) -> str:
+        with self.assertRaises(ValueError) as raised:
+            check_rung(catalog)
+        return str(raised.exception)
+
+    def test_the_shipped_catalogue_keeps_all_three(self) -> None:
+        check_rung(CATALOG)
+
+    def test_a_profile_handing_out_event_sourcing_is_refused(self) -> None:
+        drifted = copy.deepcopy(CATALOG)
+        drifted["profiles"]["event-modelling"]["capabilities"].append("event-sourcing")
+        self.assertIn("rung a service stands on", self.refuse(drifted))
+
+    def test_a_rung_that_gives_nothing_is_refused(self) -> None:
+        """`events` is where the capability lives now; without it a project would model and never say so."""
+        drifted = copy.deepcopy(CATALOG)
+        drifted["axes"]["write-model"]["options"]["events"]["capabilities"] = []
+        self.assertIn("event-sourcing capability", self.refuse(drifted))
+
+    def test_a_modelled_profile_missing_either_axis_is_refused(self) -> None:
+        for axis in ("write-model", "persistence"):
+            with self.subTest(axis=axis):
+                drifted = copy.deepcopy(CATALOG)
+                drifted["axes"][axis]["profiles"] = ["standard"]
+                self.assertIn(f"must offer the {axis} axis", self.refuse(drifted))
 
 
 class RefusalBoundaryTest(unittest.TestCase):

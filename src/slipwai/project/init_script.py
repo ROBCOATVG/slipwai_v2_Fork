@@ -9,7 +9,7 @@ fail wherever that host is unreachable.
 """
 from __future__ import annotations
 
-from ..catalog import CATALOG
+from ..catalog import CATALOG, axis_prunable
 from ..extensions import known_extensions
 from ..layout import AT_ROOT, Layout
 from ..services import App, axes_of, services_of
@@ -175,11 +175,14 @@ fi
 
 
 def init_script(apps: list[App], target: str = "none", layout: Layout = AT_ROOT) -> str:
-    # Every axis some service answered with something a later prune could take away.
+    # Every axis some service answered with something a later prune could take away. The rung is not one
+    # of them: `--write-model state` would not remove an adapter, it would declare the history already on
+    # disk to be no longer the truth, which is a migration somebody writes rather than a flag.
     prunable = [
         axis
         for axis in axes_of(apps)
-        if any(s.selection.option(axis) != CATALOG["axes"][axis]["absent"] for s in services_of(apps))
+        if axis_prunable(axis)
+        and any(s.selection.option(axis) != CATALOG["axes"][axis]["absent"] for s in services_of(apps))
     ]
     production = managed(CATALOG, target)
     extensions = sorted(known_extensions(CATALOG))

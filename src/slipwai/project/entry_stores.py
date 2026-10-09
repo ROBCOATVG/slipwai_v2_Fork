@@ -1,4 +1,4 @@
-"""The shape of what a backend's entry point writes for each event-store answer, and the markers it writes with.
+"""The shape of what a backend's entry point writes for each persistence answer, and the markers it writes with.
 
 Each backend answers `entry_store` with an `EntryStore` on its own `LANGUAGE` object (`None` where its framework
 opens its own store); this module is the type those answers are written in and the helpers that mark their
@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class EntryStore:
-    """One transport's entry point: where it is, and what each event-store answer writes into it.
+    """One transport's entry point: where it is, and what each persistence answer writes into it.
 
     `imports` and `open` are keyed by the feature that answered the axis — `None` for the in-memory answer,
     which owns no feature and needs no marked region because nothing can ever prune it away. `absent` is

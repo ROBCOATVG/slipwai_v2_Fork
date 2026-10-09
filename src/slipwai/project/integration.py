@@ -36,7 +36,7 @@ def integration_variables(services: list[App], apps: list[App], per_service: lis
     block per branch, one of them removed — cannot work: a prune only ever subtracts, so the branch cut at
     generation time is gone and no later prune can bring it back. `:=` inside the block wins while the
     service is present; delete the block and the `?=` below takes effect. One target, one recipe, and a
-    generated project that still has a working `make test-integration` after `./init --event-store memory`.
+    generated project that still has a working `make test-integration` after `./init --persistence memory`.
 
     One variable per service — `INTEGRATION_TEST` for the first, `INTEGRATION_TEST_<NAME>` after — each in
     its own store's marked region, and a store's own variables (the database address) once however many

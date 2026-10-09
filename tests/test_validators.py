@@ -66,7 +66,7 @@ def axis(**changes: object) -> dict:
     }
 
 
-AXES = {name: axis() for name in ("event-store", "http", "auth", "users")}
+AXES = {name: axis() for name in ("persistence", "http", "auth", "users")}
 # Both unmanaged, because a managed target must have `assets/targets/<name>/` behind it — a catalogue
 # entry with no infrastructure would generate projects claiming a destination they cannot reach — and
 # those trees arrive in phase 3. `managed()` is tested against a catalogue of its own.

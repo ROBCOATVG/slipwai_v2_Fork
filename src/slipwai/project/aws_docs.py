@@ -31,7 +31,7 @@ def deployment_diagram(project_name: str, apps: list[App]) -> str:
     """
     services = services_of(apps)
     web = web_apps(apps)
-    rds = any(provisioned(s, "event-store", "aws") == "rds" for s in services)
+    rds = any(provisioned(s, "persistence", "aws") == "rds" for s in services)
     internal = any(provisioned(s, "auth", "aws") == "cognito" for s in services)
     external = any(provisioned(s, "users", "aws") == "cognito" for s in services)
     auth0 = any(provisioned(s, axis, "aws") == "auth0" for s in services for axis in ("auth", "users"))
@@ -73,7 +73,7 @@ def deployment_diagram(project_name: str, apps: list[App]) -> str:
         lines += [f"    cf_{n} --> alb_{n}"]
         if web and web[0].api == s.name:
             lines += [f'    cf_web -->|"/api/*"| alb_{n}']
-        if provisioned(s, "event-store", "aws") == "rds":
+        if provisioned(s, "persistence", "aws") == "rds":
             lines += [f'    tasks_{n} -->|"DATABASE_URL, TLS"| rds', f"    tasks_{n} -.-> secrets"]
         if provisioned(s, "auth", "aws") == "cognito":
             lines += [f'    tasks_{n} -.->|"OIDC"| internal']
@@ -105,7 +105,7 @@ def deployment_diagram(project_name: str, apps: list[App]) -> str:
 
     table = "\n".join(
         f"| `{s.name}` | {s.backend} | {image_builder(s.backend)['tool'] or 'framework build'} | {s.port} | "
-        f"{provisioned(s, 'event-store', 'aws') or '—'} | {provisioned(s, 'auth', 'aws') or '—'} | "
+        f"{provisioned(s, 'persistence', 'aws') or '—'} | {provisioned(s, 'auth', 'aws') or '—'} | "
         f"{provisioned(s, 'users', 'aws') or '—'} |"
         for s in services
     )
@@ -150,7 +150,7 @@ runs the same code path.
 def production_adr(project_name: str, apps: list[App]) -> str:
     services = services_of(apps)
     web = web_apps(apps)
-    stores = {s.name: provisioned(s, "event-store", "aws") for s in services}
+    stores = {s.name: provisioned(s, "persistence", "aws") for s in services}
     rds = any(store == "rds" for store in stores.values())
     internal = any(provisioned(s, "auth", "aws") == "cognito" for s in services)
     external = any(provisioned(s, "users", "aws") == "cognito" for s in services)

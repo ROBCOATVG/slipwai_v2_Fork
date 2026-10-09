@@ -14,6 +14,20 @@ from .catalog import (
 from .errors import GenerationError
 from .features import axis_of, feature_declaring, known_features
 
+# Why an axis is not a question this profile can be asked, where the generic line would not say enough.
+# The rung is the one that matters: a project with no model has no slice to raise an event from and no
+# `evt` frame to name one, so "event-sourced" would be a claim about a write side nobody drew.
+OFF_PROFILE = {
+    "write-model": (
+        "the rung is a reading of the write side of a model, and the standard profile has no model to "
+        "read — its services keep current state"
+    ),
+    "persistence": (
+        "the store behind this axis is the driven port the modelled profile's write side is written "
+        "against, and the standard profile has no such port"
+    ),
+}
+
 
 class Selection:
     """One option per axis: the whole of what a project was asked to be given.
@@ -80,8 +94,8 @@ class Selection:
     def features(self) -> list[str]:
         """Every feature whose files this selection emits.
 
-        Includes each asked axis's `always` features — the in-memory event store, which arrives with any
-        answer to the event-store question — as well as the chosen option's own.
+        Includes each asked axis's `always` features — the in-memory adapter, which arrives with any
+        answer to the persistence question — as well as the chosen option's own.
         """
         owned = set(self.prunable_features)
         for axis in self.axes:
@@ -197,11 +211,8 @@ def resolve_selection(
                 f"not emitted. Generate with --{axis} {alternative}, or with --target {option['targets'][0]}."
             )
         if profile not in spec["profiles"] and chosen != spec["absent"]:
-            reason = (
-                "the event store is the driven port behind event sourcing, and the standard "
-                "profile has no such port"
-                if axis == "event-store"
-                else f"the {axis} axis is only wired for the {'/'.join(spec['profiles'])} profile"
+            reason = OFF_PROFILE.get(
+                axis, f"the {axis} axis is only wired for the {'/'.join(spec['profiles'])} profile"
             )
             raise GenerationError(
                 f"--{axis} {chosen} cannot be added to the {profile} profile: {reason}. Generate with "

@@ -115,7 +115,7 @@ class PlannableTest(unittest.TestCase):
                                    "verify-event-modelling-toy-plain-react-vite"])
 
     def test_a_row_naming_an_option_this_backend_has_not_got_is_not_plannable(self) -> None:
-        row = rows.Row("x", "event-modelling", "toy-plain", "none", (("event-store", "sqlite"),))
+        row = rows.Row("x", "event-modelling", "toy-plain", "none", (("persistence", "sqlite"),))
         self.assertFalse(rows.plannable(CATALOG, row))
 
     def test_a_row_naming_nothing_is_always_plannable(self) -> None:
@@ -125,7 +125,7 @@ class PlannableTest(unittest.TestCase):
         """`takes` asks both of `selection.py`'s questions — implemented for this backend, offered under
         this target — because a row refused for the second reason reads exactly like one refused for the
         first."""
-        self.assertFalse(rows.takes(CATALOG, "event-store", "sqlite", "toy-plain", "aws"))
+        self.assertFalse(rows.takes(CATALOG, "persistence", "sqlite", "toy-plain", "aws"))
 
 
 class ImageToolTest(unittest.TestCase):

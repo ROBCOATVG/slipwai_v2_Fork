@@ -5,7 +5,8 @@
     "target": "none",
     "framework": {},
     "frontend": "react-vite",
-    "event-store": "postgres",
+    "write-model": "events",
+    "persistence": "postgres",
     "http": {},
     "auth": "none",
     "users": "none"
@@ -103,9 +104,53 @@
     }
   },
   "axes": {
-    "event-store": {
-      "prompt": "Event store",
-      "description": "Where events live. Every answer is an append-only log behind one port, and the in-memory adapter ships with all of them, so `make verify` needs no Docker whichever store is chosen",
+    "write-model": {
+      "prompt": "Write model",
+      "description": "How a service decides and records a write \u2014 which is to say where this product keeps its truth. Both answers raise the same typed events the model names; what differs is whether the log is the truth or a consequence of it. Only one direction is cheap: a log folds down into tables whenever you decide it should, so a service can stop being event-sourced, but state cannot be turned back into history it never recorded. Asked per service, and the one answer about a service that cannot be walked back once it holds data",
+      "profiles": [
+        "event-modelling"
+      ],
+      "absent": "state",
+      "prunable": false,
+      "always": [],
+      "options": {
+        "events": {
+          "capabilities": [
+            "event-sourcing"
+          ],
+          "containers": [],
+          "migrations": false,
+          "integration-suite": false,
+          "label": "Event-sourced \u2014 the log is the truth and state is a fold of it. Rung 4: nothing is lost, a read model nobody thought of is a replay away, and the cost of a slice stays flat as the system grows. For a service that owns its truth, whose behaviour is business operations rather than field updates, and whose past is worth something",
+          "features": [],
+          "backends": [],
+          "targets": [
+            "none",
+            "existing",
+            "aws",
+            "azure"
+          ]
+        },
+        "state": {
+          "capabilities": [],
+          "containers": [],
+          "migrations": false,
+          "integration-suite": false,
+          "label": "State-stored \u2014 the service keeps current state, and its events are the model's contracts, raised after each write and never replayed. Rung 2: the cheaper start, for a service that is not the owner of what it holds, or whose past nobody will ask about",
+          "features": [],
+          "backends": [],
+          "targets": [
+            "none",
+            "existing",
+            "aws",
+            "azure"
+          ]
+        }
+      }
+    },
+    "persistence": {
+      "prompt": "Persistence",
+      "description": "How this service keeps its data. Every answer is one store behind one port, and the in-memory adapter ships with all of them, so `make verify` needs no Docker whichever store is chosen",
       "profiles": [
         "event-modelling"
       ],
@@ -421,23 +466,18 @@
   "profiles": {
     "standard": {
       "tier": 1,
-      "label": "Standard — walking skeleton, executable test and the CD gate, over state-stored persistence. The cheaper start and the irreversible one: cost compounds as one aggregate accretes every new feature, and history you never recorded cannot be recovered. For a tool, a spike, an internal script — anything whose expected lifespan is short",
+      "label": "Standard — the walking skeleton, the executable test and the CD gate, and no model of the workflow behind them. Features are specified one at a time and a service keeps current state: the honest answer where the system is not the owner of its truth, its behaviour is field updates rather than business operations, and nobody will ask what happened last month",
       "capabilities": [
         "continuous-delivery"
       ]
     },
     "event-modelling": {
       "tier": 2,
-      "label": "Event Modeling — everything above, plus events as the source of truth, built one stamped slice at a time. Cost per slice stays flat as the system grows, and folding the log back down into tables stays available. Recommended for a product a team will grow for years",
+      "label": "Event Modeling — everything above, plus the workflow modelled before it is built and delivered one stamped slice at a time, every event a named business fact. Where truth lives is a separate question, asked per service: the model is the same on either rung, and what changes is the write model",
       "extends": "standard",
       "capabilities": [
         "continuous-delivery",
-        "event-modelling",
-        "event-sourcing"
-      ],
-      "indivisible": [
-        "event-modelling",
-        "event-sourcing"
+        "event-modelling"
       ]
     }
   }

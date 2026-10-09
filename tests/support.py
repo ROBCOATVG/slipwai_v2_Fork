@@ -85,7 +85,7 @@ class FactoryTestCase(unittest.TestCase):
         frontend: str = "none",
         **axes: str,
     ) -> Path:
-        """Generate a project. Axis answers are passed by name — `event_store="postgres"`, `http="fastify"`,
+        """Generate a project. Axis answers are passed by name — `persistence="postgres"`, `http="fastify"`,
         `auth="keycloak"` — and any axis left unnamed keeps its catalog default. `target="none"` passes the
         production target the same way."""
         arguments = [

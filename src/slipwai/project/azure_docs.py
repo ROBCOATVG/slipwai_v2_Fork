@@ -28,7 +28,7 @@ def deployment_diagram(project_name: str, apps: list[App]) -> str:
     """
     services = services_of(apps)
     web = web_apps(apps)
-    database = any(provisioned(s, "event-store", "azure") == "flexible-server" for s in services)
+    database = any(provisioned(s, "persistence", "azure") == "flexible-server" for s in services)
     internal = any(provisioned(s, "auth", "azure") == "entra" for s in services)
     auth0 = any(provisioned(s, axis, "azure") == "auth0" for s in services for axis in ("auth", "users"))
     external = any(provisioned(s, "users", "azure") == "auth0" for s in services)
@@ -70,7 +70,7 @@ def deployment_diagram(project_name: str, apps: list[App]) -> str:
         n = node(s.name)
         if s.name == linked:
             lines += [f'    swa -->|"/api"| app_{n}']
-        if provisioned(s, "event-store", "azure") == "flexible-server":
+        if provisioned(s, "persistence", "azure") == "flexible-server":
             lines += [f'    app_{n} -->|"DATABASE_URL, TLS"| pg', f"    app_{n} -.-> vault"]
         if provisioned(s, "auth", "azure") == "entra":
             lines += [f'    app_{n} -.->|"OIDC"| internal']
@@ -98,7 +98,7 @@ def deployment_diagram(project_name: str, apps: list[App]) -> str:
 
     table = "\n".join(
         f"| `{s.name}` | {s.backend} | {image_builder(s.backend)['tool'] or 'framework build'} | {s.port} | "
-        f"{provisioned(s, 'event-store', 'azure') or '—'} | {provisioned(s, 'auth', 'azure') or '—'} | "
+        f"{provisioned(s, 'persistence', 'azure') or '—'} | {provisioned(s, 'auth', 'azure') or '—'} | "
         f"{provisioned(s, 'users', 'azure') or '—'} |"
         for s in services
     )
@@ -155,7 +155,7 @@ runs the same code path.
 def production_adr(project_name: str, apps: list[App]) -> str:
     services = services_of(apps)
     web = web_apps(apps)
-    database = any(provisioned(s, "event-store", "azure") == "flexible-server" for s in services)
+    database = any(provisioned(s, "persistence", "azure") == "flexible-server" for s in services)
     internal = any(provisioned(s, "auth", "azure") == "entra" for s in services)
     auth0_internal = any(provisioned(s, "auth", "azure") == "auth0" for s in services)
     auth0_external = any(provisioned(s, "users", "azure") == "auth0" for s in services)

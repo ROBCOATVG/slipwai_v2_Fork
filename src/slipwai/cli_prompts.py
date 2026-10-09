@@ -195,28 +195,28 @@ def prompt_yes_no(question: str, default: bool) -> bool:
         print("Invalid answer: enter yes or no", file=sys.stderr)
 
 
-# Why the recommendation is asymmetric, in the place where the choice is actually made. This is the one
-# question a generated project can never answer again — every axis can be answered down later, the profile
-# cannot — and the two directions do not cost the same, which inverts the usual "don't buy architecture you
-# cannot name a requirement for" instinct. Kept short enough to read at a prompt; the argument in full is in
-# `docs/axes.md`.
+# What the profile actually decides, in the place where the choice is made. It is one question — *is there
+# a model?* — and for a long time it answered a second one by accident: where a service keeps its truth.
+# That is the rung, it is per service, and it is asked on the `write-model` axis, which carries the
+# one-direction warning this paragraph used to. Kept short enough to read at a prompt.
 PROFILE_GUIDANCE = (
-    "Only one direction is cheap. An event log folds down into tables whenever you decide it should, so a\n"
-    "project can stop being event-sourced; state cannot be turned back into history it never recorded, so\n"
-    '"start standard and adopt events where a subdomain earns it" is an option that mostly does not exist.\n'
-    "What Event Modeling promises is flat cost per slice, not a cheap start: event upcasting and PII\n"
-    "erasure are fixed costs to pay before growth arrives, not slice-shaped ones. Persisted projections\n"
-    "were a third until the skeleton started shipping them."
+    "Event Modeling is a design practice, not a storage decision: the workflow drawn before it is built,\n"
+    "every event a named business fact, and work cut into slices that each cross the whole system. It is\n"
+    "worth having on nearly anything a team will keep working on, including a product whose services\n"
+    "store current state.\n"
+    "Where a service keeps its truth is the next question, asked per service, and that is the one that\n"
+    "cannot be walked back. What Event Modeling promises is flat cost per slice, not a cheap start."
 )
 
 
 def prompt_profile() -> str:
-    """Ask which delivery foundation, showing what each one costs and which way the decision can be walked.
+    """Ask which delivery foundation, showing what each one gives and what it deliberately does not decide.
 
     Both answers are written out first, for the reason the axes are: `standard` and `event-modelling` look
-    like more-or-less of the same thing until somebody reads that only one of them is the choice you can
-    change your mind about. The question itself stays a yes/no rather than becoming a two-option menu,
-    because this keel does make a recommendation here — a menu would present them as equals.
+    like more-or-less of the same thing until somebody reads that one of them models the workflow before
+    building it and the other does not. The question itself stays a yes/no rather than becoming a
+    two-option menu, because this keel does make a recommendation here — a menu would present them as
+    equals. What it is no longer asking here is where truth lives: that is `write-model`, per service.
     """
     print("\nDelivery foundation:")
     recommended = CATALOG["default"]["profile"]

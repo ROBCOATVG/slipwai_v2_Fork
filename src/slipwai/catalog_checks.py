@@ -76,13 +76,8 @@ def _check_catalog(catalog: dict, loaded: Registry | None = None) -> None:
     event = profiles["event-modelling"]
     if event.get("extends") != "standard":
         raise ValueError("event-modelling must extend the standard profile")
-    pair = {"event-modelling", "event-sourcing"}
-    if set(event.get("indivisible", [])) != pair or not pair <= set(event["capabilities"]):
-        raise ValueError("Event Modeling and event sourcing must be one indivisible bundle")
+    check_rung(catalog)
     for name, profile in profiles.items():
-        capabilities = set(profile["capabilities"])
-        if bool("event-modelling" in capabilities) != bool("event-sourcing" in capabilities):
-            raise ValueError(f"{name}: Event Modeling and event sourcing cannot be selected separately")
         # The same rule the axis options are held to, for the question that matters most: an answer nobody
         # can read is not a choice being offered. Which foundation a project is born on is the one decision
         # a generated project cannot revisit later, so the prompt has to say what each one costs.
@@ -91,6 +86,31 @@ def _check_catalog(catalog: dict, loaded: Registry | None = None) -> None:
     validate_targets(catalog)
     validate_axes(catalog)
     validate_extensions(catalog)
+
+
+def check_rung(catalog: dict) -> None:
+    """Event sourcing is a rung a service stands on, not a foundation a project is born with.
+
+    Three rules where there was one bundle. The profile answered *is there a model?* and the storage
+    decision by accident, so a product that wanted the model and not the log could not be generated, and
+    neither could one with a context that earned the log beside three that did not. The bundle is now the
+    `write-model` axis, asked per service, and these are what hold the catalogue to that: no profile may
+    hand out `event-sourcing` (it is not a property of the whole project), the `events` rung must, and
+    the modelled profile must carry both axes — the rung and the store it keeps its data in.
+    """
+    axes = catalog.get("axes", {})
+    for name, profile in catalog["profiles"].items():
+        if "event-sourcing" in profile["capabilities"]:
+            raise ValueError(
+                f"profile {name} carries event-sourcing, which is a rung a service stands on rather than a "
+                "foundation a project is born with: declare it on the write-model/events option"
+            )
+    rung = axes.get("write-model", {}).get("options", {}).get("events", {})
+    if "event-sourcing" not in rung.get("capabilities", []):
+        raise ValueError("write-model/events must give the project the event-sourcing capability")
+    for axis in ("write-model", "persistence"):
+        if "event-modelling" not in axes.get(axis, {}).get("profiles", []):
+            raise ValueError(f"the event-modelling profile must offer the {axis} axis")
 
 
 ROW_KEYS = ("marked_files", "owned_files", "package_edits", "manifest")

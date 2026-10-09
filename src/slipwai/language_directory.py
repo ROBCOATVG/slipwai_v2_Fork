@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from .assets import this_command
+from .axes import under_current_names
 from .errors import blame, one_line
 from .language_shape import family_fault, name_fault, row_shape_fault
 from .registry import Family, Language
@@ -176,8 +177,9 @@ def fault_in(name: str, root: Path, core: str, installed: bool = False) -> tuple
         except ValueError as error:  # a range that does not parse is a malformed language.json
             fault = str(error)
         else:
-            return (fragment, None) if fault is None else (None, fault)
+            return (under_current_names(fragment), None) if fault is None else (None, fault)
     return None, fault + (reinstall(name, back=fault != NO_FRAGMENT) if installed else "")
+
 
 
 def fragment_fault(name: str, fragment: dict[str, Any], core: str) -> str | None:

@@ -1,7 +1,8 @@
 """What an axis is, and what the catalog has to say about one before anything reads it.
 
-An **axis** is one infrastructure role asked as one question — where events live, what accepts inbound HTTP,
-who authenticates the people who run the product, who authenticates the people it is for. `validate_axes`
+An **axis** is one role asked as one question — how a service decides and records a write, how it keeps its
+data, what accepts inbound HTTP, who authenticates the people who run the product, who authenticates the
+people it is for. `validate_axes`
 is the whole of what
 `catalog.json` promises about them: the set is fixed, every option says which backends and targets it is
 implemented for and which feature owns its files, and a default never resolves to nothing for a backend that
@@ -10,18 +11,64 @@ are most of that module's length and none of its lookups.
 """
 from __future__ import annotations
 
+import copy
 import itertools
+from typing import Any
 
 from .assets import PRUNER
 from .features import known_features, validate_traits
 from .targets import validate_axis_targets
 
+# An axis this keel has renamed, and the name it had. One table, read in three places: a `project.json`
+# written before the rename (`manifest.reading`), a `language.json` written before it
+# (`language_directory`), and `docs/rename.json`, which is the same row for the files `migrate` rewrites.
+# Only the axis is renamed — `postgres` is still `postgres` — which is why a map of names is the whole of
+# it. A row stays here for as long as anything that old could still be read, because a package silently
+# dropping off the menu is worse than a refusal.
+RENAMED = {"event-store": "persistence"}
+
+
+def named_axes(answers: dict) -> dict:
+    """A mapping keyed by axis, read under the names this keel now uses."""
+    return {RENAMED.get(axis, axis): answer for axis, answer in answers.items()}
+
+
+def under_current_names(fragment: dict[str, Any]) -> dict[str, Any]:
+    """A `language.json` with every axis it names read under the name this keel now uses.
+
+    A package answers axes by name in three places: the options each backend implements, the defaults it
+    recommends, and the options the package declares itself. The keel is the one that renamed the axis, so
+    a package built before the rename is read rather than dropped off the menu — the same courtesy a
+    `project.json` written before it gets. Nothing else in the fragment moves: an option is still
+    spelled `postgres`.
+    """
+    if not any(axis in RENAMED for axis in fragment_axes(fragment)):
+        return fragment
+    read = copy.deepcopy(fragment)
+    if "axes" in read:
+        read["axes"] = named_axes(read["axes"])
+    for row in read["backends"].values():
+        for key in ("options", "defaults"):
+            if key in row:
+                row[key] = named_axes(row[key])
+    return read
+
+
+def fragment_axes(fragment: dict[str, Any]) -> set[str]:
+    """Every axis name a fragment uses, wherever it uses one."""
+    rows = fragment.get("backends", {})
+    return {
+        *fragment.get("axes", {}),
+        *(axis for row in rows.values() for key in ("options", "defaults") for axis in row.get(key, {})),
+    }
+
 
 def validate_axes(catalog: dict) -> None:
     """Each axis is one question with one answer, and the gates are data rather than scattered conditionals.
 
-    An axis names the *role* being filled — where events are stored, what accepts inbound HTTP, who
-    authenticates internally, who authenticates externally — never a product, and never a protocol: every
+    An axis names the *role* being filled — how a service records a write, how it keeps its data, what
+    accepts inbound HTTP, who authenticates internally, who authenticates externally — never a product, and
+    never a protocol: every
     `auth` answer is an OIDC issuer, which is exactly why that axis is not called `oidc`. Naming the role is
     what lets `postgres` and `keycloak` stop being alternatives on one menu: they answer unrelated questions,
     so they are asked separately and answered independently. It is also why Keycloak answers two axes: who
@@ -36,8 +83,10 @@ def validate_axes(catalog: dict) -> None:
     fix it.
     """
     axes = catalog.get("axes")
-    if not isinstance(axes, dict) or set(axes) != {"event-store", "http", "auth", "users"}:
-        raise ValueError("catalog must define exactly the event-store, http, auth and users axes")
+    if not isinstance(axes, dict) or set(axes) != {"write-model", "persistence", "http", "auth", "users"}:
+        raise ValueError(
+            "catalog must define exactly the write-model, persistence, http, auth and users axes"
+        )
     backends = set(catalog["backends"])
     profiles = set(catalog["profiles"])
     for axis, spec in axes.items():
@@ -141,12 +190,18 @@ def validate_axes(catalog: dict) -> None:
                         f"the {axis} default '{answer}' requires {required_axis}, which defaults to "
                         f"nothing for {backend} under the {target} target"
                     )
-    # The in-memory event store is not an alternative to a real one: it is what the port's contract runs
+    # The in-memory adapter is not an alternative to a real store: it is what the port's contract runs
     # against in `make verify`, which is why it is `always` rather than an option's feature. That
     # distinction is what makes it un-prunable — there is no answer to this axis that drops it, so it is
     # never offered as something to lose, and the gate needs no Docker whichever store was chosen.
-    if axes["event-store"]["always"] != ["memory"]:
-        raise ValueError("the event-store axis must always ship the in-memory adapter its contract runs against")
+    if axes["persistence"]["always"] != ["memory"]:
+        raise ValueError("the persistence axis must always ship the in-memory adapter its contract runs against")
+    # The rung is the one answer that cannot be walked back, so it is never a flag `./init` offers: a
+    # project that could answer it down would be a project that could silently throw its own history away.
+    if axes["write-model"].get("prunable") is not False:
+        raise ValueError(
+            "the write-model axis must declare itself unprunable: a rung cannot be answered down later"
+        )
     for axis, spec in axes.items():
         if set(spec.get("always", [])) & {
             feature for option in spec["options"].values() for feature in option["features"]

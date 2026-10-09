@@ -12,6 +12,7 @@ import json
 from pathlib import Path, PurePosixPath
 
 from ..assets import this_command
+from ..axes import named_axes
 from ..catalog import CATALOG, families
 from ..errors import GenerationError
 from ..loaded import refusals
@@ -35,6 +36,7 @@ MANIFEST_SCHEMA = 2
 # `unrecorded` is the written form of "nobody has said": a fact `adopt --yes` could not read off the tree and
 # nobody was asked about, kept visibly open rather than defaulted, and refreshed by the next survey that can say.
 PROVENANCES = ("detected", "confirmed", "overridden", "unrecorded")
+
 
 
 def recorded_contexts(record: dict) -> tuple[str, ...]:
@@ -143,7 +145,9 @@ def apps_from_manifest(document: dict, allow_empty: bool = False) -> list[App]:
                     record["language"],
                     record.get("framework"),
                     int(record["port"]) if generated else int(record.get("port", 0)),
-                    Selection(selection),
+                    # Read under the names this keel now uses, so a project generated before an
+                    # axis was renamed replays without being migrated first (`axes.RENAMED`).
+                    Selection(named_axes(selection)),
                     record.get("api") if not service else None,
                     purpose=record.get("purpose") if service or not generated else None,
                     contexts=recorded_contexts(record) if service or not generated else (),

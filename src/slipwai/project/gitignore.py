@@ -93,7 +93,7 @@ def build_artifacts(event: bool, apps: list[App], target: str = "none") -> str:
     environment_artifacts = ".env\n" if needs_environment(apps) else ""
     store_artifacts = "".join(
         dict.fromkeys(
-            STORE_ARTIFACTS.get(service.selection.feature_of("event-store") or "", "")
+            STORE_ARTIFACTS.get(service.selection.feature_of("persistence") or "", "")
             for service in services_of(apps)
         )
     )

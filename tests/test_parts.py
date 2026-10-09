@@ -148,11 +148,11 @@ class SelectionTest(unittest.TestCase):
     flat list cannot answer "which event store did they choose?" without guessing from membership."""
 
     def test_an_axis_that_was_asked_reads_back_the_answer(self) -> None:
-        self.assertEqual(Selection({"event-store": "postgres"}).option("event-store"), "postgres")
+        self.assertEqual(Selection({"persistence": "postgres"}).option("persistence"), "postgres")
 
     def test_an_axis_that_was_never_asked_reads_as_its_no_infrastructure_answer(self) -> None:
         """Not a KeyError and not None: an unasked axis has an answer, and it is "nothing there"."""
-        self.assertEqual(Selection({}).option("event-store"), CATALOG["axes"]["event-store"]["absent"])
+        self.assertEqual(Selection({}).option("persistence"), CATALOG["axes"]["persistence"]["absent"])
 
     def test_two_selections_of_the_same_answers_are_the_same_selection(self) -> None:
         self.assertEqual(Selection({"http": "none"}), Selection({"http": "none"}))
