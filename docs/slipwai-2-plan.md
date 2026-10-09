@@ -1322,6 +1322,31 @@ Opened 2026-10-09 by phase 15, each with the answer that phase is written to and
   brownfield repository — goes away with 15.9, and what is left is a preference not to maintain
   `model.yaml`. Revisit when 15.11 gives an adopted repository a model page on the day it is adopted.
 
+Opened 2026-10-09 by the owner, reading 15.5 back:
+
+- **On the `state` rung an event is modelled always and emitted only where something reads it, and two
+  slices in one service are linked by a processor rather than by a message.** Written to the presets and
+  the mapping document (15.14). Three things were being carried under one word. An event as *notation* —
+  a fact on the timeline, which is how a slice is found at all — costs nothing at runtime and belongs on
+  both rungs, and dropping it would mean a second notation and a second gate for half the projects this
+  keel makes. An event as *truth* is the log, and that is the other rung by definition. An event as a
+  *published contract* is machinery, and 15.5's T023 twin made it unconditional: every state-stored
+  service was told to write an outbox in the write's own transaction, which is infrastructure erected to
+  notify nobody in exactly the case the rung exists for — a small supporting domain, a context that is
+  genuinely field updates. The `pcr` frame is already the honest link: on `events` a processor subscribes
+  to a stream, and on `state` there is no stream, so it is a call the use case makes. 15.13 is the other
+  half of this and does not change: the outbox stops being optional the moment another service reads the
+  event, because a mark nobody can consume is the failure `check-chart` exists to prevent.
+- **A decision is read against what the project already does, every time, and not only against the
+  specification, the constitution and the standing entries.** Written to the decision procedure and the
+  decision entry (15.15). The three things `/cruise` names today are all documents the method owns. A
+  generated project ten slices in, and an adopted repository on its first day, both hold conventions that
+  none of those documents names — how this codebase already publishes, already links a handler to the next
+  one, already names a migration — and a decision taken without them is how a codebase ends up with two
+  ways of doing one thing, each defensible on its own. The rung question above is the worked example and
+  the reason this was noticed: *is an event emitted here* has no keel-wide answer, and the project's own
+  answer is usually already on disk.
+
 ## 10. Gaps review, 2026-10-06
 
 The plan was reviewed with the toolkit's `find-gaps` skill: the Plans checklist (scope, prerequisites,
@@ -1405,7 +1430,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 117 of 165 slices done** — phase 1 6/6, phase 2 9/9, phase 3 19/22, phase 4 7/7, phase 5 29/29, phase 6 14/14, phase 7 16/17, phase 8 5/8, phase 9 5/8, phase 10 0/6, phase 11 0/5, phase 12 0/4, phase 13 0/5, phase 14 0/4, phase 15 7/13, phase 16 0/8. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 117 of 167 slices done** — phase 1 6/6, phase 2 9/9, phase 3 19/22, phase 4 7/7, phase 5 29/29, phase 6 14/14, phase 7 16/17, phase 8 5/8, phase 9 5/8, phase 10 0/6, phase 11 0/5, phase 12 0/4, phase 13 0/5, phase 14 0/4, phase 15 7/15, phase 16 0/8. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -2053,11 +2078,15 @@ not: backfilling ten years of history from `created_at` and `updated_at`, which 
 | 15.11 | The big picture, once, in `adopt`: actors from the surfaces and the auth the survey found, external systems from the outbound calls and inbound hooks, major processes from the entry points `structure.md` already lists — written as `proposed` slices with the evidence each was read off, beside `structure.md`, with Phase 1's questions the code cannot answer as `/gaps` lines. The actors are written as a **role catalogue**, `docs/event-model/actors.yaml`: each human role and system actor with what it does and what it **cannot** do, read off the routes and the authorisation the code already holds, because a negative permission is the one thing a slice's `actor` field cannot carry and the one thing a security pass and `bff-entry-points`' access classification both ask for first. Every `/gaps` line an agent posts carries its *intention* and the *assumption it proceeded on*, so a person reading it later knows what was done in their absence. The proposal-not-questionnaire rule of section 1, applied to a codebase | new | M | An adopted repository has a model page on the day it is adopted that names its actors with what each may not do, and its external systems, with a file and line under each, and no event |  |
 | 15.12 | `/observe <capability>`: the nine steps run against the code for one capability, walking the evidence table above — handler to `ui` and `cmd`, write to `evt` named as the fact, status enum to the transition list, query to `state-view`, job to `automation`, call to `translation` — and writing the slices at `observed`, `code:` at the handler, `gwt:` at the `examples.md` the pinned tests of `/characterise` already are. Its working record is the **extraction table**, one block per table the capability writes, one row per transition: *when `status` goes `draft → confirmed` in `orders` → `OrderConfirmed`*, with the file and line of the write it was read off — so the name is proposed beside the column it replaces and `event-is-not-crud` fails `OrdersUpdated` before a person reads it. It names the **first move** too: a `state-view` slice over the wrapped service's own tables, because a read model over the wrapped service's data is the one move from `observed` to `implemented` with no write path, no genesis and no routing seam — on any adopted service, and under a strangler it is also the first row the retirement ledger should show. It reads from **two sources by the service's rung**: the status columns and the writes for a `state` service, the events module for one confirmed `events`, and it says which it used, because the second is evidence of a different order. Refuses "the whole system" the way `/characterise` does; the hotspots in `structure.md` are its suggested first argument, and **a new requirement that touches capability no slice has observed runs it first**, so the Event-model stage's *what is already recorded* is read off the code where the model has not caught up | new | M | One capability of an adopted repository is on the timeline at `observed`, its events named as business facts with the transition each was read off, its screens as white boxes, and `check-model` and `make chart` both pass on it |  |
 | 15.13 | A cross-service `reads` whose producer is `write-model: state` is refused by `check-model` until that service has an outbox, because a mark nobody can consume is the failure `check-chart` exists to prevent; the refusal names the outbox rung as the fix. Held here as a slice rather than folded into 15.4 because it is a decision, recorded in section 9 | new | S | A two-service model where a `state` service's event is read by the other fails with a message that names the producing service and the rung that would clear it |  |
+| 15.14 | The `state` rung's events are earned, not assumed: T023's state twin in `tasks-template.md` becomes conditional — the outbox is written where something reads the event (a cross-service `reads`, or an `async` read model), and otherwise the slice raises in process and the next step is a call; `model_to_code`'s state-stored table says the same of `pcr` and of `evt`, so the page a slice is written against stops implying a publisher; the constitution's Principle III state block says an event is modelled always and emitted where it is read. **Where the project already has a mechanism — an outbox, a bus, change data capture — the slice uses that one and records it, rather than adding a second** (15.15 is the general rule). The timeline does not change on either rung: every `evt` stays a fact the model names, which is what a slice is found by | new (owner, 2026-10-09) | S | A one-service `state` project's tasks carry no outbox and its mapping document names none; adding a second service that reads the first's event puts the outbox task back, and 15.13's refusal is what asks for it |  |
+| 15.15 | A decision is read against what the project already does: `/cruise`'s *Read the standing entries before any decision* gains the project's own conventions beside the specification, the constitution and the standing entries — `docs/architecture.md` and the code already there for a generated project, `structure.md` and the survey for an adopted one — and the decision entry's **Why** says which of them answered, so a reader can tell a decision taken from the project's grain from one taken from the method's defaults. `check-decisions.py` holds the field as it holds the others; the shape does not change | new (owner, 2026-10-09) | S | A decision entry whose **Why** names no authority is a finding, and a run that takes a decision the project's own architecture page already answers records that page rather than reasoning it out again |  |
 
 Order: 15.1 → 15.2 → 15.3 → 15.7 lands the keel green with `write-model: state` generating a service that has no log;
 then 15.4 → 15.5 → 15.6, and 15.8 in the language's repository once 15.6 names what it has to answer. 15.9
 and 15.10 need 15.4; 15.11 and 15.12 need both, and 15.12 needs `/characterise` as it is. 15.13 waits on
-the decision in section 9.
+the decision in section 9. 15.14 revises what 15.5 wrote and is the other half of 15.13 — the outbox is
+earned by a reader there and asked for by the gate here — so it lands before 15.13 or with it. 15.15 is
+loose: it changes `/cruise`'s decision procedure and nothing else in this phase depends on it.
 
 Depends on: phase 5's chart and model gates, which are what make the rung invisible to the division of work;
 phase 6's conformance suite, which is where 15.6 proves a backend; the adoption path of 4.x, which 15.9 to

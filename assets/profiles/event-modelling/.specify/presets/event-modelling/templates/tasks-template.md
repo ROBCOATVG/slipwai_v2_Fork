@@ -100,7 +100,7 @@ work this slice pays for — not a reason to ship the slice without its screen.
 *Where `eventSourced` is `false`:*
 
 - [ ] T022 **(state)** Migration: the state table for this aggregate, with a **`version` column** — the value `load` returns and `save` checks, which IS the optimistic concurrency control here
-- [ ] T023 **(state)** No append-only trigger: a state table is updated in place by design. Instead, the events this service raises go to an outbox table in the **same transaction** as the write, or they are lost on the one failure that matters
+- [ ] T023 **(state)** No append-only trigger: a state table is updated in place by design. **Skip this task unless something reads one of this slice's events** — a `reads` from another service, or a read model whose `materialisation` is `async`. An event is on the timeline because it is how the slice was found; it needs a publisher only when there is a subscriber, and an outbox built for nobody is infrastructure this rung exists to avoid. Where there is a reader: the events go to an outbox table in the **same transaction** as the write, or they are lost on the one failure that matters — and **if this project already publishes somehow (an outbox, a bus, change data capture), use that one and say so in the decision record** rather than adding a second. Within this service, the next step after a write is a call the use case makes (the `pcr` frame), not a message it sends to itself
 - [ ] T024 **(state)** Repository adapter, translating a stale-version update affecting zero rows into a conflict result. The same connection rule applies: anything called from inside `save` reuses `save`'s connection
 - [ ] T025 **(state)** One shared `Repository` contract suite, run against **both** the fake and the real adapter, so the fake cannot drift
 - [ ] T026 **(state)** Concurrency test against the real store: N simultaneous writers to one row, exactly one wins. Real store only — the fake cannot genuinely race
@@ -108,7 +108,7 @@ work this slice pays for — not a reason to ship the slice without its screen.
 ### Projections and cross-cutting
 
 - [ ] T027 Projection runner: apply a pure fold, and **rebuild any projection from position zero**. Needed by the first slice whose `materialisation` is `inline` or `async`; a roadmap of nothing but `live` folds defers it, and says so in the plan's Stubs and Deferrals with what the first materialised view will cost to retrofit
-- [ ] T027 **(state)** No projection runner and no rebuild: there is no log to rebuild from. A read model on this service is a query over its own tables (`live`), written in the write's transaction (`inline`), or fed by the outbox of T023 (`async`)
+- [ ] T027 **(state)** No projection runner and no rebuild: there is no log to rebuild from. A read model on this service is a query over its own tables (`live`), written in the write's transaction (`inline`), or fed by the outbox of T023 (`async`) — and `async` is one of the two things that earn T023 its outbox, so choosing it here is choosing that task there
 - [ ] T028 Structured logging with correlation-id propagation
 - [ ] T029 Application-layer authorisation policy, invoked by use cases and never by route handlers
 - [ ] T030 HTTP app factory with schema parsing that distinguishes **schema failure from business rejection**

@@ -94,10 +94,10 @@ model names are contracts raised once a write has committed and never replayed.
 |---|---|---|
 | `ui` | actor-facing surface plus driving adapter | application-specific surface under `{service.path}` |
 | `cmd` | typed intent and application use case | `{paths['usecase']}` |
-| `evt` | immutable, versioned fact, raised by the use case once the write has committed | `{paths['events']}` |
+| `evt` | immutable, versioned fact, raised by the use case once the write has committed. **Modelled always, published only where something reads it** — another service's `reads`, or an `async` read model | `{paths['events']}` |
 | the decision | a load through the repository port, a pure decide over current state, and a save at the version that was read | `{paths['domain']}`, loading and saving through `{paths['repository']}` |
 | `rmo` | pure fold, plus the store its slice's `materialisation` names | application module, plus a driven adapter for anything but `live` |
-| `pcr` | processor that reads, decides, and issues a command | `{paths['usecase']}` |
+| `pcr` | processor that reads, decides, and issues a command — here a call the use case makes, not a subscription: there is no stream to subscribe to, so two slices in this service are linked by the processor itself | `{paths['usecase']}` |
 | `stream` | the row or aggregate one transaction locks, and the version it is saved at | domain identity plus `{paths['repository']}` |
 | `guard` | refused on this rung by name: a tag query reads a log, and this service keeps none | — |
 | `folds` | refused for the same reason — there is no history here to fold | — |
@@ -119,6 +119,14 @@ A read model is a pure fold in all three cases, and `materialisation` on the sli
 `async` is maintained from the outbox the raised events are published through. `make check-model` requires
 the field from `planned`, and asks no `liveBudget` on this rung — a `live` view reads current state rather
 than folding a log, so there is no ceiling of events for it to name.
+
+**An event here is on the timeline because it is how the slice was found, and that is reason enough for it
+to exist.** It needs a publisher only where there is a subscriber: a `reads` from another service, or an
+`async` read model. Until then the use case raises it in process, and what happens next in this service is
+a call the use case makes — the `pcr` row above. An outbox built for nobody is the machinery this rung
+exists to avoid, and the first cross-service reader is what makes it required rather than optional. Where
+this project already publishes somehow — an outbox, a bus, change data capture — that is the mechanism to
+use, recorded as the decision it is rather than joined by a second one.
 """
 
 

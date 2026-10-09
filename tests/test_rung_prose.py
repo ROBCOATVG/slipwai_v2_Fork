@@ -137,6 +137,25 @@ class MappingDocumentTest(unittest.TestCase):
     def document(self, apps: list[App]) -> str:
         return documentation_files("shop", "event-modelling", apps)["docs/event-modeling-to-code.md"]
 
+    def test_a_state_stored_service_is_told_its_events_are_published_where_they_are_read(self) -> None:
+        """15.14. The page a slice is written against implied a publisher for every event, which on this
+        rung is machinery erected for nobody in exactly the case the rung exists for."""
+        page = self.document(state_only())
+        self.assertIn("**Modelled always, published only where something reads it**", page)
+        self.assertIn("An outbox built for nobody is the machinery this rung", page)
+
+    def test_two_slices_in_one_state_stored_service_are_linked_by_the_processor(self) -> None:
+        """There is no stream to subscribe to, so the `pcr` frame is a call rather than a subscription —
+        which is the thing a reader of this table would otherwise have to guess."""
+        page = self.document(state_only())
+        self.assertIn("here a call the use case makes, not a subscription", page)
+
+    def test_the_event_sourced_table_is_untouched_by_any_of_it(self) -> None:
+        """The rung that has a log keeps the sentence it had: a processor there does subscribe."""
+        page = self.document(sourced_only())
+        self.assertIn("| `pcr` | processor that reads, decides, and issues a command | ", page)
+        self.assertNotIn("published only where something reads it", page)
+
     def test_a_mixed_project_carries_a_table_per_service(self) -> None:
         """One table would describe the first service's rung and hand it silently to the second."""
         written = self.document(mixed())

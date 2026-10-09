@@ -114,9 +114,39 @@ class TasksTemplateTest(unittest.TestCase):
         self.assertIn("`version` column", self.text)
 
     def test_the_state_twin_keeps_the_events_by_writing_them_in_the_same_transaction(self) -> None:
-        """A state-stored service still raises the model's events; losing them on failure is the one
-        way the rung turns into a rung that cannot be modelled."""
+        """Where there is a reader, a state-stored service still raises the model's events; losing them on
+        failure is the one way the rung turns into a rung that cannot be modelled."""
         self.assertIn("same transaction", self.text)
+
+    def test_the_outbox_is_skipped_until_something_reads_the_event(self) -> None:
+        """15.14: the twin told every state-stored service to build a publisher. An event is on the
+        timeline because it is how the slice was found, which is not the same as having a subscriber."""
+        self.assertIn("**Skip this task unless something reads one of this slice's events**", self.text)
+        self.assertIn("an outbox built for nobody", self.text.lower())
+
+    def test_an_async_read_model_is_named_as_one_of_the_things_that_earns_it(self) -> None:
+        """The two halves have to agree, or T027 chooses `async` and T023 is still skipped."""
+        self.assertIn("`async` is one of the two things that earn T023 its outbox", self.text)
+
+    def test_the_project_s_own_publisher_is_preferred_to_a_second_one(self) -> None:
+        self.assertIn("use that one and say so in the decision record", self.text)
+
+
+class EarnedEventsTest(unittest.TestCase):
+    """15.14, across the three places that teach the state rung: the twin above, the constitution, and
+    the mapping document a slice is written against. They have to say one thing."""
+
+    def test_the_constitution_says_modelled_always_and_published_where_read(self) -> None:
+        text = CONSTITUTION.read_text(encoding="utf-8")
+        self.assertIn("An event is modelled always and published only where something reads it", text)
+        self.assertIn("Where the project already publishes, that is the mechanism", text)
+
+    def test_the_constitution_keeps_the_rung_s_other_rules(self) -> None:
+        """The new paragraphs sit inside the `state` block and displace nothing: a rung whose `guard`
+        rule went missing would be a gate the constitution stopped covering."""
+        text = CONSTITUTION.read_text(encoding="utf-8")
+        self.assertIn("MUST NOT name `guard` or `folds`", text)
+        self.assertIn("No event may claim history the system did not record at the time", text)
 
 
 if __name__ == "__main__":  # pragma: no cover

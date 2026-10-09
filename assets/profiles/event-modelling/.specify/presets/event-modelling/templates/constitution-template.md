@@ -106,6 +106,15 @@ to its own service's write model. An event is a named business fact on both — 
   explicitly — it is the concurrency ceiling here too.
 - **A slice on this service MUST NOT name `guard` or `folds`.** A tag query and a fold both need a log.
   `make check-model` refuses both by name.
+- **An event is modelled always and published only where something reads it.** It is on the timeline
+  because it is how the slice was found, and that is reason enough for it to exist. A publisher is earned
+  by a subscriber: a `reads` from another service, or a read model whose `materialisation` is `async`.
+  Until then the use case raises it in process, and the next step inside this service is a call the use
+  case makes — the `pcr` frame — not a message it sends to itself. An outbox built for nobody is the
+  machinery this rung exists to avoid.
+- **Where the project already publishes, that is the mechanism.** An outbox, a bus, change data capture:
+  the slice uses the one that is here and records which, rather than adding a second way of doing a thing
+  the codebase already does one way.
 - **No event may claim history the system did not record at the time.** An event raised from now on is a
   true event; backfilling the past from timestamps is a reconstruction wearing a fact's clothes.
 
