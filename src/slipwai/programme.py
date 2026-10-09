@@ -14,7 +14,7 @@ and no suite saw it. This module reads them all off the record as one ordered li
 a modular monolith, over time — the new home current from day one, the old home only if it stays — under a strangler
 fig, recorded but not scheduled under *leave it*, and, while nothing is decided, "decide the strategy first". Written
 into `strategy.programme` by `with_recommendation`, rendered on `docs/change-strategy.md` as *The programme*, and
-offered by `/drive`'s Convergence stage from the top. Nothing is ticked off by hand: `/survey` derives it again, and a
+offered by `/sail`'s Convergence stage from the top. Nothing is ticked off by hand: `/survey` derives it again, and a
 step the tree shows done is not there any more.
 """
 from __future__ import annotations

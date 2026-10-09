@@ -46,11 +46,11 @@ says only that.
 
 ## The board
 
-The board `commands/drive.md` opens every demo stop with, in the same order, so the two can never disagree:
+The board `commands/sail.md` opens every demo stop with, in the same order, so the two can never disagree:
 
 - ✅ **Works now** — every accepted slice, one line each, as the thing the actor can do
 - 🔧 **In progress** — the slice being worked, as the thing it will let the actor do, and the stage of
-  `/drive`'s ladder it has reached, with the artifact that says so: an example map written, a plan without
+  `/sail`'s ladder it has reached, with the artifact that says so: an example map written, a plan without
   tasks, tasks half checked, a converged verdict waiting for its demo. Nothing in progress is one line
   saying so
 - ⬜ **Still to come** — the remaining slices of the split, in order and by name, headed by one line of
@@ -60,7 +60,7 @@ The board `commands/drive.md` opens every demo stop with, in the same order, so 
 - 🔀 **Ready (parallel)** — every slice that can start now: not done, every `depends_on` done, and not
   pre-empted by an open `CRITICAL` — in two groups, *claimed* (a `slice/<id>` branch on the forge, by whom
   and how long ago) and *unclaimed*, so another session knows which sibling is free
-- ➡️ **Next (this session)** — the slices this `/drive` will take: every unclaimed ready slice whose
+- ➡️ **Next (this session)** — the slices this `/sail` will take: every unclaimed ready slice whose
   contract is settled, concurrently; or the earliest ready slice in split order where the harness cannot
   delegate, unless the user picks another ready one
 - ⛔ **Blocked** — remaining slices waiting on unmet `depends_on`, or an open `CRITICAL` ahead of them
@@ -70,7 +70,7 @@ new to show, and a question asked between demos has something half-built to repo
 
 ## Where it is read from
 
-The board is derived from artifacts, not memory, the way `/drive` derives its entry stage:
+The board is derived from artifacts, not memory, the way `/sail` derives its entry stage:
 {board_sources(event)}. The slice in progress and its stage come from the ladder — the first
 stage whose artifact is missing, empty, or still a placeholder — and its stubs from its `plan.md` and
 `tasks.md`; {constraints}.
@@ -89,7 +89,7 @@ specification, {"event model, " if event else ""}split — and what the next sta
   the board. A count an artifact cannot supply is written `unknown`, with the artifact that would have
   supplied it, never estimated.
 - **Does not demo.** It hands over no command to paste and asks no question: that is the demo stop's job,
-  and it belongs to `/drive`. Where the board shows a converged slice waiting for its demo, say so, and say
-  that `/drive` is what runs it.
+  and it belongs to `/sail`. Where the board shows a converged slice waiting for its demo, say so, and say
+  that `/sail` is what runs it.
 
 {under_cruise_section()}"""

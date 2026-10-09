@@ -293,7 +293,7 @@ def report(app: App, added: list[str], rewritten: list[str], target: str = "none
         if not app.purpose:
             lines.append(
                 f"no purpose recorded: say what it owns (`slipwai describe-service {app.name} --purpose \"...\"`), "
-                "or /drive will ask before it places a slice here"
+                "or /sail will ask before it places a slice here"
             )
     if managed(CATALOG, target) and app.is_service:
         # The stacks read the regenerated project.auto.tfvars.json, so the service's ECS service arrives with

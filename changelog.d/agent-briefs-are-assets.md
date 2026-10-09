@@ -4,7 +4,7 @@ PATCH
 standing brief was a Python string literal, so `agents.py` reached its 350-line budget and was cut at a
 paragraph boundary: `cruise_agents.py` exists because three more briefs would not fit, and the bosun's words
 have been living in a file named for the cruise, where nobody reading about the bosun would look. They are
-`assets/toolkit/agents/drive-*.md` now — one file per type, beside the skills and the commands, edited like
+`assets/toolkit/agents/sail-*.md` now — one file per type, beside the skills and the commands, edited like
 any other prose this repository ships.
 
 What did not move is the frontmatter. `name`, `stage`, `writes` and `commands` are still generated from
@@ -24,5 +24,5 @@ Nothing a project receives changed. The eleven generated files are byte-for-byte
 against digests taken from the generator at the commit before the move and kept in
 `tests/fixtures/agent-briefs.sha256`.
 
-**Catch-up:** nothing. `agents/drive-*.md` in a generated project is the same text it was; regenerate or
+**Catch-up:** nothing. `agents/sail-*.md` in a generated project is the same text it was; regenerate or
 not, as you like.

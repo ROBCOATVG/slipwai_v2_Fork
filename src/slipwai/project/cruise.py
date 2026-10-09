@@ -1,14 +1,14 @@
-"""`/cruise`: `/drive` with nobody at the wheel — the agent as driver and product owner, until the specs are satisfied.
+"""`/cruise`: `/sail` with nobody at the wheel — the agent as driver and product owner, until the specs are satisfied.
 
-`/drive` stops for a product decision, an unavailable input, an exhausted split and the next demo. `/cruise` runs
+`/sail` stops for a product decision, an unavailable input, an exhausted split and the next demo. `/cruise` runs
 the same ladder — not a copy — and at each stop does what the owner or the actor would have: decides, on the host
-where the stage recommends or a standing decision covers it and through `drive-decide-skipper` where the question is
-open; demos through `drive-demo-hand`; and audits the specification against what shipped where the split runs out.
-Every answer goes where `/drive` would have written a person's, and once more in `decisions.md` — and, where
+where the stage recommends or a standing decision covers it and through `sail-decide-skipper` where the question is
+open; demos through `sail-demo-hand`; and audits the specification against what shipped where the split runs out.
+Every answer goes where `/sail` would have written a person's, and once more in `decisions.md` — and, where
 reversing it would be a migration, into an ADR at `Proposed` — so a person can read and overturn every one.
 
 **Typed, it casts off**: `scripts/agents/fleet.py` starts the harbourmaster and a captain per stream, and the
-session takes the watch seat. The rest of this file is what a captain's dispatched `/drive` reads — the rules
+session takes the watch seat. The rest of this file is what a captain's dispatched `/sail` reads — the rules
 for the stops when nobody is at the wheel — and it is one file rather than two because the answers must be the
 same whoever asks.
 
@@ -41,7 +41,7 @@ SETTINGS: tuple[tuple[str, tuple[str, ...] | str, object, str], ...] = (
     ("enabled", ("true", "false"), False, "whether `/cruise` runs at all; `false` is a refusal that says so"),
     ("decide", ("recommended-first", "skipper-always"), "recommended-first",
      "who answers a product question: the host where the stage recommends an answer or a standing decision "
-     "covers it and `drive-decide-skipper` otherwise, or `drive-decide-skipper` for every question"),
+     "covers it and `sail-decide-skipper` otherwise, or `sail-decide-skipper` for every question"),
     ("release", ("flagged", "park"), "flagged",
      "the release-constraint stage: every slice continues or opens a flag seeded off, so every merge is dark; "
      "or park at the push and let a person say it is a release they want"),
@@ -50,7 +50,7 @@ SETTINGS: tuple[tuple[str, tuple[str, ...] | str, object, str], ...] = (
     ("hand", ("browser", "http", "cli"), "browser",
      "the top of the hand's ladder for a demo; each falls through to the next where it cannot run"),
     ("unblock", ("bosun", "park"), "bosun",
-     "what a block becomes: work for `drive-unblock-bosun` first — a stub, a narrower reading, a repair — parking only "
+     "what a block becomes: work for `sail-unblock-bosun` first — a stub, a narrower reading, a repair — parking only "
      "at the catastrophic or when it fails; or a park at once"),
     # `stuck_after`, `max_iterations`, `max_hours` and `poll_minutes` were here until 7.7d and are not any
     # more: each was a budget on a loop that no longer exists. What bounds a run is the telegraph
@@ -59,7 +59,7 @@ SETTINGS: tuple[tuple[str, tuple[str, ...] | str, object, str], ...] = (
      "stage `.specify/models.json` maps to `host`; null is the harness's default, which nobody at the wheel chooses"),
 )
 COMMENT = (
-    "How /cruise runs /drive with nobody at the wheel. Change it with /cruise-settings (python3 "
+    "How /cruise runs /sail with nobody at the wheel. Change it with /cruise-settings (python3 "
     f"{SCRIPT} --set key=value), checked; `make check-agents` holds the shape. commands/cruise.md says what "
     "each value means. `enabled: false` is the default: a project has to ask for this."
 )
@@ -95,22 +95,22 @@ def cruise_command(
         if adoption is not None else ""
     )
     return f"""---
-description: Cast off — start a captain per stream to run /drive as driver and product owner until every specification is satisfied — and watch
+description: Cast off — start a captain per stream to run /sail as driver and product owner until every specification is satisfied — and watch
 argument-hint: [--boilers <n>] | unblock: <what a captain saw>
 ---
 
 # Cruise
 
-`/drive` takes one slice from wherever it stands to an actor-visible demo and stops for a product decision, an
-unavailable input, an exhausted split and the demo. This command runs **that ladder — `commands/drive.md`,
+`/sail` takes one slice from wherever it stands to an actor-visible demo and stops for a product decision, an
+unavailable input, an exhausted split and the demo. This command runs **that ladder — `commands/sail.md`,
 every rule as written** — with nobody at the wheel: it decides what the ladder would have asked a person,
 runs each demo as the actor, and re-enters the ladder until the specification under `specs/<feature>/` is
 satisfied. Nothing about what a stage produces changes; what changes is who answers.
 
 **Typed, this casts off and watches.** `python3 {FLEET} start` starts the harbourmaster and one captain per
 stream the chart names, under the telegraph's `boilers`, and exits — nothing is left holding the state of the
-run. Each captain claims a slice, makes its berth, dispatches `/drive` for it, and reads the deck log to know
-how it went. **Dispatched, this file is the rules**: a `/drive` session a captain started reads everything
+run. Each captain claims a slice, makes its berth, dispatches `/sail` for it, and reads the deck log to know
+how it went. **Dispatched, this file is the rules**: a `/sail` session a captain started reads everything
 below *The watch seat* and answers at the ladder's stops by it.{adopted}
 
 ## Before anything: refuse, or cast off
@@ -149,7 +149,7 @@ After casting off — and only in the session that did, never in one a captain d
 {watch_seat_body(layout)}
 ## Run the ladder, and answer at its stops
 
-Run `commands/drive.md` from *Enter at the first incomplete stage* to its end, exactly as written — the entry
+Run `commands/sail.md` from *Enter at the first incomplete stage* to its end, exactly as written — the entry
 stage from artifacts, the branch check, *Who runs each stage*, the benchmark bracket, the ready-set rules and
 the concurrent fan-out. Wherever that command would stop for a person, this table says what to do instead;
 where the table is silent, the ladder's own rule stands.
@@ -195,8 +195,8 @@ re-derives the entry stage from that artifact, the way demo feedback re-enters t
 {hand_section(layout.make)}
 ## When the ready set is empty: the completion audit
 
-An exhausted split is where `/drive` stops and where this command does its last stage. Delegate `/gaps` over
-the whole of `specs/<feature>/spec.md` against what shipped — one `drive-gaps-lookout` delegate per feature area,
+An exhausted split is where `/sail` stops and where this command does its last stage. Delegate `/gaps` over
+the whole of `specs/<feature>/spec.md` against what shipped — one `sail-gaps-lookout` delegate per feature area,
 concurrently, as the post-implementation pass is per seam — and put every finding to the skipper protocol:
 a criterion nothing built becomes a slice, appended to the split with `/story-splitting`, and the ladder is
 re-entered for it; a finding the owner rules out of scope is a decision entry saying so. Write
@@ -209,7 +209,7 @@ Spend this session on one unit of work, write the lines that say what it did, an
 exists**, the unit is the upstream stages together — {upstream} — through to the split's first ready set: each
 reads the one before it and none is a slice, so the session does not end inside them; it ends when the split
 is written, or at a park. **From the split on**, the unit is the one slice the captain dispatched this session
-for, through Phase 4 and its done marker. `commands/drive.md` says *do not wait to be invoked again*; here the
+for, through Phase 4 and its done marker. `commands/sail.md` says *do not wait to be invoked again*; here the
 captain is what dispatches again, with a fresh context, which is the rule every delegate already lives by.
 
 **A stage that wrote no line made no progress, whatever it says it did.** That is the one rule this contract
@@ -254,7 +254,7 @@ left in the tree before continuing.
   same way here. What no longer serialises the fan-out are the two stops that were a person's: a delegate's
   product question is answered while its siblings keep running, and a slice's demo runs in the hand while
   the next slice's delegate is still converging. Phase 4 stays one slice at a time on `main`. The worktrees
-  beside the checkout are writable on Claude Code because the captain starts every `/drive` with `--add-dir`
+  beside the checkout are writable on Claude Code because the captain starts every `/sail` with `--add-dir`
   for the directory the checkout sits in (`scripts/agents/registry.json`, `headless.worktreeFlags`); on a
   harness whose row has no such flag, make the worktree inside the tree where the harness offers one, or run
   the ready slices one at a time here and say so, as the ladder does where the harness cannot delegate.
@@ -279,13 +279,13 @@ left in the tree before continuing.
 def cruise_settings_command(layout: Layout = AT_ROOT) -> str:
     """`/cruise-settings`: the settings shown, or changed through the checked `--set`."""
     return f"""---
-description: Show or change how /cruise runs /drive on its own — who decides, how it releases, what it demos with, when it parks
+description: Show or change how /cruise runs /sail on its own — who decides, how it releases, what it demos with, when it parks
 argument-hint: [key=value ...]
 ---
 
 # Cruise settings
 
-`{CONFIG}` holds how `/cruise` runs `commands/drive.md` with nobody at the wheel. `commands/cruise.md` says what
+`{CONFIG}` holds how `/cruise` runs `commands/sail.md` with nobody at the wheel. `commands/cruise.md` says what
 each value does at the stops it governs. This command is how the settings are read and how they change:
 checked, at any time, and never by quietly running an iteration under different rules.
 
@@ -314,7 +314,7 @@ message naming the change: it takes effect at the next iteration, and nothing al
 ## When the request is in words
 
 "Turn it on" is `enabled=true`; "ask me before every release" is `release=park`; "let the skipper decide
-everything" is `decide=skipper-always`; "drive on opus" is `model=opus` (an identifier the harness's own model
+everything" is `decide=skipper-always`; "sail on opus" is `model=opus` (an identifier the harness's own model
 flag takes; `null` is its default); "back to the defaults" is every key at the value the table shows.
 
 Two kinds of request are **not** settings and are answered by pointing somewhere else. *How hard to push* —

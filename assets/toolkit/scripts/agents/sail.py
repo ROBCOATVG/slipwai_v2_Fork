@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""How `/drive` hands implementation to `drive-implement-shipwright`: the boundary a delegate is handed, and the cycle it runs.
+"""How `/sail` hands implementation to `sail-implement-shipwright`: the boundary a delegate is handed, and the cycle it runs.
 
-`.specify/drive.json` holds both — `delegate`: how much one delegate is handed, every rule of one user story, one
+`.specify/sail.json` holds both — `delegate`: how much one delegate is handed, every rule of one user story, one
 rule, or one task; `cycle`: how many RED tests one RED-GREEN-REFACTOR cycle opens with, a rule's examples together
 or one at a time. This reads the file and says what the settings are and mean, checks a hand edit, and changes them
-through `--set`, refusing anything the ladder could not act on. `commands/drive.md`, *How implementation is
+through `--set`, refusing anything the ladder could not act on. `commands/sail.md`, *How implementation is
 delegated*, says which veto overrides a setting on a slice; nothing here decides that.
 
-    python3 scripts/agents/drive.py                                   # both settings and what each means
-    python3 scripts/agents/drive.py --check                           # well-formed; `make check-agents` runs this
-    python3 scripts/agents/drive.py --set delegate=rule cycle=example # change them, checked, any time
+    python3 scripts/agents/sail.py                                   # both settings and what each means
+    python3 scripts/agents/sail.py --check                           # well-formed; `make check-agents` runs this
+    python3 scripts/agents/sail.py --set delegate=rule cycle=example # change them, checked, any time
 
-A change takes effect at the next implementation stage `/drive` runs: the file is read before every one and
+A change takes effect at the next implementation stage `/sail` runs: the file is read before every one and
 cached nowhere. `slipwai migrate` merges a newer factory's file over an edited one rather than replacing it.
 """
 
@@ -32,7 +32,7 @@ def project_root(script: Path, depth: int) -> Path:
 
 
 ROOT = project_root(Path(__file__).resolve(), 2)
-CONFIG = ROOT / ".specify/drive.json"
+CONFIG = ROOT / ".specify/sail.json"
 DELEGATES = {
     "story": "every rule of one user story, each rule its own cycle in one context",
     "rule": "one rule with its examples",
@@ -47,9 +47,9 @@ DEFAULTS = {"delegate": "story", "cycle": "rule"}
 REFUSED = {"cycle": {"story": "a story is never a cycle unit — every rule of a story red before any is implemented "
                               "is the batch Principle V prohibits; `cycle=rule` is the widest cycle there is"}}
 VETOES = ("on a slice whose tasks carry no story tag, `story` falls to `rule`; on a map that does not number its "
-          "rules, the boundary falls to `task` and the cycle to `example` (commands/drive.md, *How implementation is "
+          "rules, the boundary falls to `task` and the cycle to `example` (commands/sail.md, *How implementation is "
           "delegated*)")
-ABSENT = (f"no {CONFIG.relative_to(ROOT)}: /drive delegates per {DEFAULTS['delegate']} and cycles per "
+ABSENT = (f"no {CONFIG.relative_to(ROOT)}: /sail delegates per {DEFAULTS['delegate']} and cycles per "
           f"{DEFAULTS['cycle']}, the defaults; `slipwai migrate` writes the file")
 
 
@@ -101,7 +101,7 @@ def main() -> None:
         CONFIG.write_text(json.dumps(table, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         for line in changed:
             print(line)
-        print(f"{CONFIG.relative_to(ROOT)} written; it takes effect at the next implementation stage /drive runs. "
+        print(f"{CONFIG.relative_to(ROOT)} written; it takes effect at the next implementation stage /sail runs. "
               "Commit it: the choice is versioned with the project.")
         return
     findings = check(table)

@@ -9,7 +9,7 @@ reader in the same way it gets a health check.
 One module rather than a row in four, because the parts only make sense together. Each backend's
 `flag_reader` answer says where its reader comes from and where it lands; `flag_reader` here is what a
 backend's `service_files` merges in; the same answer spells the path for the prose in `AGENTS.md`, the ladder stage in
-`commands/drive.md` and the release section of `docs/deployment.md`, so the file, the rule that points at
+`commands/sail.md` and the release section of `docs/deployment.md`, so the file, the rule that points at
 it, and the page that explains it cannot disagree. Nothing here is emitted under `--target none`: a project
 with nowhere to deploy has no unsafe push to make, and `flags.auto.tfvars` — the one place a flag is
 declared — is the target's file.
@@ -121,7 +121,7 @@ def flag_gate(target: str) -> str:
 
 
 def flag_stage(apps: list[App]) -> str:
-    """The release-constraint stage of `commands/drive.md`'s ladder, for a project with a target.
+    """The release-constraint stage of `commands/sail.md`'s ladder, for a project with a target.
 
     Between the slice's gaps review and its plan, because the plan is where the decision is written down
     and because deciding it later means deciding it after the code exists — which is when "it is only a

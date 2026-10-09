@@ -173,7 +173,7 @@ def main() -> int:
             failures += 1
             continue
         if row.get("provenance") == "unrecorded":
-            print(f"  {axis}: `{rung}` — unrecorded: nothing has established it; /drive asks before the first slice")
+            print(f"  {axis}: `{rung}` — unrecorded: nothing has established it; /sail asks before the first slice")
             continue
         cap = capped.get(axis)
         if cap and RUNGS[axis].index(rung) > RUNGS[axis].index(cap[0]):
@@ -196,7 +196,7 @@ def main() -> int:
             f"  strategy: `strangler-fig` is decided, {archived} slice(s) are archived, the retirement ledger "
             "reads *removed* for nothing, and every deployable is one that was here — nothing has moved to a new "
             "home. A product slice under a strangler lands in a new home (`add-service`, then `/strangle`); the "
-            "Plan stage of /drive has the rule."
+            "Plan stage of /sail has the rule."
         )
     at = sum(1 for r in rows if r.get("rung") == r.get("target"))
     print(f"check-convergence: {at} of {len(rows)} axes at target; the map is {PAGE.relative_to(ROOT)}")

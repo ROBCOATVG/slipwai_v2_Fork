@@ -1,4 +1,4 @@
-"""The project a captain runs in, and the fake `/drive` its suites drive it with.
+"""The project a captain runs in, and the fake `/sail` its suites sail it with.
 
 Not a test module — `unittest discover` collects `test_*.py` only — so this holds what two suites share and
 asserts nothing itself. The chart and the fake are rendered from one table: they were two copies, and the
@@ -22,9 +22,9 @@ AGENTS = TOOLKIT_ROOT / "scripts/agents"
 CARRIED = ("captain.py", "clearance.py", "inbox.py", "logs.py", "berths.py", "ids.py",
            # The captain dispatches a headless session of the installed harness, so it imports the
            # module that decides which one and the registry that module reads. Every case here sets
-           # `SLIPWAI_DRIVE`, so neither is consulted — but the import has to resolve.
+           # `SLIPWAI_SAIL`, so neither is consulted — but the import has to resolve.
            "harness.py", "registry.json")
-#: The chart these tests run against, as data, so the fake `/drive` below sets the marks this says it does.
+#: The chart these tests run against, as data, so the fake `/sail` below sets the marks this says it does.
 #: They were two copies and the fake set `Placed` whatever it was driving, which passed only because the
 #: captain did not read the chart's `sets` — exactly the gap slice 7.8 closes.
 SLICES: dict[str, tuple[str, list[str], list[str]]] = {
@@ -42,7 +42,7 @@ CHART = "slices:\n" + "".join(
 
 
 def fake_drive(verdict: str = "accepted", marks: bool = True, demo: bool = True) -> str:
-    """A fake `/drive`, as the real one is seen from here: a process that writes lines and exits.
+    """A fake `/sail`, as the real one is seen from here: a process that writes lines and exits.
 
     Its argv is `<slice> <fairway>`. What it writes is what the chart says that slice publishes, so a fake
     that is right about one slice is right about all of them.
@@ -121,16 +121,16 @@ class Fixture(unittest.TestCase):
             return []
         return logs.fold(path.read_text(encoding="utf-8").splitlines(), harbour=True)
 
-    def drive(self, body: str) -> str:
-        path = self.root / "fake-drive.py"
+    def sail(self, body: str) -> str:
+        path = self.root / "fake-sail.py"
         path.write_text(body, encoding="utf-8")
         return f"{sys.executable} {path}"
 
-    def captain(self, fairway: str, drive: str, timeout: float = 90) -> subprocess.CompletedProcess:
+    def captain(self, fairway: str, sail: str, timeout: float = 90) -> subprocess.CompletedProcess:
         import os
         return subprocess.run([sys.executable, str(self.script), fairway, "--once"],
                               capture_output=True, text=True, cwd=self.root, timeout=timeout,
-                              env={**os.environ, "SLIPWAI_DRIVE": drive})
+                              env={**os.environ, "SLIPWAI_SAIL": sail})
 
     def deck(self, fairway: str, *entries: logs.Entry) -> None:
         path = self.root / logs.deck_path("ordering", fairway)

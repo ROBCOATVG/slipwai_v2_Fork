@@ -30,7 +30,6 @@ from .project.deploy_workflow import deploy_workflow, promotion_workflow, rollba
 from .project.docs import documentation_files
 from .project.docs_index import docs_index
 from .project.domain import domain_files
-from .project.drive_settings import drive_config
 from .project.event_model import event_model_workflow
 from .project.existing import existing_deployment_page
 from .project.frontend import frontend_files
@@ -50,6 +49,7 @@ from .project.readme import readme
 from .project.renovate import renovate_config
 from .project.repository import repository_files
 from .project.run_skill import run_skill
+from .project.sail_settings import sail_config
 from .project.shared_packages import PACKAGES
 from .project.stage_models import stage_models
 from .project.strangle_command import strangle_files
@@ -108,7 +108,7 @@ def project_files(
         "AGENTS.md": agent_guidance(profile, apps, target),
         ".claude/settings.json": claude_settings(apps, target, layout),
         ".specify/models.json": stage_models(),
-        ".specify/drive.json": drive_config(),
+        ".specify/sail.json": sail_config(),
         "harbour.json": harbour_config(),
         **domain_files(),
         ".specify/cruise.json": cruise_config(),

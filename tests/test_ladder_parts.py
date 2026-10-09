@@ -4,7 +4,7 @@ Every one of these returns prose that ends up in a page an agent reads, and in t
 tested by generating a project and reading the page back — which needs the scaffold, so those suites
 return in slice 3.3z. What is held here is what the prose has to say whatever project it lands in.
 
-`drive_settings` gets the most attention, because it carries the two widths the delivery loop is
+`sail_settings` gets the most attention, because it carries the two widths the delivery loop is
 actually driven by: how much one implementation delegate is handed, and how many failing tests a
 red-green-refactor cycle opens with. Section 5 of the plan calls example mapping and that cycle the two
 things both profiles share and neither optional; this is the file that writes them down.
@@ -25,11 +25,11 @@ from slipwai.project import (
     commands,
     demo_stop,
     docs_index,
-    drive_section,
-    drive_settings,
     evolving,
     ladder,
     parallel_slices,
+    sail_section,
+    sail_settings,
     stage_models,
 )
 from slipwai.selection import Selection
@@ -43,29 +43,29 @@ SOURCED = [service_app("orders", "toy-plain", 3000, Selection({"write-model": "e
 
 class DriveSettingsTest(unittest.TestCase):
     def test_the_two_widths_are_the_ones_the_loop_is_driven_by(self) -> None:
-        self.assertEqual(drive_settings.DELEGATES, ("story", "rule", "task"))
-        self.assertEqual(drive_settings.CYCLES, ("rule", "example"))
+        self.assertEqual(sail_settings.DELEGATES, ("story", "rule", "task"))
+        self.assertEqual(sail_settings.CYCLES, ("rule", "example"))
 
     def test_a_story_is_never_a_cycle(self) -> None:
         """Every rule of a story red before any is implemented is a batch. `rule` is the widest cycle."""
-        self.assertIn("story", drive_settings.DELEGATES)
-        self.assertNotIn("story", drive_settings.CYCLES)
+        self.assertIn("story", sail_settings.DELEGATES)
+        self.assertNotIn("story", sail_settings.CYCLES)
 
     def test_the_defaults_are_the_widest_delegate_and_the_widest_legal_cycle(self) -> None:
-        self.assertEqual((drive_settings.DEFAULT_DELEGATE, drive_settings.DEFAULT_CYCLE), ("story", "rule"))
-        self.assertIn(drive_settings.DEFAULT_DELEGATE, drive_settings.DELEGATES)
-        self.assertIn(drive_settings.DEFAULT_CYCLE, drive_settings.CYCLES)
+        self.assertEqual((sail_settings.DEFAULT_DELEGATE, sail_settings.DEFAULT_CYCLE), ("story", "rule"))
+        self.assertIn(sail_settings.DEFAULT_DELEGATE, sail_settings.DELEGATES)
+        self.assertIn(sail_settings.DEFAULT_CYCLE, sail_settings.CYCLES)
 
     def test_the_written_config_is_json_carrying_both_widths_and_where_they_are_explained(self) -> None:
-        written = json.loads(drive_settings.drive_config())
-        self.assertEqual(written["delegate"], drive_settings.DEFAULT_DELEGATE)
-        self.assertEqual(written["cycle"], drive_settings.DEFAULT_CYCLE)
+        written = json.loads(sail_settings.sail_config())
+        self.assertEqual(written["delegate"], sail_settings.DEFAULT_DELEGATE)
+        self.assertEqual(written["cycle"], sail_settings.DEFAULT_CYCLE)
         self.assertIn("RED-GREEN-REFACTOR", written["_comment"])
 
     def test_the_comment_names_the_command_that_changes_it(self) -> None:
         """A settings file a reader cannot change safely is a settings file they will edit by hand."""
-        self.assertIn("/drive-settings", drive_settings.COMMENT)
-        self.assertIn(drive_settings.SCRIPT, drive_settings.COMMENT)
+        self.assertIn("/sail-settings", sail_settings.COMMENT)
+        self.assertIn(sail_settings.SCRIPT, sail_settings.COMMENT)
 
 
 class StagePagesTest:
@@ -118,14 +118,14 @@ def every_rung() -> str:
     No apps: the two rungs a browser app adds are a project's own answer, allowed but not required, and
     resolving a backend here would need a language package this gate deliberately does not install.
     """
-    return ladder.drive_ladder(event=True, apps=[], target="aws")
+    return ladder.sail_ladder(event=True, apps=[], target="aws")
 
 
 def both_profiles() -> list[str]:
     """Every rung either profile has. Two of them are each profile's own answer to one question: the event
     model is a rung only where there is a model, and the chart stage only where there is not."""
     return [heading for event in (True, False)
-            for heading in headings(ladder.drive_ladder(event=event, apps=[], target="aws"))]
+            for heading in headings(ladder.sail_ladder(event=event, apps=[], target="aws"))]
 
 
 def headings(text: str) -> list[str]:
@@ -158,7 +158,7 @@ class LadderTest(unittest.TestCase):
         """The event model and the chart are one question: what types the work. Never both, never neither."""
         for event, expected in ((True, "Event model"), (False, "Chart")):
             with self.subTest(event=event):
-                written = headings(ladder.drive_ladder(event=event, apps=[], target="aws"))
+                written = headings(ladder.sail_ladder(event=event, apps=[], target="aws"))
                 self.assertIn(expected, written)
                 self.assertNotIn("Chart" if event else "Event model", written)
 
@@ -188,7 +188,7 @@ class LadderTest(unittest.TestCase):
     def test_the_implement_rung_names_the_cycle_and_where_the_widths_are_read(self) -> None:
         rung = " ".join(rung_bodies(every_rung())["Implementation"].split())
         self.assertIn("RED-GREEN-REFACTOR", rung)
-        self.assertIn(drive_settings.CONFIG, rung)
+        self.assertIn(sail_settings.CONFIG, rung)
         for veto in ("story tag", "number its rules"):
             with self.subTest(veto=veto):
                 self.assertIn(veto, rung)
@@ -255,12 +255,12 @@ class ExampleMapTest(unittest.TestCase):
         for event, expected in ((True, "docs/event-model/model.yaml"), (False, "specs/<feature>/chart.yaml")):
             with self.subTest(event=event):
                 rung = " ".join(rung_bodies(
-                    ladder.drive_ladder(event=event, apps=[], target="aws"))["Example map"].split())
+                    ladder.sail_ladder(event=event, apps=[], target="aws"))["Example map"].split())
                 self.assertIn(expected, rung)
 
     def test_an_empty_map_refuses_the_implementation_rung(self) -> None:
         """The done-when of slice 5.17. Implementing against an inference is demoed against the same one."""
-        rungs = rung_bodies(ladder.drive_ladder(event=False, apps=[], target="aws"))
+        rungs = rung_bodies(ladder.sail_ladder(event=False, apps=[], target="aws"))
         self.assertIn("at least one", " ".join(rungs["Implementation"].split()))
         self.assertIn("A map with none is a stop", " ".join(rungs["Implementation"].split()))
 
@@ -311,7 +311,7 @@ class ReviewRungTest(unittest.TestCase):
     def test_there_is_a_delegate_type_for_it_and_it_writes_nothing(self) -> None:
         written = agent_targets.agent_targets() if hasattr(agent_targets, "agent_targets") else ""
         self.assertIsInstance(written, str)
-        self.assertIn("drive-review-mate", drive_section.delegable_types())
+        self.assertIn("sail-review-mate", sail_section.delegable_types())
 
 
 class HookPointTest(unittest.TestCase):
@@ -321,7 +321,7 @@ class HookPointTest(unittest.TestCase):
         self.assertEqual(written[:4], ["before-stage", "after-stage", "boundary", "before-merge"])
 
     def test_a_hook_is_never_fatal_to_the_rung(self) -> None:
-        """6.1's rule, written where `/drive` reads it: the captain depends on no hook, and neither does this."""
+        """6.1's rule, written where `/sail` reads it: the captain depends on no hook, and neither does this."""
         text = ladder.hook_points()
         self.assertIn("never fatal to the rung", " ".join(text.split()))
         self.assertIn("Nothing in this ladder depends on a hook", text)

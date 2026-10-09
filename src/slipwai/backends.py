@@ -70,7 +70,7 @@ WEB_COMPOSE_CACHES = ("/workspace/node_modules", f"/workspace/{APP}/node_modules
 
 # The addresses the whole project agrees on. `.env.example` writes PORT, Compose publishes it, the Vite dev
 # server proxies to it, and the Makefile prints it — one number, named once. A demo has to be able to state
-# its address in advance (see `commands/drive.md`), which it cannot do if four files each pick their own.
+# its address in advance (see `commands/sail.md`), which it cannot do if four files each pick their own.
 SERVICE_PORT = 3000
 WEB_PORT = 5173
 

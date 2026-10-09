@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Which model runs each stage of `/drive`'s ladder, for the harness this project is initialised for.
+"""Which model runs each stage of `/sail`'s ladder, for the harness this project is initialised for.
 
 `.specify/models.json` holds the choice — a role per stage, and per harness what each role maps to — and
 `scripts/agents/registry.json` says whether the harness can act on it at all. This reads both and prints the
-one line `/drive` needs before a stage: the model to delegate to, or why the stage runs on the host model.
+one line `/sail` needs before a stage: the model to delegate to, or why the stage runs on the host model.
 Nothing is guessed: a role with no identifier mapped, a harness the registry records no mechanism for, and a
 project with no table at all are each said in words, so a stage that did not switch is a stage that says so.
 
@@ -12,7 +12,7 @@ project with no table at all are each said in words, so a stage that did not swi
     python3 scripts/agents/models.py --check      # the table is well-formed; `make check-agents` runs this
     python3 scripts/agents/models.py --set implement-shipwright=strong claude.fast=haiku   # change it, any time
 
-A change — by hand or with `--set` — takes effect at the next stage `/drive` runs: the table is read before every
+A change — by hand or with `--set` — takes effect at the next stage `/sail` runs: the table is read before every
 stage and cached nowhere. `slipwai migrate` merges a newer factory's table over an edited one rather than
 replacing it, so a mapped identifier survives the way every edit to a generated file does.
 """
@@ -47,7 +47,7 @@ MODELS = ROOT / ".specify/models.json"
 INTEGRATION = ROOT / ".specify/integration.json"
 # Every stage the table may name, in ladder order, keyed by the command the stage runs. The factory writes
 # the same list into `.specify/models.json`; a key outside it is a typo the check reports rather than a row
-# `/drive` never reads. The keel's `slipwai.project.stage_models.STAGES` is the source of this order, and
+# `/sail` never reads. The keel's `slipwai.project.stage_models.STAGES` is the source of this order, and
 # `tests/test_agents.py` holds the two in step — four stages were missing here while the factory wrote them,
 # so `make verify` was red on a project nobody had touched, which is the one state the first page promises.
 KNOWN_STAGES = (
@@ -66,7 +66,7 @@ RENAMED = {
     "mutation": "mutation-shipworm", "skipper": "decide-skipper", "hand": "demo-hand",
     "bosun": "unblock-bosun",
 }
-# A role mapped to this runs on the model running `/drive` itself: no delegation, said in as many words.
+# A role mapped to this runs on the model running `/sail` itself: no delegation, said in as many words.
 HOST = "host"
 ABSENT = f"no {MODELS.relative_to(ROOT)}: every stage runs on the host model; `slipwai migrate` writes the table"
 
@@ -217,7 +217,7 @@ def reproject() -> None:
     """Rewrite the projections, because the agent files carry the model this table just changed.
 
     A harness that names a sub-task's model in a file (`registry.json`, `agentFile`) has that model written
-    into `<dir>/drive-<stage>.md` by `scripts/agents/project.py`. Leaving them behind would mean a change made
+    into `<dir>/sail-<stage>.md` by `scripts/agents/project.py`. Leaving them behind would mean a change made
     here takes effect at the next stage on Claude Code and never on Codex, and `make check-agents` reporting
     drift for a file nobody edited. Absent an installed integration there is nothing to write, and a failure
     here is reported rather than raised: the table is already written, and `make agents` is the retry.
@@ -251,7 +251,7 @@ def main() -> None:
         MODELS.write_text(json.dumps(table, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         for line_ in changed:
             print(line_)
-        print(f"{MODELS.relative_to(ROOT)} written; it takes effect at the next stage /drive runs. Commit it: the "
+        print(f"{MODELS.relative_to(ROOT)} written; it takes effect at the next stage /sail runs. Commit it: the "
               "choice is versioned with the project.")
         reproject()
         return

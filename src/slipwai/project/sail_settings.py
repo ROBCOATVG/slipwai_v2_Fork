@@ -1,16 +1,16 @@
-"""How `/drive` hands implementation to `drive-implement-shipwright`, on two axes a project sets once and changes at will.
+"""How `/sail` hands implementation to `sail-implement-shipwright`, on two axes a project sets once and changes at will.
 
 The **boundary** is how much one delegate is handed: every rule of one user story, one rule, or one task. The
 **cycle** is how many RED tests a RED-GREEN-REFACTOR cycle opens with: a rule's examples together, or one at
-a time. Both came from one downstream project's measurement of its own `/drive`: twenty-three fresh implement
+a time. Both came from one downstream project's measurement of its own `/sail`: twenty-three fresh implement
 delegates on one slice each spent 1.5–2.5 minutes re-reading the same plan, map, precedent and test file,
 because the boundary was the task; and ten of that slice's tasks were proofs with nothing to turn green,
 because the cycle was one test and a rule had been cut up to fit it. The story boundary answers the first
 without touching the increment; the rule cycle answers the second and is what Principle V now allows.
 
-The settings live in `.specify/drive.json`, beside `models.json`, for the same reasons that table does: read
-before every implementation stage, changed only through a checked command (`/drive-settings` over
-`scripts/agents/drive.py`), held to its shape by `make check-agents`, versioned with the project and merged
+The settings live in `.specify/sail.json`, beside `models.json`, for the same reasons that table does: read
+before every implementation stage, changed only through a checked command (`/sail-settings` over
+`scripts/agents/sail.py`), held to its shape by `make check-agents`, versioned with the project and merged
 forward by `slipwai migrate`. A story is never offered as a cycle unit: every rule of a story red before any
 is implemented is the batch Principle V prohibits, and the script refuses it.
 """
@@ -20,35 +20,35 @@ import json
 
 from ..layout import AT_ROOT, Layout
 
-CONFIG = ".specify/drive.json"
-SCRIPT = "scripts/agents/drive.py"
+CONFIG = ".specify/sail.json"
+SCRIPT = "scripts/agents/sail.py"
 # How much one implementation delegate is handed, and how many RED tests one cycle opens with.
 DELEGATES = ("story", "rule", "task")
 CYCLES = ("rule", "example")
 DEFAULT_DELEGATE, DEFAULT_CYCLE = "story", "rule"
 COMMENT = (
-    "How /drive hands implementation to drive-implement-shipwright. `delegate`: story | rule | task — how much one delegate "
+    "How /sail hands implementation to sail-implement-shipwright. `delegate`: story | rule | task — how much one delegate "
     "is handed. `cycle`: rule | example — how many RED tests a RED-GREEN-REFACTOR cycle opens with. Change it with "
-    "/drive-settings (python3 scripts/agents/drive.py --set delegate=… cycle=…), checked; `make check-agents` "
-    "holds the shape. commands/drive.md, *How implementation is delegated*, says what each value means and which "
+    "/sail-settings (python3 scripts/agents/sail.py --set delegate=… cycle=…), checked; `make check-agents` "
+    "holds the shape. commands/sail.md, *How implementation is delegated*, says what each value means and which "
     "veto overrides it."
 )
 
 
-def drive_config() -> str:
-    """`.specify/drive.json` as generated: the defaults, and the comment that says where they are explained."""
+def sail_config() -> str:
+    """`.specify/sail.json` as generated: the defaults, and the comment that says where they are explained."""
     return json.dumps({"_comment": COMMENT, "delegate": DEFAULT_DELEGATE, "cycle": DEFAULT_CYCLE}, indent=2,
                       ensure_ascii=False) + "\n"
 
 
 def implementation_section(layout: Layout = AT_ROOT) -> str:
-    """The `/drive` section after *What each stage costs*: the two axes, the vetoes, parallelism, and the record."""
+    """The `/sail` section after *What each stage costs*: the two axes, the vetoes, parallelism, and the record."""
     return f"""### How implementation is delegated
 
-Two settings in `{CONFIG}` decide how this ladder hands implementation to `drive-implement-shipwright` and how each
+Two settings in `{CONFIG}` decide how this ladder hands implementation to `sail-implement-shipwright` and how each
 delegate drives what it is handed. Read them before every implementation stage — `python3 {SCRIPT}` — say
-both in the stage line beside the model (`drive-implement-shipwright · model: sonnet · delegated, fresh context ·
-story/rule`), and change them only through `/drive-settings`, never silently inside a delegation.
+both in the stage line beside the model (`sail-implement-shipwright · model: sonnet · delegated, fresh context ·
+story/rule`), and change them only through `/sail-settings`, never silently inside a delegation.
 
 **`delegate`** — how much one delegate is handed. `story`: every rule of one user story (`[US<n>]` on the
 tasks), each rule its own cycle in one context — the boundary that stops each fresh delegate re-reading the
@@ -69,7 +69,7 @@ because a preference is what the next edit simplifies away: tasks that carry no 
 `rule`, and a map that does not number its rules is delegated per `task` and driven per `example`, since
 there is no agreed rule boundary to cut on. `example` is also the right per-slice choice for a rule where one
 assertion at a time is worth the cycles — money, authorisation, anything the constitution names as a MUST —
-and saying so in that slice's delegation brief is allowed; changing the default is `/drive-settings`.
+and saying so in that slice's delegation brief is allowed; changing the default is `/sail-settings`.
 
 **Parallelism is this session's duty at every boundary.** Siblings whose manifests are disjoint — stories,
 rules or tasks — run concurrently in the same turn, derived from the manifests rather than from a `[P]`
@@ -82,18 +82,18 @@ entry, so a wall time says what it was a wall time of. `{layout.make} benchmark`
 """
 
 
-def drive_settings_command(layout: Layout = AT_ROOT) -> str:
-    """`/drive-settings`: the two settings shown, or changed through the checked `--set`."""
+def sail_settings_command(layout: Layout = AT_ROOT) -> str:
+    """`/sail-settings`: the two settings shown, or changed through the checked `--set`."""
     return f"""---
-description: Show or change how /drive delegates implementation — the boundary a delegate is handed and the cycle it runs
+description: Show or change how /sail delegates implementation — the boundary a delegate is handed and the cycle it runs
 argument-hint: [delegate=story|rule|task] [cycle=rule|example]
 ---
 
 # Drive settings
 
-`{CONFIG}` holds two settings: `delegate`, how much one `drive-implement-shipwright` delegate is handed — every rule of one
+`{CONFIG}` holds two settings: `delegate`, how much one `sail-implement-shipwright` delegate is handed — every rule of one
 user story, one rule, or one task — and `cycle`, how many RED tests one RED-GREEN-REFACTOR cycle opens with — a
-rule's examples together, or one at a time. `commands/drive.md`, *How implementation is delegated*, says what
+rule's examples together, or one at a time. `commands/sail.md`, *How implementation is delegated*, says what
 each means and which veto overrides it. This command is how the settings are read and how they change: checked,
 at any time, and never by quietly handing a delegate something else.
 
@@ -115,7 +115,7 @@ Each argument is `delegate=story|rule|task` or `cycle=rule|example`, and both ma
 refuses a value it does not know and refuses `cycle=story` with the reason — it is the batch Principle V
 prohibits — and writes nothing then. Report a refusal in its words; do not work around it by editing the file.
 Then commit `{CONFIG}` on its own, with a message naming the change: the choice is versioned with the project,
-and it takes effect at the next implementation stage `/drive` runs. Nothing already running is interrupted.
+and it takes effect at the next implementation stage `/sail` runs. Nothing already running is interrupted.
 
 ## When the request is in words
 

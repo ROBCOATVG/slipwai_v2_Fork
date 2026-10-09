@@ -50,7 +50,7 @@ Every row is a fact `project.json` holds under `convergence`, with where it came
 `confirmed` or `overridden` by a person, `unrecorded` where nothing has said. Nothing is a default. To move a
 row, establish the rung — a slice, a decision, a pinned seam — then say so in `project.json`; `/survey`
 (`slipwai adopt --refresh`) re-reads the tree and regenerates this page, and `{layout.make} check-convergence`
-fails a row the tree contradicts or a page that no longer matches the record. `/drive` reads this before the
+fails a row the tree contradicts or a page that no longer matches the record. `/sail` reads this before the
 first slice and offers the next unplanned row as a method slice beside the product's.
 
 | Axis | Where it stands | Target | Evidence | Planned as | Provenance |

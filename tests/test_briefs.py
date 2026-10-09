@@ -71,7 +71,7 @@ class SubstitutionTest(unittest.TestCase):
 
     def test_a_token_no_value_provides_is_refused_rather_than_left_in_the_text(self) -> None:
         with self.assertRaises(GenerationError) as raised:
-            briefs.resolve("drive-tasks-quartermaster", "run {{mke}} verify", self.values)
+            briefs.resolve("sail-tasks-quartermaster", "run {{mke}} verify", self.values)
         self.assertIn("mke", str(raised.exception))
 
     def test_nothing_the_generator_writes_still_carries_a_marker(self) -> None:
@@ -110,18 +110,18 @@ class FrontmatterTest(unittest.TestCase):
         harness is projected from, and the harness would enforce whichever it was handed."""
         for field in briefs.DECLARED:
             with self.subTest(field=field), self.assertRaises(GenerationError) as raised:
-                briefs.parse("drive-gaps-lookout", f"---\ndescription: a line\n{field}: none\n---\n\nbody\n")
+                briefs.parse("sail-gaps-lookout", f"---\ndescription: a line\n{field}: none\n---\n\nbody\n")
             self.assertIn(field, str(raised.exception))
 
     def test_a_brief_with_no_frontmatter_is_refused_by_name(self) -> None:
         with self.assertRaises(GenerationError) as raised:
-            briefs.parse("drive-gaps-lookout", "You read, and you report what is missing.\n")
-        self.assertIn("drive-gaps-lookout.md", str(raised.exception))
+            briefs.parse("sail-gaps-lookout", "You read, and you report what is missing.\n")
+        self.assertIn("sail-gaps-lookout.md", str(raised.exception))
 
     def test_a_type_with_no_brief_says_which_file_is_missing(self) -> None:
         with self.assertRaises(GenerationError) as raised:
-            briefs.read("drive-navigator")
-        self.assertIn("drive-navigator.md", str(raised.exception))
+            briefs.read("sail-navigator")
+        self.assertIn("sail-navigator.md", str(raised.exception))
 
 
 class ByteForByteTest(unittest.TestCase):

@@ -115,7 +115,7 @@ def event_cwd() -> Path:
 
 
 def dispatched() -> bool:
-    """Whether the captain started this session. A person's own `/drive` edits what it likes."""
+    """Whether the captain started this session. A person's own `/sail` edits what it likes."""
     return bool(os.environ.get(FAIRWAY_VARIABLE))
 
 
@@ -241,7 +241,7 @@ def released(fairway: str) -> None:
 def before_write() -> int:
     """A file is about to be written. Refuse a gate or a control, then ask the extensions.
 
-    The keel's own half runs only in a session the captain dispatched: a person's `/drive` edits the
+    The keel's own half runs only in a session the captain dispatched: a person's `/sail` edits the
     Makefile if they want to, and a tool that refused them would be a tool they turn off. The extensions'
     half runs in every session, because an extension was agreed to by the person, not by the run.
     """

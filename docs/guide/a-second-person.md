@@ -82,14 +82,14 @@ one `node_modules` or one database file being fought over.
 
 ## Taking a lane
 
-Neither of you picks a slice. `/drive` bare already takes every ready slice of every fairway nobody holds,
+Neither of you picks a slice. `/sail` bare already takes every ready slice of every fairway nobody holds,
 so two people running it take different work without agreeing anything — the claim is the `slice/<id>`
 branch, and a slice somebody has claimed is one the other leaves.
 
 Where you do want to divide the lanes, name one:
 
 ```
-/drive fairway=booking
+/sail fairway=booking
 ```
 
 That confines the ready set to `booking`; the other fairways' ready slices are named as another fairway's
@@ -180,7 +180,7 @@ permanently.
 
 ## Next
 
-→ **[Let it sail](let-it-sail.md)** — captains, the telegraph, and what a person still decides.
+→ **[Let it cruise](let-it-cruise.md)** — captains, the telegraph, and what a person still decides.
 
 Other pages: [start here](start-here.md) · [your first feature](first-feature.md) ·
 [bring an existing codebase](adopt.md) · [the vocabulary](../../GLOSSARY.md)

@@ -5,7 +5,7 @@ to, and because these targets are about the method rather than any service's too
 backend. `check-python` comes first on `verify` because every gate is a `python3 scripts/…` line, and which
 interpreter a shell finds first decides whether they run: one older than the scripts is named once, rather than
 as whichever gate first uses a newer feature. `check-agents` is where every settings file the ladder reads is held to its shape — the models table,
-`drive.json` and `cruise.json` — so a hand edit that would leave `/drive` or `/cruise` reading nonsense fails
+`sail.json` and `cruise.json` — so a hand edit that would leave `/sail` or `/cruise` reading nonsense fails
 the gate rather than the run. `check-decisions` holds the decision log and demo log `/cruise` writes to their
 shape, and sits on `verify` because a person overrides a decision by editing that file.
 """
@@ -25,14 +25,14 @@ agents-list: ## Show every supported harness and which integrations are installe
 check-extensions: ## Fail when elected extension guidance has drifted, or an extension's own gate says no
 \tpython3 scripts/extensions/project.py --check
 \tpython3 scripts/extensions/hooks.py check --fatal
-check-agents: ## Fail when an initialized agent projection has drifted, or .specify/models.json, drive.json or cruise.json is malformed
+check-agents: ## Fail when an initialized agent projection has drifted, or .specify/models.json, sail.json or cruise.json is malformed
 \tpython3 scripts/agents/project.py --check
-\tpython3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
-models: ## Show which model runs each stage of /drive for the installed harness, and why
+\tpython3 scripts/agents/models.py --check && python3 scripts/agents/sail.py --check && python3 scripts/agents/cruise.py --check
+models: ## Show which model runs each stage of /sail for the installed harness, and why
 \tpython3 scripts/agents/models.py
 check-benchmark: ## Fail when the benchmark script's own behaviour regresses; warn of an entry left open or a done slice with no record
 \tpython3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
-benchmark: ## Show what each slice cost and how each stage of /drive did, from the records under specs/
+benchmark: ## Show what each slice cost and how each stage of /sail did, from the records under specs/
 \tpython3 scripts/agents/benchmark.py
 cruise: ## Cast off: start the harbourmaster and a captain per fairway, and exit. Nothing is left holding the state of the run
 \tpython3 scripts/agents/fleet.py start

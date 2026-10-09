@@ -1,4 +1,4 @@
-"""The demo stop of `commands/drive.md`: what a pause for feedback has to hand the actor, and open with.
+"""The demo stop of `commands/sail.md`: what a pause for feedback has to hand the actor, and open with.
 
 Its own module because it is the one part of the ladder that faces the product owner rather than the agent,
 and because it has grown by evidence: the running process (a demo whose server the turn had already stopped),
@@ -96,7 +96,7 @@ line in the actor's vocabulary rather than a slice id or a test name:
 - 🔀 **Ready (parallel)** — every slice that can start now: not done, every `depends_on` done, and not
   pre-empted by an open `CRITICAL` — in two groups, *claimed* (a `slice/<id>` branch on the forge, by whom
   and how long ago) and *unclaimed*, so another session knows which sibling is free
-- ➡️ **Next (this session)** — the slices this `/drive` will take: every unclaimed ready slice whose
+- ➡️ **Next (this session)** — the slices this `/sail` will take: every unclaimed ready slice whose
   contract is settled, concurrently; or the earliest ready slice in split order where the harness cannot
   delegate, unless the user picks another ready one
 - ⛔ **Blocked** — remaining slices waiting on unmet `depends_on`, or an open `CRITICAL` ahead of them

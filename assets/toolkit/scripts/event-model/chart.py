@@ -62,7 +62,7 @@ def contexts_of(record: dict) -> list[str]:
 
 def owns(name: str, record: dict, context: str) -> list[str]:
     """The paths this fairway owns. A service holding one context owns all of it; one holding several owns
-    the context's own directory, which is where `/drive` puts a context's code and `check-imports` keeps it."""
+    the context's own directory, which is where `/sail` puts a context's code and `check-imports` keeps it."""
     path = str(record.get("path") or name).rstrip("/")
     return [f"{path}/**"] if len(contexts_of(record)) <= 1 else [f"{path}/src/{context}/**"]
 

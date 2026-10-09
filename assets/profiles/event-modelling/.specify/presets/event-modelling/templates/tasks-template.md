@@ -164,7 +164,7 @@ task whose GREEN would be empty — a proof over behaviour an earlier task built
 folds into the task that produces the behaviour it guards.
 
 - [ ] T033 [US1] **Happy path.** RED: boundary acceptance for the happy path, entering through the use case, asserting on what is observable there. The route gets its own `tests/edge/` test for parse, delegate, and outcome-to-status — it is a translation, not where the rule is proved. GREEN: the minimum that satisfies it — the event schema(s) this one scenario needs, `initialState` and `evolve`, `decide` for the one command, the driving port returning discriminated outcomes, the use case (load, fold, decide, append with expected version), the route handler, and the composition wiring
-- [ ] T034 [US1] **The white box, in its main state.** *Delete these three tasks only if this slice has no `ui` frame — which for a `state-change` or `state-view` slice means the model is wrong, not that there is no screen.* RED: a test at the project's UI level drives the surface the way its actor does — type into the labelled fields, click the button — and asserts what the actor sees. GREEN: the screen. **If the `ui` frame has `mockups`, that state's mock is the build target**; open it and build to it. **If it has none, design it here** — then commit the wireframe under `docs/event-model/mockups/` and add its `mockups` entry to the frame in the same commit, because a screen whose states are recorded nowhere is a screen whose gaps nobody can see. An HTTP test through the route is **not** evidence about this task; load `front-end-testing` (and `react-testing` if the project is React) for the lightest harness that proves a browser-observable claim. **Its design is part of this task, not a follow-on**: before the first RED, `/drive`'s *Screen design* rung — `docs/design.md`, then `skills/frontend-design`'s second pass over the plan; before the demo, its *Design review* rung — the rendered screen, screenshot per state, read against `skills/web-interface-guidelines` — each with whatever an extension block in `AGENTS.md` adds to that rung. A green gate is not the review. Both write their line under `## Design review` below
+- [ ] T034 [US1] **The white box, in its main state.** *Delete these three tasks only if this slice has no `ui` frame — which for a `state-change` or `state-view` slice means the model is wrong, not that there is no screen.* RED: a test at the project's UI level drives the surface the way its actor does — type into the labelled fields, click the button — and asserts what the actor sees. GREEN: the screen. **If the `ui` frame has `mockups`, that state's mock is the build target**; open it and build to it. **If it has none, design it here** — then commit the wireframe under `docs/event-model/mockups/` and add its `mockups` entry to the frame in the same commit, because a screen whose states are recorded nowhere is a screen whose gaps nobody can see. An HTTP test through the route is **not** evidence about this task; load `front-end-testing` (and `react-testing` if the project is React) for the lightest harness that proves a browser-observable claim. **Its design is part of this task, not a follow-on**: before the first RED, `/sail`'s *Screen design* rung — `docs/design.md`, then `skills/frontend-design`'s second pass over the plan; before the demo, its *Design review* rung — the rendered screen, screenshot per state, read against `skills/web-interface-guidelines` — each with whatever an extension block in `AGENTS.md` adds to that rung. A green gate is not the review. Both write their line under `## Design review` below
 - [ ] T035 [US1] **Every other state of the screen.** One increment per state — empty, error, submitting, forbidden, whatever the screen can actually be in. RED at the UI level per state, GREEN the rendering it needs. These are where the unmodelled states surface: a screen with one design has three states nobody decided. Each one ends up in `mockups` too, so the model carries what the screen can be rather than what somebody remembered to draw
 - [ ] T036 [US1] **The screen reaches the command.** RED: submitting drives the driving adapter with the actor's input and renders each outcome the use case can return — accepted, business rejection, schema failure. GREEN: the wiring. **If the path beneath the screen is not finished in this slice, the screen still ships** — its submit reaches whatever exists and its states are still built and tested. A white box deferred to a later slice makes this slice a layer, and Principle V's slice independence is about seeding from synthetic events, never about leaving the actor with nothing to use
 - [ ] T037 [US1] **First business rejection.** RED: one rejection at the boundary, with its reason and any detail the caller needs to explain it. GREEN: extend `decide` to reject in business vocabulary. **Each further rejection is its own increment** — repeat this cycle per rule, do not add them as a batch
@@ -196,7 +196,7 @@ not delay feedback on working behaviour.
 
 ## Design review
 
-*Written by `/drive`, not by hand: a `Designed:` line per screen before its first RED, a `Reviewed:` line per
+*Written by `/sail`, not by hand: a `Designed:` line per screen before its first RED, a `Reviewed:` line per
 screen before the demo — or `No screen in this slice`. A screen missing either line is not ready to show.*
 
 ---
@@ -235,12 +235,12 @@ Fill the same structured graph the split and plan carry — genuine build deps o
 | [ID] | [ids, or —] | [sibling ids] | synthetic-event seeding is **not** a dependency (Principle V) |
 
 On the event profile, the same `depends_on` list lives on this slice in `docs/event-model/model.yaml`.
-`/drive` selects from the **ready** set (deps archived), not blindly the next row of the split.
+`/sail` selects from the **ready** set (deps archived), not blindly the next row of the split.
 
 ### Parallel opportunities
 
 **Across slices:** siblings in `parallel_ok_with` whose `depends_on` are already archived may run in
-parallel across sessions; one `/drive` session still drives one slice.
+parallel across sessions; one `/sail` session still drives one slice.
 
 **Inside this slice — Phase 3 has none, by construction.** Its tasks are RED-GREEN-REFACTOR increments and
 are strictly sequential: each one starts after the prior increment's local quick tests are green.

@@ -127,7 +127,7 @@ def quick_wins_table(findings: tuple[dict, ...]) -> str:
                 "dependency source over plain HTTP, no missing lockfile, no archive under version control.")
     rows = "\n".join(f"| `{f['kind']}` | `{f['where']}` | {f['what']} | {f['fix']} |" for f in findings)
     return (
-        f"Each is a proposal, not a change the factory made; `/drive` offers them before the map's rows while any "
+        f"Each is a proposal, not a change the factory made; `/sail` offers them before the map's rows while any "
         f"remain, a secret first, and `/survey` drops each as the tree stops showing it.\n\n"
         f"| Kind | Where | What | Fix |\n|---|---|---|---|\n{rows}"
     )
@@ -212,7 +212,7 @@ def report(done: Adopted, running_init: bool = False) -> str:
         lines.append(
             f"Quick wins: {len(wins)} big issue(s) that are cheap to fix — {shown}"
             + (f"; and {len(wins) - 3} more" if len(wins) > 3 else "")
-            + f". Each with its fix in {done.layout.delivery}/survey/survey.md; /drive offers them first."
+            + f". Each with its fix in {done.layout.delivery}/survey/survey.md; /sail offers them first."
         )
     record = done.adoption.strategy or {}
     if record:
@@ -308,6 +308,6 @@ def ci_lines(adoption: Adoption, layout: Layout) -> list[str]:
         "scripted": f"somebody runs a script ({evidence})",
         "manual": "by hand",
         "unknown": "not recorded — nothing in the tree says, and nobody has yet; `--release` or project.json's "
-        "`release` is where to say it, and /drive asks before the first slice",
+        "`release` is where to say it, and /sail asks before the first slice",
     }[path]
     return [said, f"How a change reaches production: {how} ({release.get('provenance')})."]

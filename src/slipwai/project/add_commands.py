@@ -147,7 +147,7 @@ files that name it, and misses the tenth.
   An axis without a flag {inherits} `add-service --help` lists the
   options this project's target allows.
 - **Purpose and contexts** — `--purpose "<what it owns, in a sentence or two>"` and `--context <name>`, once
-  per bounded context the service holds. The purpose is what `/drive` reads when it decides which service a
+  per bounded context the service holds. The purpose is what `/sail` reads when it decides which service a
   slice belongs to: a service added without one is a directory the loop cannot place work in, and it will
   stop to ask before it does. A context is one already on the list above, or a new one; without any the
   service is a context of its own. A context may span several services; the tree stays `apps/<name>`.
@@ -173,7 +173,7 @@ one of those, say so, and offer to add `X` to `{example_name}`'s `contexts` in `
 {RUN.format(
     invocation='<factory> add-service <name> --purpose "<what it owns>" [--context <name>] [--language <language>] [--<axis> <answer>]',
     afterwards='''- Say how it runs: `make dev-<name>` in the foreground, `make demo` with the rest, and its port from the
-  report. Its health example is the placeholder the first slice replaces; `/drive` from there.
+  report. Its health example is the placeholder the first slice replaces; `/sail` from there.
 - It shares the local backing services with every other service — one `DATABASE_URL`, one database. That is
   right for a walking skeleton and wrong for a product: give it its own database or schema before it owns
   any data, and say so when handing it over.
@@ -224,7 +224,7 @@ dev-server port is the command's own decision — the next one free.
     invocation="<factory> add-frontend <name> [--api <service>]",
     afterwards='''- Say how it runs: `make dev-<name>` in the foreground — with `WEB_HOST=0.0.0.0` when the browser is not on
   this machine — `make demo` with the rest, and its port from the report. Its page is the placeholder the
-  first slice replaces; `/drive` from there.
+  first slice replaces; `/sail` from there.
 ''' + WEB_PRODUCTION_AFTERWARDS.get(target, ""),
 )}
 """

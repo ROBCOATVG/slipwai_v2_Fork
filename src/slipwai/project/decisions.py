@@ -22,7 +22,7 @@ def owner_brief() -> str:
     """The brief as generated: every section a placeholder, and the reason each exists."""
     return f"""# [PROJECT_NAME] — the product owner's brief
 
-`/cruise` runs `/drive` with nobody at the wheel, and this page is the owner it decides for. The `{SKIPPER}`
+`/cruise` runs `/sail` with nobody at the wheel, and this page is the owner it decides for. The `{SKIPPER}`
 delegate reads it before every product decision, after the specification and the constitution and before the
 standing entries in `{DECISIONS}`. Edit it at any time: the next decision reads the new text, and no run has
 to stop for that. Leave a section as its placeholder and the skipper decides that ground from the

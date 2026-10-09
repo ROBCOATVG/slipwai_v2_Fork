@@ -3,7 +3,7 @@
 Brownfield adoption. The survey places every row of the convergence map it can from a file, and leaves the rest
 `unrecorded` — a question, not a default. `adopt` asks only where CI runs in the terminal, and `adopt --yes` asks
 nothing. This is the question set proper, run by the coding agent after `./init` and before the first slice, and again
-whenever `/drive` enters at Ground with a row it needs unplaced: the rung meanings and the survey's evidence in front of
+whenever `/sail` enters at Ground with a row it needs unplaced: the rung meanings and the survey's evidence in front of
 the person, one question at a time, the answer written where the record keeps it with `confirmed` provenance and the
 person's words as evidence, and `/survey` afterwards so the pages follow and the strategy recommendation is re-made from
 what was said. Regenerated with the record, so the table of rows it opens with is the map as it stands.
@@ -110,7 +110,7 @@ def application_lines(apps: list[App], about: str = "kind") -> str:
             elif "smoke" in commands:
                 said = "`smoke` recorded as a written no; `survey/running.md` carries the reason"
             else:
-                said = ("no `smoke` recorded — nobody has proved how it starts, and `/drive` refuses to change it "
+                said = ("no `smoke` recorded — nobody has proved how it starts, and `/sail` refuses to change it "
                         "until somebody has")
             return f"   - `{app.name}` at `{app.path}`: {said}"
         if about == "platform":
@@ -180,13 +180,13 @@ def candidate_section(adoption: Adoption, layout: Layout) -> str:
         "gets deployed\": it is a directory whose build this gate holds, and a library or a test suite can be one.\n"
         "Confirming one means, and the person is agreeing to all of it:\n\n"
         f"   - its recorded `lint`, `typecheck` and `test` join `{layout.make} verify`, which every change has to\n"
-        "     pass — the person's, `/drive`'s and `/cruise`'s. Findings already there are recorded as the baseline\n"
+        "     pass — the person's, `/sail`'s and `/cruise`'s. Findings already there are recorded as the baseline\n"
         "     on the first run and only new ones fail, but a red test suite stops the gate until it is fixed or\n"
         f"     quarantined on purpose with `{layout.make} ratchet-tighten`;\n"
         "   - the gate's own CI workflow runs that `verify` on every push to the main branch and every pull\n"
         "     request, on the runtime the application's toolchain names — so what its lint and tests need to run,\n"
         "     CI needs too, and a red one is a red check on the pull request;\n"
-        "   - `/drive` and `/cruise` can plan changes to it, and will not change it until somebody has recorded\n"
+        "   - `/sail` and `/cruise` can plan changes to it, and will not change it until somebody has recorded\n"
         "     the command that starts it and proves it answers (`smoke`, asked at the end of this command);\n"
         "   - it is named on the map, the structure page and the architecture view, as what this repository is.\n\n"
         "   Declining records nothing: the code stays, agents still read it, its own CI keeps running, and the\n"
@@ -228,7 +228,7 @@ This repository adopted the delivery method around code that was already here. `
 on each ladder a generated project sits at the top of. The survey placed every row it could from a file, and the
 rows it could not are `unrecorded` — a question, not a default. This command is that question set, asked by you
 of the person, one row at a time, with the answers written where the record keeps them. Two ways in, one question
-set: run it on its own after `./init` and before the first slice, or let `/drive` run it — its Ground stage is this
+set: run it on its own after `./init` and before the first slice, or let `/sail` run it — its Ground stage is this
 command, for the axes the slice touches, and the ladder continues once the rows are placed. `$ARGUMENTS` names the
 axes to ask about; empty means every row a person has not yet placed.
 
@@ -308,7 +308,7 @@ direction, at any point.
 ## How each application starts
 
 Not a row of the map, and asked before any slice changes code that was here: an application nobody has proved
-starts is the floor beside the build, and `/drive`'s Pin stage refuses to change one. The first adoptions each
+starts is the floor beside the build, and `/sail`'s Pin stage refuses to change one. The first adoptions each
 merged a slice that had stopped the application starting — constructor injection the container could not call —
 and no suite saw it, because no suite builds the context.
 
@@ -334,7 +334,7 @@ with the reason in the same file — never a key left unwritten, which reads as 
    `docs/change-strategy.md` now opens with.
 2. `make verify` — `check-convergence` holds every row you wrote to the tree.
 3. Commit as one change: what the person said, in the rows and the facts, and the pages that followed.
-4. Say which rows are still `unrecorded`, and that `/drive` will ask about each before a slice that touches it.
+4. Say which rows are still `unrecorded`, and that `/sail` will ask about each before a slice that touches it.
 """
 
 

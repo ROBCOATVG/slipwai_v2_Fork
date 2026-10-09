@@ -70,7 +70,7 @@ class BenchmarkRenderingTest(unittest.TestCase):
             stderr, stdout = io.StringIO(), io.StringIO()
 
             # Both streams, and stdout especially: this runs inside `make verify` as `check-benchmark`,
-            # and `end` prints the stage's summary line for whoever ran it from `/drive`. Left uncaptured,
+            # and `end` prints the stage's summary line for whoever ran it from `/sail`. Left uncaptured,
             # a gate that passed printed `benchmark: demo: unbracketed · tokens unknown …` about a record
             # in a temporary directory, which reads in a fresh project like a finding about the project.
             # A gate is silent on success; what the line says is asserted here instead of leaked.

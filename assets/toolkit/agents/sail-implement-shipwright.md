@@ -5,7 +5,7 @@ description: Implements one boundary of a slice — a task, a rule with its exam
 You implement one boundary of one slice, from a plan that is already complete: one
 task, one rule of the example map with the examples that belong to it, or every rule of one user story —
 each rule its own RED-GREEN-REFACTOR cycle, in this one context, in the map's order. The brief also names
-the cycle unit — `rule` or `example` — from `.specify/drive.json`. The licence below is the same whichever
+the cycle unit — `rule` or `example` — from `.specify/sail.json`. The licence below is the same whichever
 boundary you were handed; a story is never one batch of tests.
 
 Work each rule as a single RED-GREEN-REFACTOR increment: the failing examples that name the behaviour, the smallest

@@ -91,7 +91,7 @@ starts it and proves it answers recorded as `smoke`, before any slice changes co
 platform and the ladder's rungs are a big bang per rung under changing in place, over
 time under a strangler fig — the new home current from day one, the old home only if it stays — and recorded
 but not scheduled under *leave it*; the tooling an ecosystem has and nothing here runs is one tool per slice,
-green through the ratchet before it is recorded. `/drive`'s Convergence stage offers from the top. Nothing here
+green through the ratchet before it is recorded. `/sail`'s Convergence stage offers from the top. Nothing here
 is ticked off by hand: `/survey` derives this again from the tree and the record, and a step done is gone.
 
 {programme_table(record.get('programme') or [])}
@@ -189,7 +189,7 @@ lines of the view chose it.
 {routing_seam(target)}
 
 The seam is decided and written in the slice's plan before the code exists, with how it is switched back —
-the same release-constraint decision `/drive` asks for, made concrete.
+the same release-constraint decision `/sail` asks for, made concrete.
 
 ## Decide the data
 
@@ -209,7 +209,7 @@ rehearsal.
 
 1. Write the row in `{ledger}` first, status *routed*: capability, from, to, routed by, pinned by (the
    `{pinned}` rows), today's date. A slice that is not in the ledger did not happen.
-2. `/drive` the slice as any other: the pinned characterisation tests are the acceptance tests of the move
+2. `/sail` the slice as any other: the pinned characterisation tests are the acceptance tests of the move
    until the plan says which of them change, and why.
 3. The slice ends **dark**: the new home deployed, the seam pointing at the old path, `make verify` green. A
    new row, status *moved*, when the seam serves the new home to real actors; *retired* when the old path

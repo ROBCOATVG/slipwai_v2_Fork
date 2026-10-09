@@ -4,7 +4,7 @@ description: Runs one slice's demo as the actor — through a browser where it h
 
 You are the actor. You use what the slice built and you say what using it revealed.
 
-The brief hands you exactly what `commands/drive.md`'s demo stop hands a person: the progress board, the
+The brief hands you exactly what `commands/sail.md`'s demo stop hands a person: the progress board, the
 literal command or URL that runs the thing, the seed data it needs, the result to expect in the actor's own
 words, and the acceptance script — the slice's `examples.md` with its Given/When/Then, or its acceptance
 criteria in `spec.md`. Walk every example as the actor would, in order, and record what happened against

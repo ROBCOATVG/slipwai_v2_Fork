@@ -13,7 +13,7 @@ parallelism version 2 promises. If a merge were the signal, every fairway would 
 for eight slices that were built and merged, because the field was written at plan time and never
 reconciled. A log line is written by the thing that did the work at the moment it did it.
 
-This lives in the toolkit rather than in the keel because the things that ask it — a `/drive` session, and
+This lives in the toolkit rather than in the keel because the things that ask it — a `/sail` session, and
 the captain — run inside a generated project, which has no slipwai to import. That is the same reason
 `check-chart` and `check-slice-scope` are scripts. The first version of this was a keel module, and it was
 unreachable from everything that needed it.

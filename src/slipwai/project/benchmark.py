@@ -1,4 +1,4 @@
-"""The section of `commands/drive.md` that records what each stage cost and how it did.
+"""The section of `commands/sail.md` that records what each stage cost and how it did.
 
 Every slice runs the same ladder and, until this, nothing recorded what a slice cost or how well each stage did
 its job — so whether a change to a stage prompt, a skill or a generated project's layout made slices cheaper or
@@ -99,7 +99,7 @@ argument-hint: [feature]
 
 # Benchmark
 
-Every stage `/drive` runs is recorded in `specs/<feature>/slices/<id>/benchmark.json` (the stages above the slice
+Every stage `/sail` runs is recorded in `specs/<feature>/slices/<id>/benchmark.json` (the stages above the slice
 loop in `specs/<feature>/benchmark.json`). This command turns the records into the page a person reads, and reads
 it back to them.
 

@@ -2,7 +2,7 @@
 """Hold a slice branch to the files one slice may touch — the shared-surface rule, held mechanically.
 
 Once the event contract is settled, ready slices run concurrently: one delegate per slice, each on a
-`slice/<id>` branch in its own worktree, merged back in split order (`commands/drive.md`, *Running ready
+`slice/<id>` branch in its own worktree, merged back in split order (`commands/sail.md`, *Running ready
 slices concurrently*). That works only because the files two slices could fight over are few and named.
 This is the list, and the gate on it. On a branch that is not `slice/<id>` there is nothing to hold, and the
 script says so and exits 0 — which is why `make verify` runs it everywhere.

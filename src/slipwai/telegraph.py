@@ -49,7 +49,7 @@ MEANS = {
     "wait_bound": "minutes any wait may last before it is a parked line with a reason",
     # Added with slice 7.8, which needed a retry bound and found that `cycle` is not one — `cycle` is the
     # TDD unit (`rule` or `example`), not a count, and the captain needs to know how many times it may
-    # re-dispatch `/drive` for one slice before parking. A send-back at the demo is the case that matters:
+    # re-dispatch `/sail` for one slice before parking. A send-back at the demo is the case that matters:
     # the person who sent it back is present and has just given notes, so trying again beats parking, and
     # a bound stops "trying again" from being the whole afternoon.
     "attempts": "times one slice may be re-dispatched before the fairway parks",
@@ -77,12 +77,12 @@ SETTINGS: dict[str, dict[str, object]] = {
              "stage_scale": 0.0, "bar": "LOW", "decision_ceiling": 0, "wait_bound": 0,
              "attempts": 0},
 }
-#: Mirrored from `.specify/drive.json` so a person sets every width in one place. The telegraph does not own
-#: them — `/drive` does — so a position never sets them and `--set` writes them back where they came from.
+#: Mirrored from `.specify/sail.json` so a person sets every width in one place. The telegraph does not own
+#: them — `/sail` does — so a position never sets them and `--set` writes them back where they came from.
 #: **Both are words, not numbers**, which is what their values are: `delegate` is how much of a slice one
 #: delegate is handed, `cycle` is how many failing tests a RED-GREEN-REFACTOR cycle opens with. They were
 #: described here as numbers and parsed as numbers, so `--set delegate=story` and `--set cycle=rule` — the
-#: only values either takes — were both refused, and `--set cycle=3` was accepted. `scripts/agents/drive.py`
+#: only values either takes — were both refused, and `--set cycle=3` was accepted. `scripts/agents/sail.py`
 #: owns these sets; `tests/test_telegraph.py` holds the two in step, because a project has no slipwai to
 #: import and this is the second copy either way.
 MIRRORED = {

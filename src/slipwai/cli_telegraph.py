@@ -5,8 +5,8 @@ telegraph <position>` rings it, which sets every number together. `slipwai teleg
 changes one and leaves the rest, and the board then says `half-ahead, adjusted` — because a board reporting
 a position the numbers do not match is a board that is lying.
 
-`delegate` and `cycle` belong to `/drive` and are mirrored here, so a person sets every width in one place;
-`--set` writes them back to `.specify/drive.json`, where `/drive` reads them. The telegraph never rings them,
+`delegate` and `cycle` belong to `/sail` and are mirrored here, so a person sets every width in one place;
+`--set` writes them back to `.specify/sail.json`, where `/sail` reads them. The telegraph never rings them,
 because they are not the harbour's to decide.
 """
 from __future__ import annotations
@@ -20,7 +20,7 @@ from .errors import GenerationError, refuse
 from .project.harbour import CONFIG
 from .telegraph import MEANS, MIRRORED, POSITIONS, Refused, applied, described, parse_setting, scaled
 
-DRIVE = ".specify/drive.json"
+SAIL = ".specify/sail.json"
 
 
 def read(path: Path) -> dict:
@@ -52,8 +52,8 @@ def shown(held: dict) -> list[str]:
     return lines
 
 
-def drive_settings(root: Path) -> dict:
-    path = root / DRIVE
+def sail_settings(root: Path) -> dict:
+    path = root / SAIL
     try:
         held = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError, UnicodeDecodeError):
@@ -73,23 +73,23 @@ def ring(root: Path, name: str) -> list[str]:
 
 
 def set_one(root: Path, pairs: list[str]) -> list[str]:
-    """Set named numbers one at a time, each where it belongs: the harbour's here, `/drive`'s in its own file."""
-    harbour_path, drive_path = root / CONFIG, root / DRIVE
+    """Set named numbers one at a time, each where it belongs: the harbour's here, `/sail`'s in its own file."""
+    harbour_path, sail_path = root / CONFIG, root / SAIL
     held = read(harbour_path)
-    drive = drive_settings(root)
+    settings = sail_settings(root)
     said: list[str] = []
     for pair in pairs:
         name, value = parse_setting(pair)
         if name in MIRRORED:
-            drive[name] = value
-            said.append(f"  {name} = {value}  (in {DRIVE}, which is where `/drive` reads it)")
+            settings[name] = value
+            said.append(f"  {name} = {value}  (in {SAIL}, which is where `/sail` reads it)")
         else:
             held[name] = value
             said.append(f"  {name} = {value}")
     write(harbour_path, held)
-    if drive:
-        drive_path.parent.mkdir(parents=True, exist_ok=True)
-        write(drive_path, drive)
+    if settings:
+        sail_path.parent.mkdir(parents=True, exist_ok=True)
+        write(sail_path, settings)
     at = str(held.get("position", "full-ahead"))
     return [f"telegraph: {described(at, held)}", *said,
             f"`{this_command()} telegraph {at}` puts every number back to what that position means"]

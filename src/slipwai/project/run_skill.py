@@ -300,7 +300,7 @@ Dockerfile to fall behind the code.
 {trouble}
 ## What to hand over
 
-`commands/drive.md` sets the shape of a demo stop, and it is not a summary. It opens with the progress
+`commands/sail.md` sets the shape of a demo stop, and it is not a summary. It opens with the progress
 board — ✅ what works now, 🆕 what this slice added, ⬜ what is still to come with the slices counted, ⚠️ what
 is not working yet, ➡️ what comes next — and ends with the literal command or URL, the seed data, the result
 to expect in the actor's own words, and a direct question about what using it revealed. This skill exists

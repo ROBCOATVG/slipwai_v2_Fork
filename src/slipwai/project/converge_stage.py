@@ -1,4 +1,4 @@
-"""The convergence rung of `commands/drive.md`: the one stage whose exit condition is a judgement, and the
+"""The convergence rung of `commands/sail.md`: the one stage whose exit condition is a judgement, and the
 bounds that keep it a stage rather than a loop.
 
 Its own module for the reason `demo_stop.py` is: the text has grown by evidence, and each addition is a slice

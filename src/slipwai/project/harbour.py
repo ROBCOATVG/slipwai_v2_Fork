@@ -57,7 +57,7 @@ COMMENT = (
     "merge; below it a finding is stowed into the fairway's careen and the slice merges, and nothing "
     "CRITICAL is ever stowed. `decision_ceiling` is how many decisions may stand unread before a fairway "
     "parks. `wait_bound` is how long any wait may last before it is a parked line with a reason. "
-    "`attempts` is how many times a captain may re-dispatch `/drive` for one slice — a demo sent back is a "
+    "`attempts` is how many times a captain may re-dispatch `/sail` for one slice — a demo sent back is a "
     "retry, not a park — before the fairway parks naming what is still missing. `ci` is how the "
     "harbourmaster asks the forge whether trunk is green before it grants any merge: absent means `gh` "
     "where it is installed, a list of words is a command for another forge with `{trunk}` and `{limit}` "
@@ -85,7 +85,7 @@ def harbour_config() -> str:
 
 
 def budget_section() -> str:
-    """The `/drive` section that says what a stage does when it reaches its budget."""
+    """The `/sail` section that says what a stage does when it reaches its budget."""
     return f"""### When a stage reaches its budget
 
 Every stage has one, in `{CONFIG}`: wall-clock minutes and thousands of input tokens. A stage that reaches

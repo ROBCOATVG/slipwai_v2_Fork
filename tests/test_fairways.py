@@ -79,11 +79,11 @@ class ReadySetTest(unittest.TestCase):
 
 class DriveArgumentTest(unittest.TestCase):
     def test_drive_takes_a_fairway(self) -> None:
-        written = commands.drive_command(event=True, apps=[], target="aws")
+        written = commands.sail_command(event=True, apps=[], target="aws")
         self.assertIn("argument-hint: [slice-id-or-feature] [fairway=<name>]", written)
 
     def test_the_fairways_section_reaches_the_page_a_session_reads(self) -> None:
-        written = commands.drive_command(event=False, apps=[], target="none")
+        written = commands.sail_command(event=False, apps=[], target="none")
         self.assertIn("### Fairways", written)
 
 

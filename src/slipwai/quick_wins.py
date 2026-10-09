@@ -9,7 +9,7 @@ file that shows it and the fix, never the value: a secret's value is not written
 for one begins with rotating it, because a key in history is public.
 
 Each finding is a proposal and nothing is changed: the adoption's report lists them, `survey/survey.md` carries
-them under *Big issues that are quick wins*, and `/drive`'s Convergence stage offers them ahead of the map's rows
+them under *Big issues that are quick wins*, and `/sail`'s Convergence stage offers them ahead of the map's rows
 while any remain. `/survey` reads the tree again, so a finding disappears when the tree stops showing it — that is
 how they are tracked, without a ledger to tick.
 """

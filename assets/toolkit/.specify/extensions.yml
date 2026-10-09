@@ -100,10 +100,10 @@ hooks:
         only the user can do; the continuation contract in `AGENTS.md` is unaffected, and implementation
         continues to `/speckit-implement` whether or not the suggestion is taken.
 
-  # Optional, because the ladder in `commands/drive.md` already puts convergence between implementation and
+  # Optional, because the ladder in `commands/sail.md` already puts convergence between implementation and
   # the demo — and a hook that runs a command is a second route through the workflow. What this one is for
   # is the other entry: `AGENTS.md` says the loop starts when *any* per-slice command is invoked, so someone
-  # who typed `/speckit-implement` and never typed `/drive` has not read that ladder.
+  # who typed `/speckit-implement` and never typed `/sail` has not read that ladder.
   after_implement:
     - extension: "convergence"
       command: "speckit-converge"

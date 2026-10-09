@@ -47,7 +47,7 @@ class FastTargetsTest(unittest.TestCase):
 class LadderGateTest(unittest.TestCase):
     def rungs(self) -> dict[str, str]:
         import re
-        written = ladder.drive_ladder(event=True, apps=[], target="aws")
+        written = ladder.sail_ladder(event=True, apps=[], target="aws")
         parts = re.split(r"^(?=\d+\. \*\*)", written, flags=re.MULTILINE)
         found = {}
         for part in parts:

@@ -1,8 +1,8 @@
-"""The tail of `commands/drive.md`: which slices may start now, and how one session runs several at once.
+"""The tail of `commands/sail.md`: which slices may start now, and how one session runs several at once.
 
 Ready-set selection used to end with "one slice per session; name the rest so another session can claim a
 sibling" — the parallelism the method promises (slices that share only an event schema are independent, and
-Principle V makes it true in the tests) exploited only by running `/drive` twice. Once the contract is
+Principle V makes it true in the tests) exploited only by running `/sail` twice. Once the contract is
 settled a session can run every ready slice at once, one delegate per slice, and the reference
 implementations — Nebulit's build kits, Dilger's Ralph loop — show the three things that have to be true
 for that to work: a claim, so two drivers never take the same slice; a written shared-surface rule, held
@@ -118,10 +118,10 @@ claimed on the strength of it.
 **Each slice has its own worktree and one delegate.** For every unclaimed ready slice whose contract is
 settled, in the same turn: claim it, give it a worktree (`git worktree add ../<project>-<id> slice/<id>`;
 on Claude Code the Agent tool's `isolation: worktree` makes one), and delegate the slice's ladder — its
-example map through its converged verdict — to one fresh `drive-slice-watch` delegate (`agents/drive-slice-watch.md`,
+example map through its converged verdict — to one fresh `sail-slice-watch` delegate (`agents/sail-slice-watch.md`,
 the standing brief) with a manifest naming the worktree, the slice's block of the model, its `examples.md`,
 and the shared-surface rule below. That type takes no stage's model, because *Who runs each stage* still
-chooses one stage by stage inside the delegate, where `[P]` tasks still fan out to `drive-implement-shipwright`: the
+chooses one stage by stage inside the delegate, where `[P]` tasks still fan out to `sail-implement-shipwright`: the
 two levels nest. Inside one slice the stages stay strictly sequential. A delegate that meets a
 product question stops its slice with the question recorded in its `plan.md` and hands it here — a blocked
 slice is marked blocked, never guessed past.
@@ -169,7 +169,7 @@ def fairways(layout: Layout = AT_ROOT) -> str:
     """
     return f"""### Fairways
 
-A **fairway** is one bounded context's slices, in split order, held by one at a time: a person, a `/drive`
+A **fairway** is one bounded context's slices, in split order, held by one at a time: a person, a `/sail`
 session, a captain on another machine. Two fairways share nothing but **marks** — the contracts one sets and
 another steers by — so a slice in one merges and demos without waiting on a slice in another, and a second
 person or machine joins the work by taking a fairway rather than by racing for the next slice in one list. A
@@ -183,7 +183,7 @@ beside it: a second place to say which fairway a slice is in is a second place f
 one that is wrong is always the one somebody typed. A slice whose work straddles two contexts is two slices,
 or a boundary question for the chart, and never one slice in two fairways.
 
-**A session takes one fairway, or every free one.** `/drive fairway=<name>` confines the ready set to that
+**A session takes one fairway, or every free one.** `/sail fairway=<name>` confines the ready set to that
 fairway. Given none, a session takes the ready slices of every fairway nobody holds. `held_by` in the split's
 table is routing, not a lock: whoever is named there gets that fairway's slices left alone, and the board
 shows them as held; the claim is still the `slice/<id>` branch, so two sessions on one fairway are two claims

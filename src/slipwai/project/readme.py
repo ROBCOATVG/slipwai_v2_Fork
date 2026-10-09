@@ -74,14 +74,14 @@ constitution that mandates event sourcing in this profile.
 
 {readme_write_model(apps)}
 
-### One command runs the loop: `/drive`
+### One command runs the loop: `/sail`
 
 ```text
-/drive          # start the loop, or resume the slice already in flight
-/drive S2       # drive a named slice to its demo
+/sail          # start the loop, or resume the slice already in flight
+/sail S2       # drive a named slice to its demo
 ```
 
-`/drive` enters at the first incomplete stage proven by durable artifacts, and its ladder starts above the
+`/sail` enters at the first incomplete stage proven by durable artifacts, and its ladder starts above the
 slice loop: principles, product specification, the event model, the split, then example map, a `/gaps` pass
 over it, the installed Spec Kit plan and tasks, implementation, convergence, and the actor-visible demo. Invoking it before the model exists is
 a valid start rather than an error — it steps back to the stage that owes an artifact and says so. It never

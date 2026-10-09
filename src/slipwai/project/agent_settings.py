@@ -39,7 +39,7 @@ def harness_hooks(layout: Layout) -> dict[str, list[dict[str, object]]]:
         "PreCompact": [{"hooks": [{"type": "command", "command": f"python3 {script} before-compact"}]}],
         "SessionStart": [{"matcher": "compact",
                           "hooks": [{"type": "command", "command": f"python3 {script} after-compact"}]},
-                         # A person's `/drive` has no captain in front of it, so whatever an extension does at
+                         # A person's `/sail` has no captain in front of it, so whatever an extension does at
                          # the start of a session — an index made sound and current, the step a captain takes
                          # before every stage — happens here. The budget is long because a rebuild can be as
                          # long as a first index, and the guards registry's own budget bounds each one.

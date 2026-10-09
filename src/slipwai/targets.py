@@ -13,7 +13,7 @@ together with `infra/`, the image builds, the deploy pipeline and the per-target
 `existing` is the other kind: the project deploys somewhere the keel does not own — a repository the method was
 installed around (brownfield adoption) has its infrastructure already, described elsewhere or nowhere — so it offers
 what `none` offers, provisions nothing, and turns on the documentation of where it goes and the release-constraint rung
-of `/drive` instead. The second cloud is meant to be a fourth row in these same tables, not a second set of branches.
+of `/sail` instead. The second cloud is meant to be a fourth row in these same tables, not a second set of branches.
 
 A target may `require` an axis: `aws` deploys an HTTP service, and `/health` is what proves a deploy, so
 `--http none` cannot be taken there. The axis's no-infrastructure answer stays *offered* (an absent answer is

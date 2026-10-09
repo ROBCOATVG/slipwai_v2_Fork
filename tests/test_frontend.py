@@ -246,13 +246,13 @@ class FrontendTest(FactoryTestCase):
             self.assertIn("`skills/frontend-design`", page)
             self.assertIn("`skills/web-interface-guidelines`", page)
             self.assertIn("this page wins", page)
-            drive = (repo / "commands/drive.md").read_text(encoding="utf-8")
-            self.assertIn("`skills/web-interface-guidelines`", drive)
+            sail = (repo / "commands/sail.md").read_text(encoding="utf-8")
+            self.assertIn("`skills/web-interface-guidelines`", sail)
 
             headless = self.generate(directory, "headless-again", frontend="none")
             for skill in ("frontend-design", "web-interface-guidelines"):
                 self.assertFalse((headless / f"skills/{skill}").exists(), f"{skill} shipped with no browser app")
-            self.assertNotIn("web-interface-guidelines", (headless / "commands/drive.md").read_text(encoding="utf-8"))
+            self.assertNotIn("web-interface-guidelines", (headless / "commands/sail.md").read_text(encoding="utf-8"))
 
     def test_the_browser_app_calls_its_service_through_a_generated_client(self) -> None:
         """The types the app expects and the shapes the service serialises are one declaration.

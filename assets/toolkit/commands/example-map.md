@@ -88,7 +88,7 @@ as it stands.
 
 ## An empty map stops the slice
 
-`/drive` will not run its implementation rung against a slice whose `examples.md` has no example under any
+`/sail` will not run its implementation rung against a slice whose `examples.md` has no example under any
 rule. That is a refusal and not a warning, because the alternative is a slice implemented against whatever
 the implementing session inferred, and then demoed against the same inference. If the examples cannot be
 written, the reason is a product question, and a product question is a stop with a name rather than an

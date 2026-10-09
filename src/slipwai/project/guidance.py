@@ -137,7 +137,7 @@ context can live, each costing more than the one before:
    starts as, and the default here: one deployable, several models. Once a service lists more than one
    context, `make check-imports` refuses an import from one context into another that does not go through
    that module{model_gate}. Which contexts a service holds is found, not declared up front — in the event
-   model's lanes where this project keeps one, in the specification's vocabulary otherwise; `/drive` says
+   model's lanes where this project keeps one, in the specification's vocabulary otherwise; `/sail` says
    where that decision is taken and recorded.
 3. **A service of its own** — `apps/<name>`, through the factory's `add-service`. It costs a network
    boundary, a database of its own, its own image, pipeline and on-call.
@@ -225,7 +225,7 @@ question for the user, not an obligation to invent.
 
 ## Delegated agents
 
-Each stage `/drive` sends to a fresh context is a named type in `agents/` (and a whole slice is `drive-slice-watch`) carrying that stage's standing brief,
+Each stage `/sail` sends to a fresh context is a named type in `agents/` (and a whole slice is `sail-slice-watch`) carrying that stage's standing brief,
 its model and its write scope, projected into the installed harness so it holds what it can. Delegate to the
 type: a brief adds only its task-specific contract and file manifest, and restates neither the scope nor `docs/delegated-agent-safety.md` — a brief that restates a rule is one that can fall behind it.
 ## Deployable ownership
@@ -290,7 +290,7 @@ type: a brief adds only its task-specific contract and file manifest, and restat
         guidance += """
 ## Per-slice continuation contract
 
-Use `/drive` to resume from the first missing artifact or unchecked task, whether that artifact is the
+Use `/sail` to resume from the first missing artifact or unchecked task, whether that artifact is the
 constitution, the product specification, the split, or the slice's own tasks. Work through specification,
 `/gaps` over the slice's acceptance criteria, plan, tasks, RED-GREEN-REFACTOR implementation, the installed
 Spec Kit converge command until it reports converged or reaches its bound, `/gaps` over the slice diff, and an actor-visible
@@ -302,7 +302,7 @@ surface or closed the split — `commands/adversary.md` makes and records that d
         guidance += """
 ## Per-slice continuation contract
 
-The loop starts when any per-slice command is invoked: `/drive`, `/example-map`, or the installed Spec Kit
+The loop starts when any per-slice command is invoked: `/sail`, `/example-map`, or the installed Spec Kit
 plan, tasks, and implement commands. Naming one stage requests that stage and what follows it. A
 stage's own done condition is stage completion, not permission to end the delivery loop, and an optional
 extension hook is not a gate.
@@ -311,15 +311,15 @@ Continue until the actor-visible path is ready for a demo, a product decision or
 blocks progress, or the ordered split is exhausted. Before the demo, run the installed Spec Kit converge
 command until it reports converged or reaches its bound, and `/gaps` over the slice diff. At the demo, pause for feedback. On
 acceptance, harden and finish the slice — `/adversary` when the slice changed attack surface or closed the
-split, then `/mutation` and `make verify` — then continue to the ready slices (not done, every `depends_on` done): every unclaimed one whose contract is settled runs concurrently, one delegate per slice on a `slice/<id>` branch, merged in split order (`commands/drive.md`, *Running ready slices concurrently*); where the harness cannot delegate, the earliest in split order, naming the rest.
+split, then `/mutation` and `make verify` — then continue to the ready slices (not done, every `depends_on` done): every unclaimed one whose contract is settled runs concurrently, one delegate per slice on a `slice/<id>` branch, merged in split order (`commands/sail.md`, *Running ready slices concurrently*); where the harness cannot delegate, the earliest in split order, naming the rest.
 
 Under `/cruise` the same contract holds with nobody at the wheel: the two stops that were a person's — a
-product decision and the demo — are answered by `drive-decide-skipper` and `drive-demo-hand`, every answer is written where
+product decision and the demo — are answered by `sail-decide-skipper` and `sail-demo-hand`, every answer is written where
 a person's would have been and again in `specs/<feature>/decisions.md`, and an iteration ends with one line
 (`cruise: continue | done | parked: <why> | stopped: human`) that the outer loop reads before it invokes the
-next. `commands/cruise.md` is exact; it runs `commands/drive.md` and adds nothing to what a stage produces.
+next. `commands/cruise.md` is exact; it runs `commands/sail.md` and adds nothing to what a stage produces.
 
-`commands/drive.md` is the resumable entry point at any point in the workflow. It derives the current stage
+`commands/sail.md` is the resumable entry point at any point in the workflow. It derives the current stage
 from artifacts and never re-runs a completed stage merely to make sure. Invoked before the upstream stages
 exist — no ratified constitution, no specification, no modelled events, no split — it steps back to the
 earliest stage still owing an artifact instead of improvising one. If it conflicts with this file, this

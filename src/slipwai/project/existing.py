@@ -1,9 +1,9 @@
 """`target: existing`: what a project deploying to infrastructure it does not own is told, in every part that speaks of production.
 
 The third target row (brownfield adoption) manages nothing — no `infra/`, no pipeline, no `make deploy`, no flag
-mechanism — and turns on the documentation of where the project goes and the release-constraint rung of `/drive`
+mechanism — and turns on the documentation of where the project goes and the release-constraint rung of `/sail`
 instead. Every sentence of that is here, beside the page that carries what the adoption recorded about the
-infrastructure, so that the README, `AGENTS.md`, the drive command and the docs cannot disagree about what an existing
+infrastructure, so that the README, `AGENTS.md`, the sail command and the docs cannot disagree about what an existing
 target is.
 """
 from __future__ import annotations
@@ -43,7 +43,7 @@ EXISTING_README = """
 
 This project deploys to infrastructure this keel does not manage (`--target existing`): nothing under
 `infra/`, no deploy pipeline, no `make deploy`. [`docs/deployment.md`](docs/deployment.md) records where it
-runs, who describes that, and how a release reaches it — written as soon as it is known, because `/drive`
+runs, who describes that, and how a release reaches it — written as soon as it is known, because `/sail`
 asks every slice how it reaches production and what gates its release.
 """
 
@@ -77,7 +77,7 @@ def existing_deployment_page(project_name: str, adoption: Adoption | None) -> st
 This project goes to production on infrastructure this factory does not own (`target: existing`): nothing
 under `infra/`, no deploy pipeline, no `make deploy`, nothing provisioned. What the factory owes it instead is
 this page — where it runs, who describes that, and how a release reaches it — and the release-constraint rung
-of `/drive`, which asks every slice how it reaches production and what gates its release.
+of `/sail`, which asks every slice how it reaches production and what gates its release.
 
 ## The infrastructure
 
@@ -87,14 +87,14 @@ Home: **`{home}`**{provenance}. {account}
 
 {release_recorded(adoption)}Write it here, in the order it happens: the artefact (an image, a package, a
 WAR), who or what builds it, the environments in order, who applies it, and how it is undone. A release path
-nobody can write down is the first thing to fix, because every slice `/drive` finishes ends by asking for it.
+nobody can write down is the first thing to fix, because every slice `/sail` finishes ends by asking for it.
 
 ## Release constraints
 
 No flag mechanism is installed here — that comes with a managed target — so each slice decides one of three
 things and writes it in its plan: releasable on merge, because everything it adds is coherent and safe to an
 actor the moment it lands; held behind a toggle this repository already has, named; or a coordinated deploy,
-with who does what. `/drive` asks, and `AGENTS.md` asks for the same sentence in the turn that pushes.
+with who does what. `/sail` asks, and `AGENTS.md` asks for the same sentence in the turn that pushes.
 """
 
 
@@ -114,7 +114,7 @@ def release_recorded(adoption: Adoption | None) -> str:
 
 
 def release_stage(apps: list[App], target: str) -> list[str]:
-    """The release-constraint rung of `/drive`: the flag decision under a managed target, the deployment decision
+    """The release-constraint rung of `/sail`: the flag decision under a managed target, the deployment decision
     under `existing`, and nothing under `none`, which has nothing to decide."""
     if managed(CATALOG, target):
         return [flag_stage(apps)]

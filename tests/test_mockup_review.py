@@ -52,7 +52,7 @@ class MockupReviewTest(unittest.TestCase):
         read model, a route and a set of tests, and all three cost more to move than a drawing."""
         for event in (True, False):
             with self.subTest(event=event):
-                written = headings(ladder.drive_ladder(event=event, apps=[], target="aws"))
+                written = headings(ladder.sail_ladder(event=event, apps=[], target="aws"))
                 self.assertIn("Mock-up review", written)
                 typed = "Event model" if event else "Split"
                 self.assertLess(written.index("Product specification"), written.index("Mock-up review"))

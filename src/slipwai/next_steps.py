@@ -120,9 +120,9 @@ def steps(root: Path, layout: Layout, adoption: Adoption, apps: list[App]) -> li
         decided,
     ))
     # The sequence used to stop here, at a repository that is ready and has been asked to do nothing. The
-    # first person to take it end to end had to be told the rest in chat — ratify, specify, drive, cruise —
+    # first person to take it end to end had to be told the rest in chat — ratify, specify, sail, cruise —
     # and the order matters: `check-constitution` fails the moment `specs/` exists over a template
-    # constitution, which takes `verify`, and `/drive` with it.
+    # constitution, which takes `verify`, and `/sail` with it.
     # Absent entirely means `./init` has not run, which is pending rather than done — the first reading of
     # this reported a constitution as ratified in a repository that had no `.specify/` at all.
     ratified = template_gone(root)
@@ -131,17 +131,17 @@ def steps(root: Path, layout: Layout, adoption: Adoption, apps: list[App]) -> li
         "/speckit-constitution, in the agent",
         "the principles the gate holds this repository to. Before the first spec, not after: "
         "`check-constitution` fails once `specs/` exists over the template it installed, and takes `verify` "
-        "and `/drive` with it",
+        "and `/sail` with it",
         ratified,
     ))
     found.append(Step(
         "/speckit-specify, in the agent",
-        "the first feature, as a specification under `specs/<feature>/spec.md` — what `/drive` and `/cruise` "
+        "the first feature, as a specification under `specs/<feature>/spec.md` — what `/sail` and `/cruise` "
         "work from, and what they refuse to start without",
         specified,
     ))
     found.append(Step(
-        "/drive, in the agent",
+        "/sail, in the agent",
         "the loop, once by hand: it enters at the stage this map is weakest on and stops at every question "
         "only a person can answer. Worth watching before anything runs it unattended",
         False,
@@ -184,13 +184,13 @@ def report(root: Path, layout: Layout, adoption: Adoption, apps: list[App]) -> s
     if unproven:
         lines.append(
             f"  also: {len(unproven)} of {len(wrapped)} application(s) have no `smoke` recorded, so nobody has proved "
-            f"they start ({', '.join(unproven)}) — /ground asks, and /drive's Pin stage refuses to change one until "
+            f"they start ({', '.join(unproven)}) — /ground asks, and /sail's Pin stage refuses to change one until "
             "somebody has"
         )
     if not next_seen:
         lines.append("")
         lines.append(
-            "Every step of the intro is done. `/drive` is the loop from here, and this command stays honest: it "
+            "Every step of the intro is done. `/sail` is the loop from here, and this command stays honest: it "
             "reads the tree, so a row that moves back shows up here."
         )
     else:

@@ -15,7 +15,7 @@ from ..layout import Layout
 from ..origin import Adoption
 from ..services import App, wrapped_of
 from .adopted_ci import ACTIONS_GATE, delivery_workflow, gitlab_job
-from .drive_adoption import adoption_hooks
+from .sail_adoption import adoption_hooks
 from .shared_packages import PACKAGES
 
 # The list of every path the keel wrote into an adopted repository, relative to the root. `replay` reads the
@@ -178,7 +178,7 @@ has a target of its own. {ci_paragraph(adoption, layout)}
    `{where(layout)}docs/convergence.md` at a time, the evidence and the rungs shown first, each answer written
    with `confirmed` provenance; then `/survey` so the pages and the strategy recommendation follow. What
    the tree could not say, or `--yes` left `unrecorded`, is settled here rather than one slice at a time —
-   or skip straight to `/drive`, whose Ground stage runs the same questions for the rows a slice touches.
+   or skip straight to `/sail`, whose Ground stage runs the same questions for the rows a slice touches.
 3. `{make} verify` — green on day one is the promise for a linter or type checker that arrived after the
    code, and the first run records the ratchet baseline: commit `{where(layout)}baseline.json` with what `init`
    wrote. A test suite that is red on day one is the one exception: the run stops and says so, and
@@ -189,7 +189,7 @@ has a target of its own. {ci_paragraph(adoption, layout)}
    sits at the top of, what is planned to move each row, and what nobody has established yet; and
    `{where(layout)}survey/structure.md`, the architecture view — where anything starts, what depends on what,
    where change happens — which says what moves the Structure row and where `/strangle` would cut. Then
-   `{where(layout)}docs/getting-started.md` and `{where(layout)}docs/architecture.md`, then `/drive`,
+   `{where(layout)}docs/getting-started.md` and `{where(layout)}docs/architecture.md`, then `/sail`,
    whose ladder here begins at *Ground* (no map, no principles), pins wrapped code before *Implementation*,
    and holds the map to each slice at *Convergence* before offering the next row as a method slice.
    Three more commands are this adoption's own: `/characterise` pins the current behaviour of the code a slice is about
@@ -259,7 +259,7 @@ def ci_paragraph(adoption: Adoption, layout: Layout) -> str:
     return (
         f"No CI configuration was written: the survey found none in this repository (`{provenance}`). The gate runs "
         f"where somebody runs `{layout.make} verify`, and nowhere else, until a CI runs it — that is the first rung "
-        "of the path to production, and `/drive` will ask about it."
+        "of the path to production, and `/sail` will ask about it."
     )
 
 
@@ -271,7 +271,7 @@ def release_paragraph(adoption: Adoption) -> str:
     return {
         "pipeline": f"**A pipeline deploys** (`{provenance}`{f', from {evidence}' if evidence else ''}). Which "
         "environments it passes through, what gates each, and how a release is undone belong in "
-        "`docs/deployment.md`; `/drive` asks every slice how it reaches production.",
+        "`docs/deployment.md`; `/sail` asks every slice how it reaches production.",
         "scripted": f"**Somebody runs a script** (`{provenance}`{f', from {evidence}' if evidence else ''}). A "
         "scripted release is one rung below a pipeline: the next step is a CI job that runs the same script on "
         "every commit that passes `verify`, described in `docs/deployment.md` before it is built.",
@@ -281,7 +281,7 @@ def release_paragraph(adoption: Adoption) -> str:
         "unknown": f"**Not recorded** (`{provenance}`): nothing in the tree says how a change reaches production, and "
         "nobody has said yet. This is the first Minimum CD fact and the method will not guess it: say it in "
         "`project.json` under `release.path` (`pipeline`, `scripted` or `manual`) or with `slipwai adopt --release`, "
-        "and `/drive` asks before the first slice.",
+        "and `/sail` asks before the first slice.",
     }[path]
 
 

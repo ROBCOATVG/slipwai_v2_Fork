@@ -2,9 +2,9 @@
 """Which coding agent a headless session runs through, and the command that starts one.
 
 Two things in this directory need to start a fresh harness session and ask it one thing: `cruise.py`, which
-asks `/cruise` once an iteration, and `captain.py`, which asks `/drive` once a slice. They had one copy
+asks `/cruise` once an iteration, and `captain.py`, which asks `/sail` once a slice. They had one copy
 between them and it was `cruise.py`'s — so the captain, which is the thing that will outlive the runner,
-fell back to `scripts/agents/drive.py`. That script is the *settings reader* for `/drive`: handed a slice
+fell back to `scripts/agents/sail.py`. That script is the *settings reader* for `/sail`: handed a slice
 and a fairway it prints its table and exits 0. A whole real run was reported through on the strength of it.
 
 So the knowledge is here, and both callers read it:

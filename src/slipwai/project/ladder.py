@@ -1,4 +1,4 @@
-"""`commands/drive.md`'s ladder: the rungs, in order, and which stage of the model table runs each.
+"""`commands/sail.md`'s ladder: the rungs, in order, and which stage of the model table runs each.
 
 The ladder is the shape of the loop section 5 of the plan draws, and it lives apart from the page it is
 written into because it is the part that keeps changing: slice 5.8 adds the review rung, 5.9 the careen's
@@ -18,8 +18,8 @@ from ..origin import Adoption
 from ..services import App, web_apps
 from .converge_stage import convergence_stage
 from .design_stage import PLAN_STYLING, with_design_rungs
-from .drive_adoption import adoption_ladder
 from .existing import release_stage
+from .sail_adoption import adoption_ladder
 from .stage_models import rung_titles
 from .write_model_prose import paths_of, state_services
 
@@ -50,7 +50,7 @@ def rung_of_the_slice(apps: list[App]) -> str:
    against."""
 
 
-def drive_ladder(
+def sail_ladder(
     event: bool, apps: list[App], target: str = "none", layout: Layout = AT_ROOT,
     adoption: Adoption | None = None,
 ) -> str:
@@ -175,7 +175,7 @@ def drive_ladder(
    gate is the fast checks — `make unit`, lint and types — and never the full gate, which belongs to the
    merge. The refactor beat is the third beat of each cycle and is not the reshape pass further down the
    ladder: dropping it is what makes the big one necessary.
-   Read `.specify/drive.json` before delegating — `python3 scripts/agents/drive.py` — and say in the stage
+   Read `.specify/sail.json` before delegating — `python3 scripts/agents/sail.py` — and say in the stage
    line which boundary and which cycle this slice is running at. Where a veto narrowed them, say that too
    and which one: tasks carrying no story tag are delegated per `rule`, and a map that does not number its
    rules is delegated per `task` and driven per `example`. A slice that cannot support the configured
@@ -224,7 +224,7 @@ def hook_points() -> str:
     return f"""### Where an extension's hooks fire
 
 A project may have extensions installed, and an extension attaches scripts to moments the keel owns rather
-than inventing its own. Under `/drive` those moments are the rungs of this ladder, and they fire in this
+than inventing its own. Under `/sail` those moments are the rungs of this ladder, and they fire in this
 order, so that a hook behaves the same with a person present as it does under a captain:
 
 | Point | When it fires |

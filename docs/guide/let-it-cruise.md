@@ -1,4 +1,4 @@
-# Let it sail
+# Let it cruise
 
 So far you have been in the room for every slice. This page is about not being — a run that keeps going
 while you are at lunch, and stops for you when it genuinely needs you rather than at every rung.
@@ -26,7 +26,7 @@ every process and `slipwai fleet` still tells you exactly where the run got to, 
 
 One captain per fairway. Each turn it fetches trunk and both logs, works out its own state from its own
 `claimed` and `merged` lines, picks the next slice that clearance allows, writes `claimed`, dispatches
-`/drive` in that fairway's berth, and watches the log while it runs.
+`/sail` in that fairway's berth, and watches the log while it runs.
 
 **It believes the log, not the agent.** A stage that has written nothing for its wall budget is ended and
 parked with a reason — not because the agent said it was stuck, which a stuck agent cannot say, but because

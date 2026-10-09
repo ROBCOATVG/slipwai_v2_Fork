@@ -67,7 +67,7 @@ def event_documentation(project_name: str, services: list[App]) -> dict[str, str
 
     first_slice = f"""# Writing the first slice
 
-Use `/drive` at any point. It derives the first incomplete stage from artifacts rather than conversation
+Use `/sail` at any point. It derives the first incomplete stage from artifacts rather than conversation
 memory, stepping back above the slice loop when scope has not been specified, modelled, or split yet, and
 drives one actor-visible path to its demo.
 
@@ -90,7 +90,7 @@ the same vertical slice; do not ship only the backend beneath the white box.
 Feature scope and cumulative contracts stay in the feature directory. A slice's plan, research, data model,
 quickstart and tasks live under `specs/<feature>/slices/<id>/` from the day they are written: the canonical
 paths the Spec Kit commands resolve to (`specs/<feature>/plan.md` and the other four) are links into that
-directory, made by `/drive` before the plan command runs, ignored by git and never committed — so two slices
+directory, made by `/sail` before the plan command runs, ignored by git and never committed — so two slices
 planned at once never overwrite each other's record. Given/When/Then examples live there from the day they
 are mapped. Finishing a slice marks it done rather than moving it: `status: implemented` in the model, which
 the ready set and the progress board both read. A `slices/README.md` register — one row per slice, accepted
@@ -101,7 +101,7 @@ revision, then—after acceptance—run an adversarial pass where this slice cha
 the split, mutation analysis where configured, and `make verify` before the ready slices (not done, every
 `depends_on` done). Every unclaimed ready slice whose contract is settled — `planned` in the model — runs
 concurrently, one delegate per slice on a `slice/<id>` branch in its own worktree, merged in split order and
-held to the shared-surface rule by `make check-slice-scope` (`commands/drive.md`, *Running ready slices
+held to the shared-surface rule by `make check-slice-scope` (`commands/sail.md`, *Running ready slices
 concurrently*); a harness that cannot delegate takes the earliest in split order and names the rest.
 """
     mapping = model_to_code([

@@ -13,7 +13,7 @@ decide over current state and a save at the version that was read, gives `stream
 transaction locks, and refuses `guard` and `folds` by name with the reason, so the first slice written
 against that service finds out here rather than at a gate. `README.md`, `AGENTS.md`,
 `docs/architecture.md`, `docs/whats-included.md`, `docs/gates.md`, the `/gaps`, `/adversary` and
-`/constitution-coverage` command pages, `/drive`'s event-model rung and the pull-request template all read
+`/constitution-coverage` command pages, `/sail`'s event-model rung and the pull-request template all read
 the same way, and the store's own sections say which race their project's Postgres can actually lose — a
 `(stream_id, version)` constraint on the log, a save at the version the state was read at on a row.
 

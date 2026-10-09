@@ -17,7 +17,7 @@ from .cruise_agents import BOSUN, BROWSER, HAND, SKIPPER
 
 # Where `/cruise`'s settings live, and the script that reads them. Both are all that is left of the runner:
 # the settings outlived the loop because they were never the loop's — they are the answers a run gives at
-# `/drive`'s stops, which a captain's dispatched `/drive` reads exactly as a person's would have.
+# `/sail`'s stops, which a captain's dispatched `/sail` reads exactly as a person's would have.
 CONFIG = ".specify/cruise.json"
 SCRIPT = "scripts/agents/cruise.py"
 # The rule that makes a decision entry also an ADR, stated once for the command and read by its tests. `{REPORT}`

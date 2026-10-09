@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""What each stage of `/drive`'s ladder cost a slice, and how well it did — recorded where the slice's other
+"""What each stage of `/sail`'s ladder cost a slice, and how well it did — recorded where the slice's other
 artifacts are, so a project accumulates a history rather than a log that scrolls away.
 
 One record per slice, `specs/<feature>/slices/<id>/benchmark.json`, and one per feature for the stages above the
-slice loop, `specs/<feature>/benchmark.json`. `/drive` opens an entry before a stage and closes it after:
+slice loop, `specs/<feature>/benchmark.json`. `/sail` opens an entry before a stage and closes it after:
 
     python3 scripts/agents/benchmark.py start specs/shop/slices/S1 implement
     python3 scripts/agents/benchmark.py end   specs/shop/slices/S1 implement verify_failures=1
@@ -76,7 +76,7 @@ REPEATED = 3
 COUNTS = ("gaps", "findings", "seams", "verify_failures", "split")
 WORDS = ("mutation_score", "outcome", "model", "agent", "note", "delegate", "cycle", "driver")
 COMMENT = (
-    "What each stage of /drive cost this slice and how well it did, one entry per stage run, appended by "
+    "What each stage of /sail cost this slice and how well it did, one entry per stage run, appended by "
     "scripts/agents/benchmark.py at the stage's start and end. Tokens come from the harness's own transcript or are "
     "null with the reason; signals are what the stage reported. `make benchmark` reads every record. "
     "docs/agent-harnesses.md says what the numbers can and cannot be compared with."
@@ -85,11 +85,11 @@ USAGE_KEYS = ("input", "output", "cache_read", "cache_creation")
 # Which stage a delegate type's lines belong to, whatever bracket was open when they were written: a skipper round
 # opened while the implementers run must not count their tokens, and the implement entry must not lose them to it.
 OWNERS = {
-    "drive-implement-shipwright": ("implement-shipwright",), "drive-converge-navigator": ("converge-navigator",),
-    "drive-gaps-lookout": ("gaps-lookout",), "drive-adversary-privateer": ("adversary-privateer",),
-    "drive-mutation-shipworm": ("mutation-shipworm",), "drive-tasks-quartermaster": ("tasks-quartermaster",),
-    "drive-demo-hand": ("demo", "demo-hand"), "drive-decide-skipper": ("decide-skipper",),
-    "drive-unblock-bosun": ("unblock-bosun",),
+    "sail-implement-shipwright": ("implement-shipwright",), "sail-converge-navigator": ("converge-navigator",),
+    "sail-gaps-lookout": ("gaps-lookout",), "sail-adversary-privateer": ("adversary-privateer",),
+    "sail-mutation-shipworm": ("mutation-shipworm",), "sail-tasks-quartermaster": ("tasks-quartermaster",),
+    "sail-demo-hand": ("demo", "demo-hand"), "sail-decide-skipper": ("decide-skipper",),
+    "sail-unblock-bosun": ("unblock-bosun",),
 }
 
 
@@ -315,7 +315,7 @@ def claude_usage(items: list[dict[str, Any]], by_model: dict[str, dict[str, int]
     request once (592 of 1090 assistant lines on this machine's transcripts were repeats).
 
     An assistant line in a sub-agent's transcript also names the *type* that ran it, in `attributionAgent` —
-    `drive-adversary-privateer` where the stage delegated to a type, `general-purpose` where it delegated to nothing in
+    `sail-adversary-privateer` where the stage delegated to a type, `general-purpose` where it delegated to nothing in
     particular. That is read rather than asked, the way the model is, so a record can only claim a type that
     actually ran (the transcripts Claude Code 2.1.268 wrote on this machine, read 2026-09-15).
     """
@@ -635,7 +635,7 @@ def implemented() -> list[tuple[str, str | None]]:
 
 
 def done_slices(feature: Path) -> set[str]:
-    """The slices this feature has finished, as the ladder marks them (`commands/drive.md`, *Ready-set selection*):
+    """The slices this feature has finished, as the ladder marks them (`commands/sail.md`, *Ready-set selection*):
     a row in its register at `slices/README.md`, or `status: implemented` in the event model on a slice that names
     this feature, or names none and has its folder at `slices/<id>/` here."""
     done: set[str] = set()
@@ -683,7 +683,7 @@ def check() -> list[str]:
             where = f"specs/{feature.name}/slices/{ident}"
             if not record_path.is_file():
                 findings.append(f"{where} is done but has no {RECORD}: no stage of it was bracketed "
-                                "(commands/drive.md, *What each stage costs*)")
+                                "(commands/sail.md, *What each stage costs*)")
             elif "shape" not in json.loads(record_path.read_text(encoding="utf-8")):
                 findings.append(f"{where} is done but its record was never closed — "
                                 f"`python3 scripts/agents/benchmark.py close {where}`")
@@ -805,7 +805,7 @@ def summarise(record: dict[str, Any]) -> dict[str, Any]:
         "seams": sum(entry["signals"].get("seams", 0) for entry in ended),
         "verify_failures": sum(entry["signals"].get("verify_failures", 0) for entry in ended),
         # How each implement entry was delegated and driven, `delegate/cycle`: one shape is a comparable slice,
-        # two is a slice that ran as both and compares with neither (`commands/drive.md`, *How implementation
+        # two is a slice that ran as both and compares with neither (`commands/sail.md`, *How implementation
         # is delegated*).
         "delegation": sorted({
             f"{entry['signals'].get('delegate', '?')}/{entry['signals'].get('cycle', '?')}"
@@ -872,7 +872,7 @@ def notes(summaries: list[dict[str, Any]], records_: list[dict[str, Any]]) -> li
              for summary in summaries if summary["open"]]
     # Converge is append-only and safe to repeat, so a high count is never a failure — but it is the cheapest
     # signal there is that a slice was too large, or that each pass closed the instance a finding was found at
-    # and left its siblings for the next one (`commands/drive.md`, *Convergence*). The column already carries
+    # and left its siblings for the next one (`commands/sail.md`, *Convergence*). The column already carries
     # the number; this says out loud when it is worth a look, since nothing else in the table interprets it.
     lines += [f"{summary['slice']}: converge ran {summary['converge_passes']} times, appending "
               f"{summary['tasks_appended']} task(s) — a slice too large, or fixes too narrow to close the "
@@ -902,7 +902,7 @@ def notes(summaries: list[dict[str, Any]], records_: list[dict[str, Any]]) -> li
 def aggregate() -> str:
     grouped = by_feature()
     if not grouped:
-        return "benchmark: no record yet — /drive writes specs/<feature>/slices/<id>/benchmark.json from its next stage"
+        return "benchmark: no record yet — /sail writes specs/<feature>/slices/<id>/benchmark.json from its next stage"
     blocks = []
     for feature, entries in grouped.items():
         summaries = [summarise(record) for _, record in entries]

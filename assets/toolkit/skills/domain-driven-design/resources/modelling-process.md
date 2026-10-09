@@ -51,7 +51,7 @@ Eric Evans' [Model Exploration Whirlpool](https://www.domainlanguage.com/ddd/whi
 
 ## How it maps onto this toolkit
 
-- **Discover.** This toolkit's discovery format is event modeling, not EventStorming — the `event-modeling` skill and `/drive` command run the workshop and turn it into slices. The two share the idea of finding pivotal events; the sticky-note grammar differs. Use EventStorming if a facilitator already knows it; otherwise start from `event-modeling`.
+- **Discover.** This toolkit's discovery format is event modeling, not EventStorming — the `event-modeling` skill and `/sail` command run the workshop and turn it into slices. The two share the idea of finding pivotal events; the sticky-note grammar differs. Use EventStorming if a facilitator already knows it; otherwise start from `event-modeling`.
 - **Decompose, Connect, Define.** `bounded-contexts.md` in this skill covers the context-mapping patterns and how to lay contexts out in code once the Bounded Context Canvas has settled what each one is for. The `ubiquitous-language` skill owns the glossary each canvas produces.
 - **Organise.** Team structure is out of scope for the code skills, but the `structure-codebase` skill keeps bounded context as its own structural axis so package boundaries can follow the team boundaries this step decides.
 - **Code.** The Aggregate Design Canvas feeds straight into `aggregate-design.md` (sizing, invariants, one aggregate per transaction). Hexagonal architecture is one of the process's Code-step options; in this toolkit it is the separate `hexagonal-architecture` skill, and DDD does not require it.

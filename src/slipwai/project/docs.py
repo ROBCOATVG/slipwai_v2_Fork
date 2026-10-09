@@ -90,7 +90,7 @@ integration explicitly, for example `./init --integration claude` or
 {first_slice}{(" Connect it through " + web_paths + " without sharing backend implementation types." if web else "")} Run `make verify`
 before and after each increment; it is the same gate CI runs.
 
-Use `/drive` for the complete delivery loop and `/where-are-we` for the progress board at any point; both read
+Use `/sail` for the complete delivery loop and `/where-are-we` for the progress board at any point; both read
 artifacts on disk rather than memory, so one resumes safely and the other changes nothing. See `commands/`, `skills/` and `agents/`.
 `/cruise` runs the loop with nobody at the wheel — it decides product questions as the owner and runs each demo
 as the actor, and stops only for a person; it ships switched off, and `commands/cruise.md` says how to start it.
@@ -194,7 +194,7 @@ flowchart LR
   EMOD(["event-modeling · events, commands, read models, actors"])
   SS["/story-splitting · slices"]
 
-  subgraph loop["once per slice — /drive owns the loop, repeating until the split is exhausted"]
+  subgraph loop["once per slice — /sail owns the loop, repeating until the split is exhausted"]
     direction TB
     EM["/example-map · rules → examples → GWT"]
     EG["/gaps · tighten examples.md, on paper"]
@@ -234,7 +234,7 @@ flowchart LR
   G["/gaps · whole spec"]
   SS["/story-splitting · slices"]
 
-  subgraph loop["once per slice — /drive owns the loop, repeating until the split is exhausted"]
+  subgraph loop["once per slice — /sail owns the loop, repeating until the split is exhausted"]
     direction TB
     SG["/gaps · tighten the slice's criteria, on paper"]
     P["/speckit-plan · one slice"]
@@ -297,13 +297,13 @@ attack surface and at the close of the split regardless, and records the decisio
 judgement. The trigger table is in that row before any spawn. `/mutation` still runs on every accepted slice, and when both run adversary goes first, since it
 adds tests and mutation measures whatever exists when it runs.
 
-`/drive` owns resumption and sequencing, and is safe to call at any point on this diagram: it enters at the
+`/sail` owns resumption and sequencing, and is safe to call at any point on this diagram: it enters at the
 first stage still owing an artifact, stepping back out of the loop when an upstream stage has not been done.
 Demo feedback returns to the stage that owns the change before the path is demonstrated again. A real product decision is a stop; finishing an intermediate document is
 not.
 
-`/cruise` runs this same diagram with nobody at the wheel. A product decision is answered by `drive-decide-skipper`
-and written in `specs/<feature>/decisions.md`; the demo is run by `drive-demo-hand` and written in the slice's
+`/cruise` runs this same diagram with nobody at the wheel. A product decision is answered by `sail-decide-skipper`
+and written in `specs/<feature>/decisions.md`; the demo is run by `sail-demo-hand` and written in the slice's
 `demo-log.md`; the run ends only when the specification is satisfied, or when a person stops it. What each
 stage produces does not change. `commands/cruise.md` is exact.
 """

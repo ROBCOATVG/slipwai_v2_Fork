@@ -1,7 +1,7 @@
 """Which harness a headless session runs through, and what it is asked.
 
-This is the module `captain.py` fell back from. Its fallback was `scripts/agents/drive.py`, the *settings
-reader* for `/drive`, which handed a slice and a fairway prints its table and exits 0 — and a whole real
+This is the module `captain.py` fell back from. Its fallback was `scripts/agents/sail.py`, the *settings
+reader* for `/sail`, which handed a slice and a fairway prints its table and exits 0 — and a whole real
 run was reported through on the strength of it. The refusals matter as much as the choice: "no harness" has
 three causes and three different things a person does about them.
 
@@ -49,7 +49,7 @@ class Fixture(unittest.TestCase):
         self.root = Path(tempfile.mkdtemp())
         (self.root / "project.json").write_text("{}", encoding="utf-8")
         (self.root / "commands").mkdir()
-        (self.root / "commands/drive.md").write_text("# drive\n", encoding="utf-8")
+        (self.root / "commands/sail.md").write_text("# sail\n", encoding="utf-8")
         self.harness = loaded(self.root)
 
     def installed(self, *keys: str) -> None:
@@ -123,24 +123,24 @@ class PromptTest(Fixture):
         return {"key": "k", "name": "A harness", "headless": headless}
 
     def test_a_harness_whose_print_mode_resolves_slash_commands_is_asked_the_slash_command(self) -> None:
-        said = self.harness.prompt_for(self.row("slash"), "drive", self.root / "commands/drive.md",
+        said = self.harness.prompt_for(self.row("slash"), "sail", self.root / "commands/sail.md",
                                        "BOK-01 fairway=booking")
-        self.assertEqual(said, "/drive BOK-01 fairway=booking")
+        self.assertEqual(said, "/sail BOK-01 fairway=booking")
 
     def test_every_other_harness_is_asked_to_read_the_file(self) -> None:
         """Which needs nothing of a harness beyond reading a file, and is the same words whatever it is."""
-        said = self.harness.prompt_for(self.row(None), "drive", self.root / "commands/drive.md",
+        said = self.harness.prompt_for(self.row(None), "sail", self.root / "commands/sail.md",
                                        "BOK-01 fairway=booking")
-        self.assertIn("commands/drive.md", said)
+        self.assertIn("commands/sail.md", said)
         self.assertIn("BOK-01 fairway=booking", said)
-        self.assertNotIn("/drive BOK-01", said)
+        self.assertNotIn("/sail BOK-01", said)
 
     def test_the_slice_and_the_fairway_both_reach_the_prompt(self) -> None:
         """One slice per dispatch, named — the captain's gate is per slice, and a dispatch handed a whole
         fairway makes the completion lines unattributable."""
         for row in (self.row("slash"), self.row(None)):
             with self.subTest(prompt=row["headless"].get("prompt")):
-                said = self.harness.prompt_for(row, "drive", self.root / "commands/drive.md",
+                said = self.harness.prompt_for(row, "sail", self.root / "commands/sail.md",
                                                "BOK-01 fairway=booking")
                 self.assertIn("BOK-01", said)
                 self.assertIn("fairway=booking", said)

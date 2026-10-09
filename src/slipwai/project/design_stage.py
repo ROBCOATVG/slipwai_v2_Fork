@@ -1,4 +1,4 @@
-"""The two design rungs of `commands/drive.md`: the screen decided before it is built, and reviewed rendered
+"""The two design rungs of `commands/sail.md`: the screen decided before it is built, and reviewed rendered
 before the demo.
 
 Its own module for the reason `converge_stage.py` is: the text exists because of evidence. Three new screens —
@@ -59,7 +59,7 @@ def tasks_brief() -> str:
     return """The styling task names the design steps inside it, so a brief built from it
 carries them: `skills/frontend-design`'s second pass over the plan before any code, and the review of the
 rendered screens against `skills/web-interface-guidelines` before the demo — each with whatever an extension
-block in `AGENTS.md` adds to `/drive`'s *Screen design* or *Design review* rung. Leave a `## Design review`
+block in `AGENTS.md` adds to `/sail`'s *Screen design* or *Design review* rung. Leave a `## Design review`
 heading for the `Designed:` and `Reviewed:` lines those rungs write, or `No screen in this slice` under it
 where the slice has none."""
 

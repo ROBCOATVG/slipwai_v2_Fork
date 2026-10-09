@@ -204,5 +204,5 @@ bookings/
 → **[Your first feature](first-feature.md)** — a specification, a model, a chart, a slice, and a demo you
 watch happen.
 
-Other pages: [a second person joins](a-second-person.md) · [let it sail](let-it-sail.md) ·
+Other pages: [a second person joins](a-second-person.md) · [let it cruise](let-it-cruise.md) ·
 [bring an existing codebase](adopt.md) · [the vocabulary](../../GLOSSARY.md)

@@ -1,6 +1,6 @@
 """The parts that write `/cruise` into a generated project, and the ones `./init` writes.
 
-`/cruise` is the same fleet as `/drive` with nobody at the keyboard: the skipper answers the product
+`/cruise` is the same fleet as `/sail` with nobody at the keyboard: the skipper answers the product
 questions a person would have been asked, and the hand runs the demos. These modules write the commands
 and the stop table that make that safe — what the skipper may decide, what it must stop for, and what it
 must repeat verbatim rather than summarise.

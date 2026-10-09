@@ -1,7 +1,7 @@
 """The loop, end to end, in a project the keel generated.
 
 Every other suite proves one link. This drives the chain: generate a project, write a model into it, render
-the chart, run its gate, run a captain over it with a stand-in for `/drive`, carry the lines with the
+the chart, run its gate, run a captain over it with a stand-in for `/sail`, carry the lines with the
 harbourmaster, and read the board back.
 
 It exists because three faults were found by hand in ten minutes doing exactly this, and none of them could
@@ -63,8 +63,8 @@ slices:
       - type: evt
         name: OrderCharged
 """
-#: A stand-in for `/drive`: it writes what the chart says this slice sets, and nothing it does not.
-DRIVE = '''\
+#: A stand-in for `/sail`: it writes what the chart says this slice sets, and nothing it does not.
+SAIL = '''\
 import sys, json, pathlib, datetime, yaml
 slice_id, fairway = sys.argv[1], sys.argv[2]
 chart = yaml.safe_load(pathlib.Path("specs/model/chart.yaml").read_text(encoding="utf-8"))
@@ -117,7 +117,7 @@ class LoopTest(unittest.TestCase):
         held = model.read_text(encoding="utf-8")
         assert "slices: []" in held, "the seeded model no longer ends on an empty slice list"
         model.write_text(held.replace("slices: []\n", SLICES), encoding="utf-8")
-        (cls.project / "drive-stand-in.py").write_text(DRIVE, encoding="utf-8")
+        (cls.project / "sail-stand-in.py").write_text(SAIL, encoding="utf-8")
         # A captain waits for the harbourmaster's answer to its merge request, bounded by `wait_bound`.
         # Most of these cases run a captain with no harbourmaster behind it, which is the state they are
         # about — so the bound is seconds here rather than the hour a real harbour allows.
@@ -137,10 +137,10 @@ class LoopTest(unittest.TestCase):
         shutil.rmtree(self.project / ".slipwai", ignore_errors=True)
         (self.project / "specs/model/chart.yaml").unlink(missing_ok=True)
 
-    def run_in(self, *argv: str, drive: bool = False) -> subprocess.CompletedProcess:
+    def run_in(self, *argv: str, sail: bool = False) -> subprocess.CompletedProcess:
         env = {**os.environ}
-        if drive:
-            env["SLIPWAI_DRIVE"] = f"{sys.executable} {self.project / 'drive-stand-in.py'}"
+        if sail:
+            env["SLIPWAI_SAIL"] = f"{sys.executable} {self.project / 'sail-stand-in.py'}"
         return subprocess.run([sys.executable, *argv], cwd=self.project, capture_output=True, text=True,
                               env=env, timeout=180)
 
@@ -186,7 +186,7 @@ class LoopTest(unittest.TestCase):
     def test_a_sibling_is_cleared_by_a_mark_being_set_and_not_by_a_merge(self) -> None:
         """The claim the whole method rests on. Nothing merges in this test, and billing still clears."""
         self.run_in("scripts/event-model/chart.py")
-        self.run_in("scripts/agents/captain.py", "ordering", "--once", drive=True)
+        self.run_in("scripts/agents/captain.py", "ordering", "--once", sail=True)
         self.run_in("scripts/agents/harbourmaster.py", "--once", "--no-fetch")
         done = self.run_in("scripts/agents/clearance.py")
         self.assertIn("BIL-01", done.stdout)
@@ -194,7 +194,7 @@ class LoopTest(unittest.TestCase):
 
     def test_a_captain_claims_dispatches_and_asks_for_the_merge(self) -> None:
         self.run_in("scripts/event-model/chart.py")
-        done = self.run_in("scripts/agents/captain.py", "ordering", "--once", drive=True)
+        done = self.run_in("scripts/agents/captain.py", "ordering", "--once", sail=True)
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertEqual(self.kinds("ordering")[0], "claimed")
         self.assertIn("mark-set", self.kinds("ordering"))
@@ -204,7 +204,7 @@ class LoopTest(unittest.TestCase):
         """Nothing merges without the harbourmaster, and a wait with no end is indistinguishable from a run
         that has stopped. With none running, the fairway says so in its own log."""
         self.run_in("scripts/event-model/chart.py")
-        self.run_in("scripts/agents/captain.py", "ordering", "--once", drive=True)
+        self.run_in("scripts/agents/captain.py", "ordering", "--once", sail=True)
         parked = [one for one in self.entries("ordering") if one["kind"] == "parked"]
         self.assertEqual(len(parked), 1)
         self.assertIn("did not answer", parked[0]["why"])
@@ -215,7 +215,7 @@ class LoopTest(unittest.TestCase):
         A captain claims, drives, holds the slice to its gate and asks; a harbourmaster rebases, gates,
         advances trunk and answers with the commit; the captain writes `merged`. Nobody is asked anything.
 
-        Two stand-ins, both named: `/drive` is the one above, and the project's gate is one line. What is
+        Two stand-ins, both named: `/sail` is the one above, and the project's gate is one line. What is
         being proved is that the merge happens and trunk moves — that a real `make verify` passes on a
         fresh generation is `make test-docs`'s job, and running it per case would make this suite minutes
         long.
@@ -249,7 +249,7 @@ class LoopTest(unittest.TestCase):
                 [sys.executable, "scripts/agents/harbourmaster.py", "--no-fetch", "--interval", "1"],
                 cwd=self.project, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) as keeper:
             try:
-                done = self.run_in("scripts/agents/captain.py", "ordering", "--once", drive=True)
+                done = self.run_in("scripts/agents/captain.py", "ordering", "--once", sail=True)
             finally:
                 keeper.terminate()
         self.assertIn("merged", self.kinds("ordering"), done.stdout + done.stderr)
@@ -262,13 +262,13 @@ class LoopTest(unittest.TestCase):
     def test_it_holds_no_credential_and_the_merge_is_asked_for(self) -> None:
         """A berth with a token in it is a sandbox with a way out."""
         self.run_in("scripts/event-model/chart.py")
-        self.run_in("scripts/agents/captain.py", "ordering", "--once", drive=True)
+        self.run_in("scripts/agents/captain.py", "ordering", "--once", sail=True)
         asked = [one for one in self.entries("ordering") if one["kind"] == "request"]
         self.assertEqual([one["what"] for one in asked], ["merge"])
 
     def test_a_stream_named_by_its_slice_prefix_is_told_it_is_the_context(self) -> None:
         self.run_in("scripts/event-model/chart.py")
-        done = self.run_in("scripts/agents/captain.py", "ORD", "--once", drive=True)
+        done = self.run_in("scripts/agents/captain.py", "ORD", "--once", sail=True)
         self.assertIn("no slices", done.stdout)
 
     def test_it_carries_a_mark_and_answers_the_request(self) -> None:
@@ -276,7 +276,7 @@ class LoopTest(unittest.TestCase):
         refusal that says so — which is the point: a request that left no line is one the captain waits on
         for ever and nobody can explain afterwards."""
         self.run_in("scripts/event-model/chart.py")
-        self.run_in("scripts/agents/captain.py", "ordering", "--once", drive=True)
+        self.run_in("scripts/agents/captain.py", "ordering", "--once", sail=True)
         self.run_in("scripts/agents/harbourmaster.py", "--once", "--no-fetch")
         harbour = (self.project / ".slipwai/logs/harbour.jsonl").read_text(encoding="utf-8")
         lines = [json.loads(line) for line in harbour.splitlines() if line.strip()]
@@ -287,7 +287,7 @@ class LoopTest(unittest.TestCase):
 
     def test_the_board_folds_what_the_run_wrote(self) -> None:
         self.run_in("scripts/event-model/chart.py")
-        self.run_in("scripts/agents/captain.py", "ordering", "--once", drive=True)
+        self.run_in("scripts/agents/captain.py", "ordering", "--once", sail=True)
         done = subprocess.run(
             [sys.executable, "-m", "slipwai", "fleet", "--root", str(self.project)],
             cwd=REPOSITORY, capture_output=True, text=True,
@@ -306,7 +306,7 @@ class LoopTest(unittest.TestCase):
         harbour.write_text(json.dumps({"v": 1, "t": "2026-10-08T09:00:00Z", "kind": "granted",
                                        "fairway": "ordering", "request": "merge-ORD-01", "what": "merge",
                                        "slice": "ORD-01", "commit": "a1b2c3d"}) + "\n", encoding="utf-8")
-        self.run_in("scripts/agents/captain.py", "ordering", "--once", drive=True)
+        self.run_in("scripts/agents/captain.py", "ordering", "--once", sail=True)
         done = self.run_in("scripts/agents/run-state.py", "--print")
         held = json.loads(done.stdout)
         self.assertEqual(held["slices"]["ORD-01"]["state"], "merged")

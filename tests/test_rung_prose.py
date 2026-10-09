@@ -25,7 +25,7 @@ from slipwai.project.adversary import adversary_command
 from slipwai.project.commands import constitution_coverage_command, gaps_command
 from slipwai.project.docs import documentation_files
 from slipwai.project.guidance import agent_guidance, architecture
-from slipwai.project.ladder import drive_ladder
+from slipwai.project.ladder import sail_ladder
 from slipwai.project.readme import readme
 from slipwai.project.repository import pull_request_template
 from slipwai.project.run_skill import run_skill
@@ -79,7 +79,7 @@ class PagesTest(unittest.TestCase):
             "commands/gaps.md": gaps_command(True, apps),
             "commands/constitution-coverage.md": constitution_coverage_command(True, apps),
             ".github/PULL_REQUEST_TEMPLATE.md": pull_request_template("event-modelling", apps, "none"),
-            "commands/drive.md": drive_ladder(True, apps, "none"),
+            "commands/sail.md": sail_ladder(True, apps, "none"),
         }
 
     def test_a_state_stored_project_claims_no_log_anywhere(self) -> None:
@@ -120,8 +120,8 @@ class PagesTest(unittest.TestCase):
     def test_the_model_rung_says_what_naming_the_service_settles_only_where_it_settles_something(self) -> None:
         """With both rungs present the service decides which fields the slice may carry; with one rung it
         decides nothing, and the longest rung on the ladder does not grow a paragraph about it."""
-        self.assertIn("`guard` and\n   `folds` are refused", drive_ladder(True, mixed(), "none"))
-        self.assertNotIn("are refused", drive_ladder(True, sourced_only(), "none"))
+        self.assertIn("`guard` and\n   `folds` are refused", sail_ladder(True, mixed(), "none"))
+        self.assertNotIn("are refused", sail_ladder(True, sourced_only(), "none"))
 
     def test_the_pull_request_asks_about_the_rung_only_in_a_project_that_has_two(self) -> None:
         for apps, expected in ((mixed(), True), (sourced_only(), False), (state_only(), False)):

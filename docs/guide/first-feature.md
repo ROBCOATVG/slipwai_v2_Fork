@@ -3,18 +3,54 @@
 **Five minutes from a green gate to one slice demoed.** You have a repository and `make verify` passes;
 this page is one feature, from a sentence you type to a working thing you watch a person accept.
 
-The commands with a slash — `/speckit-specify`, `/chart`, `/drive` — are run inside your coding agent, not
+The commands with a slash — `/sail`, `/speckit-specify`, `/mockups` — are run inside your coding agent, not
 in the shell. `./init` installed them.
-
-**The short route is one command, and it is bare.** `/drive` walks the whole ladder below, enters at the
-first stage whose artefact is missing, runs that one and every stage after it, and then **takes the next
-ready slice without being asked again**. So you can type `/drive` now and read the rest of this page as a
-description of what it is doing. The steps are shown separately here because the first time through you
-want to see each artefact appear, and because three of the stages stop for you.
 
 ---
 
-## 1. Say what you are building
+## Sail it
+
+```
+/sail
+```
+
+That is the whole of it. `/sail` works out which stage you are at from what is on disk rather than from
+anything you tell it, runs that stage and every stage after it, and then **takes the next ready slice
+without being asked again**. It stops when the split is exhausted or everything left is blocked.
+
+Being invoked before any of this exists is a valid start, not an error: with an empty repository the first
+stage is the first one whose artefact is missing, which is the principles, and it begins there.
+
+Three narrower forms exist for when you want one lane or one slice:
+
+```
+/sail fairway=booking     one lane, and the other lanes' ready slices are named and left
+/sail booking             one feature, across whichever fairways its slices are in
+/sail BOK-01              this slice, and nothing else
+```
+
+**Bare is the normal form.** The narrower ones are for when a second person is working beside you, which
+is the next page.
+
+---
+
+## What it is doing underneath
+
+You do not type the commands below — `/sail` runs them, in this order, and enters at the first one whose
+artefact is missing. They are here because the first time through you want to see each artefact appear,
+and because **three of these stages stop for a person**: the principles are ratified by you, the mock-ups
+are approved one state at a time, and the demo is accepted by somebody watching it run.
+
+The stages are the ladder, and `commands/sail.md` in your own project carries its full text.
+
+### 1. Principles
+
+`/speckit-constitution`, which fills `.specify/memory/constitution.md` and asks you to ratify it. These
+are the rules every later stage is held to — what a slice must be, what a test must prove, what may not
+enter domain code. A constitution that is absent, unfilled or unratified is where `/sail` starts, because
+everything after it is judged against something.
+
+### 2. Say what you are building
 
 ```
 /speckit-specify  Guests book a table. A guest picks a time, we hold it, and the
@@ -32,11 +68,18 @@ which reads the specification back and asks what it did not say. Who cancels a b
 two guests take the last table? Answer them now, in the specification, because every one of them becomes a
 slice later and a question answered here costs a sentence.
 
-## 2. Model it
+### 3. Mock-ups, approved one at a time
 
 ```
-model this feature using skills/event-modeling/SKILL.md
+/mockups
 ```
+
+Every screen state the feature needs, written under `specs/booking/mockups/` and approved by you one state
+at a time — the empty one, the loaded one, the one that failed. This stage stops for a person on purpose:
+a screen nobody looked at before it was built is the most expensive thing on this ladder to discover late,
+and a slice's `ui` frame later points at the state it is built to.
+
+### 4. Model it
 
 Modelling is a skill rather than a command, because it is a conversation: you and the agent name the
 commands, events and read models together. On the event-modelling profile it writes
@@ -58,7 +101,7 @@ every command, event and read model in its place:
 
 ![An event model with its timeline and swimlanes](../captures/event-model.png)
 
-## 3. Chart the fairways
+### 5. The fairways, charted from the model
 
 A **fairway** is a lane of work that one worker owns at a time; a **mark** is a typed contract — an event,
 a read model, a route — that one fairway sets and others steer by. The **chart** names them, and it is
@@ -82,7 +125,7 @@ typed, and a mark two slices both set.
 `BookingHeld`, then everyone else can be told the moment it exists and can start — without waiting for a
 branch to merge, and without a second definition of it appearing anywhere.
 
-## 4. Split it
+### 6. Split it
 
 ```
 /story-splitting
@@ -102,28 +145,15 @@ clearance: 1 of 3 slices cleared in booking
 that waits for nothing may start. A slice that is not cleared names what it is waiting for and who is
 setting it, so "blocked" is never a mood — it is a mark with an owner.
 
-## 5. Drive it
+### 7. Then, per slice, until the demo
 
-```
-/drive
-```
+The example map, the slice's own gaps, plan and tasks, implementation one RED-GREEN-REFACTOR increment at
+a time, and convergence. Each writes its artefact under `specs/booking/slices/BOK-01/`, which is how
+`/sail` knows where it got to if you close the terminal.
 
-**Bare is the normal way to run it.** `/drive` takes every ready slice of every fairway nobody else holds,
-works them, and goes on to the next without waiting to be invoked again — it stops when the split is
-exhausted or everything left is blocked. Two narrower forms exist for when you want one:
+## The demo stops for you
 
-```
-/drive fairway=booking     one lane, and the other lanes' ready slices are named and left
-/drive BOK-01              this slice, and nothing else
-```
-
-`/drive booking` — a feature rather than a slice — is the same as bare within that feature.
-
-Whichever form, this is the ladder: principles, specification, mock-ups approved one at a time, model, chart, split,
-example map, implementation under TDD, the review and refactor stage, both gates, and a **demo** — an
-actor-visible run of the thing, stopped in front of a person.
-
-You watch it. At the demo stop it shows you what a guest would see and waits:
+An actor-visible run of the thing, in front of a person:
 
 ```
 demo of BOK-01 — a guest holds 19:30 for four
@@ -134,7 +164,8 @@ demo of BOK-01 — a guest holds 19:30 for four
 accept this? [y/n/notes]
 ```
 
-Say yes and the line goes in the log. Say no with notes and they go back into the slice.
+Say yes and the line goes in the log. Say no with notes and they go back into the slice. After the demo
+come the review and reshape stage, the adversary pass, the mutation gate, and the merge to trunk.
 
 ```console
 $ slipwai fleet booking
@@ -152,7 +183,7 @@ captain's: a captain holds no credential, so it asks, and the thing that holds t
 trunk, runs the whole gate there, and answers with the commit.
 
 **That is the fifteen minutes.** One slice, specified, modelled, charted, built, and accepted by a person
-who watched it work.
+who watched it work — and `/sail` has already taken the next ready slice.
 
 ---
 
@@ -179,5 +210,5 @@ version 2 is built on, and the next page is what it looks like with more than on
 
 → **[A second person joins](a-second-person.md)** — fairways, berths, and the board that shows both.
 
-Other pages: [start here](start-here.md) · [let it sail](let-it-sail.md) ·
+Other pages: [start here](start-here.md) · [let it cruise](let-it-cruise.md) ·
 [bring an existing codebase](adopt.md) · [the vocabulary](../../GLOSSARY.md)

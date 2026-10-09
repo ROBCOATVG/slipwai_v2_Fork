@@ -10,8 +10,8 @@ lines rather than asking the thing being controlled how it is getting on.
 Each turn it: fetches trunk and both logs; derives the fairway's state from its own `claimed` and `merged`
 lines; takes a `fix-trunk` ahead of anything new where the harbourmaster has sent one, because a trunk this
 fairway reddened is worth more than any slice it could start; otherwise picks the next slice in split order
-that `clearance.py` allows; writes `claimed`; dispatches `/drive`
-for that slice in its berth — a headless session of the installed harness, asked for `/drive <slice>
+that `clearance.py` allows; writes `claimed`; dispatches `/sail`
+for that slice in its berth — a headless session of the installed harness, asked for `/sail <slice>
 fairway=<name>`; watches the deck log while it runs; reads the inbox at every boundary and
 enforces the receipt; asks the harbourmaster for the merge, because a captain holds no credential; and
 writes `merged` against the commit the answer names.
@@ -21,7 +21,7 @@ written nothing for its wall budget is ended and `parked` with the reason — no
 stuck, which a stuck agent cannot say, but because the log stopped.
 
 **And a slice is through its gate only when the log says so, in lines written during this turn.** That rule
-was applied to the wall budget and nowhere else, so the first real run had `/drive` print a help message,
+was applied to the wall budget and nowhere else, so the first real run had `/sail` print a help message,
 exit 0, and this file write `claimed`, then `request: merge`, and report the slice through its gate — with
 no `mark-set` and no `demo` anywhere. What closes a slice now is every mark the chart says it `sets`, plus a
 `demo`, all after the index this turn started at. *During this turn* is the whole of it: without it a retry
@@ -29,7 +29,7 @@ passes on the previous turn's lines, which is the same fault as a cursor that ou
 
 A demo that came back `behaviour` or `implementation` is not a park, it is a retry. The person who sent it
 back is present and has just written notes, and parking would ask them to come back and restart a fairway
-before anything acts on them. `/drive` re-enters at the first incomplete stage, so a retry resumes at the
+before anything acts on them. `/sail` re-enters at the first incomplete stage, so a retry resumes at the
 demo rung with the notes in the slice. `attempts` in `harbour.json` bounds it; when it is spent the fairway
 parks naming the verdict and the count.
 
@@ -69,18 +69,18 @@ def project_root() -> Path:
 ROOT = project_root()
 HARBOUR = ROOT / "harbour.json"
 HOOKS = ROOT / "scripts/extensions/hooks.py"
-#: The ladder itself. A harness whose print mode resolves this project's slash commands is asked `/drive`;
+#: The ladder itself. A harness whose print mode resolves this project's slash commands is asked `/sail`;
 #: every other is asked to read this file and follow it.
-DRIVE_COMMAND = ROOT / "commands/drive.md"
+DRIVE_COMMAND = ROOT / "commands/sail.md"
 #: How often a heartbeat is written while a slice is being worked. Short enough that a fleet board can tell a
 #: wedged berth from a slow one, long enough that it is not most of the log.
 HEARTBEAT = 60.0
-#: How often the deck log is re-read while `/drive` runs. The log is the only progress signal there is.
+#: How often the deck log is re-read while `/sail` runs. The log is the only progress signal there is.
 POLL = 2.0
 #: Used where `harbour.json` is absent or unreadable — the file is the answer, and these keep the loop
 #: bounded while somebody fixes it rather than letting an unbounded stage be the cost of a typo.
 DEFAULT_STAGE_MINUTES = 30
-#: Re-dispatches of `/drive` for one slice, where `harbour.json` does not say. `half-ahead`'s number, which
+#: Re-dispatches of `/sail` for one slice, where `harbour.json` does not say. `half-ahead`'s number, which
 #: is what a fresh harbour is at.
 DEFAULT_ATTEMPTS = 2
 #: The verdict that closes a slice, and the two that send it back. `logs.VERDICTS` is the whole set.
@@ -110,7 +110,7 @@ def stage_bound() -> float:
 
 
 def attempts() -> int:
-    """Re-dispatches of `/drive` one slice may have. `0` means one run and no retry."""
+    """Re-dispatches of `/sail` one slice may have. `0` means one run and no retry."""
     held = harbour().get("attempts")
     return held if isinstance(held, int) and held >= 0 else DEFAULT_ATTEMPTS
 
@@ -246,27 +246,27 @@ def fire(point: str, **given: str) -> None:
     subprocess.run(argv, cwd=ROOT, capture_output=True, text=True)
 
 
-def drive_command(slice_id: str, fairway: str) -> tuple[list[str], dict[str, str], str]:
+def sail_command(slice_id: str, fairway: str) -> tuple[list[str], dict[str, str], str]:
     """What runs the ladder for one slice: (argv, the environment it runs under, what was chosen).
 
-    A headless session of the installed harness, asked for `/drive <slice> fairway=<name>`. The one slice is
+    A headless session of the installed harness, asked for `/sail <slice> fairway=<name>`. The one slice is
     deliberate: the gate below is per slice — every mark *that slice's* `sets` names, plus *its* demo — and a
     dispatch handed a whole fairway would make the completion lines unattributable, which is the check that
-    caught `/drive` printing a help message and exiting 0.
+    caught `/sail` printing a help message and exiting 0.
 
-    `SLIPWAI_DRIVE` replaces the whole thing and takes `<slice> <fairway>` after it, which is how the suite
+    `SLIPWAI_SAIL` replaces the whole thing and takes `<slice> <fairway>` after it, which is how the suite
     drives a fake and how a harness the registry does not know is pointed at. It used to fall back to
-    `scripts/agents/drive.py` — the *settings reader* for `/drive`, which prints its table and exits 0 — and
+    `scripts/agents/sail.py` — the *settings reader* for `/sail`, which prints its table and exits 0 — and
     that stood in for the ladder in the first real run this loop ever did.
     """
-    named = os.environ.get("SLIPWAI_DRIVE")
+    named = os.environ.get("SLIPWAI_SAIL")
     if named:
         return [*named.split(), slice_id, fairway], {**os.environ, **naming(slice_id, fairway)}, \
-            f"SLIPWAI_DRIVE: {named}"
+            f"SLIPWAI_SAIL: {named}"
     chosen, said = harness.choose()
     template, _ = harness.template(chosen)
     prompt = harness.prompt_for(chosen, "drive", DRIVE_COMMAND, f"{slice_id} fairway={fairway}")
-    line = template.replace("{prompt}", shlex.quote(prompt)) + harness.model_flags(chosen, drive_model())
+    line = template.replace("{prompt}", shlex.quote(prompt)) + harness.model_flags(chosen, sail_model())
     return shlex.split(line), {**harness.child_environment(chosen), **naming(slice_id, fairway)}, said
 
 
@@ -276,7 +276,7 @@ def naming(slice_id: str, fairway: str) -> dict[str, str]:
 
     A session carries no argument into a hook: a hook is a command the harness runs, and the only thing it
     and the session have in common is the environment. So the four facts `session.py` needs are put there,
-    and the *absence* of `SLIPWAI_FAIRWAY` is what tells a person's own `/drive` from one the captain
+    and the *absence* of `SLIPWAI_FAIRWAY` is what tells a person's own `/sail` from one the captain
     dispatched — which is the difference between a control-file edit being refused and being allowed.
 
     `SLIPWAI_SINCE` is the instant the session opened. `before-stop` holds a turn that has written no deck
@@ -287,12 +287,12 @@ def naming(slice_id: str, fairway: str) -> dict[str, str]:
             "SLIPWAI_SINCE": logs.now()}
 
 
-def drive_model() -> str | None:
+def sail_model() -> str | None:
     """The model the ladder's own session runs on, or None for the harness's default.
 
     `.specify/cruise.json`'s `model`, and deliberately not `models.json`'s: that file maps a *role* to a
-    model per harness for the stages `/drive` delegates, and the session running `/drive` itself is the
-    `host` it is all relative to. Under `/drive` typed by a person the host is whatever they opened; nobody
+    model per harness for the stages `/sail` delegates, and the session running `/sail` itself is the
+    `host` it is all relative to. Under `/sail` typed by a person the host is whatever they opened; nobody
     opens this one, so the same value `/cruise` uses for the same question answers it. Unset means the
     harness's own default, which is a fact about the run and is said in the turn's line rather than left to
     be inferred from a transcript.
@@ -307,7 +307,7 @@ def drive_model() -> str | None:
 
 def watched(process: subprocess.Popen, feature: str, fairway: str, bound: float,
             started: int) -> tuple[bool, str]:
-    """Wait for `/drive`, writing a heartbeat and ending it if the log stops. (finished, why it was ended).
+    """Wait for `/sail`, writing a heartbeat and ending it if the log stops. (finished, why it was ended).
 
     What is watched is the log and not the process: a process that is alive and writing nothing is exactly
     the failure that cost the first attempt seventeen iterations, and it looks identical from the outside to
@@ -333,7 +333,7 @@ def watched(process: subprocess.Popen, feature: str, fairway: str, bound: float,
             return False, (f"nothing was written to the deck log for {bound / 60:.0f} minutes, so the stage "
                            f"was ended. A stage that wrote no line made no progress")
     return process.returncode == 0, ("" if process.returncode == 0
-                                     else f"`/drive` exited {process.returncode}")
+                                     else f"`/sail` exited {process.returncode}")
 
 
 def boundary(feature: str, fairway: str) -> str:
@@ -381,13 +381,13 @@ def owed(fresh: list[logs.Entry], slice_id: str, promised: list[str]) -> tuple[l
 
 
 def dispatch(slice_id: str, feature: str, fairway: str) -> tuple[bool, str, list[logs.Entry]]:
-    """One run of `/drive`, and the lines it wrote. (finished, why not, the lines written during it)."""
+    """One run of `/sail`, and the lines it wrote. (finished, why not, the lines written during it)."""
     try:
-        argv, environment, _said = drive_command(slice_id, fairway)
+        argv, environment, _said = sail_command(slice_id, fairway)
     except harness.NoHarness as refused:
         # Not a park with a mark missing: the ladder never ran, and saying "no `mark-set` was written" about
         # a session nobody could start would send somebody to read a slice that is fine.
-        return False, f"{refused}. Or set SLIPWAI_DRIVE to a command taking <slice> <fairway>", []
+        return False, f"{refused}. Or set SLIPWAI_SAIL to a command taking <slice> <fairway>", []
     fire("before-stage", stage="drive", slice=slice_id, fairway=fairway)
     started = len(entries(feature, fairway))
     process = subprocess.Popen(argv, cwd=ROOT, env=environment)
@@ -423,14 +423,14 @@ def through_its_gate(slice_id: str, feature: str, fairway: str, bound: int) -> t
                            f"`mark-set` for {', '.join(missing)}. A stage that wrote no line made no "
                            f"progress, so nothing here is evidence the slice was built")
         return False, (f"this turn wrote no `demo` line for {slice_id}, so nothing says a person watched it "
-                       f"work. `/drive` exiting 0 is the agent's account of itself, which is the one thing "
+                       f"work. `/sail` exiting 0 is the agent's account of itself, which is the one thing "
                        f"this loop does not read")
 
 
 def merged(slice_id: str, feature: str, fairway: str, bound: int) -> tuple[bool, str]:
     """Ask for the merge until it lands or until asking again cannot change the answer.
 
-    A refusal says whether a berth could fix it. A conflict and a failed gate are work on code, so `/drive`
+    A refusal says whether a berth could fix it. A conflict and a failed gate are work on code, so `/sail`
     is dispatched again — in this fairway's own berth, where the context is — and the merge asked for
     afresh, because trunk may have moved again in the meantime. A refusal nothing here can act on stops at
     once rather than driving a slice four more times to be told the same thing.

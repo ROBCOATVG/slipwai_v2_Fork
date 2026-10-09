@@ -3,7 +3,7 @@ to a person.
 
 Split from `cruise.py` because that module is at its budget, and because this is the one section that reads a
 setting a delegate cannot see for itself — `hand`, where the hand's ladder starts — and the one that undoes
-what the ladder does for a person: `commands/drive.md` leaves the demo's app running for the actor to open,
+what the ladder does for a person: `commands/sail.md` leaves the demo's app running for the actor to open,
 and under `/cruise` no actor is coming, so the app is stopped once the verdict is in or the next slice's demo
 finds its port taken.
 """
@@ -18,7 +18,7 @@ CONFIG = ".specify/cruise.json"
 def hand_section(make: str) -> str:
     return f"""## Demonstrating: the hand protocol
 
-At the demo stop, compose everything `commands/drive.md` says the stop must contain — the board, the literal
+At the demo stop, compose everything `commands/sail.md` says the stop must contain — the board, the literal
 command or URL, the seed data, the expected result, the running process — and hand it, with the slice's
 acceptance script, to one fresh `{HAND}` delegate instead of a person. The brief also names where the hand's
 ladder starts, which is `{CONFIG}`'s `hand` and nothing the delegate can read for itself: `browser` is

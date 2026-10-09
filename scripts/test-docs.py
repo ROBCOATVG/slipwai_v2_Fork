@@ -63,7 +63,7 @@ BLOCK = re.compile(r"^```(\S*)[^\n]*\n(.*?)^```", re.S | re.M)
 #: pages talk *about* the chandlery and a reader should not have to avoid the word.
 CODE = re.compile(r"`([^`\n]+)`")
 SLASH = re.compile(r"^/([a-z][a-z0-9-]*)")
-#: A `key=value` argument written after a `/command`. The pages assert these — `/drive fairway=booking` is
+#: A `key=value` argument written after a `/command`. The pages assert these — `/sail fairway=booking` is
 #: a claim about what the command takes — and a page naming an argument the command does not have is the
 #: same class of wrong as naming a command that does not exist.
 ARGUMENT = re.compile(r"^/([a-z][a-z0-9-]*)((?:\s+[a-z][a-z0-9-]*=\S+)+)")
@@ -217,8 +217,8 @@ def model_it(project: Path) -> None:
     (project / "specs/booking/slices").mkdir(parents=True, exist_ok=True)
 
 
-def drive_bok01(project: Path) -> None:
-    """What `/drive BOK-01` leaves behind: its branch, its record, and the five lines its captain wrote.
+def sail_bok01(project: Path) -> None:
+    """What `/sail BOK-01` leaves behind: its branch, its record, and the five lines its captain wrote.
 
     The `mark-set` line is the one the pages are about. It is written at the slice's first stage, in its own
     worktree, which is why it is here beside `claimed` and three lines before anything asks to merge.
@@ -333,7 +333,7 @@ PROGRAMME: list[Step] = [
     Run("first-feature.md", "make chart"),
     Run("first-feature.md", "make check-chart"),
     Run("first-feature.md", "python3 scripts/agents/clearance.py"),
-    Seed(drive_bok01, "/drive BOK-01 claims the slice and sets its mark"),
+    Seed(sail_bok01, "/sail BOK-01 claims the slice and sets its mark"),
     Run("first-feature.md", "slipwai fleet booking"),
     Run("first-feature.md", "python3 scripts/agents/clearance.py"),
 

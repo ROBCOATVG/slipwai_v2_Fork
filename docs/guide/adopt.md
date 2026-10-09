@@ -118,4 +118,4 @@ You are now where [your first feature](first-feature.md) begins. Everything from
 same on both doors.
 
 Other pages: [start here](start-here.md) · [a second person joins](a-second-person.md) ·
-[let it sail](let-it-sail.md) · [the vocabulary](../../GLOSSARY.md)
+[let it cruise](let-it-cruise.md) · [the vocabulary](../../GLOSSARY.md)

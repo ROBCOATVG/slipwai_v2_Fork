@@ -1,4 +1,4 @@
-"""`agents/`: one named agent type per stage `/drive` sends to a fresh context.
+"""`agents/`: one named agent type per stage `/sail` sends to a fresh context.
 
 Every delegation the toolkit made was an anonymous general-purpose agent handed a prose brief, and the write
 scope was a sentence inside it — "remain read-only", "may edit only the files its task requires". Nothing but
@@ -51,7 +51,7 @@ def types() -> list[Type]:
     """Every type a project carries: one per delegated stage, and the one that carries a whole slice.
 
     The six stage types are named for their stage, so the model is that stage's row and there is no second
-    lookup. The seventh is `/drive`'s slice delegate, which runs one slice's whole ladder in a worktree of
+    lookup. The seventh is `/sail`'s slice delegate, which runs one slice's whole ladder in a worktree of
     its own and resolves each stage's model inside itself — so it takes no stage's model, and inherits.
     """
     named = [

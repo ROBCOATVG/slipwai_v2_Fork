@@ -209,7 +209,7 @@ What keeps a method slice honest:
 - **One rung per slice.** A slice that climbs two rungs is two slices. The rungs are the map's, never invented,
   and a rung is claimed only from the fact that establishes it.
 - **The row says it is in flight.** The slice's name goes in the row's `planned` field before work starts;
-  `/drive`'s Convergence stage flips the row when the rung is reached, and never before.
+  `/sail`'s Convergence stage flips the row when the rung is reached, and never before.
 - **Placed among the product slices, not ahead of all of them.** The ordering question is which product slice is
   blocked on which rung: the first slice that changes wrapped code needs its seam pinned by `/characterise`, a
   slice that is meant to be releasable needs a known path to production. A method slice with no product slice
@@ -312,7 +312,7 @@ never one slice in two fairways.
 |---|---|---|---|
 | ... | — or id list | sibling ids that share only a schema / synthetic seed | genuine build deps only; synthetic-event seeding is not a dependency |
 
-`/drive` and the bridge read this table (or, on the event profile, each slice's `depends_on` in
+`/sail` and the bridge read this table (or, on the event profile, each slice's `depends_on` in
 `docs/event-model/model.yaml`) to compute the **ready** set: not yet done, every `depends_on` already done.
 A ready slice starts when it has **clearance**: every mark it steers by is already set by a slice that is
 planned or implemented, and the marks it sets itself it sets as its own first stage. Cleared slices run in

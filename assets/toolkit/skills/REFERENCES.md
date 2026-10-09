@@ -204,7 +204,7 @@ Sources behind the `event-sourcing` skill. Several foundational names (Chassaing
 - **The timeline, the three swimlanes, the colour grammar, and the four patterns** (state change, state view, automation, translation) → ES skill: `resources/modelling-events.md`; the `event-modeling` and `global-event-model` skills; and the diagram `make model` renders
 
 ### Martin Dilger — *Understanding Eventsourcing*
-- **The nine-step workflow, vertical slices, and Given/When/Then per slice** → the `event-modeling` skill and the starter's `/drive` command
+- **The nine-step workflow, vertical slices, and Given/When/Then per slice** → the `event-modeling` skill and the starter's `/sail` command
 
 ### Alberto Brandolini — [EventStorming](https://www.eventstorming.com/) + *Introducing EventStorming* + [DDD Crew glossary cheat sheet](https://github.com/ddd-crew/eventstorming-glossary-cheat-sheet)
 - **Pivotal events** as the signal for bounded-context and stream boundaries → `resources/modelling-events.md`

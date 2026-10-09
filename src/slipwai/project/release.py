@@ -67,7 +67,7 @@ def flags_wanted(state: str, declared: str | None = None) -> bool:
 
 
 def release_section(state: str, declared: str | None = None) -> str:
-    """The `/drive` section its merge rung reads to know how dark this merge is."""
+    """The `/sail` section its merge rung reads to know how dark this merge is."""
     mode = release_mode(state, declared)
     others = "\n".join(f"- **{name}** — {WHAT_A_MERGE_MEANS[name]}" for name in MODES if name != mode)
     return f"""### How dark a merge is here

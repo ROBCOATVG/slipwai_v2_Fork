@@ -11,7 +11,7 @@ contradicts.
 Nothing here is a default that looks like an answer. A rung is claimed only from a fact the record holds — a
 recorded test command, a declared layout, a release path a file or a person gave — and a rung nothing
 establishes reads as the ladder's floor with `unrecorded` provenance, which the gate passes with a line and
-`/drive` asks about. A person moves a row by editing `project.json`; the provenance then says so.
+`/sail` asks about. A person moves a row by editing `project.json`; the provenance then says so.
 """
 from __future__ import annotations
 

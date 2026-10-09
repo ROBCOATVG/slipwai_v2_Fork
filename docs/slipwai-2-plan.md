@@ -38,8 +38,8 @@ version 1, it uses version 1's own names and says so.
 | **Slice** | One unit of product work that an actor can use when it is done. Unchanged from version 1 | Same word |
 | **Fairway** | One bounded context's slices, in split order, with one release flag and one holder. The fairway is the unit of scope, of ownership and of release. Several fairways run side by side into the same harbour. A vessel keeps to its own fairway | "value stream", "workstream" |
 | **Berth** | The provisioned place where one captain works: a sandbox or container, a git worktree, environment variables, an allocated block of ports, a database, and scratch directories. A berth holds no cloud or forge credential. `slipwai berth add`, `slipwai berth status` and `slipwai berth remove` manage berths | "workstation", "lane" |
-| **Captain** | The outer loop for one fairway, in both modes. The captain reads the logs, works out the state of the fairway from the logs and trunk, gives clearance, claims a slice, dispatches a stage, enforces every stage boundary, and appends to the deck log. There is one captain per fairway. Under `/drive` the captain brings every question and demo to the person. Under `/cruise` the skipper answers and the hand demos | "runner", `cruise.py run` |
-| **Harbourmaster** | The part the captains share, one process per harbour. It allocates berths, is the only writer of the harbour log, draws the fleet board and the bridge, holds the flags, and answers the telegraph. Under `/drive` it runs inside the person's session; under `/cruise` it runs on its own. It is not a merge queue | "integrator" |
+| **Captain** | The outer loop for one fairway, in both modes. The captain reads the logs, works out the state of the fairway from the logs and trunk, gives clearance, claims a slice, dispatches a stage, enforces every stage boundary, and appends to the deck log. There is one captain per fairway. Under `/sail` the captain brings every question and demo to the person. Under `/cruise` the skipper answers and the hand demos | "runner", `cruise.py run` |
+| **Harbourmaster** | The part the captains share, one process per harbour. It allocates berths, is the only writer of the harbour log, draws the fleet board and the bridge, holds the flags, and answers the telegraph. Under `/sail` it runs inside the person's session; under `/cruise` it runs on its own. It is not a merge queue | "integrator" |
 | **Deck log** | A fairway's own append-only log at `.slipwai/logs/<feature>/<fairway>.jsonl`, ignored by git and written only by that fairway's captain. The harbourmaster syncs it between machines through the ref `refs/slipwai/logs`, never through trunk. Its lines are: claimed, mark set, demo, accepted, merged, decision, told, read, heartbeat, stowed, parked | "stream log" |
 | **Harbour log** | The one append-only log at `.slipwai/logs/harbour.jsonl`, ignored by git, that every fairway reads and only the harbourmaster writes. Its lines are: mark set, flag hoisted, berth allocated, fires banked, park for a person, telegraph rung. A captain never appends to it; the harbourmaster copies what other fairways need from each deck log | "cross-stream log" |
 | **Chart** | The contracts, written before the split, as one committed file per feature: `specs/<feature>/chart.yaml`. The chart names the fairways, the marks each slice sets, the marks each slice steers by, and the paths each fairway owns. On the event-modelling profile `make chart` renders it from the event model and `check-chart` fails when the two disagree. On the standard profile a `/chart` stage writes it | "contract map", "streams manifest" |
@@ -58,8 +58,8 @@ version 1, it uses version 1's own names and says so.
 | **Skipper, hand, bosun** | The three delegates inside one iteration. The skipper decides product questions. The hand runs the demo. The bosun works round a block. Unchanged from version 1 | Same words |
 | **Fleet board** | Every view of the harbour, meaning the agents at work: the berth table, the slice graph by fairway, the swimlanes with cost, the event feed, the pressure gauge and the bunker, and the inbox. Every view is computed from the logs and from `git rev-list`. The fleet board keeps no state of its own. `slipwai fleet` prints it. `slipwai fleet watch` keeps it live. The harbourmaster also renders it as a page | "fleet view", "multi-lane status", "dashboard" |
 | **Bridge** | One product's own dashboard, as distinct from the fleet board, which is the harbour's view of the agents. The bridge shows where the product is (slipway, sea trials, in service), the release mode, how far along each fairway is, which flags are hoisted and where, what is deployed to each environment, what is waiting on a person, and what the product has cost so far. `slipwai bridge` prints it. The harbourmaster renders it to the project's Pages site next to the event model | `/where-are-we`, the demo stop's progress board, the event-model page |
-| **Drive, cruise** | `/drive` is the main mode: a person is present, the whole fleet fans out across fairways, and every product question, park and demo comes back to that person through the inbox. `/cruise` is the same fleet with nobody at the keyboard: the skipper answers the questions and the hand runs the demos. Nothing else differs | Same words, but in version 1 only `/cruise` fanned out across a product |
-| **The ladder** | The ordered stages of `/drive`. Section 5 draws it | Same word |
+| **Sail, cruise** | `/sail` is the main mode: a person is present, the whole fleet fans out across fairways, and every product question, park and demo comes back to that person through the inbox. `/cruise` is the same fleet with nobody at the keyboard: the skipper answers the questions and the hand runs the demos. Nothing else differs. The two words are a pair and are chosen to be one: somebody is at the wheel, or nobody is | `/drive`; and in version 1 only `/cruise` fanned out across a product |
+| **The ladder** | The ordered stages of `/sail`. Section 5 draws it | Same word |
 | **Rung** | How much of its past one service keeps, named for the step of the constitution's ladder it stands on: an outcome returned, in-process events, an outbox, or a durable log of everything that happened, which is event sourcing. A rung is per service, is answered on the `write-model` axis (`events` or `state`) beside the `persistence` axis that names the store, is recorded in `project.json`, and is the one answer about a service that cannot be walked back once it holds data. Event Modeling is the same on every rung; what changes is the write model. The convergence map (section 4) counts rungs too, on a different ladder — where an *adopted repository* stands on each axis of the keel's own shape — and the two never meet: no persistence row is added to that map, because a map row would say every service should climb to the log. Phase 15 | The `event-modelling` profile, which bundled the log with the model |
 
 **Facing a person, every one of these words is paired with the ordinary one.** The vocabulary is the
@@ -560,7 +560,7 @@ checkout. It trusts the iteration to read its inbox, to write its checkpoint, an
 failure in the experiment and in MANDA was the runner trusting the iteration. The log inverts that: an iteration
 that wrote no line made no progress.
 
-**The captain runs in both modes.** `/drive` is the main mode. A person is present, and the fleet still fans out: one captain per fairway, as many boilers as the telegraph allows. Every product question, every park and every demo stop comes back to the person through the inbox, with the fairway and slice it belongs to, and the person answers from one seat. `/cruise` is the same fleet with nobody at the keyboard. The only differences are who answers and who demos: the skipper decides the product questions, and the hand walks the examples. Version 1 could fan out across a product only under `/cruise`; version 2 does it under both.
+**The captain runs in both modes.** `/sail` is the main mode. A person is present, and the fleet still fans out: one captain per fairway, as many boilers as the telegraph allows. Every product question, every park and every demo stop comes back to the person through the inbox, with the fairway and slice it belongs to, and the person answers from one seat. `/cruise` is the same fleet with nobody at the keyboard. The only differences are who answers and who demos: the skipper decides the product questions, and the hand walks the examples. Version 1 could fan out across a product only under `/cruise`; version 2 does it under both.
 
 **What a captain does.** It fetches trunk and reads both logs. It works out the fairway's state from the logs plus trunk,
 never from the `status` field in `model.yaml`. It gives clearance. It claims `slice/<id>`. It dispatches the
@@ -571,14 +571,14 @@ stage that has wedged. It appends every result to its own deck log, and to nothi
 after each fetch and copies into the harbour log what other fairways need: a mark set, a park, a flag change,
 a telegraph change. Captains read the harbour log and never write it, so the one shared log has one writer and
 never conflicts. It allocates berths. It computes the fleet board and the bridge. It holds the flags. It answers
-the telegraph. Under `/drive` it runs inside the person's session. Under `/cruise` it is a process of its own,
+the telegraph. Under `/sail` it runs inside the person's session. Under `/cruise` it is a process of its own,
 on one machine; captains on other machines reach it through the forge, by fetch and push, the way they reach
 trunk. A person speaks to a captain through the log: `tell` appends a message, the captain
 appends `read` at its next boundary, and a message older than N minutes forces a boundary.
 
 **The delegates.** The skipper, the hand and the bosun stay as they are inside an iteration.
 
-**Reused without change.** The stop table, the ladder in `drive.md`, the benchmark bracket, the stop hook, the
+**Reused without change.** The stop table, the ladder in `sail.md`, the benchmark bracket, the stop hook, the
 harness registry, and the control-file guard (the rule that an iteration never edits a gate, a `Makefile`, CI, or
 a hook).
 
@@ -588,7 +588,7 @@ for the forge, the cloud or the chandlery. Anything that needs one goes through 
 a slice branch, the merge to `main`, a deploy, a flag change, a publish. The harbourmaster holds the credentials,
 checks each request against the list of things a run never does (destroy data or history, release what nobody
 asked for, spend money, expose a secret, weaken security, discard a person's commits, change a gate to make it
-pass), and refuses with the reason. Under `/drive` the person's session is the harbourmaster, so the person's
+pass), and refuses with the reason. Under `/sail` the person's session is the harbourmaster, so the person's
 own credentials are used and never copied into a berth. Version 1's `--sandbox` flag, which let a run bypass
 permissions, does not exist in version 2: the sandbox is the berth, not a flag.
 
@@ -654,7 +654,7 @@ raises the pressure to match. The person holds the telegraph. The harbourmaster 
 | `full-ahead` | Every fairway with clearance | The ladder's full fan-out | The strongest the table maps | Large per slice and per day | A person has chosen speed and watched the gauge |
 | `half-ahead` | Up to half the fairways, at least two | Two | The table as mapped | Moderate | **The default.** Where a new project starts |
 | `slow-ahead` | One | Two | The table as mapped | Moderate | One fairway at a time, inside it still parallel |
-| `dead-slow` | One | One | The cheapest mapped role for every stage | Small | Version 1's `/drive` behaviour, on a budget |
+| `dead-slow` | One | One | The cheapest mapped role for every stage | Small | Version 1's `/sail` behaviour, on a budget |
 | `stop` | None | None | — | — | Every captain parks at its next boundary. A person rings it, or the bunker is empty |
 
 - **The numbers underneath, and fine tuning.** `boilers`, `fanout`, the model role per stage (the existing
@@ -704,9 +704,9 @@ on every harbour log line. A push notification on parks, banked fires and stalls
 own notification hook where it has one, and otherwise through a webhook URL in `harbour.json`, which covers
 Slack, Teams and a phone.
 
-**Under `/drive` and under `/cruise`.** The data is the same. Who refreshes it, and who answers it, differ.
+**Under `/sail` and under `/cruise`.** The data is the same. Who refreshes it, and who answers it, differ.
 
-- Under `/drive`, the person's session is the harbourmaster's seat. Captains run for every fairway the telegraph
+- Under `/sail`, the person's session is the harbourmaster's seat. Captains run for every fairway the telegraph
   allows, in their own berths. Every question, park and demo stop from every captain lands in the person's
   inbox, oldest first, each naming its fairway and slice and the command that answers it. The person answers from
   that one seat; the answer is a `told` line, and the captain picks it up at its next boundary. The board the
@@ -744,13 +744,13 @@ Three rules hold the bridge to the same standard as the fleet board.
 
 - **It is computed, never written.** Every instrument folds from files that the loop already writes. The bridge
   keeps no state. If the bridge disagrees with trunk, trunk is right and the bridge is a bug.
-- **It is the same page under `/drive` and under `/cruise`, and it comes in two copies.** `slipwai bridge`
+- **It is the same page under `/sail` and under `/cruise`, and it comes in two copies.** `slipwai bridge`
   serves the page on localhost from the harbourmaster's seat. That copy has the controls: a person answers a
   question, hoists or strikes a flag, accepts an ADR, rings the telegraph or tunes a number from the page, and
   each click is a request to the local server, which appends the `told` line, syncs the logs, and re-renders.
   The copy on the project's Pages site, next to the event model that the `event-model.yml` workflow already
   renders, is the same page without the controls: read-only, for a stakeholder with no checkout. Under
-  `/drive` the person's session is the server; under `/cruise` the harbourmaster process is. Nothing on either
+  `/sail` the person's session is the server; under `/cruise` the harbourmaster process is. Nothing on either
   copy is state of its own.
 - **It is for the owner of one product.** The fleet board is for whoever runs the harbour, and it may show many
   products. The bridge never shows another product. An organisation that wants both opens both.
@@ -880,7 +880,7 @@ question: where does a fairway's chart come from, and who holds it? The SVG file
    gate later is evidence the tests were real; it is not what makes anyone write one first.
 
    **How wide a cycle is, and how much one delegate takes, are settings — version 1's, carried forward.**
-   `.specify/drive.json` holds two: `delegate`, which is `story` (every rule of one user story, each rule
+   `.specify/sail.json` holds two: `delegate`, which is `story` (every rule of one user story, each rule
    its own cycle, one context), `rule` (one rule with its examples) or `task` (one task as the tasks stage
    cut it); and `cycle`, which is `rule` (a rule's examples written together, each failing for its own
    stated reason, then the code) or `example` (one failing test, then the code that passes it). The
@@ -1081,7 +1081,7 @@ short `README.md` that says what this repository is and points at this plan. Mak
 until phase 1 has a green gate. The history stays: `git log` still reaches 1.5.2.dev0 and every upstream commit.
 This phase was done on 2026-10-06. The real README is phase 9's.
 
-**How phases 1 to 4 are driven.** No slipwai loop runs on the fork before phase 5: no `/drive`, no captain, no
+**How phases 1 to 4 are driven.** No slipwai loop runs on the fork before phase 5: no `/sail`, no captain, no
 adoption of the fork by 1.5.2. Plain agent sessions work from this plan and from the rules in section 8, and
 people merge. The quality bar comes from the toolkit's skills, not from the ladder: all 53 skills under
 upstream's `assets/toolkit/skills` are copied into the fork's `.claude/skills/` as part of phase 0, unchanged,
@@ -1154,7 +1154,7 @@ by `make test-docs`. What waits is the reference layer. Version 1's README is 34
 of using it, in the order a person meets it, and moves every explanation to a reference page that it links to.
 
 - **Open on one session, shown rather than described.** `uv tool install slipwai`, `slipwai generate`, the
-  questions as they appear, the first `make verify`, the first `/drive`, and the first demo stop with its board.
+  questions as they appear, the first `make verify`, the first `/sail`, and the first demo stop with its board.
   Use a real terminal transcript, trimmed to what the person sees at each step. Target: fifteen minutes to a
   running product with one slice demoed.
 - **Progressive disclosure.** Five pages, each ending where the next begins: start here; your first feature (the
@@ -1279,14 +1279,14 @@ The first attempt paid for these rules. They apply from phase 1, inside the fork
   decides, and state cannot be turned back into history it never recorded. Phase 15, and 15.5 carries it
   into the prompt, the constitution and the guide.
 - **A stage's name says its purpose and then the crew member who runs it, and only where it has a delegate.**
-  The nautical rule of 2026-10-06 had not reached `/drive`'s ladder: ten of its twenty-one stages are sent to a
+  The nautical rule of 2026-10-06 had not reached `/sail`'s ladder: ten of its twenty-one stages are sent to a
   fresh context with an enforced scope and eleven stay on the host, and nothing in a key said which — `writes`
   and `commands` said it, two columns along, in a table nobody reads at three in the morning, while the only
   part a person editing `.specify/models.json` sees is the key. So `gaps` is `gaps-lookout`,
   `implement` is `implement-shipwright`, `converge` is `converge-navigator`, `review` is `review-mate`,
   `tasks` is `tasks-quartermaster`, `adversary` is `adversary-privateer`, `mutation` is `mutation-shipworm`,
   and `/cruise`'s three are `decide-skipper`, `demo-hand` and `unblock-bosun`; the whole-slice type is
-  `drive-slice-watch`. The purpose leads so that a delegate reads its job in the first word of its own name
+  `sail-slice-watch`. The purpose leads so that a delegate reads its job in the first word of its own name
   and so that the name a stage had is still the start of the name it has — the rungs the method's own prose
   names are unchanged as prefixes, and `tests/test_model_parts.py` holds that. Rung titles and the commands
   are untouched: a title names the work, `/gaps`, `/adversary` and `/mutation` are what a person types, and
@@ -1623,10 +1623,10 @@ refuses by and which nothing else imports. Found on 2026-10-06 while doing the s
 | 3.2 | `assets.py` grown to the asset trees, `examples.py`, `tooling.py`, `capabilities.py` and `toolkit.py`: the first slice that reads an asset tree | upstream | L | Toolkit files materialise for both profiles | done |
 | 3.3 | The `project/*.py` parts, cut against `make next` rather than against assembly order. Each group below is one slice, and the groups are named as they are reached rather than guessed in advance — what is ready changes as modules land | upstream | 5 × M | After each group, `make starters` diffs empty against cruise-2 for the variants that group touches | done |
 | 3.3a | The parts that write pieces of a repository: `project/`, `pruner`, `flags`, `flag_route`, `entry_stores`, `shared_packages`, `compose`, `ci_services`, `provisioning`, `repository`, `rules` | upstream | M | Each holds its mechanism with no language named; the `E501` ignore for embedded file content is back | done |
-| 3.3b | The parts that write the ladder into a project: `drive_settings`, `demo_stop`, `adversary`, `mutation`, `benchmark`, `converge_stage`, `design_stage`, `docs_index`, `evolving`, `parallel_slices`, `agent_targets`, `model_targets`, `model_to_code` | upstream | M | The two widths are written and checked: `delegate` is story, rule or task, `cycle` is rule or example, and `story` is never a cycle | done |
+| 3.3b | The parts that write the ladder into a project: `sail_settings`, `demo_stop`, `adversary`, `mutation`, `benchmark`, `converge_stage`, `design_stage`, `docs_index`, `evolving`, `parallel_slices`, `agent_targets`, `model_targets`, `model_to_code` | upstream | M | The two widths are written and checked: `delegate` is story, rule or task, `cycle` is rule or example, and `story` is never a cycle | done |
 | 3.3c | The parts that write `/cruise` into a project, and the ones `./init` writes: the seat commands, the stop table, the unblock section, `whats_next`, `where_are_we`, `init_languages`, `init_production`, `native_commands`, `languages` | upstream | M | The harness output is repeated verbatim rather than summarised; nothing catastrophic is missing from the page that forbids it; a managed target adds stops an unmanaged one has not | done |
 | 3.3d | The parts that wire a project together: `composition`, `openapi`, `renovate`, `pins`, `agent_settings`, `adopted_ci`, `adopted_targets`, `backing_service_prose`, `catch_up_command`, `run_skill`, `add_commands` | upstream | M | Every pin is a tag and not a range; nothing is both allowed and denied in a generated project's permissions | done |
-| 3.3e | The parts that write how a project is run: `cruise`, `ci_workflows`, `init_script`, `backing_services`, `design_page`, `drive_adoption`, `existing`, `integration`, `pin_commands` | upstream | M | Every line the runner parses is declared in one place; a value with a quote in it cannot close the quote around it in `./init` | done |
+| 3.3e | The parts that write how a project is run: `cruise`, `ci_workflows`, `init_script`, `backing_services`, `design_page`, `sail_adoption`, `existing`, `integration`, `pin_commands` | upstream | M | Every line the runner parses is declared in one place; a value with a quote in it cannot close the quote around it in `./init` | done |
 | 3.3f | The rest of the parts the ledger unlocks: `stage_models`, `agents`, `commands`, `docs`, `adopted`, `decisions`, `guidance`, `event_model`, `frontend`, `gitignore`, `biome`, `skills_page` | upstream | M | Every rung section 5 draws is in `STAGES`; a read-only stage writes nothing; the skipper has a role of its own | done |
 | 3.3g | The answers tier: `convergence`, `delivery_facts`, `images`, `programme`, `quick_wins`, `uncommitted`, `unlabel`, `wrappers`, `preflight`, `upgrade` | upstream | M | Every reader of a repository the keel did not make has a nothing case; every builder and index is pinned and https | done |
 | 3.3h | The last of the parts: the target docs and stacks, `makefile`, `readme`, `production`, `deploy_workflow`, `infra`, `ground_command`, `structure_page`, `strangle_command`, and `strategy`, `survey`, `structure`, `next_steps` beside them | upstream | M | `make next` lists no `project.*` module as waiting | done |
@@ -1677,13 +1677,13 @@ Depends on: phase 3.
 | Slice | What | From | Size | Done when | Status |
 |---|---|---|---|---|---|
 | 5.1 | The skills, renamed to the vocabulary where a name changed, `docs/rename.json` begun | upstream | M | Every skill present; the rename table has a row per rename | done |
-| 5.2 | The commands and agents, the ladder in `drive.md`, the stop table, and `.specify/drive.json`: the `delegate` and `cycle` widths, the refusal of `story` as a cycle unit, and the fallbacks that run a slice narrower than the setting asks | upstream | L | `/drive` runs one slice to a demo on a generated project, red-green-refactor per the configured width, and a slice with no story tag falls to `rule` rather than failing | done |
-| 5.3 | Fairways: the `## Fairways` table in the split, `/drive fairway=<name>`, the boards grouped by fairway | `slipwai-workstreams` | M | Two fairways on one machine, merges independent | done |
+| 5.2 | The commands and agents, the ladder in `sail.md`, the stop table, and `.specify/sail.json`: the `delegate` and `cycle` widths, the refusal of `story` as a cycle unit, and the fallbacks that run a slice narrower than the setting asks | upstream | L | `/sail` runs one slice to a demo on a generated project, red-green-refactor per the configured width, and a slice with no story tag falls to `rule` rather than failing | done |
+| 5.3 | Fairways: the `## Fairways` table in the split, `/sail fairway=<name>`, the boards grouped by fairway | `slipwai-workstreams` | M | Two fairways on one machine, merges independent | done |
 | 5.4a | The chart's shape and its gate: the five rules in `scripts/check-chart.py`, the `check-chart` target in a generated project's `Makefile` and its `verify` chain | new | M | A hand-written chart passes; one with an untyped mark, a mark nobody sets, a mark two slices set, a withdrawn mark or a slice in no capability is refused by name | done |
 | 5.4b | `make chart` on the event profile: `chart.yaml` rendered from `model.yaml`, and `check-chart` failing when the two disagree | new | M | The rendered chart and the model cannot drift, the way `check-drawio` holds the canvas | done |
 | 5.4c | `/chart` on the standard profile, and the `story-splitting` change that groups slices under the capabilities they complete | new | M | A standard-profile feature reaches its split with a chart a reader can diff, and every slice in a capability, with no flag and no target | done |
 | 5.5 | Clearance and the one-setter-per-mark rule in `check-model` and `check-chart`; typed attributes and `examples.md` at the split | new (#32) | M | A fresh fairway fans out on its first iteration | done |
-| 5.5b | Clearance where the loop can reach it: `scripts/agents/clearance.py` in the toolkit, and `/drive`'s precondition replaced by it | new (#32) | S | A session asks what may start rather than reading a status field, and version 1's "its own contract is settled" is gone from the page | done |
+| 5.5b | Clearance where the loop can reach it: `scripts/agents/clearance.py` in the toolkit, and `/sail`'s precondition replaced by it | new (#32) | S | A session asks what may start rather than reading a status field, and version 1's "its own contract is settled" is gone from the page | done |
 | 5.6 | `check-slice-scope` reads the chart for owned paths on both profiles | upstream + new | M | The standard profile holds a context boundary | done |
 | 5.7 | Two gates: `make unit` in generated projects, the ladder's fast checks per increment, the full gate before `main` | new | M | A slice's increments never run the full suite | done |
 | 5.7b | The rule in a generated project's own `AGENTS.md` that keeps `make unit` fast: a test needing a real backing service, a real process or the network is an integration test and lives in the integration suite, which `make unit` already excludes | new | S | A project a year old still runs `make unit` per increment, and the rule names the architecture's own line rather than a second one | done |
@@ -1696,7 +1696,7 @@ Depends on: phase 3.
 | 5.11b | The composition root rendered from the chart, one `wire_*` line per use case, behind a marked region | new | M | Two slices each add a use case and merge without resolving the composition root | done |
 | 5.12a | The product state in `project.json` and the four release modes derived from it, read once at the merge rung | new | M | A slipway product merges in the open and generates no flag reader; moving the product is the only thing that changes the mode | done |
 | 5.12b | Flags at the entry wiring only, and the hygiene gate: `check-flags` refuses a flag hoisted everywhere and never struck. The shape beside the target is 3.4b's | new | M | A flag lives at one `if` at the route or menu, and one overdue to be struck fails the gate | done |
-| 5.13 | The deck log and harbour log formats, written by `/drive`; `.slipwai/logs/` ignored; `refs/slipwai/logs` sync | new | M | A run's status is answerable from the logs after the fact | done |
+| 5.13 | The deck log and harbour log formats, written by `/sail`; `.slipwai/logs/` ignored; `refs/slipwai/logs` sync | new | M | A run's status is answerable from the logs after the fact | done |
 | 5.14a | The berth record and its allocation policy in `src/slipwai/berths.py`: a port block per berth, a database per berth, and nothing chosen by hand | new | M | Two berths on one machine collide on neither ports nor databases, and nothing in a berth's record could hold a credential | done |
 | 5.14b | Provisioning a berth: `slipwai berth add / status / remove`, the worktree, and the sandbox as `none` or `sbx` | new | M | A berth is created, used and removed leaving nothing behind, under both sandbox kinds | done |
 | 5.15 | The decision ceiling, bounded waits, the inbox read at every boundary with receipts | new | M | A message is read within one boundary or forces one | done |
@@ -1704,7 +1704,7 @@ Depends on: phase 3.
 | 5.18 | The mock-up review as a once-per-feature stage of both profiles: `/mockups` runs a researcher that writes `research.md` from the spec, the domain knowledge and comparable workflows, reviews or drafts one HTML mock-up per surface, storyboards them, and writes `mock-states.md` from the person's approvals; the rung, and the split and the example map reading it | upstream skills + new | M | A feature handed no mock-ups reaches its split with every surface's states carrying a decision, and the rung runs before the model, the chart and the split | done |
 | 5.20 | `check-surfaces` holds the split's *Surfaces and states* column against `mock-states.md`: every state a slice names is `approved` there, and every approved state is named by exactly one slice | new | M | A split naming a parked state is refused; a split leaving an approved state unbuilt is refused; a feature whose file says `surfaces: none` passes with the column empty | done |
 | 5.19 | The demo as a capability stop: `scripts/agents/capabilities.py` saying which are whole, due or accepted, and `demo_stop` rewritten to walk a whole capability | new | M | A capability's slices merge with nobody stopped; a person is stopped once, when the last of them lands, and accepting it hoists nothing | done |
-| 5.17 | Example mapping as a stage of **both** profiles: `example-map` moves out of `assets/profiles/event-modelling/commands/` into the toolkit, deriving its examples from the model on the event profile and writing them from the chart and the story on the standard one; the demo stage reads what it wrote | upstream + new | M | A standard-profile slice reaches its demo with examples a stage produced, and `/drive` refuses to implement a slice whose map is empty | done |
+| 5.17 | Example mapping as a stage of **both** profiles: `example-map` moves out of `assets/profiles/event-modelling/commands/` into the toolkit, deriving its examples from the model on the event profile and writing them from the chart and the story on the standard one; the demo stage reads what it wrote | upstream + new | M | A standard-profile slice reaches its demo with examples a stage produced, and `/sail` refuses to implement a slice whose map is empty | done |
 
 Depends on: 1.2 for 5.1 and 5.2; phase 4 for a generated project to run against. 5.3 to 5.16 are the slices
 most worth running in two fairways themselves, once 5.3 exists.
@@ -1738,19 +1738,19 @@ Depends on: phase 4. Runs beside phase 7.
 |---|---|---|---|---|---|
 | 7.1 | The harbourmaster process: the only writer of the harbour log, the log sync, berth allocation, credentials | new | L | Two captains' marks reach each other through the harbour log | done |
 | 7.2 | The captain: the outer loop for one fairway, clearance, claim, dispatch, boundaries, heartbeat, ending a wedged stage | new + `cruise.py` | L | One fairway runs unattended for a day with every line in its deck log | done |
-| 7.3 | The telegraph: positions, `harbour.json`, `--set` for the numbers, `/model-delegation-settings` for the model role per stage, the `delegate` and `cycle` widths from `.specify/drive.json` shown and set alongside them, banking the fires in order | new | M | Over budget, the run slows in the fixed order before it stops; every number and role the telegraph groups can also be set alone | done |
+| 7.3 | The telegraph: positions, `harbour.json`, `--set` for the numbers, `/model-delegation-settings` for the model role per stage, the `delegate` and `cycle` widths from `.specify/sail.json` shown and set alongside them, banking the fires in order | new | M | Over budget, the run slows in the fixed order before it stops; every number and role the telegraph groups can also be set alone | done |
 | 7.4 | The fleet board: `slipwai fleet`, `fleet watch`, the rendered page | new | M | Every column folds from the logs; a stalled berth is told from a finished one | done |
 | 7.5 | The bridge: `slipwai bridge` local server with controls, the read-only Pages copy | new | L | A question answered from the page becomes a `told` line | done |
-| 7.4d | The loop end to end in a generated project: chart, gate, clearance, a captain with a stand-in for `/drive`, the harbourmaster, the board and the overlay | new | M | A sibling is cleared by a mark being set with nothing merged, and the suite says so | done |
+| 7.4d | The loop end to end in a generated project: chart, gate, clearance, a captain with a stand-in for `/sail`, the harbourmaster, the board and the overlay | new | M | A sibling is cleared by a mark being set with nothing merged, and the suite says so | done |
 | 7.5b | slipwai's own mark — a little tug whose funnel puffs a spark — top right of the bridge and as its icon, and an Auto/Light/Dark toggle beside it | new | S | The mark holds in one colour at 16px and the published copy keeps both without a script | done |
 | 7.6 | The harness registry rows for Claude Code, Codex, Cursor, Gemini CLI, OpenCode and Kiro; `unproven` until run | upstream + new | M | Each row says how it is invoked and which hooks it has | done |
 | 7.4b | A stream's own log, read from the board: `slipwai fleet <stream>` in the terminal and a drawer under each row on the bridge, each line said rather than printed | new | S | The question the board provokes — what has this one been doing — is answered without opening a `.jsonl` | done |
 | 7.4c | The run drawn on the event model: the browsable page and the bridge colour each slice by **two** bands — what `model.yaml` intends, and what the logs say happened — folded at render time and written back nowhere. Never into `model.drawio`, which is committed | new | M | A slice badged `implemented` whose log holds nothing is visible on the page as the drift it is, and a mark being set lights the slices it clears | done |
 | 7.7a | `/cruise` casts off: `scripts/agents/fleet.py` starts the harbourmaster and one captain per fairway under the telegraph's `boilers`, and exits. `make cruise`, `cruise-status` and `cruise-stop` point at it | new | S | Typing `/cruise` leaves nothing holding the state of the run | done |
 | 7.7b | The harness's own moments become points of the two closed sets, fired from one script the captain owns (`scripts/agents/session.py`): `guard` and `stopping` are the `before-write` and `before-stop` guards, `compacting` and `resume` are the `before-compact` and `after-compact` hooks, and the keel writes point names into `.claude/settings.json` and `registry.json`'s projections rather than one script's verbs. Both sets widened for shape rather than for need — `before-command`, `before-fetch` and `after-merge` — so that a want of a different *shape* is not a keel change | new | M | A settings row naming a verb the script has not got fails a gate by name; the control-file refusal and the compaction protocol are the keel's on every harness that has such an event, not Claude Code's | done |
-| 7.7d | Delete the runner: `cruise.py`'s loop, its stream, its pid and checkpoint files and its seat commands, with `watch`, `tell` and `told` rewritten against the deck logs. What is left of the file is the run's settings reader, the shape `drive.py` already has for `/drive` | new | L | No runner left in the toolkit, and the greenfield of phase 7 has run two captains on two machines start to finish |  |
-| 7.7c | The captain dispatches the real `/drive`: `registry.json`'s `headless.command` for the installed harness, filled with the ladder's own prompt, instead of falling back to `scripts/agents/drive.py` — which is the *settings reader* and prints two lines and exits 0. `SLIPWAI_DRIVE` stays the override. A harness whose `headless` is null is named and the fairway parks rather than being dispatched at something that is not the ladder | new (section 14, link 2) | M | A captain on a project initialised for any harness with a verified `headless` row runs the ladder; one whose harness has none says so by name instead of parking on a missing `mark-set` | done |
-| 7.8 | The captain requires the ladder's completion lines: a slice is through its gate when the log holds every mark the chart's `sets` names and a `demo`, all written during this turn. A sent-back demo is a retry in the same turn, bounded by `attempts`, then a park naming the verdict and the count. `verdict` becomes a closed set; `check-chart` requires `sets` and `steers_by` explicitly once `story-split.md` exists, so an empty list is an answer and an absent key is not | new (section 14) | M | The run that started this — `/drive` printing a help message, exiting 0 and writing nothing — parks instead of reporting a slice through its gate; a slice that sets no mark still passes on its `demo` | done |
+| 7.7d | Delete the runner: `cruise.py`'s loop, its stream, its pid and checkpoint files and its seat commands, with `watch`, `tell` and `told` rewritten against the deck logs. What is left of the file is the run's settings reader, the shape `sail.py` already has for `/sail` | new | L | No runner left in the toolkit, and the greenfield of phase 7 has run two captains on two machines start to finish |  |
+| 7.7c | The captain dispatches the real `/sail`: `registry.json`'s `headless.command` for the installed harness, filled with the ladder's own prompt, instead of falling back to `scripts/agents/sail.py` — which is the *settings reader* and prints two lines and exits 0. `SLIPWAI_SAIL` stays the override. A harness whose `headless` is null is named and the fairway parks rather than being dispatched at something that is not the ladder | new (section 14, link 2) | M | A captain on a project initialised for any harness with a verified `headless` row runs the ladder; one whose harness has none says so by name instead of parking on a missing `mark-set` | done |
+| 7.8 | The captain requires the ladder's completion lines: a slice is through its gate when the log holds every mark the chart's `sets` names and a `demo`, all written during this turn. A sent-back demo is a retry in the same turn, bounded by `attempts`, then a park naming the verdict and the count. `verdict` becomes a closed set; `check-chart` requires `sets` and `steers_by` explicitly once `story-split.md` exists, so an empty list is an answer and an absent key is not | new (section 14) | M | The run that started this — `/sail` printing a help message, exiting 0 and writing nothing — parks instead of reporting a slice through its gate; a slice that sets no mark still passes on its `demo` | done |
 | 7.9 | The harbourmaster performs the merge: it takes the request in order, one at a time, rebases in a scratch worktree of its own, runs the project's `make verify` there, pushes, and writes `merged` with the commit. A conflict is `git rebase --abort` and `refused` naming the paths, and the captain resolves in its own berth bounded by `attempts`; a red gate is `refused` with the failing check. The berth is never written by two processes and stays allocated until `merged` | new (section 14) | L | `merged` stops reading 0 on the board: a slice accepted at its demo reaches trunk with no person in the path, and a conflict comes back as two named paths rather than a wedged worktree | done |
 | 7.10 | Trunk's CI is watched, so the fleet stops adding to a red build: before granting any merge the harbourmaster reads trunk's last completed run, and a red one is `refused` plus a harbour `park` naming the commit and the job, with no fairway granted a merge until it is green. The fix goes to the captain whose `merged` line names that commit, bounded by `attempts`, then to a person; a red no `merged` line accounts for parks for a person at once. A forge it cannot reach reads *could not verify*, never *green* | new (owner, 2026-10-08) | M | A trunk reddened by `audit` or `test-integration` — which `make verify` never runs — stops the merge queue within one pass, and the fairway that broke it is the one dispatched at it | done |
 
@@ -1815,7 +1815,7 @@ broken.
 | Slice | What | From | Size | Done when | Status |
 |---|---|---|---|---|---|
 | 11.1 | The claim is a git ref: a captain takes `refs/slipwai/claims/<fairway>` by a push that refuses non-fast-forward — an atomic compare-and-swap on every forge, with nothing of ours running — before it writes `claimed`, and a refusal names who holds it and since when. **`held_by` is rendered from that ref and written by nothing** (decided 2026-10-08): a person taking a lane by hand takes the same ref, `make check-rendered` holds the split's column to it, and a harbour with no forge to push to renders `—` and says the claim is local to this machine | new (section 13) | M | Two machines start a captain for one fairway and the second refuses by name rather than both appending to one log; and `held_by` in `story-split.md` is what the refs say, with no verb and no hand edit able to make it say anything else |  |
-| 11.2 | In-flight work travels: the harbourmaster pushes each slice branch every pass as a WIP ref, the way it already pushes the logs, and a claim lapses on a lease derived from `stage_bound` rather than chosen. A captain taking a lapsed stream fetches that branch into its own berth and re-dispatches `/drive`, which enters at the first incomplete stage | new (section 13) | L | A machine closed four rungs into a slice is taken over by another, which resumes at rung five instead of starting again; no lease ever lapses under a captain that is writing |  |
+| 11.2 | In-flight work travels: the harbourmaster pushes each slice branch every pass as a WIP ref, the way it already pushes the logs, and a claim lapses on a lease derived from `stage_bound` rather than chosen. A captain taking a lapsed stream fetches that branch into its own berth and re-dispatches `/sail`, which enters at the first incomplete stage | new (section 13) | L | A machine closed four rungs into a slice is taken over by another, which resumes at rung five instead of starting again; no lease ever lapses under a captain that is writing |  |
 | 11.3 | One harbourmaster per machine: the harbour log becomes `.slipwai/logs/harbour/<machine>.jsonl`, folded on read exactly like the deck logs, so the single writer is removed rather than elected. The one thing that needs a decider — the merge — is serialised by `refs/slipwai/merge`, taken and released the way a claim is | new (section 13) | L | Three machines write three harbour logs and the board folds them into one; two harbourmasters never rebase at once, and the one that loses queues |  |
 | 11.4 | A berth's database name carries the machine identity the logs ref already uses, so two machines' berths cannot collide on a shared instance without any configuration being refused; `collisions()` checks the arithmetic anyway | new (section 13) | S | Two machines allocate berths against one database server and neither can reach the other's |  |
 | 11.5 | The proof: two machines, one harbour, a stream taken from one by the other mid-slice and carried to a merge | new | M | A second person on a second machine finishes a slice the first machine started, and the first machine's board says so without being told |  |
@@ -1872,7 +1872,7 @@ harness changes its mind. So each slice ships **one** artefact built from what t
 
 | Slice | What | From | Size | Done when | Status |
 |---|---|---|---|---|---|
-| 12.1 | `slipwai package plugin`: render a Claude Code plugin — `.claude-plugin/plugin.json` over the canonical `commands/`, `skills/`, `agents/` and the elected hooks — from the toolkit, so the material installs into a harness with no project generated. Built by the same four verbs a language package is, and published to the chandlery as a third package kind | new | M | A person with no slipwai project installs the plugin and `/drive` is there; `./init` in a generated project still writes the same files and the two never disagree, because one is rendered from the other |  |
+| 12.1 | `slipwai package plugin`: render a Claude Code plugin — `.claude-plugin/plugin.json` over the canonical `commands/`, `skills/`, `agents/` and the elected hooks — from the toolkit, so the material installs into a harness with no project generated. Built by the same four verbs a language package is, and published to the chandlery as a third package kind | new | M | A person with no slipwai project installs the plugin and `/sail` is there; `./init` in a generated project still writes the same files and the two never disagree, because one is rendered from the other |  |
 | 12.2 | An MCP server over the read side: `fleet`, `fleet <stream>`, `clearance`, `check-chart` and the inbox as tools, so an agent can ask what is waiting and answer it without a person copying a board between two windows. Read, plus the one write the bridge already allows — answering a `told` | new | M | An agent asked "what is blocked" answers from the logs, and an answer it gives a stream is the same line the bridge would have written |  |
 | 12.3 | The same material for the harnesses that are not Claude Code: Codex's prompts directory and its MCP configuration, and anything else `registry.json` already declares a native location for. One renderer, one row per harness, no per-harness prose | new | M | A second harness installs the material by its own mechanism from the same source, and adding a third is a row rather than a slice |  |
 | 12.4 | The decision, written down: which of the three is the supported route and which are conveniences. A project that can be installed four ways and is supported in one has three ways to be wrong about | new | S | `docs/reference/` says which route is held by a gate, and the others say they are not |  |
@@ -1903,7 +1903,7 @@ phases 10 to 12 are still changing.
 | 9.6 | **From a spec to a delegate**: one figure per profile following a single feature all the way down — spec, model or chart, split into slices, example-mapped into rules and examples, cleared, claimed, and handed to a delegate at the configured width. Drawn, not captured | new | M | A reader who has never used slipwai can point at where a slice comes from and at what one delegate is handed; both profiles are the same figure with two boxes different |  |
 | 9.4 | `make test-docs`: every command in the first three pages run against a fresh generation — the programme generates two projects, drives the interview question by question, seeds the pages' own model and log lines, and asks each command in the order the page asks it. A command on a page that the programme does not have fails the gate | M | The README cannot drift | done |
 | 9.7 | **What is new since version 1**, a page of its own linked from the README's first screen: the things a version 1 user has to know, and nothing else. Languages and the clouds are packages and the keel ships none; the chandlery and who you install from; the chart and the mark, and the claim that a sibling is cleared by a mark being *set*; captains and the harbourmaster in place of the runner; status folded from append-only logs and stored nowhere; the telegraph as one lever; the fleet board and the bridge; the two-gate split; `slipwai adopt` and `slipwai migrate`, with what migrating costs and what it cannot undo. Written from `CHANGELOG.md` and the five pages rather than beside them, and short enough to read in one sitting | new (owner, 2026-10-08) | M | A version 1 user reads one page and can name every change that affects them, what each is for, and the one command that moves their project; every claim on it links to the page that shows it working, and no change on it is one the changelog does not carry |  |
-| 9.4b | `/drive` bare is the documented default: `commands/drive.md` says what each of its four forms narrows, and the guide leads with the bare form rather than with a slice id. `make test-docs` holds a `key=value` a page shows after a `/command` to that command's own `argument-hint` | new | S | Every example of `/drive` on a page is one `commands/drive.md` takes, and a page that invents an argument fails the gate by name | done |
+| 9.4b | `/sail` bare is the documented default: `commands/sail.md` says what each of its four forms narrows, and the guide leads with the bare form rather than with a slice id. `make test-docs` holds a `key=value` a page shows after a `/command` to that command's own `argument-hint` | new | S | Every example of `/sail` on a page is one `commands/sail.md` takes, and a page that invents an argument fails the gate by name | done |
 | 9.5 | The five maintainer skills in `.claude/skills/`, rewritten for version 2's shape: `add-language`, `add-framework` and `add-extension` as prose around the four `slipwai package` verbs and the two package shapes; `add-target` for the skiff and the liner; `add-backing-service` for a catalogue that no longer holds backends | new | L | A contributor who has not seen this repository publishes a package by following one skill; no skill names a step a verb already does; none describes a file version 2 does not have | done |
 
 ### Phase 14. `slipwai` on its own opens the board, and the board can start a project
@@ -2049,7 +2049,7 @@ not: backfilling ten years of history from `created_at` and `updated_at`, which 
 | 15.7 | The tests and the pages: the thirteen test files that branch on the profile and every test that spells `event-store`, `test_validators.py`'s bundle assertions replaced by the three rules of 15.1, `start-here.md`'s two labels and its axis lines, `docs/axes.md` where it exists, section 4 and section 5 here (the two loop figures do not change: the rung is inside *Implement*, not on the ladder), and **Rung** in section 1 | new | M | `make verify` is green with 15.1 to 15.6 in, `grep event-store` finds only the rename table and the changelog, and a reader of `start-here.md` can say which of the two questions is the one that cannot be walked back | done |
 | 15.8 | The state-stored skeleton, in the TypeScript package: a repository port, a memory adapter and a Postgres adapter behind it, the contract suite that runs against both, and a migration for a versioned state table whose version column is the optimistic concurrency the use case checks. The same skeleton the `standard` profile has been missing since it was labelled *state-stored persistence*, so it pays twice. On both rungs the event record is three layers — store metadata, typed context, payload — and **the append or raise boundary refuses a bare payload**: `actor_id`, `on_behalf_of` where delegated, `occurred_at`, `correlation_id` and `causation_id` arrive as a typed context the use case cannot omit, system work names its actor (`systems/cron`), and `actor_id` is never read as ownership — that is a payload fact or a policy. PII is referenced by id, never inlined, on the `events` rung because the log cannot be erased and on `state` because the raised event still travels | new (the language's repository) | L | A `state` service passes the same `make verify` an `events` one does, with a concurrency test that two writers to one row see exactly one win, and an append with no context fails to compile |  |
 | 15.9 | Adoption: `change-strategy.md`'s *Be honest about the event model* loses the bundle sentence and gains the sharpened rule and the rung-2 reading of a capability that was already there; `/survey`'s event-model section says the code that was already there is an external system *or* a state-stored service in the model, by whether its behaviour is modelled or only read; `/strangle`'s *Decide the new home* names the rung, `--write-model state` with change data capture or an outbox and no genesis event, `events` with one. **A strangler has a precondition, and `/strangle` asks for it before the first capability moves: the freeze** — no new features in the legacy system, bug fixes only, no schema changes — recorded on the strategy ADR with who agreed it, or recorded as absent with what the programme does instead, because a legacy system that keeps growing under a side-car is a side-car that drifts, and the retirement ledger cannot show it. A wrapped application that is already event-sourced — its own log, Marten, Axon, EventStoreDB — is recorded `writeModel: events` the way every survey fact is recorded: the survey *proposes* it off an event-store dependency in the manifest, and only `/ground` or `slipwai adopt --confirm <name> --write-model events` records it, with `confirmed` provenance; left unanswered it is `state`, because a log nobody vouched for is a guess wearing a fact's clothes. No persistence row is added to the convergence map: the rung is a product decision per service and `project.json` is already its record, and a map row would say every service should climb to the log, which is the claim this phase exists to stop making | new | S | `adopt --profile event-modelling` on a CRUD repository passes `check-constitution` on day one, and `/strangle` asks which rung the new home is on before `add-service` runs |  |
-| 15.10 | A fifth status, `observed`: a slice that records what the code does and that the model did not design — a well-kept codebase was designed, just not here — carrying `code:` and `gwt:` and exempt from `model-matches-code`, because code the keel did not make does not contain `OrderPlaced` until a rung-2 slice raises it; on a wrapped service confirmed `events` the exemption is moot, since the names are in its events module already. `check-model` allows it only on a service recorded `generated: false`; the move to `implemented` is that slice. An `observed` slice is what a later slice `reads`: it is on the timeline for the joins, which is the reason the model is global. `global-event-model` says when to write it and `/drive`'s ready set never offers one | new | S | An `observed` slice on a wrapped service passes `check-model` with its `code:` pointing at the handler that exists, and the same slice on a generated service is refused by name |  |
+| 15.10 | A fifth status, `observed`: a slice that records what the code does and that the model did not design — a well-kept codebase was designed, just not here — carrying `code:` and `gwt:` and exempt from `model-matches-code`, because code the keel did not make does not contain `OrderPlaced` until a rung-2 slice raises it; on a wrapped service confirmed `events` the exemption is moot, since the names are in its events module already. `check-model` allows it only on a service recorded `generated: false`; the move to `implemented` is that slice. An `observed` slice is what a later slice `reads`: it is on the timeline for the joins, which is the reason the model is global. `global-event-model` says when to write it and `/sail`'s ready set never offers one | new | S | An `observed` slice on a wrapped service passes `check-model` with its `code:` pointing at the handler that exists, and the same slice on a generated service is refused by name |  |
 | 15.11 | The big picture, once, in `adopt`: actors from the surfaces and the auth the survey found, external systems from the outbound calls and inbound hooks, major processes from the entry points `structure.md` already lists — written as `proposed` slices with the evidence each was read off, beside `structure.md`, with Phase 1's questions the code cannot answer as `/gaps` lines. The actors are written as a **role catalogue**, `docs/event-model/actors.yaml`: each human role and system actor with what it does and what it **cannot** do, read off the routes and the authorisation the code already holds, because a negative permission is the one thing a slice's `actor` field cannot carry and the one thing a security pass and `bff-entry-points`' access classification both ask for first. Every `/gaps` line an agent posts carries its *intention* and the *assumption it proceeded on*, so a person reading it later knows what was done in their absence. The proposal-not-questionnaire rule of section 1, applied to a codebase | new | M | An adopted repository has a model page on the day it is adopted that names its actors with what each may not do, and its external systems, with a file and line under each, and no event |  |
 | 15.12 | `/observe <capability>`: the nine steps run against the code for one capability, walking the evidence table above — handler to `ui` and `cmd`, write to `evt` named as the fact, status enum to the transition list, query to `state-view`, job to `automation`, call to `translation` — and writing the slices at `observed`, `code:` at the handler, `gwt:` at the `examples.md` the pinned tests of `/characterise` already are. Its working record is the **extraction table**, one block per table the capability writes, one row per transition: *when `status` goes `draft → confirmed` in `orders` → `OrderConfirmed`*, with the file and line of the write it was read off — so the name is proposed beside the column it replaces and `event-is-not-crud` fails `OrdersUpdated` before a person reads it. It names the **first move** too: a `state-view` slice over the wrapped service's own tables, because a read model over the wrapped service's data is the one move from `observed` to `implemented` with no write path, no genesis and no routing seam — on any adopted service, and under a strangler it is also the first row the retirement ledger should show. It reads from **two sources by the service's rung**: the status columns and the writes for a `state` service, the events module for one confirmed `events`, and it says which it used, because the second is evidence of a different order. Refuses "the whole system" the way `/characterise` does; the hotspots in `structure.md` are its suggested first argument, and **a new requirement that touches capability no slice has observed runs it first**, so the Event-model stage's *what is already recorded* is read off the code where the model has not caught up | new | M | One capability of an adopted repository is on the timeline at `observed`, its events named as business facts with the transition each was read off, its screens as white boxes, and `check-model` and `make chart` both pass on it |  |
 | 15.13 | A cross-service `reads` whose producer is `write-model: state` is refused by `check-model` until that service has an outbox, because a mark nobody can consume is the failure `check-chart` exists to prevent; the refusal names the outbox rung as the fix. Held here as a slice rather than folded into 15.4 because it is a decision, recorded in section 9 | new | S | A two-service model where a `state` service's event is read by the other fails with a message that names the producing service and the rung that would clear it |  |
@@ -2145,13 +2145,13 @@ cannot be run. Wording changes go in their own commits, before or after, never i
 | Slice | What | From | Size | Done when | Status |
 |---|---|---|---|---|---|
 | 16.1 | The three-way rule above, written down and enforced: `docs/generated-prose.md` says what may be an asset, what must stay generated and what to do with a conditional; a check holds it — an asset that names a token the substitution does not provide, a value provided that no asset names, and a generated file still carrying `{{` after rendering. The conditional question is **decided here**: either a section marker the asset carries and the module selects, or the rule that branching prose stays in Python with the standing part extracted around it. Whichever is chosen is written as the reason, because the next eight slices apply it | new (owner, 2026-10-09) | M | A contributor can read one page and know whether a given paragraph may move; the check refuses a token nobody provides and a value nobody names, both directions, and is run by `make verify` |  |
-| 16.2 | The commands: `commands.py`, `add_commands.py`, `pin_commands.py`, `ground_command.py`, `drive_section.py`. The precedent is already half here — `assets/toolkit/commands/` holds the three that never varied and `assets/profiles/event-modelling/commands/` one more — so this is the existing arrangement finished rather than a new one, and the per-profile branching is 16.1's rule meeting its first real case | new | L | Every `commands/*.md` a project receives is byte-identical to today's, proved by the digest gate, and a reviewer changing the wording of `/drive` reads Markdown |  |
+| 16.2 | The commands: `commands.py`, `add_commands.py`, `pin_commands.py`, `ground_command.py`, `sail_section.py`. The precedent is already half here — `assets/toolkit/commands/` holds the three that never varied and `assets/profiles/event-modelling/commands/` one more — so this is the existing arrangement finished rather than a new one, and the per-profile branching is 16.1's rule meeting its first real case | new | L | Every `commands/*.md` a project receives is byte-identical to today's, proved by the digest gate, and a reviewer changing the wording of `/sail` reads Markdown |  |
 | 16.3 | `guidance.py` and `rules.py` — `AGENTS.md` and the rules a generated project is held to. The largest single page a project gets, the one most often edited for wording, and the one where a backend's own paragraph is interleaved with standing text, so it is the clearest test of whether 16.1's answer to conditionals is the right one | new | L | `AGENTS.md` is byte-identical for every profile, backend and target in the matrix |  |
 | 16.4 | `docs.py`, `readme.py`, `run_skill.py` — the README and the pages under `docs/`. `readme.py` is at 350 lines today and `metadata.py` was split out of it for budget; this is the slice that makes that split re-examinable, and if the seam was only ever the budget, the two go back together | new | M | The generated README and every page under `docs/` are byte-identical; `readme.py` is under 200 lines or the commit says why the remainder is code |  |
 | 16.5 | `event_model.py`, `model_to_code.py`, `adversary.py`, `parallel_slices.py` — the method's own pages, which 15.3 and 15.4 are changing. **Sequenced after phase 15 closes**, because moving a page while another slice is rewriting it is a merge nobody should have to do, and the byte gate cannot be taken against a moving target | new | M | The event-model pages are byte-identical on both rungs and both profiles |  |
-| 16.6 | `cruise.py`, `cruise_seat.py`, `cruise_agents.py`, `drive_adoption.py` and `adopted.py` — the cruise's pages and the adopted repository's. `cruise_agents.py` is already down to its path constants after the pilot; this finishes the three that are left | new | M | The cruise's pages are byte-identical, and no module in `project/` exists only because another reached its budget |  |
+| 16.6 | `cruise.py`, `cruise_seat.py`, `cruise_agents.py`, `sail_adoption.py` and `adopted.py` — the cruise's pages and the adopted repository's. `cruise_agents.py` is already down to its path constants after the pilot; this finishes the three that are left | new | M | The cruise's pages are byte-identical, and no module in `project/` exists only because another reached its budget |  |
 | 16.7 | The templates that are not prose: `deploy_workflow.py`'s GitHub Actions YAML, `init_script.py`'s shell, `flags.py`. These are the ones to look at last and possibly not to move: a workflow is assembled from the services, the target and the backend's own tooling, so most of it is case 2 and the standing part may not be worth separating. **A decision, with the answer written either way** — a slice that concludes "these stay" and says why is a slice that landed | new | S | The decision is in section 9 with its reason; if they move, the generated workflow and `./init` are byte-identical on every target |  |
-| 16.8 | The budget starts measuring code again: `MODULE_BUDGET` in `scripts/check-structure.py` is re-examined now that it is not being spent on paragraphs, and an asset's own size is budgeted separately or deliberately not. The modules split for budget rather than for a seam — `backing_service_prose.py`, `metadata.py`, `drive_section.py`, `cruise_agents.py` — are each either rejoined or given a reason in their docstring that is about behaviour | new | S | No module in the keel is split at a paragraph boundary, and `check-structure.py`'s budget comment says what it is now measuring |  |
+| 16.8 | The budget starts measuring code again: `MODULE_BUDGET` in `scripts/check-structure.py` is re-examined now that it is not being spent on paragraphs, and an asset's own size is budgeted separately or deliberately not. The modules split for budget rather than for a seam — `backing_service_prose.py`, `metadata.py`, `sail_section.py`, `cruise_agents.py` — are each either rejoined or given a reason in their docstring that is about behaviour | new | S | No module in the keel is split at a paragraph boundary, and `check-structure.py`'s budget comment says what it is now measuring |  |
 
 Order: 16.1 first and alone — the next seven apply its rule, and applying a rule that is still being decided
 is seven slices that need revisiting. Then 16.2 → 16.3 → 16.4, which are independent of each other and of
@@ -2268,20 +2268,20 @@ which is `upgrade`'s `after_core` path and `migrate`'s (theme A already says `mi
 made before the rename). **Slice 8.3 carries it**, and its done-when gains: an install made under
 `languages/` is found, moved, and loaded from `packages/`. Found 2026-10-07 while doing 5.1.
 
-**5.2 — The ladder in `drive.md`, the stop table, and `.specify/drive.json`.** `drive.md` is the command
+**5.2 — The ladder in `sail.md`, the stop table, and `.specify/sail.json`.** `sail.md` is the command
 that runs one slice through every stage; it exists in version 1 and is rewritten here to the ladder
 section 5 draws — example map, gaps, plan and tasks, implement, converge and demo, review and reshape,
 adversary, mutation, merge — with each stage's model role read from `stage_models.STAGES`. The review rung is the one exception
 and stays with 5.8, which is the slice that gives it a role and a command: 5.2 instead makes the page and
 the table hold each other, so a stage added to `STAGES` with no rung on the page, or a rung the table does
 not name, fails the gate. 5.8 then cannot add one without the other. Corrected 2026-10-07 while doing 5.2. The stop table
-(`project/cruise_stops.py`, back since 3.3c) stays as it is. `.specify/drive.json` is written by
-`project/drive_settings.py` (back since 3.3b) with `delegate: story` and `cycle: rule`; what is new is
-that `drive.md` *reads* it and says, at the implement stage, which width it is running at and why it fell
+(`project/cruise_stops.py`, back since 3.3c) stays as it is. `.specify/sail.json` is written by
+`project/sail_settings.py` (back since 3.3b) with `delegate: story` and `cycle: rule`; what is new is
+that `sail.md` *reads* it and says, at the implement stage, which width it is running at and why it fell
 back if it did. The refusal of `story` as a cycle and the two fallbacks are already in
-`assets/toolkit/scripts/agents/drive.py`; the slice is the prose that explains them where the agent reads
-it. Under `/drive` it also fires the extension hook points around each rung (6.1), so a hook behaves the
-same with a person present as under a captain. Test: a generated project's `drive.md` names every rung of
+`assets/toolkit/scripts/agents/sail.py`; the slice is the prose that explains them where the agent reads
+it. Under `/sail` it also fires the extension hook points around each rung (6.1), so a hook behaves the
+same with a person present as under a captain. Test: a generated project's `sail.md` names every rung of
 `STAGES` and no rung `STAGES` has not got, and names the hook points in the order they fire.
 
 **5.17 — Example mapping on both profiles.** Move `assets/profiles/event-modelling/commands/example-map.md`
@@ -2290,7 +2290,7 @@ modelling it reads the slice's given/when/then from `model.yaml` and writes them
 standard it reads the slice's story from `spec.md` and the marks it sets from `chart.yaml` (5.4), and
 *writes* the rules and examples from scratch, one example per rule, plus the questions it cannot answer
 as inbox lines. Both write `specs/<feature>/slices/<id>/examples.md` in one shape: a numbered rule, its
-examples beneath, each example one line a test can be named after. `/drive` refuses to implement a slice
+examples beneath, each example one line a test can be named after. `/sail` refuses to implement a slice
 whose `examples.md` has no example. The done-when is the standard profile reaching its demo with examples a
 stage produced, which means the test generates a standard-profile project and runs the stage.
 
@@ -2422,13 +2422,13 @@ both passes at once. Resolved 2026-10-07 while doing the slice.
 
 **5.5b — Clearance where the loop can reach it.** 5.5 put the rule in `src/slipwai/project/chart.py`, as
 this plan said to, and an audit of the flow found that nothing imported it and nothing could: the things
-that ask it — a `/drive` session and, later, the captain — run **inside a generated project**, which has no
+that ask it — a `/sail` session and, later, the captain — run **inside a generated project**, which has no
 slipwai to import. That is the same reason `check-chart` and `check-slice-scope` are toolkit scripts, and
 the rule was written down at 5.4a before it was applied here. So the module moves to
 `assets/toolkit/scripts/agents/clearance.py`, the keel's copy is deleted rather than left as a second
 implementation, and the keel's suite loads the script by path, the way a project runs it.
 
-The second half is the one that matters: `/drive`'s own precondition still read *"the contract is
+The second half is the one that matters: `/sail`'s own precondition still read *"the contract is
 settled"*, which is the version 1 rule clearance replaces. The page a session actually reads had none of
 5.5 in it. It now asks — `python3 scripts/agents/clearance.py` — rather than judging, and says why: a
 status field was wrong for eight slices in MANDA, and a log line is written by the thing that did the work
@@ -2438,7 +2438,7 @@ at the moment it did it. Found 2026-10-07 by an audit of the standard-profile fl
 by a slice that is `planned` or `implemented`; its own marks it sets itself, at its first stage. The
 one-setter-per-mark rule is `check-chart`'s already (5.4); clearance is a function in
 `project/chart.py` — `cleared(chart, deck_logs, slice_id) -> bool | str`, where the string is why not —
-that the captain (7.2) and `/drive` both call. State comes from the logs (5.13) and trunk, never from
+that the captain (7.2) and `/sail` both call. State comes from the logs (5.13) and trunk, never from
 `model.yaml`'s `status` field: a mark is set when a `mark-set` line for it is in some deck log, and a slice
 is planned when its `claimed` line is. Until 5.13 lands, the function reads a list of lines handed to it,
 which is also how it is tested. The split writes typed attributes and a minimal `examples.md` per slice,
@@ -2451,18 +2451,18 @@ second check where there is a model. A slice touching a path another fairway own
 fairways named. Test: two fairways in a chart, a diff touching the other's path, one line.
 
 **5.3 — Fairways.** Mostly brought: the `slipwai-workstreams` checkout holds the first version of the
-`## Fairways` table in the split, `/drive fairway=<name>`, and boards grouped by lane. It is renamed as it
+`## Fairways` table in the split, `/sail fairway=<name>`, and boards grouped by lane. It is renamed as it
 lands — lane and workstream to fairway throughout — and the split's table is derived from `chart.yaml`'s
 `fairways` block rather than typed. Done when two fairways on one machine merge independently, which is
 the first thing the plan ever promised.
 
 **5.7 — Two gates in generated projects.** The keel has had `make unit` since slice 1.2. A generated
 project gets the same: `project/makefile.py` writes `unit` as the fast subset — the language's unit tests
-only, no integration, no mutation, no image — and `drive.md`'s implement stage runs `make unit`, lint and
+only, no integration, no mutation, no image — and `sail.md`'s implement stage runs `make unit`, lint and
 typecheck per increment and nothing else. `make verify` runs once, at the merge stage, on the rebased
 branch. The language packages declare which of their targets are fast: a new optional member on the
 protocol, `FAST_TARGETS`, defaulting to the test target alone, so a package can say its integration suite
-is quick if it is. Test: the toy's generated `Makefile` has `unit`, and `drive.md` never names `verify`
+is quick if it is. Test: the toy's generated `Makefile` has `unit`, and `sail.md` never names `verify`
 before the merge stage.
 
 **5.7b — Keeping a generated project's `make unit` fast.** 5.7 gave a project the target. Nothing says
@@ -2532,7 +2532,7 @@ Deck log kinds: `claimed`, `mark-set`, `demo`, `accepted`, `merged`, `decision`,
 fields, declared once in `src/slipwai/logs.py` (foundation tier: it imports nothing) as dataclasses with
 a `line()` and a `read(line)` that refuses a newer `v` naming the upgrade. Paths:
 `.slipwai/logs/<feature>/<fairway>.jsonl` and `.slipwai/logs/harbour.jsonl`, both already in
-`.gitignore`. `/drive` writes to its fairway's deck log at every stage boundary from this slice on, so the
+`.gitignore`. `/sail` writes to its fairway's deck log at every stage boundary from this slice on, so the
 format is proven by use before anything depends on it. The sync is `git push origin
 refs/slipwai/logs/<fairway>:refs/slipwai/logs/<fairway>` of a blob holding the file, and the matching
 fetch; a small `scripts/agents/logs.py` in the toolkit does both. Tests: every kind round-trips; a line
@@ -2612,7 +2612,7 @@ the state, which is version 1's setting prevented from coming back.
 **5.12a/b — The four release modes.** `project.json` gains `state: slipway | sea-trials | in-service` and
 `shape: skiff | liner`, asked at `generate` and changed by `slipwai converge --state`/`--shape`. The
 release mode follows from the state — `open` for slipway, `keystone` for sea trials, `flagged` or
-`promoted` for in service — and `drive.md`'s merge stage reads it to decide how dark a merge is. Flags
+`promoted` for in service — and `sail.md`'s merge stage reads it to decide how dark a merge is. Flags
 exist at the entry wiring only (`project/flag_route.py`, back), so a slipway project runs the whole loop
 with no flag reader generated. The flag hygiene gate, `check-flags` in the toolkit, refuses a flag older
 than N releases with no `struck` line. Test: generate at each state, assert what is and is not written.
@@ -2649,12 +2649,12 @@ skipped where Docker is absent and said rather than silently passed.
 
 **5.15's three rules live in the toolkit, not in `logs.py`.** This plan said "pure functions over log
 lines, in `src/slipwai/logs.py`", and that is the mistake 5.5 made and 5.5b undid: the things that ask —
-`/drive`, and later the captain — run inside a generated project with no slipwai to import. `logs.py` keeps
+`/sail`, and later the captain — run inside a generated project with no slipwai to import. `logs.py` keeps
 the *format*, which the keel needs for `slipwai fleet` and the bridge; the *policy* is
 `scripts/agents/inbox.py`, where the loop can reach it. Corrected 2026-10-07 while doing it.
 
 **5.15 — The decision ceiling, bounded waits, the inbox at every boundary.** Three small rules the
-captain will enforce and `/drive` learns first. The count of `decision` lines with no `read` from a
+captain will enforce and `/sail` learns first. The count of `decision` lines with no `read` from a
 person is capped (`harbour.json: decision_ceiling`, default 10); over it, the fairway parks. Every wait a
 stage can enter — for a mark, for a person, for a lock — has a bound in `harbour.json` and ends with a
 `parked` line when it is reached. The inbox (`told` lines addressed to this fairway) is read at every
@@ -2679,7 +2679,7 @@ the private channel, 6.4 the four verbs, 6.5 signing, 6.6 the public channel. 6.
 verbs are how a signed release is cut.
 
 **It lands in two.** 6.1a is the hook points, which are a contract the keel owns and which 5.2 already
-names in `drive.md` while nothing defined them. 6.1b is the package shape around them and the three
+names in `sail.md` while nothing defined them. 6.1b is the package shape around them and the three
 extensions moved out, which needs repositories under `ROBCOATVG` and is the owner's push. Split 2026-10-07.
 
 **6.1a's one rule worth repeating.** A point an extension could *add* would be a promise nobody made, so
@@ -2711,7 +2711,7 @@ extension attaches to a point, it does not invent one.
 | `init` | `./init --extension <key>`, once per election | the project root | `init.py` |
 | `project` | every re-projection: `make agents`, `migrate`, `./init --integration` | the project root, the harnesses installed | `project_guidance()` |
 | `check` | `make verify`, as one more gate | the project root | `scripts/check-<key>.py` |
-| `before-stage`, `after-stage` | around each rung of the ladder, under `/drive` and the captain alike | stage, slice, fairway, berth | nothing — `codegraph` reached "sync after each delegate" through Claude Code's own hooks, so it worked on one harness |
+| `before-stage`, `after-stage` | around each rung of the ladder, under `/sail` and the captain alike | stage, slice, fairway, berth | nothing — `codegraph` reached "sync after each delegate" through Claude Code's own hooks, so it worked on one harness |
 | `boundary` | every captain boundary, after the inbox is read | slice, fairway, the lines since the last boundary | nothing |
 | `before-merge` | on the rebased branch, before the full gate runs | slice, fairway, the diff | nothing |
 
@@ -2902,14 +2902,14 @@ log, using `slipwai berth add`); push the harbour log; sleep for the telegraph's
 credentials: a captain asks for a push, a merge, a deploy, a flag change or a publish by writing a
 `request` line, and the harbourmaster checks it against the never-list (destroy data or history, release
 what nobody asked for, spend money, expose a secret, weaken security, discard a person's commits, change a
-gate to make it pass), does it or refuses with the reason, and writes the outcome. Under `/drive` it runs
+gate to make it pass), does it or refuses with the reason, and writes the outcome. Under `/sail` it runs
 in the person's session with their credentials; under `/cruise` as its own process. Test it with two
 fake deck logs and assert what reaches the harbour log, and with a request on the never-list and assert
 the refusal.
 
 **7.2 — The captain.** `assets/toolkit/scripts/agents/captain.py`. The outer loop for one fairway. Each
 turn: fetch trunk and both logs; derive the fairway's state from `claimed`/`merged` lines plus trunk;
-pick the next slice in split order that `cleared()` (5.5) allows; append `claimed`; dispatch `/drive`
+pick the next slice in split order that `cleared()` (5.5) allows; append `claimed`; dispatch `/sail`
 for that slice in the berth with the stage budgets from `harbour.json`; at every boundary — which the
 captain knows from the deck log lines the iteration writes — read the inbox and enforce the receipt
 (5.15); write `heartbeat` on an interval; if a stage exceeds its wall budget with no new line, end the
@@ -2920,14 +2920,14 @@ last-line protocol, the benchmark bracket, the control-file guard. The captain f
 points (6.1) — `before-stage` and `after-stage` around each rung, `boundary` after each inbox read,
 `before-merge` on the rebased branch — through `run_skill.py`, and depends on none of them; a hook that
 exits 2 produces a `hook` line and the stage still completes. Test: a fairway with two slices and a
-fake `/drive` that writes the expected lines runs to `merged` twice; a fake that writes nothing is parked
+fake `/sail` that writes the expected lines runs to `merged` twice; a fake that writes nothing is parked
 at the bound.
 
 **7.3 — The telegraph.** `harbour.json` at the harbour root: `position` (one of `full-ahead`,
 `half-ahead`, `slow-ahead`, `dead-slow`, `stop`), and the numbers each position sets as a group —
 `boilers` (berths lit), `fanout` (delegates per captain), `bunker_per_slice`, `bunker_per_day`, the
 stage budgets, the adversary bar, the decision ceiling, the wait bounds — plus `delegate` and `cycle`
-mirrored from `.specify/drive.json`. `slipwai telegraph <position>` writes the group; `slipwai telegraph
+mirrored from `.specify/sail.json`. `slipwai telegraph <position>` writes the group; `slipwai telegraph
 --set boilers=2 fanout=1` changes one, and the fleet board then shows `half-ahead, adjusted`; ringing a
 position again resets every number. `/model-delegation-settings` edits the model role per stage the same
 checked way. The harbourmaster watches the file and writes a `telegraph` line when it changes; captains
@@ -3238,7 +3238,7 @@ not the number. A captain holds no credential, so a slice branch lives only on t
 a lapsed claim leaves the work not merely unclaimed but *unreachable*, and whoever takes the stream starts
 from nothing. So **the harbourmaster pushes each slice branch every pass, as a WIP ref**, the way it
 already pushes the logs. When a lease lapses the taking captain fetches that branch into its own berth and
-re-dispatches `/drive`, which enters at the first incomplete stage because it reads artefacts from disk
+re-dispatches `/sail`, which enters at the first incomplete stage because it reads artefacts from disk
 rather than conversation memory. The work survives the machine, which is the whole point.
 
 *The lease is derived from `stage_bound`, not chosen.* A captain that writes nothing for `stage_bound` ends
@@ -3305,18 +3305,18 @@ blocker underneath it is larger.
 ### The loop does not close. Four links, each named in this plan as done.
 
 **1. A captain calls a slice done on a process that did nothing.** Run in the generated project with the
-default dispatch, `/drive` printed a help message, exited 0, and the captain wrote `claimed`, then
+default dispatch, `/sail` printed a help message, exited 0, and the captain wrote `claimed`, then
 `request: merge`, and said *ORD-01 is through its gate*. No `mark-set`, no `demo`. `captain.py`'s own
 docstring is *a stage that wrote no line made no progress*, and it applies that rule only to the wall
 budget — nothing written for N minutes — never to the turn as a whole.
 
-**2. The default dispatch is the wrong thing.** It falls back to `scripts/agents/drive.py`, which is the
-*settings reader* for `/drive`. The real `/drive` is `commands/drive.md`, a command file a harness runs
+**2. The default dispatch is the wrong thing.** It falls back to `scripts/agents/sail.py`, which is the
+*settings reader* for `/sail`. The real `/sail` is `commands/sail.md`, a command file a harness runs
 headlessly. `registry.json` carries each harness's `headless.command` for exactly this and nothing reads
 it — `cruise.py` and `project.py` do, `captain.py` does not. **Sliced 2026-10-08 as 7.7c.** Since 7.8 this
 no longer reports a slice that was never built; the captain parks on the `mark-set` nobody wrote. But a
 captain that cannot dispatch the ladder on any harness by default is a loop that only runs through
-`SLIPWAI_DRIVE`, which is how the suite and `make cruise` point at one.
+`SLIPWAI_SAIL`, which is how the suite and `make cruise` point at one.
 
 **3. Nothing performs a merge.** The harbourmaster writes `granted`, and `granted` is read by no code
 anywhere; no `merged` line is written by anything. Section 7.1 says it "does it or refuses with the
@@ -3338,7 +3338,7 @@ worth a row.**
   - *A slice that sets no mark needs a `demo` and nothing else.* One rule, no special case: every mark in
     the chart's `sets`, which is vacuous when that is empty, plus a `demo`. A no-mark slice's whole gate is
     one line, and that line carries a `verdict`, so writing it means the demo rung ran. What is being
-    defended against is the observed failure — `/drive` printed a help message, exited 0 and wrote nothing
+    defended against is the observed failure — `/sail` printed a help message, exited 0 and wrote nothing
     — and one required line catches it.
   - *The lines must be written during this turn.* `work()` already takes `started = len(entries(...))`
     before it dispatches, so the index is there for nothing. Without it a retry of a slice passes on the
@@ -3356,11 +3356,11 @@ worth a row.**
     list is an answer; an absent key is refused, naming the slice.
 
   *Answered while building it, 2026-10-08:* **the retry bound is a new telegraph number, `attempts`, and not
-  `cycle`.** The design above named `cycle` three times, and `cycle` is not a count — it is `/drive`'s TDD
-  unit, `rule` or `example`, mirrored from `.specify/drive.json`. The telegraph's own table described it as
+  `cycle`.** The design above named `cycle` three times, and `cycle` is not a count — it is `/sail`'s TDD
+  unit, `rule` or `example`, mirrored from `.specify/sail.json`. The telegraph's own table described it as
   "how many iterations one slice may take" and parsed it as an integer, so `slipwai telegraph --set
   cycle=rule` and `--set delegate=story` — the only values either takes — were both refused and `--set
-  cycle=3` was accepted. Both are fixed, their value sets are held against `drive.py`'s, and `attempts`
+  cycle=3` was accepted. Both are fixed, their value sets are held against `sail.py`'s, and `attempts`
   joins the telegraph's own numbers: 3 at `full-ahead` down to 0 at `stop`, because a run somebody has
   slowed is one where less is retried on its own.
 
@@ -3373,7 +3373,7 @@ worth a row.**
   reason and the captain parks. **The four open questions were answered 2026-10-08, and a fifth was found
   in the answering:**
   - *A rebase conflict is aborted and refused, naming the paths.* `git rebase --abort`, so nothing is left
-    half-done, then `refused` listing what conflicts. The captain re-dispatches `/drive` in its own berth to
+    half-done, then `refused` listing what conflicts. The captain re-dispatches `/sail` in its own berth to
     rebase and resolve, bounded by `attempts`, and asks again — and the harbourmaster rebases afresh, because
     trunk may have moved again. Resolving a conflict is work on code, which belongs where the context is;
     the harbourmaster stays credentials-and-gate only, which matters because it is the one component with
@@ -3403,7 +3403,7 @@ worth a row.**
     Before granting any merge, the harbourmaster reads trunk's most recent completed CI run. Green, it
     proceeds. Red, it refuses and writes a harbour `park` naming the commit and the failing job, and no
     fairway is granted a merge until trunk is green; the queue drains the moment it is. The forge
-    unreachable reads *could not verify*, never *green* — the rule `/drive` already uses for a fetch it
+    unreachable reads *could not verify*, never *green* — the rule `/sail` already uses for a fetch it
     could not run.
 
     **The fix goes to the captain that broke it, not to a person.** The harbourmaster wrote the `merged`
@@ -3439,7 +3439,7 @@ worth a row.**
 
 - ~~**The loop has no end-to-end test.**~~ **Closed 2026-10-07 (7.4d).** `tests/test_loop.py` generates a
   project, writes a two-stream model into it, renders the chart, runs its gate, drives a captain with a
-  stand-in for `/drive`, carries the lines with the harbourmaster and reads the board back. It holds the
+  stand-in for `/sail`, carries the lines with the harbourmaster and reads the board back. It holds the
   claim the method rests on — a sibling is cleared by a mark being *set*, with nothing merged — which
   nothing else in the suite would notice the loss of. Writing it found a fifth fault: the harbourmaster's
   cursor outlived its log, so a reset or a fresh clone had it carry nothing from that stream for ever
@@ -3448,17 +3448,17 @@ worth a row.**
   person does when a migration goes wrong, and the first user will migrate something real.
 - **A fairway is the context name, not the slice prefix.** `captain ORD` answers "the chart gives ORD no
   slices"; it is `captain ordering`. Nothing says so anywhere.
-- **`held_by` is routing with nothing that sets it.** The split's table has the column, `/drive` reads it to
+- **`held_by` is routing with nothing that sets it.** The split's table has the column, `/sail` reads it to
   leave a fairway alone, and the board shows those slices as held — but no command writes it, and
   `docs/guide/a-second-person.md` can only tell a second person to pass `fairway=` every time. Either a verb
   sets it or the column should go; a field only a hand edit reaches is the kind of state this method is
-  built around not keeping. **Raised 2026-10-08 while making `/drive` bare the documented default.**
+  built around not keeping. **Raised 2026-10-08 while making `/sail` bare the documented default.**
 
   *Asked the same day whether `/cruise` needs it, which would settle the question. It does not, and
   checking turned the question round.* Nothing in the loop reads `held_by`: `fleet.py`, `captain.py` and
   `cruise.py` never name it, and `fleet.py` takes its fairways from the chart — every fairway the chart has
   gets a captain, bounded by `boilers`. The field is read in one place only, by a session following
-  `commands/drive.md`, out of a markdown table.
+  `commands/sail.md`, out of a markdown table.
 
   So there are two answers to *who holds this fairway* and phase 11 is bringing a third: a name in the
   split's table, a running captain with a pid file, and `refs/slipwai/claims/<fairway>` (11.1).

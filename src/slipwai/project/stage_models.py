@@ -1,5 +1,5 @@
-"""`.specify/models.json`: which model runs each stage of `/drive`'s ladder, by role — and the section of
-`commands/drive.md` that applies it.
+"""`.specify/models.json`: which model runs each stage of `/sail`'s ladder, by role — and the section of
+`commands/sail.md` that applies it.
 
 Every stage ran on whatever model the harness happened to be set to, at the same price for gauging whether a
 slice converged as for turning `examples.md` into tests. The table puts the choice in the project,
@@ -10,7 +10,7 @@ provider-specific and go stale; they are mapped under `roles`, per harness, in t
 owner edits. The split is a hypothesis until benchmarking measures it, which is why every stage says out
 loud which model ran it.
 
-`host` is a value, not an absence: the model running `/drive` itself, with no delegation. `strong` and
+`host` is a value, not an absence: the model running `/sail` itself, with no delegation. `strong` and
 `review` both map to it, since a strong host handing its judgement away is as often a downgrade as not.
 `fast` is seeded only where the identifier is verified — Claude Code's Agent tool takes `sonnet` as an alias
 — and is `null` on every other harness that can switch, which `scripts/agents/models.py` reports as "no
@@ -31,15 +31,15 @@ REGISTRY = TOOLKIT_ROOT / "scripts/agents/registry.json"
 NONE, MANIFEST, REPORT, TASKS = "none", "manifest", "report", "tasks"
 READ_ONLY, TASK_COMMAND, ANY = "read-only", "tasks-command", "any"
 # The prefix every projected agent type carries, so a project's own agents are never shadowed by the keel's.
-AGENT = "drive-"
-# A type that takes no stage's model. `/drive`'s slice delegate runs a whole slice, and *Who runs each stage*
+AGENT = "sail-"
+# A type that takes no stage's model. `/sail`'s slice delegate runs a whole slice, and *Who runs each stage*
 # chooses stage by stage inside it, so resolving one here would pick a model for fourteen stages at once.
 NO_STAGE = "none"
 
 
 @dataclass(frozen=True)
 class Stage:
-    """One rung of `/drive`'s ladder: the role that runs it and, where it is delegated, what that delegate may do.
+    """One rung of `/sail`'s ladder: the role that runs it and, where it is delegated, what that delegate may do.
 
     `writes` and `commands` are declared for exactly the stages the ladder sends to a fresh context, which is
     what makes a stage delegable: tasks from a complete plan, implementation from a complete task, converge,
@@ -52,7 +52,7 @@ class Stage:
     role: str
     writes: str | None = None
     commands: str | None = None
-    # The heading the rung carries in `commands/drive.md`, so the page and this table cannot drift apart.
+    # The heading the rung carries in `commands/sail.md`, so the page and this table cannot drift apart.
     # Two stages may share one: a plan and the tasks cut from it are one rung and two models. A stage that
     # is not a rung of the ladder carries none, and `rung` says which it is.
     title: str = ""
@@ -162,11 +162,11 @@ def switchable_harnesses() -> list[dict]:
 def stage_models() -> str:
     table = {
         "_comment": (
-            "Which model runs each stage of /drive's ladder, by role. `stages` is keyed by the command each "
+            "Which model runs each stage of /sail's ladder, by role. `stages` is keyed by the command each "
             "stage runs, with a `default` row for the rest; `roles` maps each role to an identifier per harness "
-            "— `host` is the model running /drive itself, null is no identifier mapped yet. Edit the roles for "
+            "— `host` is the model running /sail itself, null is no identifier mapped yet. Edit the roles for "
             "your harness, by hand or with `python3 scripts/agents/models.py --set claude.fast=haiku`, at any time: "
-            "/drive reads this before every stage. `make models` shows what results, `make check-agents` checks the "
+            "/sail reads this before every stage. `make models` shows what results, `make check-agents` checks the "
             "shape. A harness with no row here cannot choose a model for a sub-task (scripts/agents/registry.json, "
             "`subagentModel`) and runs every stage on the host model. docs/agent-harnesses.md says more."
         ),

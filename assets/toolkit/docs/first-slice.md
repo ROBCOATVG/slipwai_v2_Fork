@@ -46,7 +46,7 @@ at the second slice, not the first**: the installed Spec Kit plan and tasks comm
 `specs/<feature>/plan.md`, so that path has to describe the slice in flight — but a *file* there, overwritten
 by the next slice, destroys the only record of why the last slice looks the way it does, including its
 Complexity / Deviation list and whatever its stubs turned out to be. So the path is a link into the slice's
-own directory, made by `/drive` before the plan command runs, and two slices planned at once never meet
+own directory, made by `/sail` before the plan command runs, and two slices planned at once never meet
 there at all.
 
 | Artifact | Lifetime | Where |
@@ -62,7 +62,7 @@ So the canonical paths always point at the slice being planned or built, and `sl
 whole record from the day it is mapped.
 
 **Finishing a slice marks it done rather than moving it**: `status: implemented` in the model on the event
-profile, a row in `slices/README.md`'s register otherwise — the board's ✅ *Works now* and `/drive`'s ready
+profile, a row in `slices/README.md`'s register otherwise — the board's ✅ *Works now* and `/sail`'s ready
 set both read that mark, and a slice with a `plan.md` under `slices/<id>/` and no mark is in flight. The
 register carrying this table is worth the ten lines on either profile: the next slice should not have to
 re-derive the convention. A regular file still at a canonical path — a harness that replaced the link — is
@@ -76,7 +76,7 @@ row — plus an adversarial pass first, when this slice changed attack surface o
 decision is never a judgement made twice. The agent then reads the **ready** set from `story-split.md`
 (every slice not done whose `depends_on` are all done) and continues automatically: every unclaimed ready
 slice whose contract is settled runs concurrently, one delegate per slice on a `slice/<id>` branch in its
-own worktree, merged back in split order — `commands/drive.md`, *Running ready slices concurrently*; a
+own worktree, merged back in split order — `commands/sail.md`, *Running ready slices concurrently*; a
 harness that cannot delegate takes the earliest in split order and names the rest. Choosing among an
 already-computed ready set is not a new product decision.
 

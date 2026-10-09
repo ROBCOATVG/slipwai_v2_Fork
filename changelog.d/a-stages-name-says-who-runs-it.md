@@ -1,6 +1,6 @@
 MINOR
 
-**A stage's name now says who runs it, and that is how you can tell it has a delegate at all.** `/drive`'s
+**A stage's name now says who runs it, and that is how you can tell it has a delegate at all.** `/sail`'s
 ladder has twenty-one stages and ten of them are sent to a fresh context with a scope the harness enforces;
 the other eleven stay with you. Nothing in the name said which was which. `writes` and `commands` said it,
 two columns further along, in a table nobody reads at three in the morning — and the only part of it a
@@ -22,10 +22,10 @@ that stays on the host keeps the work's own name:
 | `hand` | `demo-hand` | runs the demo as the actor |
 | `bosun` | `unblock-bosun` | gets a blocked run moving |
 
-The types in `agents/` take the same names (`drive-implement-shipwright`), and the whole-slice delegate is
-`drive-slice-watch`. The purpose leads rather than the crew member, for two reasons: a delegate reads its own
+The types in `agents/` take the same names (`sail-implement-shipwright`), and the whole-slice delegate is
+`sail-slice-watch`. The purpose leads rather than the crew member, for two reasons: a delegate reads its own
 job in the first word of its name, and the name a stage had before is still the start of the name it has now
-— so `/drive`'s rungs still match the words the method uses for them.
+— so `/sail`'s rungs still match the words the method uses for them.
 
 Rung titles are untouched. **Implementation** is still **Implementation**; a title names the work and the key
 now names who does it. The commands are untouched too: `/gaps`, `/adversary` and `/mutation` are what you

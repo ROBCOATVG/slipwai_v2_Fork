@@ -1,4 +1,4 @@
-"""The stop table: every stop `/drive` makes, what `/cruise` does there instead, and where the answer is recorded.
+"""The stop table: every stop `/sail` makes, what `/cruise` does there instead, and where the answer is recorded.
 
 Split from `cruise.py` because that module is at its budget, and because the table is the one part of the
 command that varies with what the project is — the release rows only under a production target, the gaps
@@ -17,7 +17,7 @@ REPORT = "specs/<feature>/cruise-report.md"
 
 
 def stop_table(event: bool, target: str, adoption: Adoption | None) -> str:
-    """Every stop `/drive` makes, what `/cruise` does there instead, and where the answer is recorded."""
+    """Every stop `/sail` makes, what `/cruise` does there instead, and where the answer is recorded."""
     criteria = "`examples.md`" if event else "the criteria in `spec.md`"
     rows = [
         ("The checkout is behind trunk, or the fetch failed",
@@ -48,7 +48,7 @@ def stop_table(event: bool, target: str, adoption: Adoption | None) -> str:
          "Answer it, un-block the slice, re-dispatch with the entry as a pointer, never as a conclusion",
          "`plan.md`, a decision entry"),
         ("Converge appended Phase 4 tasks; the after-converge `/gaps` says stop",
-         "Already bounded by the ladder: continue to the demo as `commands/drive.md` says", "—"),
+         "Already bounded by the ladder: continue to the demo as `commands/sail.md` says", "—"),
         ("The demo stop",
          f"Delegate to `{HAND}` with exactly what the stop hands a person, plus the acceptance script; take its "
          "verdict as the actor's and re-enter the ladder where demo feedback re-enters. Acceptance says "
@@ -87,4 +87,4 @@ def stop_table(event: bool, target: str, adoption: Adoption | None) -> str:
         ]
     body = "\n".join(f"| {index} | {stop} | {does} | {recorded} |" for index, (stop, does, recorded)
                      in enumerate(rows, start=1))
-    return f"| # | Where `/drive` stops | What `/cruise` does there | Recorded in |\n|---|---|---|---|\n{body}"
+    return f"| # | Where `/sail` stops | What `/cruise` does there | Recorded in |\n|---|---|---|---|\n{body}"

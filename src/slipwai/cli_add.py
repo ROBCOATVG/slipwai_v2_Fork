@@ -105,10 +105,10 @@ def add_service_main(argv: list[str]) -> None:
             "this backend offers it, else this backend's own default)",
         )
     # What the new service is for. Not a flag the scaffold reads — a flag the delivery loop reads: a second
-    # service whose purpose nobody recorded is a directory `/drive` cannot place a slice in.
+    # service whose purpose nobody recorded is a directory `/sail` cannot place a slice in.
     parser.add_argument(
         "--purpose", default=None, metavar="TEXT",
-        help="what this service owns, in a sentence or two (recorded in project.json; /drive places slices "
+        help="what this service owns, in a sentence or two (recorded in project.json; /sail places slices "
         "against it)",
     )
     parser.add_argument(
@@ -137,7 +137,7 @@ def describe_service_main(argv: list[str]) -> None:
 
     `generate` and `add-service` take `--purpose` and `--context` at scaffold time, but the contexts are found
     later — in the model's lanes, in the specification's vocabulary — and a purpose nobody gave at the start is
-    the first question `/drive` asks. This is where the answer goes: the manifest, and every page that prints
+    the first question `/sail` asks. This is where the answer goes: the manifest, and every page that prints
     it, so the file an agent reads says what was recorded rather than "no purpose recorded yet".
     """
     parser = argparse.ArgumentParser(

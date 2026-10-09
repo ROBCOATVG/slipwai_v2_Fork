@@ -1,4 +1,4 @@
-"""The section of `commands/drive.md` that applies the model table, and the command that edits it.
+"""The section of `commands/sail.md` that applies the model table, and the command that edits it.
 
 Split from `stage_models.py`, which holds the table itself: that module is a declaration — one row per
 stage, its role and what a delegate of it may touch — and this one is the English a project reads about it.
@@ -21,7 +21,7 @@ from .stage_models import (
     TASKS,
 )
 
-# What each type may write and run, said in the drive section the way `agents/` declares it, so the ladder and
+# What each type may write and run, said in the sail section the way `agents/` declares it, so the ladder and
 # the files cannot disagree about which delegate is allowed what.
 SCOPE = {
     NONE: "nothing",
@@ -35,7 +35,7 @@ SCOPE = {
 
 
 def delegable_types() -> str:
-    """The table of types in the drive section: one row per delegable stage, from the declaration itself."""
+    """The table of types in the sail section: one row per delegable stage, from the declaration itself."""
     rows = "\n".join(
         f"| `{stage.key}` | `{stage.agent}` | {SCOPE[writes]} | {SCOPE[commands]} |"
         for stage in STAGES
@@ -48,7 +48,7 @@ def delegable_types() -> str:
 
 
 def who_runs_each_stage(layout: Layout = AT_ROOT) -> str:
-    """The `/drive` section that applies the table: read the line, delegate to the type, and say which ran."""
+    """The `/sail` section that applies the table: read the line, delegate to the type, and say which ran."""
     types = delegable_types()
     return f"""## Who runs each stage
 
@@ -71,12 +71,12 @@ Every stage in that table is named for its purpose and then for the crew member 
 stage that is not in it is named for the work alone — so the key says whether a stage has a delegate at all.
 The gaps rung runs twice and only the pass after implementation is delegated: the pre-planning one may have
 to ask a product question, which is the whole reason a stage stays here. Any other conversational stage stays
-here too, and has no type for that reason. There is one more type, `drive-slice-watch`, for a whole slice
+here too, and has no type for that reason. There is one more type, `sail-slice-watch`, for a whole slice
 rather than a stage: *Running ready slices concurrently* is where it is delegated, and it reads this section
 from inside its own worktree to choose a model for each stage it then runs. The last three rows,
 `decide-skipper`, `demo-hand` and `unblock-bosun`, are `/cruise`'s: the product owner, the actor and the one
 who gets a blocked run moving, delegated only when that command is running this ladder on its own
-(`commands/cruise.md`). Under `/drive` alone they run nothing; a person is the owner and the actor.
+(`commands/cruise.md`). Under `/sail` alone they run nothing; a person is the owner and the actor.
 
 Delegate to the type by name. The type is the standing brief, so the call adds only the task, its contract and
 the file manifest — it never describes the role again or restates the scope, and it does not give the delegate
@@ -90,8 +90,8 @@ and the conservative reading is the expensive one. The page each type is written
 delegation is held to: reference it, restate none of it (`AGENTS.md`, *Delegated agents*).
 
 **A delegate does not inherit this session's code-index connection, and needs none.** Where `AGENTS.md`
-carries a code index's extension block, three of the types above — `drive-converge-navigator`, `drive-gaps-lookout` and
-`drive-adversary-privateer` — are exploration-heavy, and *what does this code not yet do* is a blast-radius question the
+carries a code index's extension block, three of the types above — `sail-converge-navigator`, `sail-gaps-lookout` and
+`sail-adversary-privateer` — are exploration-heavy, and *what does this code not yet do* is a blast-radius question the
 index answers. Delegate them as the table says: a delegate reaches the index by the routes that block names,
 which are the shell's and the harness's rather than this session's, so its brief's first route is one it has.
 It names the route that answered, and falls back to text search only when the index says there is none. Never
@@ -103,8 +103,8 @@ carries the one the table resolved; everywhere else set it explicitly through th
 names, and never accept that mechanism's implicit default. If the harness cannot start a fresh sub-agent on
 the selected model, run the stage here and say why. Then read its result from disk the way every stage is
 read. Either way the stage says, in one line, which type ran it, which model, whether it was delegated and
-whether its context was fresh (`drive-implement-shipwright · model: sonnet · delegated, fresh context` ·
-`drive-adversary-privateer · model: host · delegated, fresh context` · `model: host, current context — harness cannot
+whether its context was fresh (`sail-implement-shipwright · model: sonnet · delegated, fresh context` ·
+`sail-adversary-privateer · model: host · delegated, fresh context` · `model: host, current context — harness cannot
 delegate`). Those lines make type, model and context measurable; a stage that switched any of them silently
 cannot be compared with one that did not. Nothing about what a stage produces changes with who runs it — the
 artifacts, gates and stops are the same — and a sub-agent that meets a product decision hands the
@@ -119,11 +119,11 @@ marker is the tasks command's reading of production-code contention, and it unde
 marked one pair concurrent, said of the rest "none, by construction", and left two pairs that shared no file
 to run in sequence. The manifests are the artifact; read them, and let only an overlap with a running
 sibling's files, or what the section rules out, keep a task waiting. How many rules one delegate is handed
-— a task, a rule or a user story — and how many RED tests each cycle opens with are `.specify/drive.json`'s
+— a task, a rule or a user story — and how many RED tests each cycle opens with are `.specify/sail.json`'s
 two settings (*How implementation is delegated* below), said in the stage line and put on the record. What the
 section rules out stays sequential whatever the markers seem to allow — a RED-GREEN-REFACTOR increment starts
 from a green, committed suite, and two of them at once is the batched-tests anti-pattern with a `[P]` on it.
-The siblings are `drive-implement-shipwright` delegates, and that type is where the rule they cannot infer for
+The siblings are `sail-implement-shipwright` delegates, and that type is where the rule they cannot infer for
 themselves already lives: **no concurrent delegate writes `tasks.md`**. It is the one file every sibling would
 otherwise contend for, so each reports which task it finished and this session ticks the checkbox.
 
@@ -132,7 +132,7 @@ Verify their claims by spot-checking the recorded reproduction or RED evidence; 
 investigation in the host context. Do not re-investigate. A delegate that was stopped has filed nothing:
 everything in its stop notification is a lead, never a result, and a lead is re-run before it is written
 anywhere outside this session. An adversary pass is the same kind of batch:
-disjoint-manifest seams of one pass are concurrent `drive-adversary-privateer` siblings in one turn, and the host
+disjoint-manifest seams of one pass are concurrent `sail-adversary-privateer` siblings in one turn, and the host
 writes the log after the batch rather than re-attacking. It records the type and the explicit model that
 ran each seam in `specs/<feature>/adversary-log.md`, especially when seams use different models.
 
@@ -155,13 +155,13 @@ def model_delegation_settings_command(layout: Layout = AT_ROOT) -> str:
     """`/model-delegation-settings`: the table shown, or changed through the checked `--set` — never by editing a delegation."""
     keys = stage_keys()
     return f"""---
-description: Show or change which model runs each stage of /drive
+description: Show or change which model runs each stage of /sail
 argument-hint: [stage=role | harness.role=identifier ...]
 ---
 
 # Model delegation settings
 
-`.specify/models.json` says which model runs each stage of `/drive`'s ladder, by role — `strong` where a
+`.specify/models.json` says which model runs each stage of `/sail`'s ladder, by role — `strong` where a
 stage decides what to build or whether it was built, `fast` where the input is already fully specified on
 paper — and what each role maps to on the harness this project is initialised for. This command is how the
 table is read and how it changes: as and when, in one step, checked, and never by quietly picking a different
@@ -182,11 +182,11 @@ why. No harness installed is a line of its own — `./init --integration <agent>
 Each argument is one of two edits, and the first thing to decide is which one the person means:
 
 - `stage=role` moves a stage between roles — `implement-shipwright=strong` puts implementation back on the
-  model running `/drive`. The keys are the stages: {keys}, and `default` for any stage without a row of its
+  model running `/sail`. The keys are the stages: {keys}, and `default` for any stage without a row of its
   own. A stage whose key ends in a crew member's name is one with a delegate; the rest run on the host. A
   stage's name before the rename — `implement` for `implement-shipwright` — is still accepted and resolved.
 - `harness.role=identifier` changes what a role runs on — `claude.fast=haiku`, or `claude.skipper=opus` to
-  put a bigger model on `/cruise`'s product decisions than on driving. `host` is the model running `/drive`;
+  put a bigger model on `/cruise`'s product decisions than on driving. `host` is the model running `/sail`;
   `null` is no identifier mapped, which the line before each stage then says.
 
 Pass them through exactly as given:
@@ -195,7 +195,7 @@ Pass them through exactly as given:
 python3 scripts/agents/models.py --set $ARGUMENTS
 ```
 
-It rewrites the agent types as it goes: `agents/drive-<stage>.md` is projected into the installed harness
+It rewrites the agent types as it goes: `agents/sail-<stage>.md` is projected into the installed harness
 with the model this table resolves, so a change here that left them behind would take effect on one harness
 and not another, and `make check-agents` would report drift in a file nobody edited. The line saying so is
 part of the output; report it.
@@ -216,5 +216,5 @@ Where the harness's mechanism takes an alias the registry names (`identifiers` u
 that spelling; otherwise ask which identifier, since model names are provider-specific and go stale. Never map
 a role for a harness this project is not initialised for, and never for one the registry says cannot switch —
 the script refuses the second, and the first is a setting nothing reads. A change takes effect at the next
-stage `/drive` runs; nothing already running is interrupted. `{layout.make} models` prints the same table.
+stage `/sail` runs; nothing already running is interrupted. `{layout.make} models` prints the same table.
 """

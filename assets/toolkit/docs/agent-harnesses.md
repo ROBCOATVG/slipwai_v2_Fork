@@ -54,10 +54,10 @@ does not own. An `import` harness's file is created if absent, because nothing e
 
 ## The agent types
 
-`agents/` holds one named type per stage `/drive` sends to a fresh context —
-`drive-tasks-quartermaster`, `drive-implement-shipwright`, `drive-converge-navigator`,
-`drive-gaps-lookout`, `drive-review-mate`, `drive-adversary-privateer`, `drive-mutation-shipworm` — and
-one, `drive-slice-watch`, for a whole slice. Each declares, in words no harness owns, what its delegate may
+`agents/` holds one named type per stage `/sail` sends to a fresh context —
+`sail-tasks-quartermaster`, `sail-implement-shipwright`, `sail-converge-navigator`,
+`sail-gaps-lookout`, `sail-review-mate`, `sail-adversary-privateer`, `sail-mutation-shipworm` — and
+one, `sail-slice-watch`, for a whole slice. Each declares, in words no harness owns, what its delegate may
 write (`none`, `tasks`, `manifest`, `report`) and what it may run (`read-only`, `tasks-command`, `any`),
 and carries that stage's standing brief; the per-call brief then adds only the task, its contract and the
 file manifest. A stage type is named for its stage, so its model is that stage's row in
@@ -66,7 +66,7 @@ file manifest. A stage type is named for its stage, so its model is that stage's
 Every one of those names is its purpose and then the crew member who does the work — a lookout reports what
 it sees, a shipwright builds to the plan, a privateer attacks and never repairs — and a stage with no
 delegate is named for the work alone. So the key in `.specify/models.json` tells you which stages are sent
-away at all, which is the thing you most want to know while reading it. `drive-slice-watch`
+away at all, which is the thing you most want to know while reading it. `sail-slice-watch`
 declares no stage and takes no model: it runs one slice's whole ladder in a worktree of its own and reads the
 table stage by stage inside itself, so resolving one model for it would choose one for fourteen stages at
 once.
@@ -104,14 +104,14 @@ canonical source the same way it reads a drifted skill.
 
 The registry also says, under `subagentModel`, how each harness lets a sub-task run on a chosen model — read
 from the harness's own documentation on the date the row names — or `null` where nothing was verified.
-`.specify/models.json` puts a role on each stage of `/drive`'s ladder, keyed by the command the stage runs
+`.specify/models.json` puts a role on each stage of `/sail`'s ladder, keyed by the command the stage runs
 (`strong` for judgement, `fast` where the input is already fully specified on paper) and maps the roles to
-identifiers per harness; `host` is the model running `/drive` itself. `python3 scripts/agents/models.py <stage>`
-resolves both into the line `/drive` reads before a stage — the model to delegate to and how, or why the stage
+identifiers per harness; `host` is the model running `/sail` itself. `python3 scripts/agents/models.py <stage>`
+resolves both into the line `/sail` reads before a stage — the model to delegate to and how, or why the stage
 runs on the host model — and `make models` prints the whole table. A harness with a `null` row runs every stage
 on the host model, and the line says so. Edit the roles for your harness — only Claude Code's `fast` is seeded —
 and `make check-agents` checks the shape. Change it whenever you like: `/model-delegation-settings implement=strong claude.fast=haiku` (the
-command over `python3 scripts/agents/models.py --set`) writes a checked edit, `/drive` reads the table before every stage so the
+command over `python3 scripts/agents/models.py --set`) writes a checked edit, `/sail` reads the table before every stage so the
 change takes effect at the next one, and `slipwai migrate` merges a newer factory's table over yours rather than
 replacing it.
 
@@ -123,7 +123,7 @@ model explicitly through `subagentModel`; leaving it unset selects a harness def
 Under `usage`, the registry also says where each harness keeps the tokens a session spent — Claude Code's
 transcript under `~/.claude/projects/` and Codex's rollout under `~/.codex/sessions/`, each read from the harness
 itself on the date the row names, or `null` where nothing was verified. `scripts/agents/benchmark.py` reads it
-between the start and the end of every stage `/drive` runs and writes the result — with which model ran, how long
+between the start and the end of every stage `/sail` runs and writes the result — with which model ran, how long
 the stage took, and what the stage reported — into `specs/<feature>/slices/<id>/benchmark.json`, beside the
 slice's other artifacts; `/benchmark` draws `specs/<feature>/benchmark.md` from the records and `make benchmark`
 prints the same table. Where the harness attributes a sub-agent's lines to the type that ran it — Claude Code

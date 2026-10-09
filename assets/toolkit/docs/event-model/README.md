@@ -24,10 +24,14 @@ answers "what does this event already mean, and who reads it" *before* a new sli
 
 ## Where it fits in the flow
 
+`/sail` runs the stages below and enters at the first one whose artefact is missing, so none of them is a
+command to remember — this is what it is doing to the model as it climbs:
+
 ```
-Spec Kit constitution → specify → `/story-splitting` → plan → tasks → implement
-                              add slices          split them          stream identity     model tasks       flip to
-                              as proposed         → modelled          → planned                             implemented
+principles → specification → mock-ups → model → split → example map → plan and tasks → implement
+                        add slices       split them     the identity a    model tasks     flip to
+                        as proposed      → modelled     write locks                       implemented
+                                                        → planned
 ```
 
 `status` is the join. Each step tightens what the model must contain, and `make check-model` enforces the
@@ -259,12 +263,12 @@ is every arrow between the steps — see below.
 Optional on each slice. Lists sibling slice ids that must be **done** — `status: implemented` — before this
 one may start — genuine code or contract dependencies only. Needing another slice's events is *not* a
 `depends_on`: seed from synthetic fixtures (Principle V). `make check-model` refuses a `depends_on` set that
-is exactly the producers of this slice's `reads`, and refuses cycles. `/drive` uses the field (with the
+is exactly the producers of this slice's `reads`, and refuses cycles. `/sail` uses the field (with the
 split's `## Slice graph`) to compute which slices are **ready**, in one session or across several.
 
 Ready is necessary for running alongside a sibling, not sufficient: the slice must also be `planned`. Its
 events' `attributes`, its `stream` or `guard` and its `examples.md` are the contract a concurrent sibling
-builds against, and `modelled` is the word for a contract that may still move. `/drive` fans out over the
+builds against, and `modelled` is the word for a contract that may still move. `/sail` fans out over the
 ready slices that are `planned` and works a ready `modelled` one itself first.
 
 ## The two rungs, and what changes between them

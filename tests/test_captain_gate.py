@@ -17,7 +17,7 @@ from slipwai import logs
 class GateTest(Fixture):
     """What closes a slice: every mark the chart says it sets, and a demo, written during this turn.
 
-    This is the fault that started slice 7.8. In the first real run `/drive` printed a help message, exited
+    This is the fault that started slice 7.8. In the first real run `/sail` printed a help message, exited
     0, and the captain wrote `claimed`, then `request: merge`, and said the slice was through its gate —
     with nothing else in the log at all.
     """
@@ -27,20 +27,20 @@ class GateTest(Fixture):
         (self.root / "harbour.json").write_text(json.dumps({**held, "attempts": many}), encoding="utf-8")
 
     def test_a_drive_that_exits_cleanly_having_written_nothing_parks_and_asks_for_no_merge(self) -> None:
-        done = self.captain("ORD", self.drive("import sys\nsys.exit(0)\n"))
+        done = self.captain("ORD", self.sail("import sys\nsys.exit(0)\n"))
         self.assertEqual([e for e in self.read("ORD") if e.kind == "request"], [], done.stdout)
         parked = [str(e.fields["why"]) for e in self.read("ORD") if e.kind == "parked"]
         self.assertEqual(len(parked), 1)
         self.assertIn("Placed", parked[0])
 
     def test_a_demo_with_no_mark_set_parks_naming_the_mark_the_chart_promised(self) -> None:
-        done = self.captain("ORD", self.drive(fake_drive(marks=False)))
+        done = self.captain("ORD", self.sail(fake_drive(marks=False)))
         parked = [str(e.fields["why"]) for e in self.read("ORD") if e.kind == "parked"]
         self.assertIn("sets Placed", parked[0], done.stdout)
         self.assertIn("no `mark-set` for Placed", parked[0])
 
     def test_a_mark_set_with_no_demo_parks_saying_nobody_watched_it(self) -> None:
-        done = self.captain("ORD", self.drive(fake_drive(demo=False)))
+        done = self.captain("ORD", self.sail(fake_drive(demo=False)))
         parked = [str(e.fields["why"]) for e in self.read("ORD") if e.kind == "parked"]
         self.assertIn("no `demo` line", parked[0], done.stdout)
 
@@ -49,7 +49,7 @@ class GateTest(Fixture):
         self.deck("BIL", logs.entry("mark-set", fairway="BIL", slice="BIL-01", mark="Charged"),
                   logs.entry("claimed", fairway="BIL", slice="BIL-01"))
         self.grant("BIL-02")
-        done = self.captain("BIL", self.drive(WORKS))
+        done = self.captain("BIL", self.sail(WORKS))
         self.assertIn("BIL-02", done.stdout)
         self.assertIn("merged", done.stdout)
 
@@ -58,7 +58,7 @@ class GateTest(Fixture):
         outlives its log: a reader reporting a run that did not happen."""
         self.deck("ORD", logs.entry("mark-set", fairway="ORD", slice="ORD-01", mark="Placed"),
                   logs.entry("demo", fairway="ORD", slice="ORD-01", verdict="accepted"))
-        done = self.captain("ORD", self.drive("import sys\nsys.exit(0)\n"))
+        done = self.captain("ORD", self.sail("import sys\nsys.exit(0)\n"))
         self.assertEqual([e for e in self.read("ORD") if e.kind == "request"], [], done.stdout)
         self.assertEqual(len([e for e in self.read("ORD") if e.kind == "parked"]), 1)
 
@@ -72,14 +72,14 @@ tried.write_text("x")
 exec({fake_drive("behaviour")!r} if first else {fake_drive()!r})
 """
         self.grant("ORD-01")
-        done = self.captain("ORD", self.drive(once))
+        done = self.captain("ORD", self.sail(once))
         verdicts = [e.fields["verdict"] for e in self.read("ORD") if e.kind == "demo"]
         self.assertEqual(verdicts, ["behaviour", "accepted"], done.stdout)
         self.assertEqual(len([e for e in self.read("ORD") if e.kind == "request"]), 1)
 
     def test_a_demo_sent_back_past_the_bound_parks_naming_the_verdict_and_the_count(self) -> None:
         self.attempts(1)
-        done = self.captain("ORD", self.drive(fake_drive("implementation")))
+        done = self.captain("ORD", self.sail(fake_drive("implementation")))
         self.assertEqual(len([e for e in self.read("ORD") if e.kind == "demo"]), 2, done.stdout)
         parked = [str(e.fields["why"]) for e in self.read("ORD") if e.kind == "parked"]
         self.assertIn("implementation", parked[0])
@@ -87,7 +87,7 @@ exec({fake_drive("behaviour")!r} if first else {fake_drive()!r})
 
     def test_attempts_of_zero_is_one_run_and_no_retry(self) -> None:
         self.attempts(0)
-        self.captain("ORD", self.drive(fake_drive("behaviour")))
+        self.captain("ORD", self.sail(fake_drive("behaviour")))
         self.assertEqual(len([e for e in self.read("ORD") if e.kind == "demo"]), 1)
 
 
@@ -109,7 +109,7 @@ class FixTrunkTest(Fixture):
                   logs.entry("merged", fairway="ORD", slice="ORD-01", commit="a1b2c3d4"))
         self.order()
         self.grant("ORD-01")
-        done = self.captain("ORD", self.drive(WORKS))
+        done = self.captain("ORD", self.sail(WORKS))
         claimed = [e.fields["slice"] for e in self.read("ORD") if e.kind == "claimed"]
         self.assertEqual(claimed[-1], "ORD-01", done.stdout)
         self.assertIn("trunk is red", done.stdout)
@@ -117,7 +117,7 @@ class FixTrunkTest(Fixture):
     def test_an_order_another_fairway_was_sent_is_not_this_one_s(self) -> None:
         self.order(slice_id="BIL-01", fairway="BIL")
         self.grant("ORD-01")
-        done = self.captain("ORD", self.drive(WORKS))
+        done = self.captain("ORD", self.sail(WORKS))
         claimed = [e.fields["slice"] for e in self.read("ORD") if e.kind == "claimed"]
         self.assertEqual(claimed, ["ORD-01"], done.stdout)
         self.assertNotIn("trunk is red", done.stdout)
@@ -128,7 +128,7 @@ class FixTrunkTest(Fixture):
         self.order()
         self.deck("ORD", logs.entry("claimed", fairway="ORD", slice="ORD-01"),
                   logs.entry("merged", fairway="ORD", slice="ORD-01", commit="fixed001"))
-        done = self.captain("ORD", self.drive(WORKS))
+        done = self.captain("ORD", self.sail(WORKS))
         self.assertNotIn("trunk is red", done.stdout)
         # Back to split order, which here has nothing ready — `Placed` was never set, because the lines
         # above are seeded rather than driven. What matters is that it went looking rather than re-driving

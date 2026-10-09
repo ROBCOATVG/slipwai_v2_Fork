@@ -14,25 +14,25 @@ from .catch_up_command import catch_up_files
 from .cruise import cruise_command, cruise_settings_command
 from .cruise_seat import cruise_status_command, cruise_stop_command, cruise_tell_command, cruise_watch_command
 from .demo_stop import demo_stop
-from .drive_section import model_delegation_settings_command, who_runs_each_stage
-from .drive_settings import drive_settings_command, implementation_section
 from .flags import PUSH_CHECK
 from .harbour import budget_section
-from .ladder import drive_ladder, hook_points
+from .ladder import hook_points, sail_ladder
 from .mutation import mutation_command
 from .parallel_slices import concurrent_slices, done_marker, ready_set_selection
+from .sail_section import model_delegation_settings_command, who_runs_each_stage
+from .sail_settings import implementation_section, sail_settings_command
 from .whats_next import whats_next_command
 from .where_are_we import where_are_we_command
 from .write_model_prose import sourced_services, state_services
 
 
-def drive_command(
+def sail_command(
     event: bool, apps: list[App], target: str = "none", layout: Layout = AT_ROOT, adoption: Adoption | None = None,
 ) -> str:
     resolution = "the requested slice in `docs/event-model/model.yaml`" if event else "the requested feature or the active directory recorded in `.specify/feature.json`"
     web = web_apps(apps)
     baseline = ", ".join(f"`{app.path}`" for app in web)
-    ladder = drive_ladder(event, apps, target, layout, adoption)
+    ladder = sail_ladder(event, apps, target, layout, adoption)
     return f"""---
 description: Drive one slice through planning, implementation, and an actor-visible demo
 argument-hint: [slice-id-or-feature] [fairway=<name>]
@@ -52,10 +52,10 @@ arguments narrows that and nothing else:
 
 | Written | What ready means for this session |
 | --- | --- |
-| `/drive` | every fairway nobody holds, every ready slice of each |
-| `/drive fairway=<name>` | that fairway's ready slices; the rest are named as another fairway's and left |
-| `/drive <feature>` | that feature's ready slices, across whichever fairways they are in |
-| `/drive <slice-id>` | that slice, and nothing else |
+| `/sail` | every fairway nobody holds, every ready slice of each |
+| `/sail fairway=<name>` | that fairway's ready slices; the rest are named as another fairway's and left |
+| `/sail <feature>` | that feature's ready slices, across whichever fairways they are in |
+| `/sail <slice-id>` | that slice, and nothing else |
 
 A `fairway=` may be written with any of the others. Nothing here chooses a slice for you where several are
 ready: rule 6 says run them concurrently, and that holds in every form but the last.
@@ -72,7 +72,7 @@ names, and not a text search; grep is for words in documents.
 **The checkout goes stale the way conversation memory does, so check the branch before the artifacts.**
 Every signal the ladder reads — a slice's `status`, whether `examples.md` or `tasks.md` exists, the slice
 graph — is a property of this commit, and a branch behind trunk reads exactly like a project where the work
-was never done: a `/drive` fifty-seven commits behind wrote a second example map for a slice that had
+was never done: a `/sail` fifty-seven commits behind wrote a second example map for a slice that had
 shipped. So fetch and compare first — `git fetch`, then `git log --oneline HEAD..@{{u}}`, or against
 `origin/main` where the branch has no upstream. Behind by anything, stop and say so rather than deriving:
 the artifacts about to be read are not the project's current ones. The evidence line names the branch, its
@@ -246,7 +246,7 @@ than an open question.
 # three reaching back out to the keel. One list, so the documentation and the files cannot disagree.
 BASE_COMMANDS = ("drive", "mockups", "chart", "example-map", "careen", "where-are-we", "whats-next", "gaps", "adversary", "mutation",
                  "constitution-coverage",
-                 "model-delegation-settings", "drive-settings", "benchmark", "cruise", "cruise-settings",
+                 "model-delegation-settings", "sail-settings", "benchmark", "cruise", "cruise-settings",
                  "cruise-status", "cruise-stop", "cruise-tell", "cruise-watch", "add-service", "add-frontend",
                  "catch-up")
 # Copied whole from `assets/profiles/event-modelling/commands/`; listed because the documentation names them in order.
@@ -264,7 +264,7 @@ def command_files(
 ) -> dict[str, str]:
     """`commands/`: one file per command, adapted to this profile and the services' backends."""
     files = {
-        "commands/drive.md": drive_command(event, apps, target, layout, adoption),
+        "commands/sail.md": sail_command(event, apps, target, layout, adoption),
         "commands/careen.md": careen_command(layout),
         "commands/cruise.md": cruise_command(event, apps, target, layout, adoption),
         "commands/cruise-settings.md": cruise_settings_command(layout),
@@ -279,7 +279,7 @@ def command_files(
         "commands/mutation.md": mutation_command(backends_of(apps)),
         "commands/constitution-coverage.md": constitution_coverage_command(event, apps),
         "commands/model-delegation-settings.md": model_delegation_settings_command(layout),
-        "commands/drive-settings.md": drive_settings_command(layout),
+        "commands/sail-settings.md": sail_settings_command(layout),
         "commands/benchmark.md": benchmark_command(layout),
     }
     files.update(add_command_files(apps, target))

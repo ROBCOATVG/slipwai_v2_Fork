@@ -102,7 +102,7 @@ runs them. Never rewrite an earlier row; a behaviour that is no longer pinned ge
 
 ## Then
 
-The pinned behaviour is what the slice may now change. `/drive` continues with the plan, and the
+The pinned behaviour is what the slice may now change. `/sail` continues with the plan, and the
 characterisation tests are the ones that keep passing until the plan says which of them change, and why.
 """
 

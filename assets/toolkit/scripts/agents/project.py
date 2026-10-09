@@ -71,7 +71,7 @@ EXPECTED: set[Path] = set()
 DECLARATION = "capabilities:"
 # Harnesses whose projection directories are absent under `--check`: not drift, a clone `./init` has not run in.
 NOT_PROJECTED: list[str] = []
-# The canonical agent types: one per stage `/drive` sends to a fresh context, declaring in words no harness owns
+# The canonical agent types: one per stage `/sail` sends to a fresh context, declaring in words no harness owns
 # what its delegate may write (`none`, `tasks`, `manifest`, `report`) and what it may run (`read-only`,
 # `tasks-command`, `any`).
 # `registry.json`'s `agentFile` says how each harness spells those, and `null` there is a harness that cannot.
@@ -79,7 +79,7 @@ NO_WRITES = "none"
 TASK_WRITES = "tasks"
 READ_ONLY = "read-only"
 TASK_COMMAND = "tasks-command"
-# A type that declares no stage takes no stage's model: `drive-slice-watch` runs a whole slice and chooses a model
+# A type that declares no stage takes no stage's model: `sail-slice-watch` runs a whole slice and chooses a model
 # per stage inside itself, so resolving one here would pick a model for the lot.
 NO_STAGE = "none"
 # The MCP servers this repository's own extensions installed, spelled as the harnesses below name a server's
@@ -255,7 +255,7 @@ def parse_agent(path: Path) -> tuple[dict[str, str], str]:
 
 
 def agent_model(stage: str, harness: dict[str, object]) -> tuple[str | None, str]:
-    """The model this type's stage resolves to on this harness, and why — the same resolution `/drive` reads.
+    """The model this type's stage resolves to on this harness, and why — the same resolution `/sail` reads.
 
     The agent file is a *projection* of `.specify/models.json`, never a second place a model is written: five
     of the six harnesses that can give a sub-task its own model can only do it here, so if this file decided

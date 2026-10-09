@@ -1,6 +1,6 @@
 """The parts that write the model, the frontend and the ladder's own table of stages.
 
-`stage_models` is the one worth reading twice: it declares every rung of `/drive` and, per rung, the
+`stage_models` is the one worth reading twice: it declares every rung of `/sail` and, per rung, the
 role whose model runs it and what a delegate at that rung may write. It is how a project puts a bigger
 model on deciding than on typing, and how a read-only stage is kept read-only.
 

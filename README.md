@@ -54,7 +54,7 @@ that said `planned` for eight slices that had shipped.
 | **[Start here](docs/guide/start-here.md)** | Install it, answer its questions, watch the gate go green |
 | **[Your first feature](docs/guide/first-feature.md)** | A spec, a model, a chart, a slice, and a demo you accept |
 | **[A second person joins](docs/guide/a-second-person.md)** | Fairways, berths, and why neither of you is waiting |
-| **[Let it sail](docs/guide/let-it-sail.md)** | Captains, the telegraph, and what a person still decides |
+| **[Let it cruise](docs/guide/let-it-cruise.md)** | Captains, the telegraph, and what a person still decides |
 | **[Bring an existing codebase](docs/guide/adopt.md)** | The other door: survey, then wrap |
 
 Each one ends where the next begins. Stop when you have what you came for.

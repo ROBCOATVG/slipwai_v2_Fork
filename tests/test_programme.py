@@ -3,7 +3,7 @@
 What this gates is that the three kinds of thing worth tracking — quick wins, products out of support, the ladder's
 rungs and missing tooling — are one list read off the record, in that order; that the pacing follows the decided
 strategy and says *decide it first* while nothing is; that a tool the ecosystem has is proposed and never added; and
-that the page and the drive command carry it.
+that the page and the sail command carry it.
 """
 from __future__ import annotations
 

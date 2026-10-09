@@ -125,9 +125,9 @@ class FileTest(unittest.TestCase):
 
     def test_a_width_that_belongs_to_drive_is_written_where_drive_reads_it(self) -> None:
         (self.root / ".specify").mkdir()
-        (self.root / ".specify/drive.json").write_text(json.dumps({"delegate": "task"}), encoding="utf-8")
+        (self.root / ".specify/sail.json").write_text(json.dumps({"delegate": "task"}), encoding="utf-8")
         set_one(self.root, ["delegate=rule"])
-        self.assertEqual(json.loads((self.root / ".specify/drive.json").read_text())["delegate"], "rule")
+        self.assertEqual(json.loads((self.root / ".specify/sail.json").read_text())["delegate"], "rule")
         self.assertNotIn("delegate", self.held())
 
     def test_the_two_mirrored_settings_take_their_own_words_and_not_numbers(self) -> None:
@@ -143,16 +143,16 @@ class FileTest(unittest.TestCase):
                 telegraph.parse_setting(pair)
 
     def test_the_mirrored_values_are_the_ones_drive_itself_takes(self) -> None:
-        """A project has no slipwai to import, so `scripts/agents/drive.py` has its own copy of these sets
+        """A project has no slipwai to import, so `scripts/agents/sail.py` has its own copy of these sets
         and this is the second. Held as an equality rather than left to drift, which is what put a count in
         the description of a setting whose values are words."""
         source = (pathlib.Path(__file__).resolve().parents[1]
-                  / "assets/toolkit/scripts/agents/drive.py").read_text(encoding="utf-8")
+                  / "assets/toolkit/scripts/agents/sail.py").read_text(encoding="utf-8")
         for name, key in (("delegate", "DELEGATES"), ("cycle", "CYCLES")):
             with self.subTest(name=name):
                 found = re.search(key + r" = \{(.*?)\n\}", source, re.S)
                 if found is None:
-                    self.fail(f"drive.py no longer declares {key} as a literal mapping")
+                    self.fail(f"sail.py no longer declares {key} as a literal mapping")
                 self.assertEqual(tuple(re.findall(r'^\s*"([^"]+)":', found.group(1), re.M)),
                                  telegraph.MIRRORED[name][1])
 

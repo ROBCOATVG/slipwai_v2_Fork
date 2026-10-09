@@ -1,14 +1,14 @@
-"""The adoption phases of `/drive`: what the ladder gains in a repository the method was installed around.
+"""The adoption phases of `/sail`: what the ladder gains in a repository the method was installed around.
 
 Brownfield adoption is a phase of the delivery loop rather than a step before it. A generated project starts at the top
 of every ladder on the convergence map; an adopted one starts wherever it is, and the loop's job is to climb, one rung
-per slice, until the two are the same thing. So `/drive` in an adopted repository has three more things to do, and they
+per slice, until the two are the same thing. So `/sail` in an adopted repository has three more things to do, and they
 are stages so that the "enter at the first incomplete stage" rule reaches them: **Ground** before Principles — no map,
 no principles, and an unrecorded row on an axis the slice touches is a question before anything else; **Pin** before
 Implementation — code that was here is changed only once `/characterise` has recorded what it does at the seam; and
 Convergence re-checks the map after the slice, flips the row a rung was reached on, and offers the next unplanned row as
 a method slice. The hooks in `.specify/extensions.yml` say the same three things to whoever typed a `/speckit-*` command
-without ever typing `/drive`.
+without ever typing `/sail`.
 """
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ def ground_stage(apps: list[App], layout: Layout) -> str:
    `unrecorded` — or `detected`, the tree's reading and nobody's answer — on an axis the slice touches is a
    question for the person **before anything else**: the release path first of all, since a slice with no
    known path to production cannot be called releasable. **Asking is this stage's work, not a stop:** run
-   `/ground` here, inside `/drive`, for the axes the slice touches — or with no argument, the first time, for
+   `/ground` here, inside `/sail`, for the axes the slice touches — or with no argument, the first time, for
    every row a person has not placed — one row at a time, the evidence and the rungs shown first, each answer
    written where the record keeps it (`release`, `ci`, a deployable's `kind`, `why`, or the `convergence` row
    itself, provenance `confirmed`), then `/survey` so the record is followed. The stage is done when the rows
@@ -129,7 +129,7 @@ def implementation_addendum(apps: list[App]) -> str:
 
 
 def adoption_ladder(stages: list[str], apps: list[App], layout: Layout) -> list[str]:
-    """The `/drive` ladder with the adoption phases in it: Ground first, the Plan stage holding the slice's home to
+    """The `/sail` ladder with the adoption phases in it: Ground first, the Plan stage holding the slice's home to
     the decided strategy, Pin before Implementation, the Implementation stage saying how new code beside what was
     here is tested, and the Convergence stage re-checking the map. The stages are found by their titles, so the
     ladder's own order holds whatever a profile adds between them."""
@@ -147,10 +147,10 @@ def adoption_ladder(stages: list[str], apps: list[App], layout: Layout) -> list[
 def adoption_hooks(extensions: str, apps: list[App], layout: Layout) -> str:
     """`.specify/extensions.yml` with the adoption's hooks appended: the map before a specification is written,
     the pin before a plan is, and the map again after converge. All three print rather than run — each says what
-    `/drive` already does, for the session that entered the loop through a `/speckit-*` command instead."""
+    `/sail` already does, for the session that entered the loop through a `/speckit-*` command instead."""
     last = extensions.rfind("\n  after_")
     assert last != -1 and extensions[last:].startswith("\n  after_converge:"), "after_converge is no longer last"
-    ledger, page, drive = layout.under("survey/pinned.md"), layout.under(MAP), layout.under("commands/drive.md")
+    ledger, page, drive = layout.under("survey/pinned.md"), layout.under(MAP), layout.under("commands/sail.md")
     where = wrapped_paths(apps) or "the wrapped applications"
     return extensions.rstrip("\n") + f"""
     - extension: "convergence-map"
@@ -180,7 +180,7 @@ def adoption_hooks(extensions: str, apps: list[App], layout: Layout) -> str:
         an axis this slice touches is a question for the person before the specification is written, never a
         default — the release path first of all, and a change strategy the map only recommends;
         `/ground` asks it, one row at a time, and records the answer. `{drive}`, the Ground stage, has the
-        rule; `/drive` enters there.
+        rule; `/sail` enters there.
 
   before_plan:
     - extension: "pin"
