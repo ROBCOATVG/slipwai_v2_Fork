@@ -107,8 +107,6 @@ locals {
     VITE_USERS_CLIENT_ID = aws_cognito_user_pool_client.external[0].id
   } : {}
 }
-# backing-service:users-keycloak:end
-
 # ─────────────────────────────────────────────────────────────────────────────────────────────────────
 # Renamed 2026-10-08: `staff` is `internal` and `customers` is `external`, because the two identity axes
 # are now asked that way. A resource address is state, not a name — without these blocks the first apply
@@ -130,3 +128,4 @@ moved {
   from = aws_cognito_user_pool_client.customers
   to   = aws_cognito_user_pool_client.external
 }
+# backing-service:users-keycloak:end

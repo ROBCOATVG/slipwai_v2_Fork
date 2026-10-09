@@ -1658,7 +1658,7 @@ refuses by and which nothing else imports. Found on 2026-10-06 while doing the s
 | 3.3z | `scaffold.py`, last of the parts and not first: it imports forty of them. With `manifest/`, `adopt_report`, the `cli_*` prompts and `tests/support.py` | upstream + cruise-2 | L | `project_files()` is importable and the suites that generate a project are in the tree, skipped on the one thing they still lack | done |
 | 3.8 | The template's toy package in-tree as the one fixture the keel's own gate reads, and the import surface filled in to the twenty modules a package imports (was 2.6) | cruise-2 | L | `check-structure` reads the toy and finds no import off the surface; the surface is twenty lines and every one names a module the keel has; the keel pins no package; and every suite that generates a project runs against the toy — `test_services`, `test_layout`, `test_toolkit`, `test_harness`, `test_npm_workspace`, the flag gate and the prune rows | done |
 | 3.4 | Targets `aws` and `azure`, their stacks and docs, as the **liner** shape | upstream | L | Stack validation tests green |  |
-| 3.4b | The **skiff** shape for both targets: a Lightsail container service and a scale-to-zero Container App, one environment, the shape question in the interview, `converge --shape`; the compute named in one row of the target's table, not spread through its stack | new | L | Both shapes validate against the real providers; a slipway project generates a skiff by default; changing a skiff's compute is one row and its stack file |  |
+| 3.4b | The **skiff** shape for both targets: a Lightsail container service and a scale-to-zero Container App, one environment, the shape question in the interview, `converge --shape`; the compute named in one row of the target's table, not spread through its stack. **Not started, unlike 3.4 and 3.5**: `skiff` and `liner` appear in the glossary, the `add-target` maintainer skill and this plan, and nowhere in the code or the assets. The skill also records that version 2's skiff was written around AWS App Runner, which is being sunsetted, so the shape needs deciding again before it is built | new | L | Both shapes validate against the real providers; a slipway project generates a skiff by default; changing a skiff's compute is one row and its stack file |  |
 | 3.5 | Frontends and backing services, the `react-vite` npm-workspace contract | upstream + cruise-2 | M | The frontend variants match |  |
 | 3.6 | The language-specific answers out of the keel: the `http` axis keeps `none` alone, a package declares the options it brings in `language.json`'s `axes` block, and the pruner's per-option tables travel with them | cruise-2 + new | L | `catalog.json` and the keel's `prune.py` name no framework; the toy brings `http/toy-serve` and the keel's own gate exercises the path on every commit | done |
 | 3.10 | `http` inferred rather than asked: the axis is marked `inferred`, the answer is the backend's own default, and the interview never raises it | new | S | A generated project gets its backend's transport without being asked; `none` is what a backend with no transport, or an adopted repository reporting none, ends up with | done |
@@ -1667,21 +1667,32 @@ refuses by and which nothing else imports. Found on 2026-10-06 while doing the s
 
 Depends on: phase 2.
 
-**3.4, 3.4b and 3.5 and what is left of them.** Every module and every asset is back — `make next` says
-174 of 174, `assets/targets/` holds all 47 files of both stacks, and `react-vite` is in the catalogue. What
-is not done is their *Done when*, and that is where it belongs rather than where it was written: both
+**3.4 and 3.5, and where their proof actually lives.** Every module and every asset is back — `make next`
+says 174 of 174, `assets/targets/` holds all 47 files of both stacks, and `react-vite` is in the catalogue.
+What was missing was their *Done when*, and that is where it belongs rather than where it was written: both
 acceptances generate a real project, which needs a language installed, and **the keel pins no language** —
 a keel whose gate checks seven packages is a keel nobody can change without them (theme A). So
-`tests/test_aws_stack.py`, `test_azure_stack.py` and `test_frontend.py` skip here with that reason, and
-the run that proves them is a language package's own matrix job:
+`tests/test_aws_stack.py`, `test_azure_stack.py` and `test_frontend.py` skip here with that reason.
 
-```sh
-gh workflow run verify.yml -R ROBCOATVG/slipwai-language-go -f matrix=true
-```
+This paragraph used to say the run that proves them is a language package's own matrix job
+(`gh workflow run verify.yml -R … -f matrix=true`). **That was wrong**, and it is worth saying why rather
+than deleting it: the matrix generates a project per row and holds each to *that project's own*
+`make verify` (`slipwai.matrix`). It never runs the keel's suite, so it cannot run these three files,
+which are about the keel's own stack assets rather than about any language. The three had no home at all.
 
-It builds images and starts containers, so it is opt-in. **Nobody has run it yet**, which is why these
-three rows are not ticked: the code is in and the proof is one command away, and ticking them before the
-command has been run would be exactly the "green while holding nothing" these gates exist to prevent.
+They were run by hand instead, on 2026-10-09, and that is the proof the ticks stand on: the five language
+packages cloned into `packages/`, `tofu` installed, `make test`. `test_frontend` passed whole, eleven
+tests. `test_aws_stack` passed. `test_azure_stack` found a real defect and now passes — the `moved {}`
+blocks of the 2026-10-08 internal/external rename sat *after* their file's `backing-service:…:end` marker
+in five stack files, so `./init --auth none` emptied the region and left behind state moves for resources
+the pruned stack no longer defines. They are inside the region now, which is where an answer's own
+material belongs.
+
+**The home is still open, and it is not the keel's gate.** Running the whole suite with five packages
+installed fails eleven tests that assert the toy is the only package this keel reads — correctly, because
+that is theme A written as assertions. So an opt-in job that installs the packages cannot just run `make
+test`. What it needs is a job that runs these three modules and only these three. Worth a slice in phase
+10, where the targets leave the keel and these assets go with them.
 
 ### Phase 4. The verbs
 

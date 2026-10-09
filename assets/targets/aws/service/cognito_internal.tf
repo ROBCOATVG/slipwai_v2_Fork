@@ -101,8 +101,6 @@ output "internal_login" {
   description = "The hosted login for internal, once the flow exists to send them there."
   value       = local.internal_wanted ? "https://${aws_cognito_user_pool_domain.internal[0].domain}.auth.${data.aws_region.current.region}.amazoncognito.com" : null
 }
-# backing-service:keycloak:end
-
 # ─────────────────────────────────────────────────────────────────────────────────────────────────────
 # Renamed 2026-10-08: `staff` is `internal` and `customers` is `external`, because the two identity axes
 # are now asked that way. A resource address is state, not a name — without these blocks the first apply
@@ -139,3 +137,4 @@ moved {
   from = aws_secretsmanager_secret_version.staff_client
   to   = aws_secretsmanager_secret_version.internal_client
 }
+# backing-service:keycloak:end

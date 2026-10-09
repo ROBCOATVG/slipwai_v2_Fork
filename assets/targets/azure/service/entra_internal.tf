@@ -103,8 +103,6 @@ output "internal_application" {
   description = "The app registration internal sign in through, once the flow exists to send them there."
   value       = local.internal_wanted ? azuread_application.internal[0].client_id : null
 }
-# backing-service:keycloak:end
-
 # ─────────────────────────────────────────────────────────────────────────────────────────────────────
 # Renamed 2026-10-08: `staff` is `internal` and `customers` is `external`, because the two identity axes
 # are now asked that way. A resource address is state, not a name — without these blocks the first apply
@@ -131,3 +129,4 @@ moved {
   from = azurerm_key_vault_secret.staff_client
   to   = azurerm_key_vault_secret.internal_client
 }
+# backing-service:keycloak:end

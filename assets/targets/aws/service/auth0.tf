@@ -269,8 +269,6 @@ resource "auth0_connection_clients" "external" {
   connection_id   = auth0_connection.external[0].id
   enabled_clients = [auth0_client.external[0].id]
 }
-# backing-service:users-keycloak:end
-
 # ─────────────────────────────────────────────────────────────────────────────────────────────────────
 # Renamed 2026-10-08: `staff` is `internal` and `customers` is `external`, because the two identity axes
 # are now asked that way. A resource address is state, not a name — without these blocks the first apply
@@ -342,3 +340,4 @@ moved {
   from = auth0_connection_clients.customers
   to   = auth0_connection_clients.external
 }
+# backing-service:users-keycloak:end
