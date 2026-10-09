@@ -127,11 +127,5 @@ class ServiceFilesTest(unittest.TestCase):
         self.assertIn("memory", memory)
         self.assertNotIn("adapters/repository_postgres.txt", self.files(Selection({"write-model": "state"})))
 
-
-if __name__ == "__main__":  # pragma: no cover
-    unittest.main()
-
-
-
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()
