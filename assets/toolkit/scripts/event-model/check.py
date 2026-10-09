@@ -10,6 +10,8 @@ import sys
 import importlib
 from pathlib import Path
 
+import rung
+
 
 def project_root(script: Path, depth: int) -> Path:
     """The repository root: the nearest directory above this script holding `project.json`.
@@ -61,6 +63,28 @@ def project_services() -> dict[str, list[str]]:
     return services
 
 
+def project_rungs() -> dict[str, bool]:
+    """Which services keep their truth in a log, as `project.json` records it per deployable.
+
+    `eventSourced` has been in the manifest since it was written, set from the profile and read by nothing
+    that could tell the difference. Phase 15 made it the answer to the `write-model` axis, per service, and
+    this is where the model gate asks it. A service the manifest does not mention is state-stored, which is
+    the axis's own `absent` and the honest reading of a service nobody vouched for.
+    """
+    try:
+        document = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    deployables = document.get("deployables") if isinstance(document, dict) else None
+    if not isinstance(deployables, dict):
+        return {}
+    return {
+        name: bool(record.get("eventSourced"))
+        for name, record in deployables.items()
+        if isinstance(record, dict) and record.get("kind") == "service"
+    }
+
+
 def load_yaml() -> object:
     sys.path.insert(0, str(TOOLS))
     try:
@@ -86,10 +110,15 @@ def load_yaml() -> object:
     return yaml.safe_load(MODEL.read_text(encoding="utf-8"))
 
 
-def validate(model: object, services: dict[str, list[str]] | None = None) -> list[str]:
+def validate(
+    model: object,
+    services: dict[str, list[str]] | None = None,
+    rungs: dict[str, bool] | None = None,
+) -> list[str]:
     if not isinstance(model, dict):
         return ["model root must be a mapping"]
     services = project_services() if services is None else services
+    rungs = project_rungs() if rungs is None else rungs
     placed = {"modelled", "planned", "implemented"}
     findings: list[str] = []
     if model.get("version") != 1:
@@ -111,6 +140,16 @@ def validate(model: object, services: dict[str, list[str]] | None = None) -> lis
         if not isinstance(item, dict):
             findings.append(f"{label} must be a mapping")
             continue
+        # The service this slice is on, and so the rung, decided before any rule that reads it. Named
+        # explicitly, or the only service there is, or — with several and none named — unknown, which the
+        # placement rules below report; an unknown owner is read as state-stored, the axis's own `absent`.
+        named = item.get("service")
+        owner = (
+            named if isinstance(named, str) and named in services
+            else next(iter(services)) if len(services) == 1
+            else None
+        )
+        sourced = bool(rungs.get(owner)) if owner is not None else False
         slice_id = item.get("id")
         if not isinstance(slice_id, str) or not slice_id:
             findings.append(f"{label}.id must be a non-empty string")
@@ -239,7 +278,8 @@ def validate(model: object, services: dict[str, list[str]] | None = None) -> lis
                     "sentence. Unstated, a boundary is a query somebody widened until the tests passed"
                 )
         if (
-            status in {"planned", "implemented"}
+            sourced
+            and status in {"planned", "implemented"}
             and pattern == "state-change"
             and not item.get("stream")
             and guard is None
@@ -248,6 +288,13 @@ def validate(model: object, services: dict[str, list[str]] | None = None) -> lis
                 f"{slice_id}: a planned state change names what its append is guarded by — `stream`, whose "
                 "version the append carries, or `guard`, a boundary drawn over tags"
             )
+        # The rung's own rules, which are the same three fields read on a service that keeps current state:
+        # `stream` required rather than one of two, `guard` and `folds` refused by name. And the two naming
+        # rules, which hold on either rung — an event is a named business fact wherever it is kept.
+        findings += rung.write_model_findings(
+            slice_id, item, sourced, status in {"planned", "implemented"}
+        )
+        findings += rung.naming_findings(slice_id, frames)
         # Where the read model lives. This is the read side's version of the question `stream` asks on the
         # write side, and it is required from `planned` for the same reason: one fixes the consistency
         # boundary, the other fixes what a query costs, and both are decided once and paid for afterwards. A
@@ -281,7 +328,7 @@ def validate(model: object, services: dict[str, list[str]] | None = None) -> lis
         # The budget is asked for only where `live` is an answer the pattern may give: a refused `live` has
         # been reported once already, and asking it to bound a fold it is not allowed to do in the first
         # place says nothing a reader can act on.
-        if pattern == "state-view" and materialisation == "live":
+        if pattern == "state-view" and materialisation == "live" and sourced:
             events = budget.get("events") if isinstance(budget, dict) else None
             because = budget.get("because") if isinstance(budget, dict) else None
             if isinstance(events, bool) or not isinstance(events, int) or events < 1:
@@ -295,7 +342,7 @@ def validate(model: object, services: dict[str, list[str]] | None = None) -> lis
                     f"{slice_id}: materialisation `live` names why that ceiling holds in "
                     "`liveBudget.because`, in terms of the stream's own lifetime"
                 )
-        elif budget is not None:
+        elif budget is not None and not (pattern == "state-view" and materialisation == "live"):
             findings.append(
                 f"{slice_id}: `liveBudget` bounds the fold a `live` state-view does on every query, and this "
                 + (
@@ -308,13 +355,12 @@ def validate(model: object, services: dict[str, list[str]] | None = None) -> lis
         # service there is nothing to decide, so the field is optional; with two or more, a modelled slice
         # that names none would land in the first service by gravity, which is the placement this exists
         # to make a decision rather than a default.
-        service = item.get("service")
-        if service is not None and (not isinstance(service, str) or service not in services):
+        if named is not None and (not isinstance(named, str) or named not in services):
             findings.append(
-                f"{slice_id}: names service {service!r}, which project.json does not list"
+                f"{slice_id}: names service {named!r}, which project.json does not list"
                 + (f" (it has {', '.join(services)})" if services else "")
             )
-        elif service is None and len(services) > 1 and status in placed:
+        elif named is None and len(services) > 1 and status in placed:
             findings.append(
                 f"{slice_id}: this project has {len(services)} services ({', '.join(services)}); a modelled "
                 "slice names the one that owns it in `service`, chosen against each service's purpose in "
@@ -324,7 +370,6 @@ def validate(model: object, services: dict[str, list[str]] | None = None) -> lis
         # `context-named`: a service holding one context has nothing to decide; one holding several is the
         # modular monolith this project starts as, and a slice placed in the service but in no context is
         # placed by gravity again — into whichever `src/<context>/` the implementer reaches for first.
-        owner = service if service in services else next(iter(services)) if len(services) == 1 else None
         held = services.get(owner, []) if owner is not None else []
         context = item.get("context")
         if context is not None and owner is not None and context not in held:

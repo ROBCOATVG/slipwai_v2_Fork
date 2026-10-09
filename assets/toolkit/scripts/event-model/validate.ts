@@ -32,6 +32,12 @@ export interface Workspace {
   services(): readonly string[];
   /** The bounded contexts one service holds — what a slice placed in it may name as its `context`. */
   contextsOf(service: string): readonly string[];
+  /**
+   * Whether this service's truth is its log, as `project.json` records it per deployable. Phase 15 made
+   * this the `write-model` axis answered per service, so the two rungs are generatable side by side; a
+   * service nothing says it of keeps current state, which is the axis's own `absent`.
+   */
+  isEventSourced(service: string): boolean;
 }
 
 export interface Violation {
@@ -166,6 +172,62 @@ function checkGrammar(slice: Slice): Violation[] {
   return [];
 }
 
+/**
+ * The verbs that name the row rather than the business fact. Dudycz calls modelling this way *property
+ * sourcing*: the model records that a column changed — which the table already knew — and the one thing a
+ * reader wanted, what happened, is nowhere. The verb is matched at the tail of the name, because that is
+ * what the event says happened; a frame declaring `crud: true` with a `because` is exempt, since a CMS
+ * page and a settings record honestly are field updates.
+ */
+const CRUD_VERBS = ['Created', 'Updated', 'Deleted', 'Changed', 'Modified'] as const;
+
+/**
+ * `OrderNotShipped` names the absence of a thing, and nothing raises an absence. The fact underneath is a
+ * failure, a rejection or an expiry, and it carries why. Matched only where the negation is followed by a
+ * capital, so `UserNotified`, `AccountUnlocked` and `ItemUnpacked` are left alone.
+ */
+const NEGATIVE_NAME = /(?:^|[a-z0-9])(Not|Never|Un)[A-Z]/;
+
+/** `event-is-not-crud` and `event-is-not-negative`, over one slice's event frames, on either rung. */
+function namingViolations(slice: Slice): Violation[] {
+  const violations: Violation[] = [];
+  for (const frame of slice.frames) {
+    if (frame.type !== 'evt') continue;
+    const verb = CRUD_VERBS.find((word) => frame.name.endsWith(word) && frame.name !== word);
+    if (verb !== undefined && frame.crud !== true) {
+      const subject = frame.name.slice(0, -verb.length);
+      violations.push({
+        slice: slice.id,
+        rule: 'event-is-not-crud',
+        message:
+          `\`${frame.name}\` names the write and not the fact: ${verb.toLowerCase()} is what the table ` +
+          `did. Name what happened to the ${subject.toLowerCase() || 'thing'} in the business's own word ` +
+          `— \`${subject}Placed\`, \`${subject}Cancelled\`, \`${subject}Confirmed\`. Where this ` +
+          'honestly is CRUD — a CMS page, a setting — the frame says `crud: true` with a `because`',
+      });
+    } else if (frame.crud === true && (frame.because ?? '').trim() === '') {
+      violations.push({
+        slice: slice.id,
+        rule: 'event-is-not-crud',
+        message:
+          `\`${frame.name}\` declares \`crud: true\`, which needs a \`because\` saying why this one ` +
+          'honestly is a field update — unstated, it is the exemption everything gets',
+      });
+    }
+    if (NEGATIVE_NAME.test(frame.name)) {
+      violations.push({
+        slice: slice.id,
+        rule: 'event-is-not-negative',
+        message:
+          `\`${frame.name}\` names something that did not happen, and nothing raises an absence. The ` +
+          'fact is the failure itself — `ShipmentFailed`, `PaymentDeclined`, `HoldExpired` — with a ' +
+          '`reason` attribute carrying which of the ways it went wrong this was',
+      });
+    }
+  }
+  return violations;
+}
+
 export function validate(model: Model, workspace: Workspace): Violation[] {
   const violations: Violation[] = [];
   const frames = numberFrames(model);
@@ -189,6 +251,15 @@ export function validate(model: Model, workspace: Workspace): Violation[] {
 
   for (const [index, slice] of model.slices.entries()) {
     violations.push(...checkGrammar(slice));
+    violations.push(...namingViolations(slice));
+
+    // The rung this slice's service is on, decided before any rule that reads it. Named explicitly, or the
+    // only service there is, or — with several and none named — unknown, which the placement rules below
+    // report; an unknown owner reads as state-stored, the `write-model` axis's own `absent`.
+    const onService = slice.service !== undefined && workspace.services().includes(slice.service)
+      ? slice.service
+      : workspace.services().length === 1 ? workspace.services()[0] : undefined;
+    const sourced = onService === undefined ? false : workspace.isEventSourced(onService);
 
     // ── Read-model-to-command is the one edge event modelling forbids outright ──────────────────────
     // The reason is consistency, not shape. A command may decide only from what its own append can hold
@@ -303,7 +374,7 @@ export function validate(model: Model, workspace: Workspace): Violation[] {
       });
     }
 
-    if (slice.pattern === 'state-view' && materialisation === 'live' && budget === undefined) {
+    if (slice.pattern === 'state-view' && materialisation === 'live' && budget === undefined && sourced) {
       violations.push({
         slice: slice.id,
         rule: 'live-fold-is-bounded',
@@ -596,6 +667,7 @@ export function validate(model: Model, workspace: Workspace): Violation[] {
     }
 
     if (
+      sourced &&
       rank >= STATUS_ORDER.planned &&
       slice.pattern === 'state-change' &&
       slice.stream === undefined &&
@@ -610,6 +682,45 @@ export function validate(model: Model, workspace: Workspace): Violation[] {
           'boundaries and therefore concurrency ceilings; changing either later migrates the one thing ' +
           'that cannot be migrated, which is why the answer is owed here and not at the first conflict',
       });
+    }
+
+    // ── The state-stored rung ──────────────────────────────────────────────────────────────────────
+    // Event Modeling is the same on both rungs and so is every rule above this one. What changes is the
+    // write model: `stream` still fixes the consistency boundary but means the row or aggregate one
+    // transaction locks, and the two fields that need a log to exist are refused by name rather than left
+    // to fail at a gate the first slice written against this service reaches. `check.py`'s `rung.py` holds
+    // the same three, because it is what `make check-model` runs.
+    if (!sourced) {
+      if (slice.guard !== undefined) {
+        violations.push({
+          slice: slice.id,
+          rule: 'guard-needs-a-log',
+          message:
+            'a `guard` draws a boundary over a tag query and needs a log to query. This slice\'s service ' +
+            'keeps current state (`eventSourced: false` in project.json): its consistency boundary is the ' +
+            'row or aggregate one transaction locks, which is `stream`',
+        });
+      }
+      if (slice.folds !== undefined && slice.folds.length > 0) {
+        violations.push({
+          slice: slice.id,
+          rule: 'folds-need-a-log',
+          message:
+            '`folds` replays earlier events into the state a decision is made over. This slice\'s service ' +
+            'keeps current state, so there is nothing to replay — the decision loads what the service ' +
+            'already holds, decides, and saves at the version it read',
+        });
+      }
+      if (rank >= STATUS_ORDER.planned && slice.pattern === 'state-change' && slice.stream === undefined) {
+        violations.push({
+          slice: slice.id,
+          rule: 'stream-before-planning',
+          message:
+            'a planned state change on a state-stored service names the row or aggregate one transaction ' +
+            'locks in `stream`, with its version. It is the concurrency ceiling either way, and `guard` is ' +
+            'not the alternative here that it is on the event-sourced rung',
+        });
+      }
     }
 
     // Its read-side sibling, at the same status and for the same reason: `stream` decides what a write

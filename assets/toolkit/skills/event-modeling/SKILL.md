@@ -68,7 +68,10 @@ which workflows to model. Ask these questions of the user; do not assume
 answers. Output: the actors and proposed slices recorded in `docs/event-model/model.yaml`.
 
 **Phase 2 -- Workflow Design.** For each workflow, follow the 9-step
-process. You MUST follow `references/nine-steps.md` for the full methodology. Design
+process. You MUST follow `references/nine-steps.md` for the full methodology,
+and `references/naming.md` when naming events — two of its rules are gates
+`make check-model` enforces (`event-is-not-crud`, `event-is-not-negative`), on
+either write-model rung. Design
 one workflow at a time. Complete all 9 steps before starting the next
 workflow. Output: that workflow's slices in `docs/event-model/model.yaml` at
 `status: modelled`, each with its actor, events, commands, and read models —

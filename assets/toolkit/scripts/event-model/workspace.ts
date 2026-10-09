@@ -45,6 +45,12 @@ export interface ServiceRecord {
   path: string;
   purpose?: string | undefined;
   contexts: readonly string[];
+  /**
+   * Whether this service's truth is its log — `eventSourced` in the manifest, which phase 15 made the
+   * answer to the `write-model` axis rather than a reading of the profile. A service the manifest does not
+   * say it of keeps current state, which is the axis's own `absent`.
+   */
+  eventSourced: boolean;
 }
 
 /**
@@ -89,6 +95,7 @@ export function loadServices(): ServiceRecord[] {
         path: typeof entry['path'] === 'string' ? entry['path'] : `apps/${name}`,
         purpose: typeof entry['purpose'] === 'string' && entry['purpose'] !== '' ? entry['purpose'] : undefined,
         contexts: listed.length > 0 ? listed : single,
+        eventSourced: entry['eventSourced'] === true,
       },
     ];
   });
@@ -196,6 +203,9 @@ export function createWorkspace(model: Model): Workspace {
     },
     contextsOf(service: string): readonly string[] {
       return loadServices().find((record) => record.name === service)?.contexts ?? [];
+    },
+    isEventSourced(service: string): boolean {
+      return loadServices().find((record) => record.name === service)?.eventSourced ?? false;
     },
   };
 }

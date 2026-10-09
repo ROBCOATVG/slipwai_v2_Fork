@@ -211,6 +211,16 @@ const frameSchema = z.strictObject({
    */
   external: z.boolean().optional(),
   /**
+   * Marks an event whose name honestly is a field update — a CMS page saved, a setting changed — and is
+   * what lifts `event-is-not-crud` for it. Needs `because` beside it: unstated, it is the exemption
+   * everything gets, which is how a model turns into a record that columns changed.
+   */
+  crud: z.boolean().optional(),
+  /**
+   * Why this one is honestly CRUD, in a sentence. Read only beside `crud: true`.
+   */
+  because: z.string().min(1).optional(),
+  /**
    * The mocks for this screen, one entry per state it can be in.
    *
    * Only a `ui` frame has them, and `check-model` says so: a command, an event and a read model are data,

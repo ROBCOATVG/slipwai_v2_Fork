@@ -267,6 +267,37 @@ events' `attributes`, its `stream` or `guard` and its `examples.md` are the cont
 builds against, and `modelled` is the word for a contract that may still move. `/drive` fans out over the
 ready slices that are `planned` and works a ready `modelled` one itself first.
 
+## The two rungs, and what changes between them
+
+A service's **write model** is how it decides and records a write, and `project.json` records it per
+deployable as `eventSourced`. On `events` the log is the truth and current state is a fold of it; on
+`state` the service keeps current state, and the events this model names are contracts raised by the use
+case after the write has committed — real events, never replayed.
+
+**Event Modeling is the same on both.** The same nine steps, the same four patterns, the same chart, the
+same split into slices, the same stamp. `chart.py` renders fairways from `context` and `service`, marks
+from `evt` frames and steers-by from `reads`, and reads none of the fields below — so the division of work
+does not know which rung a service is on, and the rendered chart of a model is identical whichever rung
+either of its slices is on. What changes is three fields on the write side:
+
+| | `write-model: events` | `write-model: state` |
+|---|---|---|
+| `stream` | the stream an append carries the expected version of | the row or aggregate one transaction locks, with its version |
+| at `planned` | `stream` **or** `guard` | `stream`, always |
+| `guard` | a boundary drawn over a tag query | **refused**: a tag query needs a log |
+| `folds` | the history the Decider rehydrates from | **refused**: there is nothing to replay |
+| `materialisation` | `live`, `inline`, `async` | `live`, `inline`, `async` — unchanged |
+| `liveBudget` | required on a `live` state-view | not asked: no fold to bound |
+| `model-matches-code` | unchanged | unchanged — an event is a file on either rung |
+
+The rung is per service, so a project with one context that earns the log beside three that do not is one
+model with one timeline. A cross-service `reads` whose producer is state-stored is a separate question and
+a later one.
+
+**And it is the one answer that cannot be walked back.** A log folds down into tables whenever somebody
+decides it should; state cannot be turned back into history it never recorded. Nothing in the model
+changes the rung — `slipwai add-service --write-model` does, once, at the start.
+
 ## `reads` and `folds` are different questions
 
 Two folds, easy to confuse, and confusing them is what makes the `automation` pattern look structurally
