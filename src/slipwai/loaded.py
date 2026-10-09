@@ -34,6 +34,7 @@ from .registry import (
     Registry,
     load,
 )
+from .rungs import every_rung
 
 # What phase 2 refused the last time the registry was built, for `refusals()`.
 PHASE_TWO: list[str] = []
@@ -47,7 +48,7 @@ def reaches(language: Language, registry: Registry) -> list[str]:
     for backend in language.backends:
         key, roots = backend.key, registry.sources(backend.key)
         for member in (WRITE_SIDE_FILES, READ_SIDE_FILES):
-            for files in registry.answer(key, member).values():
+            for files in every_rung(registry.answer(key, member)).values():
                 for destination, source in files.items():
                     faults += placed(key, destination)
                     faults += found(roots, f"backing-services/{key}/{source}", key, source)

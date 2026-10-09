@@ -57,7 +57,7 @@ TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
     # backend answers its probes. The registry and the loader land here in phase 2.
     ("contract", ("registry", "family_only", "language_shape", "language_directory", "extension_directory",
                   "features", "extensions", "extension_shape", "hooks", "guards", "telegraph", "targets",
-                  "axes", "catalog",
+                  "axes", "catalog", "rungs",
                   "catalog_checks", "catalog_merge",
                   "catalog_options", "loaded", "backends", "probes", "ecosystems", "npm_workspace",
                   "examples", "harness",

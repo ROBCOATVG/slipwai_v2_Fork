@@ -14,8 +14,8 @@ from pathlib import Path
 
 from ..assets import PRUNER
 from ..catalog import family_of
-from ..project.backing_services import merged_layout
 from ..registry import PRUNE_ROWS, READ_SIDE_FILES, WRITE_SIDE_FILES, Registry
+from ..rungs import every_rung, merged_layout
 from ..services import APPLICATIONS, FIRST_SERVICE
 from .generation import Run
 
@@ -48,7 +48,8 @@ def row_findings(loaded: Registry, backend: str, done: list[Run]) -> list[str]:
     """Every file a prune of this backend's projects would leave behind, as its family's rows stand."""
     rows, family = loaded.answer(backend, PRUNE_ROWS), family_of(backend)
     findings: list[str] = []
-    layout = merged_layout(loaded.answer(backend, WRITE_SIDE_FILES), loaded.answer(backend, READ_SIDE_FILES))
+    layout = merged_layout(every_rung(loaded.answer(backend, WRITE_SIDE_FILES)),
+                           every_rung(loaded.answer(backend, READ_SIDE_FILES)))
     for feature, files in layout.items():
         if feature not in PRUNER.FEATURES:
             continue  # always there, as the in-memory store is: nothing prunes it

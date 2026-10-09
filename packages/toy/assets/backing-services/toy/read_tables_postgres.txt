@@ -1,0 +1,1 @@
+# A placeholder for a state-stored read model: a query over the write tables, with no checkpoint to keep.

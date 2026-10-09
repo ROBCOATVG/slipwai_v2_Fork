@@ -1,0 +1,2 @@
+# A placeholder for a real language's Postgres repository: current state in a table, one row per aggregate,
+# with the version column the use case checks for optimistic concurrency.

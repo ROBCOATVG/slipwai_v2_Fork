@@ -1,0 +1,1 @@
+# A placeholder for the migration that creates the versioned state table the repository writes.

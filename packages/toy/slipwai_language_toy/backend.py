@@ -98,13 +98,25 @@ TOOLING: Tooling = {
 # transport and provider it offers. `postgres` is offered because an axis whose only answer is `memory` is never asked,
 # so a project would get no store files, and because core's persistence default is `postgres`, which every backend
 # offering a second store must offer.
+# `state` is not a feature: it is the other rung, and the rows under it are what a service answered
+# `write-model: state` is given instead of the ones above — the repository port and its adapters where the
+# event-sourced service gets the log, and the migration for a versioned state table. Keyed by feature inside
+# the block the same way, because the rung does not settle which store was chosen.
 WRITE_SIDE = {
     "memory": {"adapters/event_store_memory.txt": "../toy/event_store_memory.txt"},
     "postgres": {"adapters/event_store_postgres.txt": "../toy/event_store_postgres.txt"},
+    "state": {
+        "memory": {"adapters/repository_memory.txt": "../toy/repository_memory.txt"},
+        "postgres": {"adapters/repository_postgres.txt": "../toy/repository_postgres.txt",
+                     "migrations/0001_state_table.txt": "../toy/state_table_migration.txt"},
+    },
 }
+# No checkpoint on the state-stored rung: there is no projection to be behind, so a read model is a query
+# over the write tables and the only row is the store that holds them.
 READ_SIDE = {
     "memory": {"adapters/checkpoint_store_memory.txt": "../toy/checkpoint_store_memory.txt"},
     "postgres": {"adapters/checkpoint_store_postgres.txt": "../toy/checkpoint_store_postgres.txt"},
+    "state": {"postgres": {"adapters/read_tables_postgres.txt": "../toy/read_tables_postgres.txt"}},
 }
 
 # Where the flag reader is committed (`assets/languages/toy/flags`), where it lands, and how a slice asks it.

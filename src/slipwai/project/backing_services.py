@@ -13,6 +13,7 @@ import posixpath
 
 from ..assets import BACKING_SERVICE_ROOT, located, source_text
 from ..registry import READ_SIDE_FILES, WRITE_SIDE_FILES, registry
+from ..rungs import EVENTS, Layout, merged_layout, rung_rows
 from ..selection import Selection
 from ..services import (
     App,
@@ -108,23 +109,12 @@ def backing_service_files(apps: list[App]) -> dict[str, str]:
     return files
 
 
-Layout = dict[str, dict[str, str]]
-
-
-def merged_layout(write_side: Layout, read_side: Layout) -> Layout:
-    """The write side's layout with the read side folded into it, feature by feature, in the write side's order.
-
-    A feature lands because the write side lands it; the read side only adds files to it. The keys cannot
-    collide: a path names one file, and each side ships its own.
-    """
-    return {feature: {**files, **read_side.get(feature, {})} for feature, files in write_side.items()}
-
-
-def service_layout(backend: str) -> Layout:
-    """Every file a feature owns under a service, whichever side of the log it is on: the backend's
-    `write_side_files` and `read_side_files`, merged."""
+def service_layout(backend: str, write_model: str = EVENTS) -> Layout:
+    """Every file a feature owns under a service on this rung: the backend's `write_side_files` and
+    `read_side_files`, each read at the rung, merged."""
     answer = registry().answer
-    return merged_layout(answer(backend, WRITE_SIDE_FILES), answer(backend, READ_SIDE_FILES))
+    return merged_layout(rung_rows(answer(backend, WRITE_SIDE_FILES), write_model),
+                         rung_rows(answer(backend, READ_SIDE_FILES), write_model))
 
 
 def backing_service_service_files(selection: Selection, backend: str) -> dict[str, str]:
@@ -134,9 +124,14 @@ def backing_service_service_files(selection: Selection, backend: str) -> dict[st
     The in-memory adapter arrives with every persistence answer rather than only the bare one, on purpose:
     it is what the shared contract runs against in `make verify`, and a fake with no real adapter to be
     checked against has nothing to keep it honest.
+
+    Which set, out of the two a backend declares, is the service's rung: `write-model: events` is given the
+    log and the adapters behind it, `state` the repository port and the versioned table. The feature is the
+    same either way — the persistence axis chose the store — so the question the rung settles is what the
+    store is asked to hold, not which store it is.
     """
     roots = registry().sources(backend)  # its own, then its family's: a framework reads the family's files
-    layout = service_layout(backend)
+    layout = service_layout(backend, selection.write_model)
     files: dict[str, str] = {}
     for feature, mapping in layout.items():
         if not selection.has(feature):

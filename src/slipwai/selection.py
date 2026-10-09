@@ -13,12 +13,13 @@ from .catalog import (
 )
 from .errors import GenerationError
 from .features import axis_of, feature_declaring, known_features
+from .rungs import WRITE_MODEL
 
 # Why an axis is not a question this profile can be asked, where the generic line would not say enough.
 # The rung is the one that matters: a project with no model has no slice to raise an event from and no
 # `evt` frame to name one, so "event-sourced" would be a claim about a write side nobody drew.
 OFF_PROFILE = {
-    "write-model": (
+    WRITE_MODEL: (
         "the rung is a reading of the write side of a model, and the standard profile has no model to "
         "read — its services keep current state"
     ),
@@ -49,6 +50,17 @@ class Selection:
     def option(self, axis: str) -> str:
         """The chosen option, or the axis's no-infrastructure answer when the axis was not asked."""
         return self.choices.get(axis, CATALOG["axes"][axis]["absent"])
+
+    @property
+    def write_model(self) -> str:
+        """The rung this service is on: `events`, where the log is the truth and state is a fold of it, or
+        `state`, where the service keeps current state and its events are contracts raised after the write.
+
+        A property rather than a feature test because the rung owns no files of its own — it chooses which
+        of the *persistence* answer's two sets a service is given (`service_layout`), and it is the one
+        answer about a service that cannot be walked back once it holds data.
+        """
+        return self.option(WRITE_MODEL)
 
     def has(self, feature: str) -> bool:
         return feature in self.features
