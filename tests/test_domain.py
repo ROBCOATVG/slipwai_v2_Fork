@@ -11,7 +11,7 @@ import unittest
 
 import checkout_packages  # noqa: F401
 
-from slipwai.project import cruise_agents, domain
+from slipwai.project import briefs, cruise_agents, domain
 
 
 def flat(text: str) -> str:
@@ -52,7 +52,7 @@ class DomainPageTest(unittest.TestCase):
 class SkipperCitationTest(unittest.TestCase):
     def brief(self) -> str:
         from slipwai.layout import AT_ROOT
-        return flat(cruise_agents.cruise_body(AT_ROOT)[cruise_agents.SKIPPER])
+        return flat(briefs.brief(cruise_agents.SKIPPER, AT_ROOT).body)
 
     def test_the_skipper_reads_the_domain_before_deciding(self) -> None:
         self.assertIn(".specify/domain/", self.brief())

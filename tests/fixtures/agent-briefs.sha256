@@ -1,0 +1,46 @@
+# What `project/agents.py` rendered for each type before the standing briefs moved out of its string
+# literals and into `assets/toolkit/agents/`, as SHA-256 over the UTF-8 bytes of each generated file.
+#
+# The move is only worth doing if it changed nothing a project receives, and "generate before and after"
+# cannot be run across one commit. So these were captured by running the generator at fee9ce4, the commit
+# this change was written on top of, and the new path has to reproduce them exactly
+# (`tests/test_briefs.py`). Anyone can take the same reading: check out fee9ce4, run
+#
+#     PYTHONPATH=src python3 -c "import hashlib; from slipwai.layout import Layout; \
+#         from slipwai.project.agents import agent_files; \
+#         print('\n'.join(f'{hashlib.sha256(t.encode()).hexdigest()}  {d}  {p}' \
+#             for d in ('.', 'delivery') for p, t in sorted(agent_files(Layout(d)).items())))"
+#
+# and compare it with the lines below.
+#
+# Two layouts, because the one value a brief interpolates on every type that has it is `{{make}}`, and a
+# project that keeps its delivery material in a subdirectory says `make -f delivery/Makefile`. A record
+# taken at the default layout alone would pass with the substitution stubbed out to the empty string.
+#
+# A deliberate edit to a brief changes these, which is the point: the line a reviewer has to see change is
+# the one saying which file's bytes a wording change moved. Re-read them the same way after the edit, with
+# `agent_files` on the edited tree, and say in the commit which type was reworded.
+#
+# <sha256>  <project.json layout.delivery>  <path in the generated project>
+de6f43485d7e6f3c081a8c80dc7dab2b49e059d9069a68413066e43936b233e5  .  agents/drive-adversary-privateer.md
+09096d38965ae638ee58b6fcaeb8ed631b13729c56d17ad1860e73f5a43d8341  .  agents/drive-converge-navigator.md
+588e998611fa7bac3b78728ac9740458baf292f1052f058418f27d6174f215d9  .  agents/drive-decide-skipper.md
+98df2dcc47a1e8dfc4fd0a43afc3064f02661c4006bf51d1d677c1a2131b53d7  .  agents/drive-demo-hand.md
+0bb0907b8bf41ee5468dbbe3098d3033ad12719e02c9df22fde54b13b8967386  .  agents/drive-gaps-lookout.md
+87225b0271d9d7bed9e2fa9bbbcf4d075437b7fed558a32f5078d540b7773219  .  agents/drive-implement-shipwright.md
+b7d840228478cd937a5b0aadb0c6cc91295c825361cd549f5df8bb765dfe4bb7  .  agents/drive-mutation-shipworm.md
+6592ac0faa61288661f686f05620651e40914526e2064bc841604161d6898aa2  .  agents/drive-review-mate.md
+05850905447d50ff52298dcade17c6f7ef1748797b01dc18dce78083607b9036  .  agents/drive-slice-watch.md
+3208f7b741a78e24bde303bdb7121dc2862e006de2e3c6f8fc9376f9192419a6  .  agents/drive-tasks-quartermaster.md
+5e8da6a2a1e1aaab5dea82e2360ec058e8f0d0a1ce8979639580c576e9437cc0  .  agents/drive-unblock-bosun.md
+de6f43485d7e6f3c081a8c80dc7dab2b49e059d9069a68413066e43936b233e5  delivery  agents/drive-adversary-privateer.md
+92cc360fb47d5020494dc1b28c407975a466e78115f9c761bf50cfb3c5ece08b  delivery  agents/drive-converge-navigator.md
+588e998611fa7bac3b78728ac9740458baf292f1052f058418f27d6174f215d9  delivery  agents/drive-decide-skipper.md
+0a318391c4f3e789a251d2464105595a32e8e4976807f6659580f2bdb1323144  delivery  agents/drive-demo-hand.md
+0bb0907b8bf41ee5468dbbe3098d3033ad12719e02c9df22fde54b13b8967386  delivery  agents/drive-gaps-lookout.md
+5dcdfac1787c8467b9722c2581badf3943d547c657c49c9b71a4d218b2557dbd  delivery  agents/drive-implement-shipwright.md
+3fac96b25a4d154aa5766c8c10eb777a5e90a5b0b492b6fd074367263474d5ea  delivery  agents/drive-mutation-shipworm.md
+6592ac0faa61288661f686f05620651e40914526e2064bc841604161d6898aa2  delivery  agents/drive-review-mate.md
+1cb79a97f5726bef02b7d0d2c173896384a524a76d6f8ed08ec455f93fc7b30d  delivery  agents/drive-slice-watch.md
+3208f7b741a78e24bde303bdb7121dc2862e006de2e3c6f8fc9376f9192419a6  delivery  agents/drive-tasks-quartermaster.md
+110a67dd0b5c765372ec5ed19649004f8daec0fdd2e30cdb885b69a16b55a0b2  delivery  agents/drive-unblock-bosun.md
