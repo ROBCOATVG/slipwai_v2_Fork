@@ -1371,7 +1371,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 111 of 157 slices done** — phase 1 6/6, phase 2 9/9, phase 3 19/22, phase 4 7/7, phase 5 29/29, phase 6 13/14, phase 7 16/17, phase 8 5/8, phase 9 5/8, phase 10 0/6, phase 11 0/5, phase 12 0/4, phase 13 0/5, phase 14 0/4, phase 15 2/13. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 111 of 165 slices done** — phase 1 6/6, phase 2 9/9, phase 3 19/22, phase 4 7/7, phase 5 29/29, phase 6 13/14, phase 7 16/17, phase 8 5/8, phase 9 5/8, phase 10 0/6, phase 11 0/5, phase 12 0/4, phase 13 0/5, phase 14 0/4, phase 15 2/13, phase 16 0/8. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -2037,6 +2037,71 @@ fork, so there is none. The version that counts is cut after the merge back upst
 keel and the plugin is still being shaped describes a system that will not exist by the time anybody reads
 it. 2.0.0 ships on the five pages, the README and the captures, which are written and are held by
 `make test-docs`.
+
+### Phase 16. The generated prose lives where prose lives, after 2.0.0
+
+Asked 2026-10-09, after the agent briefs moved out of `agents.py` and into `assets/toolkit/agents/`. That
+move was a pilot and it worked; this is the rest of it.
+
+**The measurement.** `src/slipwai/project/` is 92 modules and 14,402 lines, of which **6,285 — 43% — sit
+inside multi-line string literals that are not docstrings**. Twenty-eight of those modules are more than
+60% prose by line. Nine are at or over 300 lines against a 350-line budget, and what is pressing against
+that budget is English, not code.
+
+**What that has already cost.** The budget is a rule about code a person has to hold in their head, and it
+is being spent on paragraphs. So modules get split at whichever paragraph happens to reach line 350:
+`backing_service_prose.py` exists because "this module outgrew its budget", `metadata.py` was "split from
+`readme.py`, which had reached its budget", and `cruise_agents.py` held the skipper's, the hand's and the
+bosun's briefs only because `agents.py` had no room — so nobody looking for the bosun's words would think
+to open a file named for the cruise. Each of those splits is a seam in the *prose*, not in the behaviour,
+and a reader navigating by behaviour is sent to the wrong file. A second cost is review: a wording change
+arrives as a diff of Python string literals, where the reviewer reads escaping and line continuations
+instead of sentences.
+
+**The dividing line, and it is not "is it prose".** Three kinds of text live in these modules and only one
+of them may leave:
+
+1. **Standing text** — the same words in every project, or the same words with a value substituted. This
+   moves to an asset. `{{token}}` against a closed set, the mechanism the pilot built.
+2. **Text rendered from a declaration** — the delegable-types table from `STAGES`, the axis tables from
+   `catalog.json`, a service list from `project.json`. This **must not** move. It is generated precisely so
+   it cannot drift from the declaration, and an asset that hand-wrote it would be a second answer. The
+   pilot already drew this line: an agent brief carries its `description` and is refused if it writes
+   `name`, `stage`, `writes` or `commands`, because those four are what a harness enforces.
+3. **Text that branches** — on the profile, on the rung, on the backend, on the target. This is the one the
+   pilot did not meet and the reason this is a phase rather than a sweep. A conditional section needs to be
+   expressible in the asset or the module keeps it, and deciding which is 16.1's whole job.
+
+**The risk this phase carries, and what catches it.** Every one of these modules writes a file somebody
+receives, and a move that changes a byte is a change nobody asked for. The pilot's answer is the gate: a
+digest of every generated file taken *before* the move, which the new path must reproduce exactly. It
+earned its place on its first use — rebasing the pilot onto the rename silently reverted a paragraph of the
+shared trailer to an older wording, and the byte gate was the only thing that saw it; lint, the type checker
+and the merge all passed. **Every slice here carries the same gate, taken on the commit it is written on.**
+
+**Not a rewrite of any page.** A slice that improves the words while moving them is a slice whose gate
+cannot be run. Wording changes go in their own commits, before or after, never inside the move.
+
+| Slice | What | From | Size | Done when | Status |
+|---|---|---|---|---|---|
+| 16.1 | The three-way rule above, written down and enforced: `docs/generated-prose.md` says what may be an asset, what must stay generated and what to do with a conditional; a check holds it — an asset that names a token the substitution does not provide, a value provided that no asset names, and a generated file still carrying `{{` after rendering. The conditional question is **decided here**: either a section marker the asset carries and the module selects, or the rule that branching prose stays in Python with the standing part extracted around it. Whichever is chosen is written as the reason, because the next eight slices apply it | new (owner, 2026-10-09) | M | A contributor can read one page and know whether a given paragraph may move; the check refuses a token nobody provides and a value nobody names, both directions, and is run by `make verify` |  |
+| 16.2 | The commands: `commands.py`, `add_commands.py`, `pin_commands.py`, `ground_command.py`, `drive_section.py`. The precedent is already half here — `assets/toolkit/commands/` holds the three that never varied and `assets/profiles/event-modelling/commands/` one more — so this is the existing arrangement finished rather than a new one, and the per-profile branching is 16.1's rule meeting its first real case | new | L | Every `commands/*.md` a project receives is byte-identical to today's, proved by the digest gate, and a reviewer changing the wording of `/drive` reads Markdown |  |
+| 16.3 | `guidance.py` and `rules.py` — `AGENTS.md` and the rules a generated project is held to. The largest single page a project gets, the one most often edited for wording, and the one where a backend's own paragraph is interleaved with standing text, so it is the clearest test of whether 16.1's answer to conditionals is the right one | new | L | `AGENTS.md` is byte-identical for every profile, backend and target in the matrix |  |
+| 16.4 | `docs.py`, `readme.py`, `run_skill.py` — the README and the pages under `docs/`. `readme.py` is at 350 lines today and `metadata.py` was split out of it for budget; this is the slice that makes that split re-examinable, and if the seam was only ever the budget, the two go back together | new | M | The generated README and every page under `docs/` are byte-identical; `readme.py` is under 200 lines or the commit says why the remainder is code |  |
+| 16.5 | `event_model.py`, `model_to_code.py`, `adversary.py`, `parallel_slices.py` — the method's own pages, which 15.3 and 15.4 are changing. **Sequenced after phase 15 closes**, because moving a page while another slice is rewriting it is a merge nobody should have to do, and the byte gate cannot be taken against a moving target | new | M | The event-model pages are byte-identical on both rungs and both profiles |  |
+| 16.6 | `cruise.py`, `cruise_seat.py`, `cruise_agents.py`, `drive_adoption.py` and `adopted.py` — the cruise's pages and the adopted repository's. `cruise_agents.py` is already down to its path constants after the pilot; this finishes the three that are left | new | M | The cruise's pages are byte-identical, and no module in `project/` exists only because another reached its budget |  |
+| 16.7 | The templates that are not prose: `deploy_workflow.py`'s GitHub Actions YAML, `init_script.py`'s shell, `flags.py`. These are the ones to look at last and possibly not to move: a workflow is assembled from the services, the target and the backend's own tooling, so most of it is case 2 and the standing part may not be worth separating. **A decision, with the answer written either way** — a slice that concludes "these stay" and says why is a slice that landed | new | S | The decision is in section 9 with its reason; if they move, the generated workflow and `./init` are byte-identical on every target |  |
+| 16.8 | The budget starts measuring code again: `MODULE_BUDGET` in `scripts/check-structure.py` is re-examined now that it is not being spent on paragraphs, and an asset's own size is budgeted separately or deliberately not. The modules split for budget rather than for a seam — `backing_service_prose.py`, `metadata.py`, `drive_section.py`, `cruise_agents.py` — are each either rejoined or given a reason in their docstring that is about behaviour | new | S | No module in the keel is split at a paragraph boundary, and `check-structure.py`'s budget comment says what it is now measuring |  |
+
+Order: 16.1 first and alone — the next seven apply its rule, and applying a rule that is still being decided
+is seven slices that need revisiting. Then 16.2 → 16.3 → 16.4, which are independent of each other and of
+phase 15. 16.5 waits for phase 15 to close. 16.6 after 16.5. 16.7 and 16.8 last, in either order.
+
+Depends on: the pilot (`assets/toolkit/agents/`, `project/briefs.py`, `tests/test_briefs.py`), which is the
+mechanism and the gate this phase repeats eight times; phase 15, for 16.5. **Not a dependency of anything.**
+Every slice here is byte-neutral by construction, so this phase can be stopped after any slice and what has
+moved has moved. That is deliberate: a phase whose value is readability must not be able to hold up a
+release.
 
 ### Risks the plan carries, and where each is caught
 
