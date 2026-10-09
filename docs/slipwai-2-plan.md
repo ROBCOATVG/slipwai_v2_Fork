@@ -60,6 +60,7 @@ version 1, it uses version 1's own names and says so.
 | **Bridge** | One product's own dashboard, as distinct from the fleet board, which is the harbour's view of the agents. The bridge shows where the product is (slipway, sea trials, in service), the release mode, how far along each fairway is, which flags are hoisted and where, what is deployed to each environment, what is waiting on a person, and what the product has cost so far. `slipwai bridge` prints it. The harbourmaster renders it to the project's Pages site next to the event model | `/where-are-we`, the demo stop's progress board, the event-model page |
 | **Drive, cruise** | `/drive` is the main mode: a person is present, the whole fleet fans out across fairways, and every product question, park and demo comes back to that person through the inbox. `/cruise` is the same fleet with nobody at the keyboard: the skipper answers the questions and the hand runs the demos. Nothing else differs | Same words, but in version 1 only `/cruise` fanned out across a product |
 | **The ladder** | The ordered stages of `/drive`. Section 5 draws it | Same word |
+| **Rung** | How much of its past one service keeps, named for the step of the constitution's ladder it stands on: an outcome returned, in-process events, an outbox, or a durable log of everything that happened, which is event sourcing. A rung is per service, is answered on the `write-model` axis (`events` or `state`) beside the `persistence` axis that names the store, is recorded in `project.json`, and is the one answer about a service that cannot be walked back once it holds data. Event Modeling is the same on every rung; what changes is the write model. Phase 15 | The `event-modelling` profile, which bundled the log with the model |
 
 **Facing a person, every one of these words is paired with the ordinary one.** The vocabulary is the
 method's, not the reader's. A stop, a command, a refusal or a page that asks a person something names the
@@ -1249,6 +1250,26 @@ section 4 now records: a language's answers are the language's to declare.
 Every other decision this plan needed on 2026-10-06 is taken. New ones go to the deck logs' `decision`
 lines and, where a person must take them, to the bridge's inbox.
 
+Opened 2026-10-09 by phase 15, each with the answer that phase is written to and the slice that settles it:
+
+- **Event sourcing is an answer on a `write-model` axis beside the renamed `persistence` axis, not a
+  third profile and not a `none` on the store.** Written to the two axes; phase 15's preamble has the
+  argument. Settled when 15.1 lands.
+- **A `write-model: state` service ships a repository skeleton, or nothing, as `standard` ships today.**
+  Written to the skeleton, in the language's repository (15.8); the keel is green without it from 15.7, so
+  the choice is when, not whether.
+- **Two candidates from the `agentskills` reading, not yet slices.** A `streamBudget` at `planned` beside
+  `liveBudget` — events per instance per year times lifetime, with its `because` — so *is my stream identity
+  wrong?* is asked before a snapshot is; and field-level traceability, every `rmo` field naming the `evt`
+  attribute it folds from, which the Prime Directive states and `check-model` holds only at event level, and
+  which needs `rmo` frames to carry `attributes` first. Both go to 15.4 if wanted; neither blocks it.
+- **A cross-service `reads` from a state-stored producer is refused until that service has an outbox.**
+  Written to refusal (15.13), because a mark nobody can consume is the failure `check-chart` exists to
+  prevent. The alternative is to allow it and document it.
+- **`adopt`'s default profile stays `standard`.** Today's reason — the event profile could not fit a
+  brownfield repository — goes away with 15.9, and what is left is a preference not to maintain
+  `model.yaml`. Revisit when 15.11 gives an adopted repository a model page on the day it is adopted.
+
 ## 10. Gaps review, 2026-10-06
 
 The plan was reviewed with the toolkit's `find-gaps` skill: the Plans checklist (scope, prerequisites,
@@ -1332,7 +1353,7 @@ Added 2026-10-07:
 
 ## 11. The implementation plan
 
-**Progress: 107 of 144 slices done** — phase 1 6/6, phase 2 9/9, phase 3 19/22, phase 4 7/7, phase 5 29/29, phase 6 11/14, phase 7 16/17, phase 8 5/8, phase 9 5/8, phase 10 0/6, phase 11 0/5, phase 12 0/4, phase 13 0/5, phase 14 0/4. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
+**Progress: 107 of 157 slices done** — phase 1 6/6, phase 2 9/9, phase 3 19/22, phase 4 7/7, phase 5 29/29, phase 6 11/14, phase 7 16/17, phase 8 5/8, phase 9 5/8, phase 10 0/6, phase 11 0/5, phase 12 0/4, phase 13 0/5, phase 14 0/4, phase 15 0/13. Written by `scripts/progress.py` from the history; run `make progress` after a slice merges.
 
 This section turns section 7's phases into slices. A slice here is one pull request to the fork's `main`: a few
 hours of work, one module or one skill, reviewed and refactored before it merges, with the fast checks per
@@ -1852,6 +1873,128 @@ route), phase 13 (14.2 offers quickstarts, so they have to exist), and the bridg
 5, which are what the page is already made of. **Not a rewrite of the interview**: 14.2 is a second face on
 the questions `catalog.json` already declares, and the gate that proves it is the two trees being identical.
 
+### Phase 15. Event Modeling without event sourcing, after 2.0.0
+
+Asked 2026-10-09, after a reading of what the field says about the method this keel is built on. The
+reading divides on one line and the line runs through `catalog.json`: Event Modeling is a design practice
+that nearly every source recommends nearly always, and event sourcing is a storage decision that the same
+sources say to take only where the system owns the truth, the behaviour is business operations rather than
+field updates, and the past is worth something. `catalog.json` welds the two — `"indivisible":
+["event-modelling", "event-sourcing"]`, held by `catalog_checks.py` — so a product that wants the model and
+not the log cannot be generated, and a product with one context that earns the log and three that do not
+cannot be generated either. The constitution already disagrees with the catalogue: Principle III's scope
+boundary says a peripheral context *must not* be event-sourced merely for consistency, and the plan
+template asks which rung a non-event-sourced context sits on. The tooling is what forbids the answer.
+
+**Event sourcing becomes an axis answer, not a profile.** The profile stays the question it really is —
+*is there a model?* — and the `event-store` axis stops being event-shaped. It is renamed **`persistence`**,
+asking *how does this service keep its data*, and its rows (`memory`, `sqlite`, `postgres`, their
+containers, migrations, prune rows and what each target provisions) are unchanged. Beside it a second
+per-service axis, **`write-model`**, asks the question the profile used to answer by accident: `events` —
+the log is the truth and state is a fold — or `state` — the service keeps current state, and its events
+are the model's contracts, raised after each write and never replayed. `state` is rung 2 of the
+constitution's own ladder; `events` is rung 4. The rung rides on its own axis rather than as a `none` on the
+store, because *where do events live — nowhere* is a question answered by denying it, and because the
+product axis carries machinery (prune rows keyed by feature, `provisioned()` per target, the Compose
+service) that a flattened `events-postgres` / `state-postgres` would have to carry twice. Three profiles
+were the other shape, and lose on every count that matters: the rung is per service in `project.json`
+already (`eventSourced`, set today from the profile and read by nothing that could tell the difference),
+`add-service` already asks the axes per service, and an adopted repository is by definition a mix of
+services that store state and new homes that may not. The out-of-scope list in section 11 names new axes
+and new profiles; `write-model` is a new axis, and is named here as the one exception, because it is the
+axis the catalogue has been answering silently since the profile was written.
+
+**On the state-stored rung an event is still a file.** `src/domain/<context>/events/<Name>`, one per event,
+additive, raised by the use case after the state write. That is what keeps every gate and the chart intact:
+`chart.py` renders fairways from `context` and `service`, marks from `evt` frames and `steers_by` from
+`reads`, and never reads `stream`, `guard`, `folds` or `materialisation` — so the division of work does not
+know which rung a service is on. What changes per rung is the write model: `stream` is still required at
+`planned` and means the row or aggregate the transaction locks, with its version; `guard` and `folds` are
+refused, because a tag query and a fold both need a log; `materialisation` keeps its three words (`live` is
+a query over the write tables, `inline` is the same transaction, `async` is outbox-fed) and `liveBudget` is
+not required, there being no fold to bound. `model-matches-code`, `screen-is-built` and the additive-events
+rule hold unchanged.
+
+**The default path generates byte for byte what it does today.** `event-modelling` + `postgres` stays the
+default; everything here is additive to it. The one direction that is not cheap — state cannot be turned
+back into history it never recorded — stays said, and moves from the profile prompt to the `write-model`
+prompt, which is the one answer it is true of. `persistence` is answered down by `./init` as the store is
+today; `write-model` is not: a rung is chosen at `generate` and at `add-service`, and `./init` refuses to
+move it.
+
+**What this gives an adopted repository.** Today `adopt --profile event-modelling` writes a constitution
+that mandates event sourcing over code that has none, and `journey_template` cannot soften it because the
+convergence map has no persistence row — which is why `adopt` defaults to `standard` and `change-strategy.md`
+says event modelling on brownfield means *new slices at the edge only*, the code that was already there an
+external box. `adopt` is for any repository the keel did not make — a well-kept codebase as much as a
+legacy one — and only `/strangle` presumes a system being retired; the rest of this paragraph is about the
+first, and says *legacy* only where it means the second.
+With the rung per service, a wrapped application is `write-model: state` with no store the keel knows —
+the case that already exists — and a capability of the code that was already there can be a real
+`state-change` slice on the wrapped service: `ui → cmd → evt`, the event a typed
+file raised after the existing write. The honesty rule stays and sharpens: *no event may claim history the
+system did not record at the time; an event raised from now on is a true event.* And `/strangle`'s new home
+gets the choice it lacks — `--write-model events` with a genesis event, or `state` fed by change data
+capture or an outbox, which is the right answer for the first few capabilities that move, because they
+rarely have a history worth keeping.
+
+**How the model of a repository the keel did not make is built.** Nothing builds one today: the survey records what builds and
+how, `structure.md` records where anything starts and where change happens, `/characterise` pins one
+behaviour at one seam and refuses full coverage first, and the modelling skill asks a person. The code is
+the domain expert, and `/characterise` already names every seam the four patterns need: a handler is a `ui`
+and a `cmd`; the write it performs — above all a status-column transition — is an `evt` named as the business
+fact, never the row, which is the one place a reverse-engineered model goes wrong (Dudycz's *property
+sourcing*); a status enum is the slice list for its aggregate; a query, report or export is a `state-view`; a
+cron job or consumer is an `automation`; an outbound call or inbound webhook is a `translation`; the same word
+meaning two things is a context; and the hotspots in `structure.md` say which capability to model first. Two
+rules carry over from the method as it stands: the big picture (actors, major processes, external systems)
+is done once for the whole system because it is cheap, and the nine steps are done only where work lands,
+the way `/characterise` is; and nothing in the tables' past becomes an event. The Given/When/Then comes free:
+the tests `/characterise` pins *are* the observed slice's `examples.md`. One status is missing for this — a
+slice that says *this is what the code does; nobody designed it* — the same separation the survey keeps
+between `detected` and `confirmed`.
+
+**Read against TrogonStack's `agentskills` marketplace** (`github.com/TrogonStack/agentskills/plugins`,
+2026-10-09): fifteen prose skills for the same nine steps, no machine check, and event sourcing coupled as
+hard as our catalogue couples it — which is the confirmation, not the lesson. Five things it does that this
+plan did not, each folded into a row below: a **freeze agreement** as the precondition of a strangler
+(15.9); the extraction strategy written **per status transition** with the column it was read off (15.12);
+a **read model over the wrapped service's data** as the first, write-free move (15.12); a **role catalogue with `cannot`**
+per actor (15.11); and **naming rules as Good / Bad / Why tables** — no negative event names, CRUD names only
+where creation is the domain concept, no `Event` suffix, no broker in the name — two of which become lints
+(15.4). Its three-layer event record (metadata, typed context, payload) and *the append API cannot persist a
+bare payload without `actor_id`, `occurred_at`, `correlation_id`, `causation_id`* go to the skeleton (15.8),
+with its PII rule — reference by id, never inline, because a log cannot be erased. Its one-question-at-a-time
+format carries an *Intention* and the *Assumptions* the asker proceeded on; a `/gaps` question posted by an
+agent nobody is watching should carry both (15.11, 15.12). What it has that this plan deliberately does
+not: backfilling ten years of history from `created_at` and `updated_at`, which the honesty rule refuses.
+
+| Slice | What | From | Size | Done when | Status |
+|---|---|---|---|---|---|
+| 15.1 | The catalogue: the `event-store` axis renamed `persistence`, its question *how does this service keep its data*, its rows unchanged; a `write-model` axis with `events` and `state`, offered on the `event-modelling` profile with `events` the default and `state` its `absent`, so `standard` answers it `state` without being asked; `event-sourcing` leaves the profile's capabilities and is brought by `write-model: events`; `indivisible` goes, and `catalog_checks.py`'s two bundle rules become three — no profile carries `event-sourcing`, `write-model: events` does, the `event-modelling` profile offers both axes. The rename table `migrate` and `replay` read (section 6) carries `event-store → persistence`, so a 2.0 `project.json` is read under its old name. Both profile labels rewritten around where truth lives, the shape of the behaviour and the value of the past rather than around lifespan; `PROFILE_GUIDANCE`'s one-direction warning moves to the `write-model` prompt | new (owner, 2026-10-09) | S | `slipwai generate --write-model state --persistence postgres` is accepted on the `event-modelling` profile; `--write-model events` is refused on `standard` with the reason; the default answers generate a tree identical to the day before but for the axis's name in `project.json`, and a project recorded under `event-store` replays |  |
+| 15.2 | The keel's one boolean becomes two facts: `modelled`, the profile, project-wide; and `sourced`, read off each service's selection. `metadata.py` writes `eventSourced` from `write-model` for a service the keel made, and for a wrapped one from a `writeModel` a person confirmed (15.9) — `state` where nobody has, never `events` by detection alone; `backing_service_service_files` writes the set the write model names — under `events` the event-store port, its adapters and contract suite as today; under `state` the repository port and its adapters, from the rows 15.6 adds — and every site that read the `event-store` feature (`backing_service_prose.py`, `aws_docs.py`, `azure_docs.py`, `gitignore.py`, `guidance.py`, `selection.py`'s refusal, the pruner's `./init --event-store`) reads `persistence`. The ~130 sites that mean the workflow rename and nothing else | new | M | A project with two services, one `events`/`postgres` and one `state`/`postgres`, generates a log under the first and a versioned state table under the second, both on one Postgres, and `project.json` says so per deployable |  |
+| 15.3 | The prose follows the rung: `commands.py`, `ladder.py`, `guidance.py`'s *Backend event bundle* and event-store paragraphs, `adversary.py`, `readme.py`, the pull-request template, and `model_to_code` rendered per service — a state-stored service's table says repository where the event-sourced one says Decider, and the documents of a mixed project carry both | new | M | A generated `docs/event-modeling-to-code.md` for a mixed project shows each service its own table, and no generated page in a `none` project mentions streams, replay or an event store |  |
+| 15.4 | `check-model` and `validate.ts` read the slice's service's `eventSourced` off `project.json` — `check.py` reads the deployables already, and the field is the same whether the keel generated the service or a person confirmed a wrapped one's rung — and hold the state-stored rung: `stream` required at `planned`, `guard` and `folds` refused by name, `materialisation` kept, `liveBudget` not asked, `model-matches-code` unchanged. `docs/event-model/README.md` gains the two-rung table; `chart.py`, `check-chart` and `check-slice-scope` are touched by nothing. Two lints on either rung, from the naming tables: `event-is-not-crud` — `Created`, `Updated`, `Deleted`, `Changed`, `Modified` refused as the verb of an `evt` unless the frame says `crud: true` with a reason, which is what a CMS page or a setting honestly is — and `event-is-not-negative` — `OrderNotShipped` refused in favour of `ShipmentFailed` with a `reason` attribute. The Good / Bad / Why tables go to `event-modeling/references/naming.md` | new | M | A model with one slice on each rung passes, a `guard` on a state-stored slice fails with the reason, `OrdersUpdated` fails with the name to use instead, and the rendered chart of that model is the same whichever rung either slice is on |  |
+| 15.5 | The skills and the presets: `serves()` is any-match, so `event-sourcing/SKILL.md` declares `event-sourcing` alone and `event-modeling` and `global-event-model` declare `event-modelling` alone, or the sourcing skill ships to every modelled project; the `event-modelling` constitution's Principle II reads *the write model* where it read *the event stream*, and its Principle III is rewritten as *the rung is recorded per service*, the scope boundary becoming the rule; the plan and tasks templates' event-store block (T017–T027) is conditional on the service's rung. The `event-modeling` skill's Phase 1 writes the **role catalogue** of 15.11 for every project — each actor with what it does and what it `cannot` — so a generated project has it from the first conversation and an adopted one derives the same file from code | new | S | A `state` project's `skills/` holds the modelling skills and not the sourcing one; `check-constitution` passes the rewritten template on a mixed project |  |
+| 15.6 | The language protocol: `service_files`'s `event` parameter is deprecated in `docs/backend-protocol.md` in favour of `selection.option("write-model")`, with no signature change; `WRITE_SIDE_FILES` and `READ_SIDE_FILES` gain a `state` key beside the feature keys — the repository port, its memory and store adapters and its contract suite, per store — read only where `write-model` is `state`; `EVENT_STORE_DIRECTORY` becomes `PERSISTENCE_DIRECTORY` with the old name read for one MINOR; `EVENT_MODEL_PATHS` gains `repository` beside `events`, `decider` and `usecase`; the conformance suite adds a run at the `event-modelling` profile, the first target and `--write-model state`, so a backend proves it generates a state-stored service; the toy answers it. Reaches the languages as a MINOR of the protocol | upstream + new | M | `slipwai package check` on the toy passes the new run, and a language that answers no `state` rows is named by the conformance suite rather than by a generated page with a hole in it |  |
+| 15.7 | The tests and the pages: the thirteen test files that branch on the profile and every test that spells `event-store`, `test_validators.py`'s bundle assertions replaced by the three rules of 15.1, `start-here.md`'s two labels and its axis lines, `docs/axes.md` where it exists, section 4 and section 5 here (the two loop figures do not change: the rung is inside *Implement*, not on the ladder), and **Rung** in section 1 | new | M | `make verify` is green with 15.1 to 15.6 in, `grep event-store` finds only the rename table and the changelog, and a reader of `start-here.md` can say which of the two questions is the one that cannot be walked back |  |
+| 15.8 | The state-stored skeleton, in the TypeScript package: a repository port, a memory adapter and a Postgres adapter behind it, the contract suite that runs against both, and a migration for a versioned state table whose version column is the optimistic concurrency the use case checks. The same skeleton the `standard` profile has been missing since it was labelled *state-stored persistence*, so it pays twice. On both rungs the event record is three layers — store metadata, typed context, payload — and **the append or raise boundary refuses a bare payload**: `actor_id`, `on_behalf_of` where delegated, `occurred_at`, `correlation_id` and `causation_id` arrive as a typed context the use case cannot omit, system work names its actor (`systems/cron`), and `actor_id` is never read as ownership — that is a payload fact or a policy. PII is referenced by id, never inlined, on the `events` rung because the log cannot be erased and on `state` because the raised event still travels | new (the language's repository) | L | A `state` service passes the same `make verify` an `events` one does, with a concurrency test that two writers to one row see exactly one win, and an append with no context fails to compile |  |
+| 15.9 | Adoption: `change-strategy.md`'s *Be honest about the event model* loses the bundle sentence and gains the sharpened rule and the rung-2 reading of a capability that was already there; `/survey`'s event-model section says the code that was already there is an external system *or* a state-stored service in the model, by whether its behaviour is modelled or only read; `/strangle`'s *Decide the new home* names the rung, `--write-model state` with change data capture or an outbox and no genesis event, `events` with one. **A strangler has a precondition, and `/strangle` asks for it before the first capability moves: the freeze** — no new features in the legacy system, bug fixes only, no schema changes — recorded on the strategy ADR with who agreed it, or recorded as absent with what the programme does instead, because a legacy system that keeps growing under a side-car is a side-car that drifts, and the retirement ledger cannot show it. A wrapped application that is already event-sourced — its own log, Marten, Axon, EventStoreDB — is recorded `writeModel: events` the way every survey fact is recorded: the survey *proposes* it off an event-store dependency in the manifest, and only `/ground` or `slipwai adopt --confirm <name> --write-model events` records it, with `confirmed` provenance; left unanswered it is `state`, because a log nobody vouched for is a guess wearing a fact's clothes. No persistence row is added to the convergence map: the rung is a product decision per service and `project.json` is already its record, and a map row would say every service should climb to the log, which is the claim this phase exists to stop making | new | S | `adopt --profile event-modelling` on a CRUD repository passes `check-constitution` on day one, and `/strangle` asks which rung the new home is on before `add-service` runs |  |
+| 15.10 | A fifth status, `observed`: a slice that records what the code does and that the model did not design — a well-kept codebase was designed, just not here — carrying `code:` and `gwt:` and exempt from `model-matches-code`, because code the keel did not make does not contain `OrderPlaced` until a rung-2 slice raises it; on a wrapped service confirmed `events` the exemption is moot, since the names are in its events module already. `check-model` allows it only on a service recorded `generated: false`; the move to `implemented` is that slice. An `observed` slice is what a later slice `reads`: it is on the timeline for the joins, which is the reason the model is global. `global-event-model` says when to write it and `/drive`'s ready set never offers one | new | S | An `observed` slice on a wrapped service passes `check-model` with its `code:` pointing at the handler that exists, and the same slice on a generated service is refused by name |  |
+| 15.11 | The big picture, once, in `adopt`: actors from the surfaces and the auth the survey found, external systems from the outbound calls and inbound hooks, major processes from the entry points `structure.md` already lists — written as `proposed` slices with the evidence each was read off, beside `structure.md`, with Phase 1's questions the code cannot answer as `/gaps` lines. The actors are written as a **role catalogue**, `docs/event-model/actors.yaml`: each human role and system actor with what it does and what it **cannot** do, read off the routes and the authorisation the code already holds, because a negative permission is the one thing a slice's `actor` field cannot carry and the one thing a security pass and `bff-entry-points`' access classification both ask for first. Every `/gaps` line an agent posts carries its *intention* and the *assumption it proceeded on*, so a person reading it later knows what was done in their absence. The proposal-not-questionnaire rule of section 1, applied to a codebase | new | M | An adopted repository has a model page on the day it is adopted that names its actors with what each may not do, and its external systems, with a file and line under each, and no event |  |
+| 15.12 | `/observe <capability>`: the nine steps run against the code for one capability, walking the evidence table above — handler to `ui` and `cmd`, write to `evt` named as the fact, status enum to the transition list, query to `state-view`, job to `automation`, call to `translation` — and writing the slices at `observed`, `code:` at the handler, `gwt:` at the `examples.md` the pinned tests of `/characterise` already are. Its working record is the **extraction table**, one block per table the capability writes, one row per transition: *when `status` goes `draft → confirmed` in `orders` → `OrderConfirmed`*, with the file and line of the write it was read off — so the name is proposed beside the column it replaces and `event-is-not-crud` fails `OrdersUpdated` before a person reads it. It names the **first move** too: a `state-view` slice over the wrapped service's own tables, because a read model over the wrapped service's data is the one move from `observed` to `implemented` with no write path, no genesis and no routing seam — on any adopted service, and under a strangler it is also the first row the retirement ledger should show. It reads from **two sources by the service's rung**: the status columns and the writes for a `state` service, the events module for one confirmed `events`, and it says which it used, because the second is evidence of a different order. Refuses "the whole system" the way `/characterise` does; the hotspots in `structure.md` are its suggested first argument, and **a new requirement that touches capability no slice has observed runs it first**, so the Event-model stage's *what is already recorded* is read off the code where the model has not caught up | new | M | One capability of an adopted repository is on the timeline at `observed`, its events named as business facts with the transition each was read off, its screens as white boxes, and `check-model` and `make chart` both pass on it |  |
+| 15.13 | A cross-service `reads` whose producer is `write-model: state` is refused by `check-model` until that service has an outbox, because a mark nobody can consume is the failure `check-chart` exists to prevent; the refusal names the outbox rung as the fix. Held here as a slice rather than folded into 15.4 because it is a decision, recorded in section 9 | new | S | A two-service model where a `state` service's event is read by the other fails with a message that names the producing service and the rung that would clear it |  |
+
+Order: 15.1 → 15.2 → 15.3 → 15.7 lands the keel green with `write-model: state` generating a service that has no log;
+then 15.4 → 15.5 → 15.6, and 15.8 in the language's repository once 15.6 names what it has to answer. 15.9
+and 15.10 need 15.4; 15.11 and 15.12 need both, and 15.12 needs `/characterise` as it is. 15.13 waits on
+the decision in section 9.
+
+Depends on: phase 5's chart and model gates, which are what make the rung invisible to the division of work;
+phase 6's conformance suite, which is where 15.6 proves a backend; the adoption path of 4.x, which 15.9 to
+15.12 extend. **Not a rewrite of the model's schema**: every field keeps its name and its meaning on the
+event-sourced rung, and the state-stored rung is a reading of the same fields with two of them refused.
+
 ### Order, and what runs in parallel
 
 ```
@@ -1885,6 +2028,7 @@ it. 2.0.0 ships on the five pages, the README and the captures, which are writte
 | The two-gate split hides a failure until the merge | 5.7's rule that the full gate runs on the rebased branch, plus CI |
 | Sandbox per berth on native Windows is harder than it reads | 5.14 proves it on all four platforms before 7.2 depends on it |
 | The chart on the standard profile is a design nobody has used | 5.4 is sized L and lands before 5.5 and 5.6 build on it; MANDA (event profile) does not depend on it |
+| The state-stored rung is a reading of the model nobody has built on, and a model built from code the keel did not make names rows instead of facts | 15.4 lands before 15.9 to 15.12 read it, with a mixed model in its test; 15.6's conformance run holds every language to the rung; 15.12 names property sourcing as the one failure to refuse and refuses "the whole system" |
 | The migration of in-flight work meets a case section 6 did not foresee | `make test-migration`'s fixtures carry a claimed slice and both flag states; the first real migration is after 2.0.0, on a branch, with `--check` first |
 | The researcher's "what good looks like" is generic, and the person approves it because it is there | 5.18's research note must cite what it drew on per surface, and the storyboard's gap cards and `find-gaps` pass run before approval; the demo walks the approved states, so a generic state costs a visible demo, not a silent one |
 | The token target is missed | The baseline above, measured at 7.x on the greenfield, with time to tune the telegraph positions |
