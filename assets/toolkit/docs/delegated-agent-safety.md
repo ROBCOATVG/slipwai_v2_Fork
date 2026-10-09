@@ -1,9 +1,10 @@
 # Delegated-agent safety
 
 Every delegated brief references this page and adds only its task, contract and file manifest. The write
-scope comes from the *type* the brief delegates to — `agents/drive-tasks.md`, `drive-implement`,
-`drive-converge`, `drive-gaps`, `drive-adversary`, `drive-mutation`, `drive-slice` — which declares it in words no harness owns and is
-projected into the installed harness with as much of it enforced as that harness can express
+scope comes from the *type* the brief delegates to — `agents/drive-tasks-quartermaster.md`,
+`drive-implement-shipwright`, `drive-converge-navigator`, `drive-gaps-lookout`, `drive-review-mate`,
+`drive-adversary-privateer`, `drive-mutation-shipworm`, `drive-slice-watch` — which declares it in words no
+harness owns and is projected into the installed harness with as much of it enforced as that harness can express
 (`docs/agent-harnesses.md`). Keeping the standing constraints here, and the scope there, prevents an older
 brief from carrying an incomplete copy of either.
 

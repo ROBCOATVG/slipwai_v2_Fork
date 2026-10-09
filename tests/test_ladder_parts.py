@@ -25,6 +25,7 @@ from slipwai.project import (
     commands,
     demo_stop,
     docs_index,
+    drive_section,
     drive_settings,
     evolving,
     ladder,
@@ -166,7 +167,7 @@ class LadderTest(unittest.TestCase):
     def test_the_stages_that_are_not_rungs_are_the_three_cruise_delegates(self) -> None:
         """The skipper, the hand and the bosun take a model and a brief, and no step of the ladder."""
         self.assertEqual([stage.key for stage in stage_models.STAGES if not stage.rung],
-                         ["skipper", "hand", "bosun"])
+                         ["decide-skipper", "demo-hand", "unblock-bosun"])
 
     def test_the_merge_rung_exists_and_is_nobody_s_delegate(self) -> None:
         """Rule 10: a person holds the merge until a captain enforces the boundaries."""
@@ -277,7 +278,7 @@ class ReviewRungTest(unittest.TestCase):
 
     def test_the_reviewer_never_edits(self) -> None:
         """A reviewer that can write is one that edits, and then nobody has read the diff with fresh eyes."""
-        review = next(stage for stage in stage_models.STAGES if stage.key == "review")
+        review = next(stage for stage in stage_models.STAGES if stage.key == "review-mate")
         self.assertEqual(review.writes, stage_models.NONE)
         self.assertEqual(review.commands, stage_models.READ_ONLY)
         self.assertIn("The reviewer never edits", self.rung())
@@ -297,7 +298,7 @@ class ReviewRungTest(unittest.TestCase):
 
     def test_the_model_table_gains_a_review_role_seeded_to_the_host(self) -> None:
         table = json.loads(stage_models.stage_models())
-        self.assertEqual(table["stages"]["review"], stage_models.REVIEW)
+        self.assertEqual(table["stages"]["review-mate"], stage_models.REVIEW)
         for harness, roles in table["roles"].items():
             with self.subTest(harness=harness):
                 self.assertEqual(roles[stage_models.REVIEW], stage_models.HOST)
@@ -305,7 +306,7 @@ class ReviewRungTest(unittest.TestCase):
     def test_there_is_a_delegate_type_for_it_and_it_writes_nothing(self) -> None:
         written = agent_targets.agent_targets() if hasattr(agent_targets, "agent_targets") else ""
         self.assertIsInstance(written, str)
-        self.assertIn("drive-review", stage_models.delegable_types())
+        self.assertIn("drive-review-mate", drive_section.delegable_types())
 
 
 class HookPointTest(unittest.TestCase):

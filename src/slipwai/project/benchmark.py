@@ -15,14 +15,14 @@ from ..layout import AT_ROOT, Layout
 
 # What each stage passes to `end`, and nothing else. One place, so the ladder and the tests cannot disagree.
 SIGNALS: tuple[tuple[str, str], ...] = (
-    ("gaps", "`gaps=N` — criteria or states added before the plan; findings traced after converge"),
-    ("implement", "`verify_failures=N` — red `make verify` runs during the stage"),
-    ("implement", "`delegate=…` and `cycle=…` — how the stage was delegated and driven (*How implementation is "
+    ("gaps-lookout", "`gaps=N` — criteria or states added before the plan; findings traced after converge"),
+    ("implement-shipwright", "`verify_failures=N` — red `make verify` runs during the stage"),
+    ("implement-shipwright", "`delegate=…` and `cycle=…` — how the stage was delegated and driven (*How implementation is "
                   "delegated*)"),
-    ("implement", "`split=N` — groups the delegate fanned out into; `0` where it did not"),
-    ("adversary", "`findings=N` — findings the pass recorded in the log; a recorded skip is `0`"),
-    ("adversary", "`seams=N` — delegates spawned; a recorded skip is `0`"),
-    ("mutation", "`mutation_score=…` — copied from the tool's own line, in its own units"),
+    ("implement-shipwright", "`split=N` — groups the delegate fanned out into; `0` where it did not"),
+    ("adversary-privateer", "`findings=N` — findings the pass recorded in the log; a recorded skip is `0`"),
+    ("adversary-privateer", "`seams=N` — delegates spawned; a recorded skip is `0`"),
+    ("mutation-shipworm", "`mutation_score=…` — copied from the tool's own line, in its own units"),
     ("demo", "`outcome=accepted`, `outcome=behaviour` or `outcome=implementation` — what the feedback changed"),
     ("any", "`model=…` only when the record shows no transcript was read and the stage said which model ran it"),
     ("any", "`agent=…` the same way: only when the transcript attributed the delegate to no type and the stage "

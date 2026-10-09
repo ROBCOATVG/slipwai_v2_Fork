@@ -79,7 +79,7 @@ NO_WRITES = "none"
 TASK_WRITES = "tasks"
 READ_ONLY = "read-only"
 TASK_COMMAND = "tasks-command"
-# A type that declares no stage takes no stage's model: `drive-slice` runs a whole slice and chooses a model
+# A type that declares no stage takes no stage's model: `drive-slice-watch` runs a whole slice and chooses a model
 # per stage inside itself, so resolving one here would pick a model for the lot.
 NO_STAGE = "none"
 # The MCP servers this repository's own extensions installed, spelled as the harnesses below name a server's

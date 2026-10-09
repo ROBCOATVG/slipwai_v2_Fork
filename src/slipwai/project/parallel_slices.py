@@ -118,10 +118,10 @@ claimed on the strength of it.
 **Each slice has its own worktree and one delegate.** For every unclaimed ready slice whose contract is
 settled, in the same turn: claim it, give it a worktree (`git worktree add ../<project>-<id> slice/<id>`;
 on Claude Code the Agent tool's `isolation: worktree` makes one), and delegate the slice's ladder — its
-example map through its converged verdict — to one fresh `drive-slice` delegate (`agents/drive-slice.md`,
+example map through its converged verdict — to one fresh `drive-slice-watch` delegate (`agents/drive-slice-watch.md`,
 the standing brief) with a manifest naming the worktree, the slice's block of the model, its `examples.md`,
 and the shared-surface rule below. That type takes no stage's model, because *Who runs each stage* still
-chooses one stage by stage inside the delegate, where `[P]` tasks still fan out to `drive-implement`: the
+chooses one stage by stage inside the delegate, where `[P]` tasks still fan out to `drive-implement-shipwright`: the
 two levels nest. Inside one slice the stages stay strictly sequential. A delegate that meets a
 product question stops its slice with the question recorded in its `plan.md` and hands it here — a blocked
 slice is marked blocked, never guessed past.

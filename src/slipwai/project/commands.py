@@ -14,13 +14,13 @@ from .catch_up_command import catch_up_files
 from .cruise import cruise_command, cruise_settings_command
 from .cruise_seat import cruise_status_command, cruise_stop_command, cruise_tell_command, cruise_watch_command
 from .demo_stop import demo_stop
+from .drive_section import model_delegation_settings_command, who_runs_each_stage
 from .drive_settings import drive_settings_command, implementation_section
 from .flags import PUSH_CHECK
 from .harbour import budget_section
 from .ladder import drive_ladder, hook_points
 from .mutation import mutation_command
 from .parallel_slices import concurrent_slices, done_marker, ready_set_selection
-from .stage_models import model_delegation_settings_command, who_runs_each_stage
 from .whats_next import whats_next_command
 from .where_are_we import where_are_we_command
 

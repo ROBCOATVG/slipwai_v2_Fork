@@ -1242,6 +1242,24 @@ The first attempt paid for these rules. They apply from phase 1, inside the fork
   none were handed over, and a person approves the storyboard surface by surface before anything is modelled,
   charted or split. Section 5, item 3; slice 5.18.
 
+### Settled on 2026-10-09
+
+- **A stage's name says its purpose and then the crew member who runs it, and only where it has a delegate.**
+  The nautical rule of 2026-10-06 had not reached `/drive`'s ladder: ten of its twenty-one stages are sent to a
+  fresh context with an enforced scope and eleven stay on the host, and nothing in a key said which — `writes`
+  and `commands` said it, two columns along, in a table nobody reads at three in the morning, while the only
+  part a person editing `.specify/models.json` sees is the key. So `gaps` is `gaps-lookout`,
+  `implement` is `implement-shipwright`, `converge` is `converge-navigator`, `review` is `review-mate`,
+  `tasks` is `tasks-quartermaster`, `adversary` is `adversary-privateer`, `mutation` is `mutation-shipworm`,
+  and `/cruise`'s three are `decide-skipper`, `demo-hand` and `unblock-bosun`; the whole-slice type is
+  `drive-slice-watch`. The purpose leads so that a delegate reads its job in the first word of its own name
+  and so that the name a stage had is still the start of the name it has — the rungs the method's own prose
+  names are unchanged as prefixes, and `tests/test_model_parts.py` holds that. Rung titles and the commands
+  are untouched: a title names the work, `/gaps`, `/adversary` and `/mutation` are what a person types, and
+  Spec Kit owns the plan, tasks and implement commands the ladder runs. A pre-rename `.specify/models.json`
+  and a pre-rename `benchmark.json` are read under either name and say which answered, because the rename is
+  ours and those two files are theirs.
+
 ### Still open
 
 None. Every decision this plan needed on 2026-10-06 is taken, including the one slice 3.6 raised and

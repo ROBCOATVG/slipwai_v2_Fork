@@ -59,7 +59,7 @@ release.
 
 ## Triage the seams
 
-The trigger table is what `/drive` must see in the log before any `drive-adversary` spawn. Name each seam
+The trigger table is what `/drive` must see in the log before any `drive-adversary-privateer` spawn. Name each seam
 the diff widened against that table and the attack catalogue. Spawn one adversary per widened seam, not one
 per catalogue category. A seam whose brief has no explicit file manifest is not spawned: record it as
 omitted, with why. Record every seam not spawned in `specs/<feature>/adversary-log.md` with the prior rows
@@ -69,8 +69,8 @@ passes.
 
 For each selected seam, derive an explicit file manifest from the diff: the external boundary, production
 path, tests, schemas, migrations and configuration the adversary needs. Put those paths in its brief so it
-does not spend turns rediscovering the repository. Each seam goes to the `drive-adversary` type
-(`agents/drive-adversary.md`), which is the standing brief and carries the read-only scope into the harness
+does not spend turns rediscovering the repository. Each seam goes to the `drive-adversary-privateer` type
+(`agents/drive-adversary-privateer.md`), which is the standing brief and carries the read-only scope into the harness
 itself; the per-seam brief adds only that seam's contract, manifest, non-goals and attack question, and does
 not restate the scope or `docs/delegated-agent-safety.md`.
 
@@ -106,7 +106,7 @@ has to be run again:
 |---|---|---|
 | … | widened / already covered / not present | `path` or prior row |
 
-Spawned: <seam> · `drive-adversary` · <model> · delegated, fresh context · manifest: <paths>
+Spawned: <seam> · `drive-adversary-privateer` · <model> · delegated, fresh context · manifest: <paths>
 Omitted: <seam> · <why>
 Findings: none | …
 ```

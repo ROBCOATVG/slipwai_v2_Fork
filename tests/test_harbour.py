@@ -55,7 +55,7 @@ class ConfigTest(unittest.TestCase):
     def test_the_implement_stage_gets_the_largest_budget(self) -> None:
         """It is the one that writes the code; a budget that treats it like a gaps pass would be wrong."""
         stages = self.document()["stages"]
-        self.assertEqual(max(stages, key=lambda name: stages[name]["tokens"]), "implement")
+        self.assertEqual(max(stages, key=lambda name: stages[name]["tokens"]), "implement-shipwright")
 
     def test_the_bar_is_the_careen_s_and_not_a_second_copy(self) -> None:
         self.assertEqual(self.document()["bar"], DEFAULT_BAR)

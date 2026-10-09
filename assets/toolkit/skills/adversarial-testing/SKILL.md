@@ -69,7 +69,7 @@ it.
 **`/adversary` does this step.** The command in `commands/adversary.md` writes the trigger table into
 `specs/<feature>/adversary-log.md` before any spawn — one line per surface, each `widened`, `already
 covered`, or `not present` — then triages the seams the diff widened and spawns one adversary per selected
-seam: the `drive-adversary` type in `agents/`, whose projection into your harness withholds the editing
+seam: the `drive-adversary-privateer` type in `agents/`, whose projection into your harness withholds the editing
 tools rather than asking the delegate not to use them. Each brief carries the seam's contract plus an
 explicit file manifest, so the delegate does not rediscover the repository. Read on to run the pass by
 hand, or to know what the command is doing on your behalf — everything from Step 3 onward is yours either

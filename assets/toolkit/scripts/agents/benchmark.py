@@ -56,9 +56,19 @@ RECORD = "benchmark.json"
 OVERVIEW = "benchmark.md"
 # The ladder, in order, plus the stages an adopted repository adds; a stage outside it is accepted and sorted last.
 LADDER = (
-    "ground", "principles", "specify", "event-model", "split", "example-map", "gaps", "release-constraint", "plan",
-    "tasks", "pin", "implement", "converge", "demo", "adversary", "mutation", "skipper", "hand", "bosun",
+    "ground", "principles", "specify", "event-model", "split", "example-map", "gaps-lookout",
+    "release-constraint", "plan", "tasks-quartermaster", "pin", "implement-shipwright", "converge-navigator",
+    "demo", "adversary-privateer", "mutation-shipworm", "decide-skipper", "demo-hand", "unblock-bosun",
 )
+# What a delegable stage was called before its name said who runs it. A record is history: entries written
+# before the rename keep the word they were written with, and are read under the name the stage has now, so
+# `make benchmark` over a run that straddles the change still counts one stage once.
+RENAMED = {
+    "gaps": "gaps-lookout", "tasks": "tasks-quartermaster", "implement": "implement-shipwright",
+    "converge": "converge-navigator", "review": "review-mate", "adversary": "adversary-privateer",
+    "mutation": "mutation-shipworm", "skipper": "decide-skipper", "hand": "demo-hand",
+    "bosun": "unblock-bosun",
+}
 OUTCOMES = ("accepted", "behaviour", "implementation")
 # Converge passes beyond which the overview says something: one pass to find work and one to confirm it
 # closed is the shape of a slice that converged, so the third is the first that is worth reading about.
@@ -74,9 +84,13 @@ COMMENT = (
 USAGE_KEYS = ("input", "output", "cache_read", "cache_creation")
 # Which stage a delegate type's lines belong to, whatever bracket was open when they were written: a skipper round
 # opened while the implementers run must not count their tokens, and the implement entry must not lose them to it.
-OWNERS = {"drive-implement": ("implement",), "drive-converge": ("converge",), "drive-gaps": ("gaps",),
-          "drive-adversary": ("adversary",), "drive-mutation": ("mutation",), "drive-tasks": ("tasks",),
-          "drive-hand": ("demo", "hand"), "drive-skipper": ("skipper",), "drive-bosun": ("bosun",)}
+OWNERS = {
+    "drive-implement-shipwright": ("implement-shipwright",), "drive-converge-navigator": ("converge-navigator",),
+    "drive-gaps-lookout": ("gaps-lookout",), "drive-adversary-privateer": ("adversary-privateer",),
+    "drive-mutation-shipworm": ("mutation-shipworm",), "drive-tasks-quartermaster": ("tasks-quartermaster",),
+    "drive-demo-hand": ("demo", "demo-hand"), "drive-decide-skipper": ("decide-skipper",),
+    "drive-unblock-bosun": ("unblock-bosun",),
+}
 
 
 def now() -> str:
@@ -301,7 +315,7 @@ def claude_usage(items: list[dict[str, Any]], by_model: dict[str, dict[str, int]
     request once (592 of 1090 assistant lines on this machine's transcripts were repeats).
 
     An assistant line in a sub-agent's transcript also names the *type* that ran it, in `attributionAgent` —
-    `drive-adversary` where the stage delegated to a type, `general-purpose` where it delegated to nothing in
+    `drive-adversary-privateer` where the stage delegated to a type, `general-purpose` where it delegated to nothing in
     particular. That is read rather than asked, the way the model is, so a record can only claim a type that
     actually ran (the transcripts Claude Code 2.1.268 wrote on this machine, read 2026-09-15).
     """
@@ -719,8 +733,14 @@ def summary_wall(summary: dict[str, Any]) -> str:
     return f"{measured}+" if summary.get("unbracketed") else measured
 
 
+def canonical(stage: str) -> str:
+    """A recorded stage under the name it has now, so one stage is counted once across the rename."""
+    return RENAMED.get(stage, stage)
+
+
 def order(stage: str) -> int:
-    return LADDER.index(stage) if stage in LADDER else len(LADDER)
+    named = canonical(stage)
+    return LADDER.index(named) if named in LADDER else len(LADDER)
 
 
 def usage_unread(entry: dict[str, Any]) -> bool:
@@ -750,21 +770,21 @@ def summarise(record: dict[str, Any]) -> dict[str, Any]:
         for key in USAGE_KEYS:
             total[key] += totals(entry)[key]
     unknown = sum(1 for entry in ended if usage_unread(entry))
-    converge = [entry for entry in ended if entry["stage"] == "converge"]
+    converge = [entry for entry in ended if canonical(entry["stage"]) == "converge-navigator"]
     appended = sum(
         sum(entry["tasks"]["end"].values()) - sum(entry["tasks"]["start"].values())
         for entry in converge if entry.get("tasks", {}).get("start") and entry.get("tasks", {}).get("end")
     )
     # The record is append-only, so its order is the order things happened — finer than the timestamps.
-    first_converged = next((index for index, entry in enumerate(ended) if entry["stage"] == "converge"), len(ended))
+    first_converged = next((index for index, entry in enumerate(ended) if canonical(entry["stage"]) == "converge-navigator"), len(ended))
     gaps_before = sum(entry["signals"].get("gaps", 0) for index, entry in enumerate(ended)
-                      if entry["stage"] == "gaps" and index < first_converged)
+                      if canonical(entry["stage"]) == "gaps-lookout" and index < first_converged)
     gaps_after = sum(entry["signals"].get("gaps", 0) for index, entry in enumerate(ended)
-                     if entry["stage"] == "gaps" and index > first_converged)
-    first_implemented = next((index for index, entry in enumerate(ended) if entry["stage"] == "implement"), len(ended))
+                     if canonical(entry["stage"]) == "gaps-lookout" and index > first_converged)
+    first_implemented = next((index for index, entry in enumerate(ended) if canonical(entry["stage"]) == "implement-shipwright"), len(ended))
     # The post-converge `/gaps` pass is the ladder, not rework; a stage above it, re-entered, is.
     rework = [entry["stage"] for index, entry in enumerate(ended)
-              if index > first_implemented and order(entry["stage"]) < order("gaps")]
+              if index > first_implemented and order(entry["stage"]) < order("gaps-lookout")]
     last = {key: next((entry["signals"][key] for entry in reversed(ended) if key in entry.get("signals", {})), None)
             for key in ("mutation_score", "outcome")}
     return {

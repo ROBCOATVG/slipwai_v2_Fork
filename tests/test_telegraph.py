@@ -97,9 +97,9 @@ class FileTest(unittest.TestCase):
         self.assertFalse(telegraph.adjusted("dead-slow", held))
 
     def test_ringing_scales_the_stage_budgets_with_it(self) -> None:
-        before = self.held()["stages"]["implement"]["minutes"]
+        before = self.held()["stages"]["implement-shipwright"]["minutes"]
         ring(self.root, "dead-slow")
-        self.assertLess(self.held()["stages"]["implement"]["minutes"], before)
+        self.assertLess(self.held()["stages"]["implement-shipwright"]["minutes"], before)
 
     def test_no_stage_budget_ever_scales_to_nothing(self) -> None:
         """Zero is a budget no stage can meet, which reads as every stage failing rather than as `stop`."""

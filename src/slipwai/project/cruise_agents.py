@@ -2,8 +2,8 @@
 
 `/drive` stops for a product decision and for the demo because both belong to a person. `/cruise` runs the same
 ladder with nobody at the wheel, so each of those stops has to be a delegate with a standing brief of its own:
-`drive-skipper` answers a product question the way the owner brief and the decision log say the owner would,
-and refuses the one thing a decision can never be — a fact it does not have; `drive-hand` runs the demo the
+`drive-decide-skipper` answers a product question the way the owner brief and the decision log say the owner would,
+and refuses the one thing a decision can never be — a fact it does not have; `drive-demo-hand` runs the demo the
 ladder hands a person, through a browser where the slice has a screen, and reports what using it revealed
 in the three words the benchmark already knows. Their words live here rather than in `agents.py` because that
 module is at its budget, and because these two are the only types a project never meets under `/drive` alone.
@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from ..layout import Layout
 
-SKIPPER, HAND, BOSUN = "drive-skipper", "drive-hand", "drive-bosun"
+SKIPPER, HAND, BOSUN = "drive-decide-skipper", "drive-demo-hand", "drive-unblock-bosun"
 # Where a decision is written, per feature; the shape of an entry is `cruise.DECISION_ENTRY`.
 DECISIONS = "specs/<feature>/decisions.md"
 OWNER_BRIEF = ".specify/product-owner.md"

@@ -81,13 +81,13 @@ DEFAULTS: dict[str, Any] = {
 CONTROLS = {
     "enabled": "whether `/cruise` runs at all; `false` is a refusal that says so",
     "decide": "who answers a product question: the host where the stage recommends an answer or a standing "
-              "decision covers it and `drive-skipper` otherwise, or `drive-skipper` for every question",
+              "decision covers it and `drive-decide-skipper` otherwise, or `drive-decide-skipper` for every question",
     "release": "the release-constraint stage: every slice continues or opens a flag seeded off, so every merge "
                "is dark; or park at the push and let a person say it is a release they want",
     "constitution": "an unratified constitution: the skipper drafts and ratifies it, marked pending human "
                     "review; or park",
     "hand": "the top of the hand's ladder for a demo; each falls through to the next where it cannot run",
-    "unblock": "what a block becomes: work for `drive-bosun` first — a stub, a narrower reading, a repair — parking "
+    "unblock": "what a block becomes: work for `drive-unblock-bosun` first — a stub, a narrower reading, a repair — parking "
                "only at the catastrophic or when it fails; or a park at once",
     "model": "the model the iteration itself runs on — the driver, and every stage `.specify/models.json` maps to "
              "`host`; null is the harness's default, which nobody at the wheel chooses",

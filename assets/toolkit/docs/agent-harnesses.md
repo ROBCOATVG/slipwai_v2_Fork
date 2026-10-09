@@ -54,13 +54,19 @@ does not own. An `import` harness's file is created if absent, because nothing e
 
 ## The agent types
 
-`agents/` holds one named type per stage `/drive` sends to a fresh context — `drive-tasks`,
-`drive-implement`, `drive-converge`, `drive-gaps`, `drive-adversary`, `drive-mutation` — and one,
-`drive-slice`, for a whole slice. Each declares, in words no harness owns, what its delegate may write
-(`none`, `tasks`, `manifest`, `report`) and what it may run (`read-only`, `tasks-command`, `any`), and
-carries that stage's standing brief; the per-call brief then
-adds only the task, its contract and the file manifest. A stage type is named for its stage, so its model is
-that stage's row in `.specify/models.json` and there is no second place a model is chosen. `drive-slice`
+`agents/` holds one named type per stage `/drive` sends to a fresh context —
+`drive-tasks-quartermaster`, `drive-implement-shipwright`, `drive-converge-navigator`,
+`drive-gaps-lookout`, `drive-review-mate`, `drive-adversary-privateer`, `drive-mutation-shipworm` — and
+one, `drive-slice-watch`, for a whole slice. Each declares, in words no harness owns, what its delegate may
+write (`none`, `tasks`, `manifest`, `report`) and what it may run (`read-only`, `tasks-command`, `any`),
+and carries that stage's standing brief; the per-call brief then adds only the task, its contract and the
+file manifest. A stage type is named for its stage, so its model is that stage's row in
+`.specify/models.json` and there is no second place a model is chosen.
+
+Every one of those names is its purpose and then the crew member who does the work — a lookout reports what
+it sees, a shipwright builds to the plan, a privateer attacks and never repairs — and a stage with no
+delegate is named for the work alone. So the key in `.specify/models.json` tells you which stages are sent
+away at all, which is the thing you most want to know while reading it. `drive-slice-watch`
 declares no stage and takes no model: it runs one slice's whole ladder in a worktree of its own and reads the
 table stage by stage inside itself, so resolving one model for it would choose one for fourteen stages at
 once.

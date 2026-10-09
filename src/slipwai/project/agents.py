@@ -55,32 +55,32 @@ def types() -> list[Type]:
         for writes, commands in [(stage.writes, stage.commands)]
         if writes is not None and commands is not None
     ]
-    return [*named, Type(f"{AGENT}slice", NO_STAGE, MANIFEST, ANY)]
+    return [*named, Type(f"{AGENT}slice-watch", NO_STAGE, MANIFEST, ANY)]
 
 
 def summary(agent: Type) -> str:
     """The one line a harness shows to whatever is choosing a delegate, so the choice is made on the type."""
     return {
-        "drive-tasks":
+        "drive-tasks-quartermaster":
             "Turns one slice's finished plan into its ordered tasks; writes only that slice's tasks.md",
-        "drive-implement":
+        "drive-implement-shipwright":
             "Implements one boundary of a slice — a task, a rule with its examples, or every rule of one user "
             "story, each its own RED-GREEN-REFACTOR cycle; edits only the files its manifest names, never tasks.md",
-        "drive-converge":
+        "drive-converge-navigator":
             "Judges whether a slice converged against the constitution and appends what it still owes; edits "
             "only what the verdict requires",
-        "drive-gaps":
+        "drive-gaps-lookout":
             "Reads a slice and the code it produced and reports the gaps between them; writes nothing",
-        "drive-review":
+        "drive-review-mate":
             "Reads a slice's whole diff against the chart, the constitution and its own examples, and "
             "reports what it found; writes nothing",
-        "drive-adversary":
+        "drive-adversary-privateer":
             "Attacks one seam of a slice through its reachable boundaries and reports what broke; reads and "
             "runs, never edits",
-        "drive-mutation":
+        "drive-mutation-shipworm":
             "Runs the mutation harness over a slice and reports the score; writes only the report the run "
             "produces",
-        "drive-slice":
+        "drive-slice-watch":
             "Carries one ready slice from its example map to a converged verdict, in a worktree of its own and "
             "strictly sequentially; stops rather than guessing",
         **cruise_summary(),
@@ -90,7 +90,7 @@ def summary(agent: Type) -> str:
 def body(agent: Type, layout: Layout) -> str:
     """The standing brief: what this type is for, what it may touch, what it returns, and what it hands back."""
     return {
-        "drive-tasks": f"""You turn one slice's finished plan into the ordered tasks that build it.
+        "drive-tasks-quartermaster": f"""You turn one slice's finished plan into the ordered tasks that build it.
 
 The plan, example map, data model and contracts are already written and authoritative. Add no requirement,
 resolve no open question and change no decision. Report a contradiction between them; never reconcile one.
@@ -123,7 +123,7 @@ Your one write is this slice's `tasks.md`. Not the model, plan, code, benchmark 
 prepared before delegating you. Return the path you wrote, the tasks and parallel batches you derived, and
 any contradiction or file you believe needs changing; leave every other file alone.""",
 
-        "drive-implement": f"""You implement one boundary of one slice, from a plan that is already complete: one
+        "drive-implement-shipwright": f"""You implement one boundary of one slice, from a plan that is already complete: one
 task, one rule of the example map with the examples that belong to it, or every rule of one user story —
 each rule its own RED-GREEN-REFACTOR cycle, in this one context, in the map's order. The brief also names
 the cycle unit — `rule` or `example` — from `.specify/drive.json`. The licence below is the same whichever
@@ -167,7 +167,7 @@ into how many groups, the tests you added with their names, the commands you ran
 results, and anything you had to leave undone. A task that cannot be done as specified is reported, not reinterpreted:
 say what the plan assumed and what the code actually is.""",
 
-        "drive-converge": f"""You judge whether one slice converged, and append what it still owes.
+        "drive-converge-navigator": f"""You judge whether one slice converged, and append what it still owes.
 
 Read the slice's plan, tasks, examples and diff, and the constitution at `.specify/memory/constitution.md`.
 The verdict names each principle the diff touches — a MUST about money, time, identity, a boundary — with the
@@ -194,7 +194,7 @@ acceptance, immediately before the implementation is pushed. Return the verdict,
 the evidence for each, so the session that delegated you can re-run this stage until it reports converged
 or the ladder's bound is reached.""",
 
-        "drive-gaps": """You read, and you report what is missing. You change nothing.
+        "drive-gaps-lookout": """You read, and you report what is missing. You change nothing.
 
 Compare what the slice promised — its acceptance criteria, its examples, the states and criteria its plan
 named — with what the code and tests actually do. A gap is a consequential difference: a state nothing
@@ -205,7 +205,7 @@ Return the gaps and nothing else. Do not fix one, do not add a test, and do not 
 gap go away: a paper edit here is a rewritten test later, and the session that delegated you decides which
 gaps become tasks.""",
 
-        "drive-review": """You read one slice's whole diff and report what you found. You change nothing.
+        "drive-review-mate": """You read one slice's whole diff and report what you found. You change nothing.
 
 You are reading the shape of what was built, not the shape of one cycle's code. Four questions, in this
 order. Is it **correct** against the slice's own examples and the constitution's MUSTs — name the file and
@@ -222,7 +222,7 @@ everything it noticed makes the reader do the ranking you were asked for.
 You never edit. A reviewer that can write is one that edits, and then nobody has read this diff with fresh
 eyes. The delegate that wrote the slice closes what you found.""",
 
-        "drive-adversary": """You attack one seam and report what broke. You never fix it.
+        "drive-adversary-privateer": """You attack one seam and report what broke. You never fix it.
 
 The brief names the seam, the boundaries the diff widened, and the files that make up the surface. Probe
 parsing, authorization, concurrency, time, partial failure and the operational boundaries as far as *that*
@@ -239,7 +239,7 @@ Return each finding with its reproduction, its severity (`CRITICAL`, `HIGH`, `ME
 consequence, or the explicit statement that the seam yielded nothing — an empty result is exactly what makes
 the next slice's skip decidable.""",
 
-        "drive-mutation": f"""You run the mutation harness over one slice and report what it says.
+        "drive-mutation-shipworm": f"""You run the mutation harness over one slice and report what it says.
 
 Run the harness the brief names, over the scope it names, and copy the score from the tool's own line in the
 tool's own units. Do not convert it, do not round it, and do not describe a run that did not finish as a
@@ -251,7 +251,7 @@ code the mutants are made from, and do not tune the configuration to make a run 
 measurement into an argument for itself. Return the score, the survivors worth reading, the command you ran
 and its wall time, so `{layout.make} verify` and the benchmark can be read against it.""",
 
-        "drive-slice": f"""You carry one whole slice, alone, in a worktree of your own.
+        "drive-slice-watch": f"""You carry one whole slice, alone, in a worktree of your own.
 
 The brief names the slice, its `slice/<id>` branch — already claimed for you — its worktree and its block of
 the model. Run that slice's ladder in order: example map, gaps, plan and tasks, implementation, converge, and

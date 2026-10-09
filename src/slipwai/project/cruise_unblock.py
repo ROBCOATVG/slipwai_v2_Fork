@@ -2,7 +2,7 @@
 
 A run used to park at the first input nobody had — a credential, a service that was down — and wait for a
 person, which is the idle nobody knows about that the whole command exists to prevent. Blocked is now work
-before it is a stop: a strong delegate, `drive-bosun`, is handed the blocker and takes the least surprising
+before it is a stop: a strong delegate, `drive-unblock-bosun`, is handed the blocker and takes the least surprising
 way round — a fake behind the port, a reading that keeps every MUST, a repaired checkout — and writes down
 what it did. What remains a park is the catastrophic: destroying, releasing, spending, weakening security,
 or discarding a person's commits, which no workaround is allowed to be.

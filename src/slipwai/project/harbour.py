@@ -35,14 +35,14 @@ START = "half-ahead"
 STAGE_BUDGETS: dict[str, dict[str, int]] = {
     "default": {"minutes": 30, "tokens": 400},
     "example-map": {"minutes": 20, "tokens": 200},
-    "gaps": {"minutes": 20, "tokens": 200},
+    "gaps-lookout": {"minutes": 20, "tokens": 200},
     "plan": {"minutes": 30, "tokens": 300},
-    "tasks": {"minutes": 15, "tokens": 150},
-    "implement": {"minutes": 90, "tokens": 1200},
-    "converge": {"minutes": 30, "tokens": 400},
-    "review": {"minutes": 25, "tokens": 300},
-    "adversary": {"minutes": 40, "tokens": 500},
-    "mutation": {"minutes": 60, "tokens": 200},
+    "tasks-quartermaster": {"minutes": 15, "tokens": 150},
+    "implement-shipwright": {"minutes": 90, "tokens": 1200},
+    "converge-navigator": {"minutes": 30, "tokens": 400},
+    "review-mate": {"minutes": 25, "tokens": 300},
+    "adversary-privateer": {"minutes": 40, "tokens": 500},
+    "mutation-shipworm": {"minutes": 60, "tokens": 200},
 }
 #: How many decisions may stand unread by a person before a fairway parks. The experiment reached 125
 #: decisions with 105 of them never reviewed, which is not a record of judgement, it is a backlog of it.

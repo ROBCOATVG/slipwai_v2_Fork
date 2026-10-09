@@ -82,9 +82,9 @@ Commands are adapted to this repository's {language} backend toolchain, `{fronte
 {command_list}
 
 Agent types under `agents/` are the fifth thing projected. Each stage `/drive` sends to a fresh context has
-one — `drive-gaps`, `drive-tasks`, `drive-implement`, `drive-converge`, `drive-adversary`, `drive-mutation`, and
-`drive-slice` for a whole slice — carrying that stage's standing brief, the model `.specify/models.json` resolves for it, and what its delegate may write and
-run. Three more, `drive-skipper`, `drive-hand` and `drive-bosun`, are `/cruise`'s product owner, actor and
+one — `drive-gaps-lookout`, `drive-tasks-quartermaster`, `drive-implement-shipwright`, `drive-converge-navigator`, `drive-adversary-privateer`, `drive-mutation-shipworm`, and
+`drive-slice-watch` for a whole slice — carrying that stage's standing brief, the model `.specify/models.json` resolves for it, and what its delegate may write and
+run. Three more, `drive-decide-skipper`, `drive-demo-hand` and `drive-unblock-bosun`, are `/cruise`'s product owner, actor and
 unblocker, met only when that command runs the ladder on its own. `make agents` renders each into the installed harness's own agent file so the harness holds the scope
 it can hold; `docs/agent-harnesses.md` says what each one can.
 

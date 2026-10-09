@@ -8,9 +8,9 @@ Nothing is guessed: a role with no identifier mapped, a harness the registry rec
 project with no table at all are each said in words, so a stage that did not switch is a stage that says so.
 
     python3 scripts/agents/models.py              # the whole table, per installed harness
-    python3 scripts/agents/models.py implement    # one stage, keyed by the command it runs
+    python3 scripts/agents/models.py implement-shipwright   # one stage, by its name
     python3 scripts/agents/models.py --check      # the table is well-formed; `make check-agents` runs this
-    python3 scripts/agents/models.py --set implement=strong claude.fast=haiku   # change it, checked, any time
+    python3 scripts/agents/models.py --set implement-shipwright=strong claude.fast=haiku   # change it, any time
 
 A change — by hand or with `--set` — takes effect at the next stage `/drive` runs: the table is read before every
 stage and cached nowhere. `slipwai migrate` merges a newer factory's table over an edited one rather than
@@ -51,10 +51,21 @@ INTEGRATION = ROOT / ".specify/integration.json"
 # `tests/test_agents.py` holds the two in step — four stages were missing here while the factory wrote them,
 # so `make verify` was red on a project nobody had touched, which is the one state the first page promises.
 KNOWN_STAGES = (
-    "principles", "specify", "mockups", "event-model", "chart", "split", "example-map", "gaps",
-    "release-constraint", "plan", "tasks", "implement", "converge", "demo", "review", "adversary", "mutation",
-    "merge", "skipper", "hand", "bosun",
+    "principles", "specify", "mockups", "event-model", "chart", "split", "example-map", "gaps-lookout",
+    "release-constraint", "plan", "tasks-quartermaster", "implement-shipwright", "converge-navigator", "demo",
+    "review-mate", "adversary-privateer", "mutation-shipworm", "merge", "decide-skipper", "demo-hand",
+    "unblock-bosun",
 )
+# What a stage was called before its name said who runs it. A delegable stage is `purpose-crew` now, which is
+# what tells a reader of this table which stages have a delegate at all. Read here rather than only migrated,
+# because this table is a file a person edits: a project whose `fast` mapping sits on a row called `implement`
+# keeps that mapping until `slipwai migrate` rewrites the file, and is told which name answered.
+RENAMED = {
+    "gaps": "gaps-lookout", "tasks": "tasks-quartermaster", "implement": "implement-shipwright",
+    "converge": "converge-navigator", "review": "review-mate", "adversary": "adversary-privateer",
+    "mutation": "mutation-shipworm", "skipper": "decide-skipper", "hand": "demo-hand",
+    "bosun": "unblock-bosun",
+}
 # A role mapped to this runs on the model running `/drive` itself: no delegation, said in as many words.
 HOST = "host"
 ABSENT = f"no {MODELS.relative_to(ROOT)}: every stage runs on the host model; `slipwai migrate` writes the table"
@@ -72,11 +83,28 @@ def installed() -> list[str]:
     return [default] if isinstance(default, str) else []
 
 
+def under_any_name(stage: str) -> tuple[str, ...]:
+    """The names this stage may be written under, newest first: its own, then what it was called before.
+
+    Both directions, because both arrive. A person types `implement` from memory and means the shipwright;
+    a table written before the rename has the row under `implement` and the new name asks for it.
+    """
+    was = {fresh: old for old, fresh in RENAMED.items()}
+    return tuple(dict.fromkeys((stage, RENAMED.get(stage, stage), was.get(stage, stage))))
+
+
 def role_of(stage: str, table: dict[str, Any]) -> tuple[str, str]:
-    """The role a stage runs under, and a note when it fell to the `default` row."""
+    """The role a stage runs under, and a note when it fell to the `default` row or answered to an old name."""
     stages = table["stages"]
-    if stage in stages:
-        return str(stages[stage]), ""
+    for name in under_any_name(stage):
+        if name in stages:
+            if name == stage:
+                said = ""
+            elif name in RENAMED:  # the table is older than the rename and the row is still under the old name
+                said = f"read from the `{name}` row, which is what this stage was called before the rename"
+            else:  # the table has moved on and the stage was asked for by the name it used to have
+                said = f"read from the `{name}` row; `{stage}` is what it was called before the rename"
+            return str(stages[name]), said
     return str(stages["default"]), f"no `{stage}` row; the `default` row applies"
 
 
@@ -122,7 +150,10 @@ def check(table: object, registry: dict[str, dict[str, Any]]) -> list[str]:
     stages = table.get("stages")
     if not isinstance(stages, dict) or "default" not in stages:
         return ["`stages` must be an object with a `default` row"]
-    allowed = set(KNOWN_STAGES) | {"default"}
+    # A row still under a stage's pre-rename name is read, not refused: the table is a file a person edits,
+    # it still works, and `slipwai migrate` moves it. A gate that went red on it would make a rename of ours
+    # into a broken build of theirs.
+    allowed = set(KNOWN_STAGES) | set(RENAMED) | {"default"}
     for key, value in stages.items():
         if key not in allowed:
             findings.append(f"`stages.{key}` is not a stage of the ladder; known: {', '.join(KNOWN_STAGES)}")
@@ -167,9 +198,13 @@ def assign(table: dict[str, Any], registry: dict[str, dict[str, Any]], assignmen
                                "so a role mapped for it would never be read")
         table.setdefault("roles", {}).setdefault(harness, {})[role] = None if value == "null" else value
         return f"roles.{harness}.{role} = {value}"
+    was, key = key, RENAMED.get(key, key)  # typed from memory, or out of a table older than the rename
     if key not in KNOWN_STAGES and key != "default":
         raise RuntimeError(f"`{key}` is not a stage of the ladder; known: default, {', '.join(KNOWN_STAGES)}")
-    table.setdefault("stages", {})[key] = value
+    # The old row goes with it. Leaving it behind would put two rows in the table for one stage, and the
+    # next reader would have to know which of them wins to know what they had just changed.
+    table.setdefault("stages", {}).pop(was, None)
+    table["stages"][key] = value
     unmapped = [harness for harness, mapping in table.get("roles", {}).items() if value not in mapping]
     for harness in unmapped:
         table["roles"][harness][value] = None
@@ -224,6 +259,10 @@ def main() -> None:
     if "--check" in arguments:
         if findings:
             raise RuntimeError(f"{MODELS.relative_to(ROOT)}:\n  - " + "\n  - ".join(findings))
+        was = sorted(set(table["stages"]) & set(RENAMED))
+        if was:
+            print(f"check-models: {', '.join(was)} are these stages' names before they said who runs them "
+                  f"({', '.join(RENAMED[name] for name in was)}); they are read, and `slipwai migrate` moves them")
         print(f"check-models: {MODELS.relative_to(ROOT)} names {len(table['stages']) - 1} stage(s) and "
               f"{len(table['roles'])} harness(es)")
         return

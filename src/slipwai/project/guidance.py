@@ -236,7 +236,7 @@ question for the user, not an obligation to invent.
 
 ## Delegated agents
 
-Each stage `/drive` sends to a fresh context is a named type in `agents/` (and a whole slice is `drive-slice`) carrying that stage's standing brief,
+Each stage `/drive` sends to a fresh context is a named type in `agents/` (and a whole slice is `drive-slice-watch`) carrying that stage's standing brief,
 its model and its write scope, projected into the installed harness so it holds what it can. Delegate to the
 type: a brief adds only its task-specific contract and file manifest, and restates neither the scope nor `docs/delegated-agent-safety.md` — a brief that restates a rule is one that can fall behind it.
 ## Deployable ownership
@@ -333,7 +333,7 @@ acceptance, harden and finish the slice — `/adversary` when the slice changed 
 split, then `/mutation` and `make verify` — then continue to the ready slices (not done, every `depends_on` done): every unclaimed one whose contract is settled runs concurrently, one delegate per slice on a `slice/<id>` branch, merged in split order (`commands/drive.md`, *Running ready slices concurrently*); where the harness cannot delegate, the earliest in split order, naming the rest.
 
 Under `/cruise` the same contract holds with nobody at the wheel: the two stops that were a person's — a
-product decision and the demo — are answered by `drive-skipper` and `drive-hand`, every answer is written where
+product decision and the demo — are answered by `drive-decide-skipper` and `drive-demo-hand`, every answer is written where
 a person's would have been and again in `specs/<feature>/decisions.md`, and an iteration ends with one line
 (`cruise: continue | done | parked: <why> | stopped: human`) that the outer loop reads before it invokes the
 next. `commands/cruise.md` is exact; it runs `commands/drive.md` and adds nothing to what a stage produces.

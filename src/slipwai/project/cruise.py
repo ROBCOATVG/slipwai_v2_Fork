@@ -2,8 +2,8 @@
 
 `/drive` stops for a product decision, an unavailable input, an exhausted split and the next demo. `/cruise` runs
 the same ladder — not a copy — and at each stop does what the owner or the actor would have: decides, on the host
-where the stage recommends or a standing decision covers it and through `drive-skipper` where the question is
-open; demos through `drive-hand`; and audits the specification against what shipped where the split runs out.
+where the stage recommends or a standing decision covers it and through `drive-decide-skipper` where the question is
+open; demos through `drive-demo-hand`; and audits the specification against what shipped where the split runs out.
 Every answer goes where `/drive` would have written a person's, and once more in `decisions.md` — and, where
 reversing it would be a migration, into an ADR at `Proposed` — so a person can read and overturn every one.
 
@@ -41,7 +41,7 @@ SETTINGS: tuple[tuple[str, tuple[str, ...] | str, object, str], ...] = (
     ("enabled", ("true", "false"), False, "whether `/cruise` runs at all; `false` is a refusal that says so"),
     ("decide", ("recommended-first", "skipper-always"), "recommended-first",
      "who answers a product question: the host where the stage recommends an answer or a standing decision "
-     "covers it and `drive-skipper` otherwise, or `drive-skipper` for every question"),
+     "covers it and `drive-decide-skipper` otherwise, or `drive-decide-skipper` for every question"),
     ("release", ("flagged", "park"), "flagged",
      "the release-constraint stage: every slice continues or opens a flag seeded off, so every merge is dark; "
      "or park at the push and let a person say it is a release they want"),
@@ -50,7 +50,7 @@ SETTINGS: tuple[tuple[str, tuple[str, ...] | str, object, str], ...] = (
     ("hand", ("browser", "http", "cli"), "browser",
      "the top of the hand's ladder for a demo; each falls through to the next where it cannot run"),
     ("unblock", ("bosun", "park"), "bosun",
-     "what a block becomes: work for `drive-bosun` first — a stub, a narrower reading, a repair — parking only "
+     "what a block becomes: work for `drive-unblock-bosun` first — a stub, a narrower reading, a repair — parking only "
      "at the catastrophic or when it fails; or a park at once"),
     # `stuck_after`, `max_iterations`, `max_hours` and `poll_minutes` were here until 7.7d and are not any
     # more: each was a budget on a loop that no longer exists. What bounds a run is the telegraph
@@ -196,7 +196,7 @@ re-derives the entry stage from that artifact, the way demo feedback re-enters t
 ## When the ready set is empty: the completion audit
 
 An exhausted split is where `/drive` stops and where this command does its last stage. Delegate `/gaps` over
-the whole of `specs/<feature>/spec.md` against what shipped — one `drive-gaps` delegate per feature area,
+the whole of `specs/<feature>/spec.md` against what shipped — one `drive-gaps-lookout` delegate per feature area,
 concurrently, as the post-implementation pass is per seam — and put every finding to the skipper protocol:
 a criterion nothing built becomes a slice, appended to the split with `/story-splitting`, and the ladder is
 re-entered for it; a finding the owner rules out of scope is a decision entry saying so. Write

@@ -275,8 +275,8 @@ first stage still owing an artifact, stepping back out of the loop when an upstr
 Demo feedback returns to the stage that owns the change before the path is demonstrated again. A real product decision is a stop; finishing an intermediate document is
 not.
 
-`/cruise` runs this same diagram with nobody at the wheel. A product decision is answered by `drive-skipper`
-and written in `specs/<feature>/decisions.md`; the demo is run by `drive-hand` and written in the slice's
+`/cruise` runs this same diagram with nobody at the wheel. A product decision is answered by `drive-decide-skipper`
+and written in `specs/<feature>/decisions.md`; the demo is run by `drive-demo-hand` and written in the slice's
 `demo-log.md`; the run ends only when the specification is satisfied, or when a person stops it. What each
 stage produces does not change. `commands/cruise.md` is exact.
 """

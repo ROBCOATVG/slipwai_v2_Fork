@@ -1,4 +1,4 @@
-"""How `/drive` hands implementation to `drive-implement`, on two axes a project sets once and changes at will.
+"""How `/drive` hands implementation to `drive-implement-shipwright`, on two axes a project sets once and changes at will.
 
 The **boundary** is how much one delegate is handed: every rule of one user story, one rule, or one task. The
 **cycle** is how many RED tests a RED-GREEN-REFACTOR cycle opens with: a rule's examples together, or one at
@@ -27,7 +27,7 @@ DELEGATES = ("story", "rule", "task")
 CYCLES = ("rule", "example")
 DEFAULT_DELEGATE, DEFAULT_CYCLE = "story", "rule"
 COMMENT = (
-    "How /drive hands implementation to drive-implement. `delegate`: story | rule | task — how much one delegate "
+    "How /drive hands implementation to drive-implement-shipwright. `delegate`: story | rule | task — how much one delegate "
     "is handed. `cycle`: rule | example — how many RED tests a RED-GREEN-REFACTOR cycle opens with. Change it with "
     "/drive-settings (python3 scripts/agents/drive.py --set delegate=… cycle=…), checked; `make check-agents` "
     "holds the shape. commands/drive.md, *How implementation is delegated*, says what each value means and which "
@@ -45,9 +45,9 @@ def implementation_section(layout: Layout = AT_ROOT) -> str:
     """The `/drive` section after *What each stage costs*: the two axes, the vetoes, parallelism, and the record."""
     return f"""### How implementation is delegated
 
-Two settings in `{CONFIG}` decide how this ladder hands implementation to `drive-implement` and how each
+Two settings in `{CONFIG}` decide how this ladder hands implementation to `drive-implement-shipwright` and how each
 delegate drives what it is handed. Read them before every implementation stage — `python3 {SCRIPT}` — say
-both in the stage line beside the model (`drive-implement · model: sonnet · delegated, fresh context ·
+both in the stage line beside the model (`drive-implement-shipwright · model: sonnet · delegated, fresh context ·
 story/rule`), and change them only through `/drive-settings`, never silently inside a delegation.
 
 **`delegate`** — how much one delegate is handed. `story`: every rule of one user story (`[US<n>]` on the
@@ -91,7 +91,7 @@ argument-hint: [delegate=story|rule|task] [cycle=rule|example]
 
 # Drive settings
 
-`{CONFIG}` holds two settings: `delegate`, how much one `drive-implement` delegate is handed — every rule of one
+`{CONFIG}` holds two settings: `delegate`, how much one `drive-implement-shipwright` delegate is handed — every rule of one
 user story, one rule, or one task — and `cycle`, how many RED tests one RED-GREEN-REFACTOR cycle opens with — a
 rule's examples together, or one at a time. `commands/drive.md`, *How implementation is delegated*, says what
 each means and which veto overrides it. This command is how the settings are read and how they change: checked,

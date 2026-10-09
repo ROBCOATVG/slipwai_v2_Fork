@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""How `/drive` hands implementation to `drive-implement`: the boundary a delegate is handed, and the cycle it runs.
+"""How `/drive` hands implementation to `drive-implement-shipwright`: the boundary a delegate is handed, and the cycle it runs.
 
 `.specify/drive.json` holds both — `delegate`: how much one delegate is handed, every rule of one user story, one
 rule, or one task; `cycle`: how many RED tests one RED-GREEN-REFACTOR cycle opens with, a rule's examples together

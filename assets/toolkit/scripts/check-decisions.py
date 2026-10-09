@@ -15,10 +15,10 @@ an unwritten row is a pass that has to be run again, and until now nothing notic
   Iteration), **Question**, **Options**, **Decision**, **Why**, **Decided by**, **Confidence** (with Would
   reverse if), **Written to**, **Status**;
 - entries are numbered contiguously from `D1`, in order;
-- **Decided by** is `host (stage recommendation)`, `host (standing decision D<m>)`, `drive-skipper (<model>)`,
-  `drive-bosun` — with or without its `(<model>)` — or `human`; **Status** is `standing`, `overridden by D<m>` or `overridden by human <date>`;
+- **Decided by** is `host (stage recommendation)`, `host (standing decision D<m>)`, `drive-decide-skipper (<model>)`,
+  `drive-unblock-bosun` — with or without its `(<model>)` — or `human`; **Status** is `standing`, `overridden by D<m>` or `overridden by human <date>`;
 - every **Written to** path exists in the repository, and a path still carrying `<placeholders>` is a finding;
-- a demo entry is `## <instant> — <verdict> · iteration <n> · drive-hand (<model>)`, its verdict one of
+- a demo entry is `## <instant> — <verdict> · iteration <n> · drive-demo-hand (<model>)`, its verdict one of
   `accepted`, `behaviour`, `implementation`, followed by **Started with**, **Driven through**, **Examples**,
   **Evidence**, **Feedback**; every **Evidence** path exists, beside the log or from the root, or is `none`;
 - every slice the ladder calls done — a row in `specs/<feature>/slices/README.md`, or `status: implemented` in
@@ -65,11 +65,11 @@ VERDICTS = ("accepted", "behaviour", "implementation")
 # which in the first attempt cost 54 renumbering commits in a night, one of them rewriting 91 citations.
 DECISION_HEADING = re.compile(r"^## D-(?:(?P<fairway>[A-Za-z0-9][A-Za-z0-9_-]*)-)?(?P<n>\d+) — (.+)$"
                               r"|^## D(?P<old>\d+) — (.+)$")
-DEMO_HEADING = re.compile(r"^## (\S+) — (\w+) · iteration (\d+) · drive-hand \((.+)\)$")
-# The bosun's entries name the type alone or with the model, because the command tells it `Decided by: drive-bosun`
+DEMO_HEADING = re.compile(r"^## (\S+) — (\w+) · iteration (\d+) · drive-demo-hand \((.+)\)$")
+# The bosun's entries name the type alone or with the model, because the command tells it `Decided by: drive-unblock-bosun`
 # and the skipper's habit of naming its model is one it may share.
-DECIDED_BY = re.compile(r"^(host \(stage recommendation\)|host \(standing decision D\d+\)|drive-skipper \(.+\)|"
-                        r"drive-bosun( \(.+\))?|human)$")
+DECIDED_BY = re.compile(r"^(host \(stage recommendation\)|host \(standing decision D\d+\)|drive-decide-skipper \(.+\)|"
+                        r"drive-unblock-bosun( \(.+\))?|human)$")
 STATUS = re.compile(r"^(standing|overridden by D\d+|overridden by human \S+)$")
 FIELD = re.compile(r"^- \*\*([^*]+):\*\* ?(.*)$")
 PLACEHOLDER = re.compile(r"<[^>]*>")
@@ -140,7 +140,7 @@ def check_decisions(path: Path) -> list[str]:
             findings.append(f"{where}: D{number}'s fields are out of order; the shape is {', '.join(DECISION_FIELDS)}")
         if not DECIDED_BY.match(fields["Decided by"]):
             findings.append(f"{where}: D{number} `Decided by` is {fields['Decided by']!r}; it is host (stage "
-                            "recommendation), host (standing decision D<m>), drive-skipper (<model>), drive-bosun "
+                            "recommendation), host (standing decision D<m>), drive-decide-skipper (<model>), drive-unblock-bosun "
                             "or human")
         if not STATUS.match(fields["Status"]):
             findings.append(f"{where}: D{number} `Status` is {fields['Status']!r}; it is standing, overridden by "
@@ -155,7 +155,7 @@ def check_demo_log(path: Path) -> list[str]:
     for line, heading, fields in entries(path.read_text(encoding="utf-8"), DEMO_HEADING):
         where = f"{relative}:{line}"
         if heading is None:
-            findings.append(f"{where}: a heading that is not `## <instant> — <verdict> · iteration <n> · drive-hand (<model>)`")
+            findings.append(f"{where}: a heading that is not `## <instant> — <verdict> · iteration <n> · drive-demo-hand (<model>)`")
             continue
         verdict = heading.group(2)
         if verdict not in VERDICTS:
